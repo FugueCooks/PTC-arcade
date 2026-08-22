@@ -18,6 +18,7 @@ const forceUpload = process.env.STORAGE_FORCE_UPLOAD === '1';
 const client = new S3Client({
   endpoint,
   region,
+  maxAttempts: 12,
   forcePathStyle: process.env.STORAGE_FORCE_PATH_STYLE === '1',
   credentials: {
     accessKeyId: process.env.STORAGE_ACCESS_KEY_ID.trim(),
@@ -47,7 +48,9 @@ for (const asset of manifest) {
       CacheControl: 'public, max-age=31536000, immutable',
       Metadata: { sha256: asset.sha256, kind: asset.kind }
     },
-    queueSize: 3,
+    // A single multipart stream is slower, but is substantially more reliable
+    // on consumer upload connections and avoids saturating the upstream link.
+    queueSize: 1,
     partSize: 16 * 1024 * 1024,
     leavePartsOnError: false
   });
