@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Extreme Gundam avatar">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#070d28"/><stop offset="1" stop-color="#321261"/></linearGradient></defs>
+  <rect width="240" height="160" rx="10" fill="url(#bg)"/>
+  <path d="M120 23 139 52 133 74 149 128 120 145 91 128 107 74 101 52Z" fill="#e9eef7" stroke="#35f6ff" stroke-width="4"/>
+  <path d="m101 63-68 42 56-9m50-33 68 42-56-9" fill="none" stroke="#8d55ff" stroke-width="13" stroke-linecap="round"/>
+  <path d="m108 43 12-18 12 18-12 13Z" fill="#ff4359"/><path d="M105 75h30v25h-30z" fill="#3a9cff"/>
+  <text x="120" y="155" text-anchor="middle" fill="#b9fbff" font-family="monospace" font-size="11">EXTREME GUNDAM</text>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Omni-Man avatar">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#112d6a"/><stop offset="1" stop-color="#07112d"/></linearGradient>
+    <linearGradient id="suit" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#e8323f"/><stop offset="1" stop-color="#7a0f25"/></linearGradient>
+  </defs>
+  <rect width="320" height="180" rx="14" fill="url(#sky)"/>
+  <path d="M47 38 91 18l-9 72-35 42zM273 38l-44-20 9 72 35 42z" fill="#e9eef9" opacity=".9"/>
+  <circle cx="160" cy="53" r="28" fill="#f1be9d"/>
+  <path d="M131 48q29-37 58 0v12h-58z" fill="#42251c"/>
+  <path d="M139 71q21 12 42 0l-3 12h-36z" fill="#42251c"/>
+  <path d="M113 153q4-61 47-61t47 61" fill="url(#suit)"/>
+  <path d="M120 103q40 23 80 0l-9 28q-31 13-62 0z" fill="#f0db63"/>
+  <path d="M152 107h16l-8 22z" fill="#2d67bc"/>
+  <text x="160" y="171" text-anchor="middle" fill="#fff4cc" font-family="monospace" font-size="17" font-weight="700">OMNI-MAN</text>
+</svg>

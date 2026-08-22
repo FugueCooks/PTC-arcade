@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEON//ARCADE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="hud"><span class="brand">ROMS</span><span class="status">WASD · MOVE &nbsp; / &nbsp; MOUSE · LOOK &nbsp; / &nbsp; V · 3RD PERSON</span></div>
+    <div id="crosshair">+</div>
+    <div id="prompt"><b>PRESS E</b><span>TO ENTER CABINET</span></div>
+    <div id="world-prompt"><b>PRESS E</b><span>INTERACT</span></div>
+    <div id="world-announcement" role="status" aria-live="polite"></div>
+    <aside id="social-hud" aria-label="Multiplayer status">
+      <button id="player-list-toggle" type="button" aria-expanded="false"><span id="connection-dot"></span><span id="room-label">MAIN ARCADE</span> · <span id="room-population">0</span></button>
+      <span id="network-stats">CONNECTING</span>
+      <span id="world-status">SYNTHWAVE · QUIET</span>
+      <section id="player-list" hidden aria-label="Players in this room"></section>
+    </aside>
+    <section id="chat-panel" aria-label="Room chat">
+      <div id="chat-messages" aria-live="polite"></div>
+      <form id="chat-form" hidden><input id="chat-input" maxlength="180" autocomplete="off" placeholder="MESSAGE THE ROOM…" aria-label="Chat message" /><button type="submit">SEND</button></form>
+    </section>
+    <nav id="reaction-bar" aria-label="Quick reactions">
+      <button type="button" data-reaction="👍">👍</button><button type="button" data-reaction="😂">😂</button><button type="button" data-reaction="❤️">❤️</button><button type="button" data-reaction="🔥">🔥</button><button type="button" data-reaction="😮">😮</button>
+    </nav>
+    <aside id="player-inspection" hidden><button id="inspection-close" type="button" aria-label="Close">×</button><p class="eyebrow">PLAYER SIGNAL</p><h3 id="inspection-name"></h3><p id="inspection-avatar"></p><p id="inspection-status"></p><button id="follow-player" type="button">FOLLOW CAMERA</button></aside>
+    <section id="jukebox-panel" hidden aria-labelledby="jukebox-title">
+      <button id="jukebox-close" type="button" aria-label="Close jukebox">×</button><p class="eyebrow">ROOM AUDIO // SYNCHRONIZED</p><h2 id="jukebox-title">NEON JUKEBOX</h2><div id="jukebox-tracks"></div><button id="jukebox-stop" type="button">STOP MUSIC</button>
+    </section>
+    <button id="audio-toggle" type="button" aria-pressed="true" title="Toggle ambient audio">AUDIO ON</button>
+    <section id="avatar-screen" aria-labelledby="avatar-title">
+      <form id="avatar-form" class="avatar-panel">
+        <p class="eyebrow">PLAYER SELECT // ONLINE ARCADE</p>
+        <h2 id="avatar-title">CHOOSE YOUR PLAYER</h2>
+        <label class="avatar-name-label" for="display-name">DISPLAY NAME</label>
+        <input id="display-name" name="display-name" maxlength="18" autocomplete="nickname" placeholder="PLAYER ONE" required />
+        <div id="avatar-cards" class="avatar-cards" aria-label="Available avatars" aria-live="polite"></div>
+        <p id="avatar-status" role="status">Loading avatar choices…</p>
+        <button id="avatar-confirm" type="submit" disabled>ENTER ARCADE</button>
+      </form>
+    </section>
+    <div id="start-screen">
+      <p class="eyebrow">EST. 1987 · QUARTERS NOT REQUIRED</p>
+      <h1><i>ROMS</i></h1>
+      <p>Walk the floor. Find a glowing cabinet.<br />Load a game and make the high score board.</p>
+      <button id="enter">ENTER ARCADE</button>
+    </div>
+    <div id="machine-modal" aria-hidden="true">
+      <section class="machine-panel">
+        <button class="close" aria-label="Close">×</button>
+        <p id="machine-type" class="eyebrow">CABINET_01</p>
+        <h2 id="machine-name">STAR RAIDERS</h2>
+        <div class="screen-wrap"><canvas id="game-screen" width="640" height="440"></canvas><div id="emulator-stage"><div id="emulator-host"></div></div><div class="scanlines"></div></div>
+        <div id="rom-control">
+          <button id="play-hosted-game" type="button">PLAY INSTALLED GAME</button>
+          <label for="rom-file">LOAD GAME FILE</label>
+          <input id="rom-file" type="file" accept=".zip,.nes,.gb,.gba,.smc,.sfc,.bin,.rom,.cue,.iso,.chd,.pbp,.z64,.n64,.v64" />
+          <span id="rom-name">NO CARTRIDGE INSERTED</span>
+        </div>
+        <div id="bios-control">
+          <label for="bios-file">LOAD PS1 BIOS</label>
+          <input id="bios-file" type="file" accept=".bin" />
+          <span id="bios-name">BIOS REQUIRED FOR PLAYSTATION GAMES</span>
+        </div>
+        <p class="controls">CONTROLLER READY: CONNECT BEFORE PLAYING · TOOLBAR: SAVE / LOAD · ESC EXIT</p>
+        <p class="legal">Use game images and BIOS files legally dumped from hardware you own. The Crash Bandicoot cabinet runs a local PlayStation image in your browser; no game files are included.</p>
+      </section>
+    </div>
+    <script type="importmap">
+      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/" } }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.1/three.min.js"></script>
+    <script src="runtime-config.js"></script>
+    <script src="arcade.js?v=production-assets-1"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="avatar-selection.js?v=phase4-3"></script>
+    <script src="multiplayer-client.js?v=phase6-1"></script>
+  </body>
+</html>

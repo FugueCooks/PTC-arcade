@@ -1,0 +1,22 @@
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build && npm prune --omit=dev
+
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=8080
+COPY --from=build /app/package.json /app/package-lock.json ./
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist/server ./dist/server
+COPY --from=build /app/index.html /app/player.html /app/style.css /app/arcade.js /app/avatar-selection.js /app/multiplayer-client.js ./
+COPY --from=build /app/assets ./assets
+COPY --from=build /app/avatars ./avatars
+COPY --from=build /app/cabinets ./cabinets
+COPY --from=build /app/social ./social
+COPY --from=build /app/world ./world
+EXPOSE 8080
+CMD ["node", "dist/server/src/index.js"]

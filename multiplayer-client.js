@@ -1,0 +1,215 @@
+(() => {
+  const arcade = window.arcadeMultiplayer;
+  if (!arcade || typeof window.io !== 'function') {
+    console.warn('Multiplayer client unavailable. Start the arcade with the Node launcher.');
+    return;
+  }
+
+  const ROOM_ID = 'main';
+  const RESUME_TOKEN_KEY = 'roms-arcade-multiplayer-resume-token';
+  const sendIntervalMs = 66;
+  const interpolationDelayMs = 100;
+  const remotePlayers = new Map();
+  let socket;
+  let avatarRenderer;
+  let cabinetVisuals;
+  let cabinetSessions;
+  let presenceClient;
+  let inspectionClient;
+  let worldManager;
+  let localPlayerId;
+  let localAvatar;
+  let lastSentAt = 0;
+  let lastSentTransform;
+  let started = false;
+
+  const angleLerp = (from, to, alpha) => {
+    const difference = Math.atan2(Math.sin(to - from), Math.cos(to - from));
+    return from + difference * alpha;
+  };
+
+  const asTransform = (state) => ({ position: { x: state.p[0], y: state.p[1], z: state.p[2] }, rotationY: state.r });
+
+  const removeRemotePlayer = (id) => {
+    const remote = remotePlayers.get(id);
+    if (!remote) return;
+    avatarRenderer.remove(remote.avatar);
+    remotePlayers.delete(id);
+    presenceClient?.remove(id);
+    inspectionClient?.refresh();
+  };
+
+  const setRemoteDisconnected = (id, disconnected) => remotePlayers.get(id)?.avatar.setDisconnected(disconnected);
+
+  const addSample = (state) => {
+    presenceClient?.upsert(state);
+    if (!localPlayerId || state.id === localPlayerId) return;
+    let remote = remotePlayers.get(state.id);
+    if (!remote) {
+      remote = { avatar: avatarRenderer.create(state), samples: [] };
+      remotePlayers.set(state.id, remote);
+    }
+    remote.avatar.applyIdentity(state);
+    setRemoteDisconnected(state.id, false);
+    remote.samples.push({ receivedAt: performance.now(), state });
+    if (remote.samples.length > 8) remote.samples.shift();
+  };
+
+  const applyServerCorrection = (state) => {
+    if (state.id !== localPlayerId) return;
+    if (!localAvatar) localAvatar = avatarRenderer.create(state, { showNameplate: false });
+    else localAvatar.applyIdentity(state);
+    const local = arcade.getLocalTransform();
+    const target = asTransform(state);
+    const drift = Math.hypot(local.position.x - target.position.x, local.position.z - target.position.z);
+    if (drift < 0.005 && Math.abs(local.rotationY - target.rotationY) < 0.005) return;
+    arcade.applyAuthoritativeTransform(target, drift > 1 ? 0.28 : 0.1);
+  };
+
+  const interpolateRemotePlayers = (now) => {
+    const renderTime = now - interpolationDelayMs;
+    remotePlayers.forEach((remote) => {
+      const samples = remote.samples;
+      if (!samples.length) return;
+      while (samples.length > 2 && samples[1].receivedAt <= renderTime) samples.shift();
+      const first = samples[0];
+      const second = samples[1] ?? first;
+      const span = Math.max(1, second.receivedAt - first.receivedAt);
+      const alpha = Math.max(0, Math.min(1, (renderTime - first.receivedAt) / span));
+      const from = first.state;
+      const to = second.state;
+      const movedBetweenSamples = Math.hypot(to.p[0] - from.p[0], to.p[2] - from.p[2]) > 0.003;
+      // An idle server state always wins. The position fallback also prevents a
+      // stale final walk packet from looping forever if an idle packet is delayed.
+      const animation = to.a === 'walk' && !movedBetweenSamples ? 'idle' : to.a;
+      remote.avatar.setTransform(
+        new THREE.Vector3(
+          from.p[0] + (to.p[0] - from.p[0]) * alpha,
+          Math.max(0, from.p[1] + (to.p[1] - from.p[1]) * alpha - 1.65),
+          from.p[2] + (to.p[2] - from.p[2]) * alpha
+        ),
+        angleLerp(from.r, to.r, alpha),
+        animation
+      );
+    });
+  };
+
+  const hasMeaningfullyChanged = (next) => {
+    if (!lastSentTransform) return true;
+    const previous = lastSentTransform;
+    return Math.hypot(next.position.x - previous.position.x, next.position.z - previous.position.z) > 0.01
+      || Math.abs(next.rotationY - previous.rotationY) > 0.01
+      || next.animation !== previous.animation;
+  };
+
+  const sendLocalTransform = (now) => {
+    if (!socket?.connected || !localPlayerId || now - lastSentAt < sendIntervalMs) return;
+    const transform = { ...arcade.getLocalTransform(), animation: arcade.getLocalAnimationState() };
+    if (!hasMeaningfullyChanged(transform)) return;
+    socket.emit('player:move', { p: [transform.position.x, transform.position.z], r: transform.rotationY });
+    lastSentTransform = { position: { ...transform.position }, rotationY: transform.rotationY, animation: transform.animation };
+    lastSentAt = now;
+  };
+
+  const frame = (now) => {
+    if (avatarRenderer) {
+      interpolateRemotePlayers(now);
+      if (localAvatar) {
+        const local = arcade.getLocalTransform();
+        localAvatar.setHidden(arcade.isFirstPerson?.() === true);
+        localAvatar.setTransform(new THREE.Vector3(local.position.x, 0, local.position.z), local.rotationY, arcade.getLocalAnimationState());
+      }
+      avatarRenderer.update(now);
+      sendLocalTransform(now);
+    }
+    requestAnimationFrame(frame);
+  };
+
+  const start = async (identity) => {
+    if (started) return;
+    started = true;
+    try {
+      const [{ AvatarRenderer }, { loadAvatarRegistry }, { CabinetNetworkClient }, { CabinetVisualState }, { CabinetSessionController }, { loadCabinetRegistry }, { ChatClient }, { PresenceClient }, { ReactionClient }, { InspectionClient }, { WorldManager }] = await Promise.all([
+        import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=phase4-1'),
+        import('./cabinets/cabinet-network-client.js?v=phase4-1'), import('./cabinets/cabinet-visual-state.js?v=phase4-1'),
+        import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=phase4-1'),
+        import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=phase5-1'),
+        import('./social/reaction-client.js?v=phase5-2'), import('./social/inspection-client.js?v=phase5-1'),
+        import('./world/world-manager.js?v=phase6-1')
+      ]);
+      const avatarRegistry = await loadAvatarRegistry();
+      avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
+      // Render a local fallback immediately. The server snapshot will replace
+      // its identity with the validated state once the room connection opens.
+      localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
+      socket = window.io();
+      new ChatClient(socket);
+      presenceClient = new PresenceClient(socket, avatarRegistry);
+      new ReactionClient(socket, (id) => id === localPlayerId ? localAvatar : remotePlayers.get(id)?.avatar);
+      inspectionClient = new InspectionClient(arcade, avatarRenderer, presenceClient, (id) => remotePlayers.get(id));
+      worldManager = await WorldManager.create(arcade, socket);
+      cabinetVisuals = new CabinetVisualState(arcade);
+      cabinetSessions = new CabinetSessionController(arcade, new CabinetNetworkClient(socket), cabinetVisuals, await loadCabinetRegistry());
+      const joinRoom = () => socket.emit('room:join', {
+        roomId: ROOM_ID,
+        resumeToken: sessionStorage.getItem(RESUME_TOKEN_KEY) ?? undefined,
+        identity
+      });
+      socket.on('connect', joinRoom);
+      // A cached Socket.IO transport can already be connected by the time the
+      // dynamically imported social modules finish initializing.
+      if (socket.connected) joinRoom();
+      socket.on('room:resume', ({ resumeToken }) => {
+        try { sessionStorage.setItem(RESUME_TOKEN_KEY, resumeToken); } catch { /* Non-persistent browser session. */ }
+      });
+      socket.on('room:error', ({ message }) => {
+        started = false;
+        cabinetSessions?.dispose();
+        socket.disconnect();
+        window.dispatchEvent(new CustomEvent('arcade:connection-error', { detail: { message } }));
+      });
+      socket.on('room:snapshot', ({ roomId, selfId, players }) => {
+        localPlayerId = selfId;
+        presenceClient.snapshot(roomId, selfId, players);
+        const self = players.find((player) => player.id === selfId);
+        if (self) applyServerCorrection(self);
+        players.forEach(addSample);
+      });
+      socket.on('player:state', applyServerCorrection);
+      socket.on('player:joined', addSample);
+      socket.on('player:moved', addSample);
+      socket.on('player:reconnected', addSample);
+      socket.on('player:status', (payload) => {
+        presenceClient.status(payload);
+        const remote = remotePlayers.get(payload.id);
+        if (remote?.samples.length) {
+          const latest = remote.samples[remote.samples.length - 1].state;
+          remote.samples.push({ receivedAt: performance.now(), state: { ...latest, s: payload.status, a: payload.status === 'away' ? 'idle' : latest.a } });
+        }
+        inspectionClient.refresh();
+      });
+      socket.on('player:disconnected', ({ id }) => { setRemoteDisconnected(id, true); presenceClient.disconnected(id); });
+      socket.on('player:left', ({ id }) => removeRemotePlayer(id));
+      socket.on('cabinet:snapshot', ({ cabinets }) => cabinetVisuals.applySnapshot(cabinets));
+      socket.on('cabinet:state-changed', (state) => cabinetVisuals.apply(state));
+      socket.on('cabinet:forced-release', ({ cabinetId, reason }) => cabinetSessions.forceRelease(cabinetId, reason));
+      socket.on('disconnect', () => {
+        cabinetSessions?.serverDisconnected();
+        localPlayerId = undefined;
+        if (localAvatar) { avatarRenderer.remove(localAvatar); localAvatar = undefined; }
+        remotePlayers.forEach((_, id) => removeRemotePlayer(id));
+      });
+      let lastActivityAt = 0;
+      const activity = () => { const now = performance.now(); if (socket.connected && now - lastActivityAt > 3000) { socket.emit('presence:activity'); lastActivityAt = now; } };
+      ['keydown', 'pointerdown'].forEach((name) => window.addEventListener(name, activity, { passive: true }));
+    } catch (error) {
+      started = false;
+      window.dispatchEvent(new CustomEvent('arcade:connection-error', { detail: { message: 'Avatar renderer could not start. Please refresh and try again.' } }));
+      console.error('Avatar renderer failed to start.', error);
+    }
+  };
+
+  window.addEventListener('arcade:identity-selected', ({ detail }) => void start(detail));
+  if (window.arcadeAvatarIdentity) void start(window.arcadeAvatarIdentity);
+  requestAnimationFrame(frame);
+})();

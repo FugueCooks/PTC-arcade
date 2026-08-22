@@ -1,0 +1,27 @@
+.git
+.npm-cache
+.conversion-tools
+.conversion-work
+node_modules
+dist
+tmp
+outputs
+work
+tools/*.png
+tools/*.exe
+tools/recording-current
+assets/games
+assets/bios
+Crash Bandicoot [U] [SCUS-94900]
+*.bin
+*.BIN
+*.cue
+*.iso
+*.chd
+*.pbp
+*.ecm
+*.ape
+*.7z
+*.z64
+*.n64
+*.v64

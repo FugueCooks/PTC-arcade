@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "avatars": [
+    {
+      "id": "neon-capsule",
+      "name": "Neon Capsule",
+      "modelUrl": null,
+      "thumbnailUrl": "assets/avatars/neon-capsule.svg",
+      "scale": 1,
+      "heightOffset": 0,
+      "rotationOffset": 0,
+      "enabled": true,
+      "animations": {}
+    },
+    {
+      "id": "origin-gundam",
+      "name": "Origin Gundam",
+      "modelUrl": "assets/avatars/models/origin-gundam.glb",
+      "thumbnailUrl": "assets/avatars/origin-gundam.svg",
+      "scale": 0.037,
+      "heightOffset": 0,
+      "rotationOffset": 3.141592653589793,
+      "enabled": false,
+      "animations": {
+        "idle": "GundamNeutralIdle",
+        "walk": "origin-gundam-walk"
+      }
+    },
+    {
+      "id": "extreme-gundam",
+      "name": "Gundam",
+      "modelUrl": "assets/avatars/models/extreme-gundam-balanced-walk.glb?v=gundam-balanced-4",
+      "thumbnailUrl": "assets/avatars/extreme-gundam.svg",
+      "scale": 1,
+      "heightOffset": 0,
+      "rotationOffset": 3.141592653589793,
+      "enabled": true,
+      "animations": {
+        "idle": "Idle",
+        "walk": "GundamBalancedWalk"
+      }
+    },
+    {
+      "id": "omni-man",
+      "name": "Omni-Man",
+      "modelUrl": "assets/avatars/models/omni-man-rest-arms-sides.glb?v=omni-man-rest-3",
+      "motionModelUrl": "assets/avatars/models/omni-man-flight-compact.glb?v=omni-man-flight-2",
+      "thumbnailUrl": "assets/avatars/omni-man.svg",
+      "scale": 0.06,
+      "heightOffset": 0,
+      "rotationOffset": 3.141592653589793,
+      "movementEffect": "hover",
+      "hoverWhenIdle": true,
+      "hoverHeight": 0.48,
+      "flightHeight": 0.64,
+      "hoverPitch": -0.18,
+      "staticPose": true,
+      "enabled": true,
+      "animations": {}
+    }
+  ]
+}

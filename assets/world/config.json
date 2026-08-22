@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "defaultThemeId": "synthwave",
+  "defaultWeatherId": "rain",
+  "themes": [
+    { "id": "day", "name": "Day Arcade", "fog": "#18233a", "ambient": "#93b9ff", "ground": "#1d2740", "neon": ["#41dfff", "#ff6fbd", "#ffe18a"], "brightness": 1.15 },
+    { "id": "night", "name": "Night Arcade", "fog": "#05040d", "ambient": "#292051", "ground": "#090716", "neon": ["#23f6ff", "#a15cff", "#ff3cac"], "brightness": 0.72 },
+    { "id": "synthwave", "name": "Synthwave", "fog": "#090611", "ambient": "#37266e", "ground": "#100b22", "neon": ["#36f9f6", "#ff3cac", "#934dff"], "brightness": 1 },
+    { "id": "halloween", "name": "Halloween", "fog": "#130807", "ambient": "#51240f", "ground": "#180b08", "neon": ["#ff7a18", "#8aff38", "#8b38ff"], "brightness": 0.82 },
+    { "id": "christmas", "name": "Christmas", "fog": "#071314", "ambient": "#31565c", "ground": "#091817", "neon": ["#ff304c", "#39ff88", "#fff2c7"], "brightness": 1.05 },
+    { "id": "retro-80s", "name": "Retro 80s", "fog": "#10061d", "ambient": "#503071", "ground": "#170a28", "neon": ["#00f7ff", "#ff2fa5", "#ffd536"], "brightness": 1.08 }
+  ],
+  "weather": [
+    { "id": "clear", "name": "Clear Night", "particle": null, "color": "#071329" },
+    { "id": "rain", "name": "Rain", "particle": "rain", "color": "#0b2844" },
+    { "id": "thunder", "name": "Thunderstorm", "particle": "rain", "color": "#081426" },
+    { "id": "sunset", "name": "Sunset", "particle": "dust", "color": "#9f315d" },
+    { "id": "snow", "name": "Snow", "particle": "snow", "color": "#516b92" },
+    { "id": "fog", "name": "Fog", "particle": "fog", "color": "#536070" }
+  ],
+  "tracks": [
+    { "id": "neon-drive", "name": "Neon Drive", "url": null, "tempo": 108, "root": 45, "pattern": [0, 7, 10, 3, 0, 7, 12, 10] },
+    { "id": "pixel-dreams", "name": "Pixel Dreams", "url": null, "tempo": 92, "root": 52, "pattern": [0, 4, 7, 11, 7, 4, 2, 7] },
+    { "id": "midnight-circuit", "name": "Midnight Circuit", "url": null, "tempo": 124, "root": 40, "pattern": [0, 0, 7, 5, 3, 3, 10, 7] }
+  ],
+  "objects": [
+    { "id": "jukebox", "type": "jukebox", "name": "NEON JUKEBOX", "position": [6.3, 0, -10.5], "interactionDistance": 2.4 },
+    { "id": "prize-counter", "type": "prize-counter", "name": "PRIZE COUNTER", "position": [0, 0, -11.2], "interactionDistance": 2.3 }
+  ],
+  "npcPaths": [
+    { "id": "wanderer-cyan", "color": "#36f9f6", "speed": 0.75, "points": [[-5,0,8],[-4,0,-8],[3,0,-9],[5,0,6]] },
+    { "id": "wanderer-pink", "color": "#ff3cac", "speed": 0.62, "points": [[5,0,8],[7,0,1],[3,0,-6],[-3,0,-5],[-5,0,5]] },
+    { "id": "wanderer-gold", "color": "#ffcc4a", "speed": 0.55, "points": [[-2,0,10],[2,0,7],[1,0,2],[-2,0,3]] }
+  ]
+}

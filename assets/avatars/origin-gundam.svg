@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Origin Gundam avatar">
+  <defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101522"/><stop offset="1" stop-color="#312044"/></linearGradient></defs>
+  <rect width="240" height="160" fill="url(#b)"/>
+  <path d="M120 14 147 34 141 67 159 89 151 133H89L81 89 99 67 93 34Z" fill="#e9eef6" stroke="#4cf7ee" stroke-width="3"/>
+  <path d="M99 39 120 52l21-13-6 30h-30z" fill="#2252a0"/><path d="M110 79h20v54h-20z" fill="#dd3c58"/>
+  <path d="M83 75 48 99l18 12 30-19m61-17 35 24-18 12-30-19" fill="none" stroke="#e9eef6" stroke-width="13"/>
+  <path d="m95 30 16 11-28-5m62-6-16 11 28-5" fill="none" stroke="#ffd34e" stroke-width="4"/>
+  <text x="120" y="153" text-anchor="middle" fill="#fff4cc" font-family="monospace" font-size="14">ORIGIN GUNDAM</text>
+</svg>

@@ -1,0 +1,39 @@
+node_modules/
+dist/
+.npm-cache/
+.conversion-tools/
+.conversion-work/
+npm-debug.log*
+
+# Licensed game/BIOS dumps stay local and are never published to GitHub.
+assets/games/
+assets/bios/
+*.bin
+*.BIN
+*.cue
+*.iso
+*.chd
+*.pbp
+*.ecm
+*.ape
+*.7z
+*.z64
+*.n64
+*.v64
+Crash Bandicoot \[U\] \[SCUS-94900\]/
+
+# Keep only the avatar models referenced by the approved registry. Animation
+# experiments remain local so the production clone stays small.
+assets/avatars/models/*.glb
+!assets/avatars/models/origin-gundam.glb
+!assets/avatars/models/extreme-gundam-balanced-walk.glb
+!assets/avatars/models/omni-man-rest-arms-sides.glb
+!assets/avatars/models/omni-man-flight-compact.glb
+
+# Local recordings, generated previews, and scratch renders.
+tmp/
+outputs/
+work/
+tools/*.png
+tools/cloudflared.exe
+tools/recording-current/
