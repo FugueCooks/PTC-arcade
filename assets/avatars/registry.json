@@ -29,7 +29,7 @@
     {
       "id": "extreme-gundam",
       "name": "Gundam",
-      "modelUrl": "assets/avatars/models/extreme-gundam-balanced-walk.glb?v=gundam-balanced-4",
+      "modelUrl": "assets/avatars/models/extreme-gundam-balanced-walk.optimized.glb?v=gundam-meshopt-1",
       "thumbnailUrl": "assets/avatars/extreme-gundam.svg",
       "scale": 1,
       "heightOffset": 0,
@@ -43,8 +43,8 @@
     {
       "id": "omni-man",
       "name": "Omni-Man",
-      "modelUrl": "assets/avatars/models/omni-man-rest-arms-sides.glb?v=omni-man-rest-3",
-      "motionModelUrl": "assets/avatars/models/omni-man-flight-compact.glb?v=omni-man-flight-2",
+      "modelUrl": "assets/avatars/models/omni-man-rest-arms-sides.optimized.glb?v=omni-man-meshopt-1",
+      "motionModelUrl": "assets/avatars/models/omni-man-flight-compact.optimized.glb?v=omni-man-flight-meshopt-1",
       "thumbnailUrl": "assets/avatars/omni-man.svg",
       "scale": 0.06,
       "heightOffset": 0,

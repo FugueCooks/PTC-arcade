@@ -1,9 +1,10 @@
 import { AdditiveBlending, Box3, BoxGeometry, CanvasTexture, CapsuleGeometry, Color, ConeGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Raycaster, Sprite, SpriteMaterial, Vector2 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { AvatarAnimationController } from './avatar-animation-controller.js';
 
-const loader = new GLTFLoader();
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const assetPromises = new Map();
 const RENDER_DISTANCE = 28;
 const NAMEPLATE_DISTANCE = 16;

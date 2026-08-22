@@ -33,6 +33,9 @@ assets/avatars/models/*.glb
 !assets/avatars/models/extreme-gundam-balanced-walk.glb
 !assets/avatars/models/omni-man-rest-arms-sides.glb
 !assets/avatars/models/omni-man-flight-compact.glb
+!assets/avatars/models/extreme-gundam-balanced-walk.optimized.glb
+!assets/avatars/models/omni-man-rest-arms-sides.optimized.glb
+!assets/avatars/models/omni-man-flight-compact.optimized.glb
 
 # Local recordings, generated previews, and scratch renders.
 tmp/
