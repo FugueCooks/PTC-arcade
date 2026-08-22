@@ -88,5 +88,9 @@ function setAssetCacheHeaders(response: Response, filePath: string, includesGame
     response.setHeader('Cache-Control', `public, max-age=${ONE_YEAR_MS / 1_000}, immutable`);
     return;
   }
+  if (normalized.includes('/assets/')) {
+    response.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    return;
+  }
   response.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
 }

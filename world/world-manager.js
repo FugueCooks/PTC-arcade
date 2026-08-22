@@ -12,7 +12,7 @@ export class WorldManager {
     const config = await response.json(); return new WorldManager(arcade, socket, config);
   }
   constructor(arcade, socket, config) {
-    this.arcade = arcade; this.socket = socket; this.config = config; this.state = null; this.lastFrameAt = performance.now(); this.disposed = false; this.announcementTimer = 0;
+    this.arcade = arcade; this.socket = socket; this.config = config; this.state = null; this.lastFrameAt = performance.now(); this.nextFrameAt = 0; this.updateIntervalMs = arcade.performanceProfile?.lowPower ? 50 : 33; this.disposed = false; this.announcementTimer = 0;
     this.particles = new ParticleManager(arcade.scene, arcade.getCamera); this.environment = new EnvironmentManager(arcade.scene, config, this.particles);
     this.audio = new AudioManager(arcade, config); this.lighting = new LightingManager(arcade.scene, config); this.npcs = new NPCManager(arcade.scene, config.npcPaths, arcade.getCamera);
     this.jukebox = new JukeboxClient(socket, config.tracks, this.audio);
@@ -26,6 +26,6 @@ export class WorldManager {
   interact(object) { this.audio.click(); if (object.type === 'jukebox') return this.jukebox.open(); const messages = { 'prize-counter': 'PRIZE COUNTER // SHOP COMING LATER' }; this.announce({ text: messages[object.type] ?? `${object.name} // READY`, audioCue: 'notice' }); }
   announce(announcement) { const element = document.querySelector('#world-announcement'); element.textContent = announcement.text; element.classList.add('visible'); this.audio.cue(announcement.audioCue); clearTimeout(this.announcementTimer); this.announcementTimer = setTimeout(() => element.classList.remove('visible'), 4200); }
   event(event) { this.lighting.event(event); if (event.type === 'power-flicker' && this.state?.weatherId === 'thunder') this.environment.flash(); if (event.type === 'neon-surge') this.particles.burst([0, 2.2, 0], 0xff3cac); if (event.type === 'fireworks') this.particles.burst([12.8, 3, 0], 0xffd34a); }
-  update(now) { if (this.disposed) return; const delta = Math.min(.05, (now - this.lastFrameAt) / 1000); this.lastFrameAt = now; this.interactions.update(now); this.audio.update(now); this.lighting.update(now, delta); this.npcs.update(now, delta); this.particles.update(delta); requestAnimationFrame(this.frame); }
+  update(now) { if (this.disposed) return; requestAnimationFrame(this.frame); if (now < this.nextFrameAt) return; this.nextFrameAt = now + this.updateIntervalMs; const delta = Math.min(.05, (now - this.lastFrameAt) / 1000); this.lastFrameAt = now; this.interactions.update(now); this.audio.update(now); this.lighting.update(now, delta); this.npcs.update(now, delta); this.particles.update(delta); }
   dispose() { this.disposed = true; clearTimeout(this.announcementTimer); this.audio.dispose(); this.lighting.dispose(); this.npcs.dispose(); this.environment.dispose(); this.interactions.dispose(); this.particles.dispose(); }
 }
