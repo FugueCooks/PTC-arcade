@@ -10,9 +10,14 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"server/**/*.ts\" \"test/**/*.ts\"",
     "test": "npm run build && node --test dist/test/*.test.js",
-    "verify:games": "node tools/verify-game-assets.mjs"
+    "verify:games": "node tools/verify-game-assets.mjs",
+    "verify:assets": "node tools/verify-game-assets.mjs",
+    "storage:upload": "node tools/storage-upload.mjs",
+    "storage:verify": "node tools/verify-remote-assets.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1116.0",
+    "@aws-sdk/lib-storage": "^3.1116.0",
     "express": "^4.21.2",
     "socket.io": "^4.8.1"
   },

@@ -4,6 +4,10 @@ dist/
 .conversion-tools/
 .conversion-work/
 npm-debug.log*
+.env
+.env.*
+!.env.example
+.wrangler/
 
 # Licensed game/BIOS dumps stay local and are never published to GitHub.
 assets/games/

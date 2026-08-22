@@ -4,15 +4,18 @@ A Three.js/WebGL arcade floor with a lightweight Socket.IO multiplayer foundatio
 
 ## Production hosting
 
-The Node.js service now serves only approved browser assets, exposes `/healthz`, uses proxy-safe HTTP keep-alive settings, and keeps movement traffic on compact Socket.IO messages with WebSocket support. Large game downloads are separated from realtime traffic through `GAME_ASSET_BASE_URL`.
+The Node.js service now serves only approved browser assets, exposes `/healthz`, uses proxy-safe HTTP keep-alive settings, and keeps movement traffic on compact Socket.IO messages with WebSocket support. Large game downloads are separated from realtime traffic through `GAME_ASSET_BASE_URL`; the hosted PlayStation BIOS is independently configured through `BIOS_ASSET_URL`.
 
 - Leave `GAME_ASSET_BASE_URL` blank for the existing local `assets/games/` behavior.
-- In production, point it at a CDN-backed object-storage directory containing the exact files in `deploy/game-assets.manifest.json`.
+- In production, point it at a CDN-backed object-storage `games` directory containing the exact files in `deploy/public-assets.manifest.json`.
+- Point `BIOS_ASSET_URL` at the exact public BIOS object URL. Leaving it blank preserves the local `assets/bios/SCPH1001.BIN` fallback.
 - The cabinet code resolves the same filenames through the runtime configuration, so switching between local and CDN assets requires no rebuild.
-- ROMs and BIOS files are excluded from Git and Docker images. The object-storage/CDN deployment procedure is documented in `deploy/README.md`.
+- ROMs and BIOS files are excluded from Git and Docker images. The S3-compatible multipart upload, public byte-range verification, CORS, and CDN deployment procedure is documented in `deploy/README.md`.
 - MongoDB is not required. Current multiplayer state remains intentionally in memory; Redis is only needed when horizontally scaling the realtime service.
 
-Build the production container with `docker build -t roms-retro-arcade .`. Run `npm run verify:games` to validate all locally hosted game files against the deployment manifest.
+Build the production container with `docker build -t roms-retro-arcade .`. Run `npm run verify:games` to validate locally hosted games, `npm run storage:upload` to upload the approved public manifest, and `npm run storage:verify` to confirm CDN byte-range access.
+
+Production uses one WebSocket-capable Node instance for authoritative multiplayer and a separate object-storage/CDN origin for game and BIOS downloads. This prevents multi-hundred-megabyte downloads from blocking movement, chat, cabinet ownership, or world events. A database is not necessary for the current feature set.
 
 ## Start the multiplayer arcade
 

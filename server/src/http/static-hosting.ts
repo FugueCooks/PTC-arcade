@@ -4,6 +4,7 @@ import path from 'node:path';
 
 export interface PublicRuntimeConfig {
   gameAssetBaseUrl: string;
+  biosAssetUrl: string;
 }
 
 const ROOT_FILES = [
@@ -20,7 +21,10 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1_000;
 
 /** Build the small public configuration object injected before arcade.js. */
 export function publicRuntimeConfig(environment: NodeJS.ProcessEnv = process.env): PublicRuntimeConfig {
-  return { gameAssetBaseUrl: normalizeBaseUrl(environment.GAME_ASSET_BASE_URL) };
+  return {
+    gameAssetBaseUrl: normalizeBaseUrl(environment.GAME_ASSET_BASE_URL),
+    biosAssetUrl: normalizeAssetUrl(environment.BIOS_ASSET_URL)
+  };
 }
 
 /** Serve only browser assets, never server source, tests, package metadata, or local tooling. */
@@ -67,6 +71,10 @@ export function runtimeConfigScript(config: PublicRuntimeConfig): string {
 function normalizeBaseUrl(value: string | undefined): string {
   const trimmed = value?.trim() ?? '';
   return trimmed.replace(/\/+$/, '');
+}
+
+function normalizeAssetUrl(value: string | undefined): string {
+  return value?.trim() ?? '';
 }
 
 function sendRootFile(response: Response, projectRoot: string, file: typeof ROOT_FILES[number]): void {

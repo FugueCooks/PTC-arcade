@@ -4,11 +4,12 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const root = process.cwd();
-const manifest = JSON.parse(await readFile(path.join(root, 'deploy', 'game-assets.manifest.json'), 'utf8'));
+const manifest = JSON.parse(await readFile(path.join(root, 'deploy', 'public-assets.manifest.json'), 'utf8'));
 let failed = false;
 
 for (const expected of manifest) {
-  const filePath = path.join(root, 'assets', 'games', expected.file);
+  const directory = expected.kind === 'bios' ? 'bios' : 'games';
+  const filePath = path.join(root, 'assets', directory, expected.file);
   try {
     const details = await stat(filePath);
     const hash = createHash('sha256');
