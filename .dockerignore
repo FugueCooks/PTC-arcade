@@ -12,7 +12,6 @@ tools/*.exe
 tools/recording-current
 assets/games
 assets/bios
-Crash Bandicoot [U] [SCUS-94900]
 *.bin
 *.BIN
 *.cue
