@@ -23,7 +23,9 @@ function box(w,h,d,color,x,y,z,emissive=0){const m=new THREE.Mesh(new THREE.BoxG
 for(let z=-14;z<14;z+=5){box(56,.18,.2,0x2c1954,0,5,z,.2);box(56,.04,.08,0x29eee8,0,4.88,z,2)}
 box(.3,5,34,0x180d31,-28,2.5,0);
 box(.3,5,34,0x180d31,28,2.5,0);
-const rearWall=box(28,5,.3,0x15182a,0,2.5,-13.73,.18);rearWall.receiveShadow=true;
+// Keep the rear wall solid directly behind the prize display while leaving
+// matching six-unit walkways into both expansion rooms.
+const rearWall=box(16,5,.3,0x15182a,0,2.5,-13.73,.18);rearWall.receiveShadow=true;
 const rearPanelMaterial=new THREE.MeshStandardMaterial({color:0x17233a,emissive:0x08162b,emissiveIntensity:.5,roughness:.58,metalness:.38});
 for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,4.62,.055),rearPanelMaterial);panel.position.set(x,2.42,-13.55);panel.receiveShadow=true;scene.add(panel)}
 box(27.5,.09,.08,0x29eee8,0,4.78,-13.5,1.7);box(27.5,.12,.08,0x251447,0,.1,-13.5,.55);
