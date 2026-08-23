@@ -66,6 +66,13 @@ export class PlayerManager {
     return this.players.size;
   }
 
+  canResume(resumeToken: string | undefined, roomId: string, now = Date.now()): boolean {
+    if (!resumeToken) return false;
+    const player = this.playerForToken(resumeToken);
+    return Boolean(player && player.roomId === roomId && player.disconnectedAt !== undefined
+      && now - player.disconnectedAt <= RECONNECT_GRACE_MS);
+  }
+
   subscribe(listener: (event: PlayerEvent) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);

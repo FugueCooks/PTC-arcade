@@ -8,6 +8,8 @@ export interface ServerConfig {
   region: string;
   softwareVersion: string;
   maxPlayersPerRoom: number;
+  minAvailableRooms: number;
+  roomIdleTimeoutMs: number;
   maxRoomsPerServer: number;
   maxPlayersPerServer: number;
   maxPendingConnections: number;
@@ -30,6 +32,8 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     region: cleanIdentifier(environment.SERVER_REGION ?? environment.RENDER_REGION ?? environment.FLY_REGION) ?? 'local',
     softwareVersion: cleanVersion(environment.SOFTWARE_VERSION ?? environment.RENDER_GIT_COMMIT ?? environment.FLY_IMAGE_REF) ?? 'development',
     maxPlayersPerRoom: integer(environment.MAX_PLAYERS_PER_ROOM, 24, 2, 48),
+    minAvailableRooms: integer(environment.MIN_AVAILABLE_ROOMS, 1, 1, 100),
+    roomIdleTimeoutMs: seconds(environment.ROOM_IDLE_TIMEOUT_SECONDS, 900, 30, 86_400),
     maxRoomsPerServer: integer(environment.MAX_ROOMS_PER_SERVER, 8, 1, 100),
     maxPlayersPerServer: integer(environment.MAX_PLAYERS_PER_SERVER, 192, 2, 5_000),
     maxPendingConnections: integer(environment.MAX_PENDING_CONNECTIONS, 128, 1, 10_000),

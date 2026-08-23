@@ -7,6 +7,7 @@ import type { RuntimeMetrics } from '../metrics/metrics.js';
 
 export interface DrainOptions {
   activePlayers(): number;
+  beginDraining?(): void;
   stopTimers(): void;
 }
 
@@ -30,6 +31,7 @@ export class DrainController {
     this.draining = true;
     this.deadlineAt = Date.now() + this.config.drainTimeoutMs;
     this.health.beginDraining();
+    this.options.beginDraining?.();
     this.metrics.increment('server_drain_started_total');
     this.logger.warn('server_draining', { reason, deadlineAt: this.deadlineAt, activePlayers: this.options.activePlayers() });
     this.io.emit('server:draining', {

@@ -10,6 +10,8 @@ The Node.js service now serves only approved browser assets, exposes liveness at
 
 Phase 7 operational safeguards begin with typed and bounded environment configuration, a unique server identity, structured JSON lifecycle logs, capacity-aware readiness, and graceful `SIGTERM`/`SIGINT` draining. During a normal drain the server rejects new room joins, warns connected clients, and keeps existing sessions alive until empty or `SERVER_DRAIN_TIMEOUT_SECONDS` expires.
 
+The Node room layer now models each arcade instance with an owning server ID, human name, lifecycle and health status, capacity, population, creation/activity timestamps, and cabinet/world/jukebox revision counters. `RoomDirectory` is deliberately transport-independent: local development uses `InMemoryRoomDirectory`, while the next scaling milestone supplies the Redis implementation without moving active room simulation out of its owning server.
+
 - Leave `GAME_ASSET_BASE_URL` blank for the existing local `assets/games/` behavior.
 - In production, point it at a CDN-backed object-storage `games` directory containing the exact files in `deploy/public-assets.manifest.json`.
 - Point `BIOS_ASSET_URL` at the exact public BIOS object URL. Leaving it blank preserves the local `assets/bios/SCPH1001.BIN` fallback.

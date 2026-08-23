@@ -60,6 +60,19 @@ void test('a short reconnect restores the same player and a stale player is clea
   assert.equal(players.snapshotFor('socket-b'), undefined);
 });
 
+void test('a disconnected player can reclaim membership in a room at capacity', () => {
+  const rooms = new RoomManager(undefined, 2);
+  const players = new PlayerManager(rooms);
+  const first = players.join('socket-a', 'main', undefined, identity, 1_000);
+  players.join('socket-b', 'main', undefined, identity, 1_000);
+  assert.equal(rooms.getDefault().status, 'full');
+  players.disconnect('socket-a', 1_100);
+  assert.equal(players.canResume(first.resumeToken, 'main', 2_000), true);
+  const resumed = players.join('socket-c', 'main', first.resumeToken, identity, 2_000);
+  assert.equal(resumed.resumed, true);
+  assert.equal(resumed.player.id, first.player.id);
+});
+
 void test('avatar identity is included in room player state', () => {
   const players = createPlayers();
   const first = players.join('socket-a', 'main', undefined, { displayName: 'NEON KID', avatarId: 'neon-capsule' }, 1_000);

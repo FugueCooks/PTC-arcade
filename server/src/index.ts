@@ -20,6 +20,8 @@ import { RuntimeMetrics } from './metrics/metrics.js';
 import { HealthService } from './health/health-service.js';
 import { installOperationalRoutes } from './http/operational-routes.js';
 import { DrainController } from './shutdown/drain-controller.js';
+import { InMemoryRoomDirectory } from './rooms/room-directory.js';
+import { RoomLifecycleService } from './rooms/room-lifecycle-service.js';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -35,7 +37,7 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   perMessageDeflate: false,
   transports: ['websocket', 'polling']
 });
-const rooms = new RoomManager(undefined, config.maxPlayersPerRoom);
+const rooms = new RoomManager(undefined, config.maxPlayersPerRoom, config.serverId);
 const players = new PlayerManager(rooms);
 const cabinets = new CabinetManager(players, {
   interactionDistance: Number(process.env.CABINET_INTERACTION_DISTANCE ?? 2.6),
@@ -56,15 +58,18 @@ let health: HealthService;
 const metrics = new RuntimeMetrics({
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
-  activeRooms: () => rooms.activeRoomCount,
+  activeRooms: () => rooms.roomCount,
   averageRoomPopulation: () => rooms.averagePopulation,
   draining: () => health?.isDraining ?? false
 });
 health = new HealthService(config, metrics, {
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
-  activeRooms: () => rooms.activeRoomCount
+  activeRooms: () => rooms.roomCount
 });
+const roomDirectory = new InMemoryRoomDirectory();
+const roomLifecycle = new RoomLifecycleService(rooms, roomDirectory, metrics, logger);
+await roomLifecycle.start();
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
 installStaticHosting(app, projectRoot, publicRuntimeConfig());
@@ -120,7 +125,10 @@ reactions.subscribe((event) => {
 });
 
 world.subscribe((event) => {
-  if (event.type === 'WorldStateChanged') io.to(event.state.roomId).emit('world:state-changed', event.state);
+  if (event.type === 'WorldStateChanged') {
+    rooms.bumpStateRevision(event.state.roomId, 'world');
+    io.to(event.state.roomId).emit('world:state-changed', event.state);
+  }
   if (event.type === 'WorldAnnouncement') {
     io.to(event.announcement.roomId).emit('world:announcement', event.announcement);
     chat.announce(event.announcement.roomId, event.announcement.text, event.announcement.at);
@@ -129,7 +137,10 @@ world.subscribe((event) => {
 });
 
 cabinets.subscribe((event) => {
-  if (event.type === 'CabinetStateChanged') io.to(event.roomId).emit('cabinet:state-changed', event.state);
+  if (event.type === 'CabinetStateChanged') {
+    rooms.bumpStateRevision(event.roomId, 'cabinet');
+    io.to(event.roomId).emit('cabinet:state-changed', event.state);
+  }
   if (event.type === 'CabinetForcedRelease') {
     const socketId = players.socketIdForPlayerId(event.playerId);
     if (socketId) io.to(socketId).emit('cabinet:forced-release', { cabinetId: event.cabinetId, reason: event.reason });
@@ -158,7 +169,7 @@ io.on('connection', (socket) => {
       return;
     }
     const requestedRoom = rooms.get(roomId) ?? rooms.getDefault();
-    if (requestedRoom.isFull) {
+    if (!requestedRoom.acceptsPlayers && !players.canResume(resumeToken, requestedRoom.id)) {
       metrics.increment('join_rejected_room_full_total');
       socket.emit('room:error', { code: 'room-full', message: 'This arcade room is full. Choose another instance.' });
       return;
@@ -227,7 +238,9 @@ io.on('connection', (socket) => {
   });
 });
 
-const cleanupTimer = setInterval(() => { players.sweep(); cabinets.sweep(); statuses.sweep(); }, 1_000);
+const cleanupTimer = setInterval(() => {
+  players.sweep(); cabinets.sweep(); statuses.sweep(); roomLifecycle.closeIdle(config.roomIdleTimeoutMs);
+}, 1_000);
 cleanupTimer.unref();
 let worldEventIndex = 0;
 const worldEventTypes = ['neon-surge', 'power-flicker', 'fireworks'] as const;
@@ -239,9 +252,11 @@ worldEventTimer.unref();
 
 const drain = new DrainController(httpServer, io, config, health, metrics, logger, {
   activePlayers: () => players.connectedCount,
+  beginDraining: () => roomLifecycle.beginDraining(),
   stopTimers: () => {
     clearInterval(cleanupTimer);
     clearInterval(worldEventTimer);
+    roomLifecycle.stop();
   }
 });
 
