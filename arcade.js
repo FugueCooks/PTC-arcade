@@ -23,12 +23,13 @@ function box(w,h,d,color,x,y,z,emissive=0){const m=new THREE.Mesh(new THREE.BoxG
 for(let z=-14;z<14;z+=5){box(56,.18,.2,0x2c1954,0,5,z,.2);box(56,.04,.08,0x29eee8,0,4.88,z,2)}
 box(.3,5,34,0x180d31,-28,2.5,0);
 box(.3,5,34,0x180d31,28,2.5,0);
-// Keep the rear wall solid directly behind the prize display while leaving
-// matching six-unit walkways into both expansion rooms.
-const rearWall=box(16,5,.3,0x15182a,0,2.5,-13.73,.18);rearWall.receiveShadow=true;
+// The main room now reaches the true rear wall. Keeping this wall aligned with
+// the two expansion-room back walls leaves open passages around both partition
+// ends instead of creating a false wall in front of the walkways.
+const rearWall=box(28,5,.3,0x15182a,0,2.5,-16.8,.18);rearWall.receiveShadow=true;
 const rearPanelMaterial=new THREE.MeshStandardMaterial({color:0x17233a,emissive:0x08162b,emissiveIntensity:.5,roughness:.58,metalness:.38});
-for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,4.62,.055),rearPanelMaterial);panel.position.set(x,2.42,-13.55);panel.receiveShadow=true;scene.add(panel)}
-box(27.5,.09,.08,0x29eee8,0,4.78,-13.5,1.7);box(27.5,.12,.08,0x251447,0,.1,-13.5,.55);
+for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,4.62,.055),rearPanelMaterial);panel.position.set(x,2.42,-16.62);panel.receiveShadow=true;scene.add(panel)}
+box(27.5,.09,.08,0x29eee8,0,4.78,-16.57,1.7);box(27.5,.12,.08,0x251447,0,.1,-16.57,.55);
 const gangsterPepeMount=new THREE.Group();gangsterPepeMount.position.set(0,.16,0);scene.add(gangsterPepeMount);
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);gangsterPepeLight.position.set(0,.82,.55);scene.add(gangsterPepeLight);
 const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_LENGTH=13.7,PARTITION_WALL_HALF_THICKNESS=.18,PLAYER_COLLISION_RADIUS=.34;
@@ -167,8 +168,8 @@ const counterGlow=new THREE.Mesh(new THREE.CylinderGeometry(1.62,1.62,.08,48),ne
 const counterTop=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,.09,48),new THREE.MeshStandardMaterial({color:0xb8f3ff,emissive:0x1c4e6a,emissiveIntensity:.34,transparent:true,opacity:.32,metalness:.65,roughness:.07,side:THREE.DoubleSide,depthWrite:false}));counterTop.position.y=1.15;prizeCounter.add(counterTop);
 const counterTopRim=new THREE.Mesh(new THREE.CylinderGeometry(1.73,1.73,.12,48,1,true),new THREE.MeshStandardMaterial({color:0x1a2d3a,emissive:0x0d1c28,emissiveIntensity:.45,metalness:.9,roughness:.12}));counterTopRim.position.y=1.15;prizeCounter.add(counterTopRim);
 const counterDisplayLight=new THREE.PointLight(0xe8f9ff,5.4,4.2,2);counterDisplayLight.position.set(0,.82,0);prizeCounter.add(counterDisplayLight);
-// Low, oversized glass prize display set against the back wall.
-const prizeDisplay=new THREE.Group();prizeDisplay.position.set(0,0,-12.55);scene.add(prizeDisplay);
+// Low, oversized glass prize display set flush against the true back wall.
+const prizeDisplay=new THREE.Group();prizeDisplay.position.set(0,0,-15.65);scene.add(prizeDisplay);
 const rearCaseGlass=new THREE.Mesh(new THREE.BoxGeometry(14.2,1.225,1.8),new THREE.MeshStandardMaterial({color:0x8deeff,emissive:0x173d5d,emissiveIntensity:.26,transparent:true,opacity:.16,metalness:.65,roughness:.06,side:THREE.DoubleSide,depthWrite:false}));rearCaseGlass.position.y=.6125;prizeDisplay.add(rearCaseGlass);
 const rearCaseBase=new THREE.Mesh(new THREE.BoxGeometry(14.4,.16,2.04),new THREE.MeshStandardMaterial({color:0x142331,metalness:.9,roughness:.12}));rearCaseBase.position.y=.08;prizeDisplay.add(rearCaseBase);
 const rearCaseTop=new THREE.Mesh(new THREE.BoxGeometry(14.4,.09,2.04),new THREE.MeshStandardMaterial({color:0x243a4b,emissive:0x173c56,emissiveIntensity:.6,metalness:.85,roughness:.1}));rearCaseTop.position.y=1.22;prizeDisplay.add(rearCaseTop);

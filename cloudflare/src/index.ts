@@ -103,7 +103,6 @@ export class ArcadeRoom implements DurableObject {
       case 'cabinet:request-use': acknowledge(await this.requestCabinet(socket, attachment, message.d)); break;
       case 'cabinet:activate': acknowledge(await this.activateCabinet(socket, attachment, message.d)); break;
       case 'cabinet:release': acknowledge(await this.releaseCabinet(socket, attachment, message.d)); break;
-      case 'world:jukebox-set': acknowledge(await this.setJukebox(socket, attachment, message.d)); break;
     }
   }
 
@@ -286,20 +285,6 @@ export class ArcadeRoom implements DurableObject {
     const state = this.cabinetStates.get(cabinetId);
     if (!state || state.occupiedByPlayerId !== player.id) return { ok: false, reason: 'not-owner' };
     await this.releaseState(state, player); socket.serializeAttachment(attachment); return { ok: true, state };
-  }
-
-  private async setJukebox(socket: WebSocket, attachment: SocketAttachment, payload: unknown): Promise<Record<string, unknown>> {
-    const player = attachment.player; const request = asObject(payload); const playing = request?.playing; const trackId = request?.trackId;
-    if (!player || typeof playing !== 'boolean' || (playing && typeof trackId !== 'string')) return { ok: false, reason: 'invalid' };
-    if (playing && !worldConfig.tracks.some((track) => track.id === trackId)) return { ok: false, reason: 'unknown-track' };
-    const now = Date.now(); if (now - (this.requestTimes.get(`jukebox:${player.id}`) ?? -Infinity) < 500) return { ok: false, reason: 'rate-limited' };
-    this.requestTimes.set(`jukebox:${player.id}`, now);
-    this.world.jukebox = { trackId: playing ? trackId as string : this.world.jukebox.trackId, playing, startedAt: playing ? now : null, changedBy: player.n };
-    this.world.revision += 1; await this.ctx.storage.put('world', this.world); this.broadcast('world:state-changed', this.world);
-    const text = playing ? `${player.n} selected a jukebox track.` : `${player.n} stopped the jukebox.`;
-    const announcement = { id: crypto.randomUUID(), roomId: this.roomId, text, kind: 'event', at: now, audioCue: 'jukebox' };
-    this.broadcast('world:announcement', announcement); await this.pushChat({ ...announcement, kind: 'announcement', playerId: null, displayName: null });
-    return { ok: true, state: this.world.jukebox };
   }
 
   private async disconnect(socket: WebSocket): Promise<void> {

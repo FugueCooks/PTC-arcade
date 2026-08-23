@@ -8,8 +8,8 @@ export class ObjectInteractionManager {
   createVisual(definition) {
     if (definition.type === 'prize-counter') return null;
     const THREE = window.THREE, group = new THREE.Group(); group.position.set(...definition.position);
-    const colors = { jukebox: 0xff3cac, vending: 0x36f9f6, kiosk: 0xffcc4a }, color = colors[definition.type] ?? 0x934dff;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(definition.type === 'jukebox' ? 1.35 : 1.05, definition.type === 'jukebox' ? 2.15 : 1.85, .75), new THREE.MeshStandardMaterial({ color: 0x101423, emissive: color, emissiveIntensity: .18, metalness: .75, roughness: .2 })); body.position.y = definition.type === 'jukebox' ? 1.08 : .93; group.add(body);
+    const colors = { 'prize-counter': 0x934dff }, color = colors[definition.type] ?? 0x36f9f6;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.85, .75), new THREE.MeshStandardMaterial({ color: 0x101423, emissive: color, emissiveIntensity: .18, metalness: .75, roughness: .2 })); body.position.y = .93; group.add(body);
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(.76, .72), new THREE.MeshBasicMaterial({ color })); screen.position.set(0, 1.25, .381); group.add(screen);
     const trim = new THREE.Mesh(new THREE.TorusGeometry(.46, .045, 10, 32, Math.PI), new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 2 })); trim.position.set(0, 1.56, .4); group.add(trim);
     this.arcade.scene.add(group); return group;

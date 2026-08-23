@@ -18,14 +18,9 @@
     { "id": "snow", "name": "Snow", "particle": "snow", "color": "#516b92" },
     { "id": "fog", "name": "Fog", "particle": "fog", "color": "#536070" }
   ],
-  "tracks": [
-    { "id": "neon-drive", "name": "Neon Drive", "url": null, "tempo": 108, "root": 45, "pattern": [0, 7, 10, 3, 0, 7, 12, 10] },
-    { "id": "pixel-dreams", "name": "Pixel Dreams", "url": null, "tempo": 92, "root": 52, "pattern": [0, 4, 7, 11, 7, 4, 2, 7] },
-    { "id": "midnight-circuit", "name": "Midnight Circuit", "url": null, "tempo": 124, "root": 40, "pattern": [0, 0, 7, 5, 3, 3, 10, 7] }
-  ],
+  "tracks": [],
   "objects": [
-    { "id": "jukebox", "type": "jukebox", "name": "NEON JUKEBOX", "position": [6.3, 0, -10.5], "interactionDistance": 2.4 },
-    { "id": "prize-counter", "type": "prize-counter", "name": "PRIZE COUNTER", "position": [0, 0, -11.2], "interactionDistance": 2.3 }
+    { "id": "prize-counter", "type": "prize-counter", "name": "PRIZE COUNTER", "position": [0, 0, -14.35], "interactionDistance": 2.3 }
   ],
   "npcPaths": [
     { "id": "wanderer-cyan", "color": "#36f9f6", "speed": 0.75, "points": [[-5,0,8],[-4,0,-8],[3,0,-9],[5,0,6]] },

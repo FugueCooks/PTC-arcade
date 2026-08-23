@@ -21,7 +21,7 @@ Production uses one WebSocket-capable Node instance for authoritative multiplaye
 
 ### Cloudflare realtime backend
 
-`cloudflare/` contains an optional low-latency native WebSocket backend built with Cloudflare Workers and Durable Objects. Each room name maps to exactly one Durable Object, giving that room an atomic authority for players, cabinet ownership, chat, reactions, presence, AFK state, reconnect grace, and jukebox state. WebSocket Hibernation allows idle rooms to sleep while connections remain open. Room chat, cabinet state, reconnect records, and world state use Durable Object storage; ROMs, BIOS files, emulator frames, controller input, saves, video, and audio never enter this service.
+`cloudflare/` contains an optional low-latency native WebSocket backend built with Cloudflare Workers and Durable Objects. Each room name maps to exactly one Durable Object, giving that room an atomic authority for players, cabinet ownership, chat, reactions, presence, AFK state, and reconnect grace. WebSocket Hibernation allows idle rooms to sleep while connections remain open. Room chat, cabinet state, reconnect records, and world state use Durable Object storage; ROMs, BIOS files, emulator frames, controller input, saves, video, and audio never enter this service.
 
 The browser uses `realtime/realtime-socket.js`, a small Socket.IO-compatible transport boundary. With no `REALTIME_URL`, it uses the existing same-origin Socket.IO server unchanged. With `REALTIME_URL` configured, it uses native WebSockets and reconnects with bounded exponential backoff. This makes Cloudflare an opt-in production switch with an immediate Render fallback.
 
@@ -32,13 +32,13 @@ Cloudflare commands:
 - `npm run cloudflare:smoke` connects two local clients and verifies join, visibility, movement, sanitized chat, and acknowledgements.
 - `npm run cloudflare:deploy` deploys the Worker after Cloudflare authentication.
 
-After deployment, set the static host's `REALTIME_URL` to the full Worker endpoint, for example `https://retro-arcade-realtime.<account>.workers.dev/realtime`. Leave it blank to roll back to Render Socket.IO. The Worker validates room IDs, display names, approved avatar IDs, movement speed and bounds, cabinet proximity/ownership, chat, reactions, and jukebox tracks. Movement remains change-only at the browser and uses proximity-aware fan-out: nearby peers receive normal updates while far peers are capped at roughly one update per 300 ms.
+After deployment, set the static host's `REALTIME_URL` to the full Worker endpoint, for example `https://retro-arcade-realtime.<account>.workers.dev/realtime`. Leave it blank to roll back to Render Socket.IO. The Worker validates room IDs, display names, approved avatar IDs, movement speed and bounds, cabinet proximity/ownership, chat, and reactions. Movement remains change-only at the browser and uses proximity-aware fan-out: nearby peers receive normal updates while far peers are capped at roughly one update per 300 ms.
 
 The Worker currently accepts production WebSockets only from the approved Render and Cloudflare Pages origins (plus localhost development), limits each room to 48 active players, and validates the browser protocol version. Additional players should be distributed into additional room IDs rather than raising this limit without load testing.
 
 ### Arcade instances
 
-`assets/rooms/registry.json` defines eight approved instances with a capacity of 48 players each, for a current configured ceiling of 384 concurrent room occupants. Players choose an instance alongside their name and avatar; the selection is remembered locally. Friends must choose the same named instance to share players, chat, cabinet occupancy, jukebox state, and announcements. If a selected Cloudflare room fills between selection and connection, the native realtime client rolls forward through the approved instances and stops with a clear error if all eight are full.
+`assets/rooms/registry.json` defines eight approved instances with a capacity of 48 players each, for a current configured ceiling of 384 concurrent room occupants. Players choose an instance alongside their name and avatar; the selection is remembered locally. Friends must choose the same named instance to share players, chat, cabinet occupancy, world state, and announcements. If a selected Cloudflare room fills between selection and connection, the native realtime client rolls forward through the approved instances and stops with a clear error if all eight are full.
 
 Room IDs are validated against the same registry by both production architectures. Cloudflare maps every ID to a separate Durable Object. The Node fallback creates matching isolated `Room` objects. Adding an instance requires one unique `main-N` registry entry and a redeploy; do not accept arbitrary client-created room IDs.
 
@@ -108,20 +108,14 @@ Messages are normalized and stripped of control/angle-bracket characters by the 
 Phase 6 is configuration-driven through `assets/world/config.json`. `WorldManager` composes independent client systems and applies the server-owned room state without taking ownership of movement, cabinets, avatars, or emulation.
 
 - **WorldManager** coordinates snapshots, room activity, announcements, events, themes, weather, the update loop, and the other world managers.
-- **AudioManager** owns one shared Web Audio context, master/ambience/music buses, cached procedural noise, positional cabinet/air-conditioning hums, activity-scaled crowd ambience, announcement cues, and jukebox playback. Avatar walking sounds are intentionally disabled. Browser audio unlocks only after a user gesture. Track entries may point to approved local audio files; the included tracks are original procedural synthesizer patterns.
+- **AudioManager** owns one shared Web Audio context, ambience/effects buses, cached procedural noise, positional cabinet/air-conditioning hums, activity-scaled crowd ambience, and short interface/announcement cues. Background music and avatar walking sounds are intentionally disabled. Browser audio unlocks only after a user gesture.
 - **LightingManager** discovers existing scene lights and emissive materials once, preserves their base values, and smoothly adjusts brightness for quiet, active, and busy rooms. It also supports flicker, neon surges, animated emissive accents, and future palette control.
 - **NPCManager** owns lightweight ambient NPC entities, configurable walking paths, idle pauses, distance culling, and a future-facing interaction callback. Initial NPCs deliberately use inexpensive arcade-styled geometry rather than unrelated avatar rigs.
 - **ParticleManager** pools typed position/velocity buffers for dust, snow, sparks, neon bursts, and future effects. Emitters stop updating outside their configured camera distance.
 - **EnvironmentManager** creates interior window displays, applies configuration-defined theme/fog/window colors, and switches pooled snow, sunset dust, and fog-style effects without affecting collision or gameplay. The former N64-wall rain particle field has been removed for performance.
-- **ObjectInteractionManager** detects nearby non-cabinet objects independently from cabinet ownership. The jukebox and prize counter use this framework; only the jukebox has full behavior in this phase. Placeholder vending-machine and information-kiosk instances were removed to keep the arcade floor uncluttered.
+- **ObjectInteractionManager** detects nearby non-cabinet objects independently from cabinet ownership. The prize counter remains registered for future interaction. The jukebox, placeholder vending machine, and information kiosk were removed to keep the arcade floor and soundscape uncluttered.
 
-Room-specific world state contains `themeId`, `weatherId`, `activityLevel`, population, revision, and jukebox state. The server validates all theme, weather, and track IDs against the registry. `WorldManager.setTheme()` and `setWeather()` are server-side expansion APIs for future schedules/admin controls. State is persistent for the lifetime of the server process but intentionally is not stored in a database.
-
-### Jukebox synchronization
-
-Approach the jukebox and press **E**. Selecting or stopping a track sends `world:jukebox-set`; the server validates the socket, room, cooldown, and approved track ID, then broadcasts `world:state-changed`. Clients synthesize or load the chosen local asset independently from the shared `startedAt` timestamp. No audio bytes are streamed through Socket.IO.
-
-To add an approved local track, place an optimized audio file under `assets/world/audio/`, add a unique entry to `config.json`, and set its `url`. Keep `tempo`, `root`, and `pattern` for the procedural fallback. Only use music you own or have permission to distribute.
+Room-specific world state contains `themeId`, `weatherId`, `activityLevel`, population, and revision. The server validates theme and weather IDs against the registry. `WorldManager.setTheme()` and `setWeather()` are server-side expansion APIs for future schedules/admin controls. State is persistent for the lifetime of the server process but intentionally is not stored in a database.
 
 ### Themes, weather, NPCs, and objects
 
@@ -130,7 +124,7 @@ To add an approved local track, place an optimized audio file under `assets/worl
 - Add ambient walking paths under `npcPaths`; points are `[x, y, z]`, and speed is world units per second.
 - Add non-cabinet interactables under `objects` with a stable ID, type, position, and interaction distance. Implement behavior in the `WorldManager.interact()` boundary rather than inside `arcade.js`.
 
-World wire events are `world:snapshot`, `world:state-changed`, `world:announcement`, `world:event`, and the acknowledged `world:jukebox-set` request. `WORLD_REQUEST_COOLDOWN_MS` defaults to `500`; `WORLD_EVENT_INTERVAL_MS` defaults to `90000`.
+World wire events are `world:snapshot`, `world:state-changed`, `world:announcement`, and `world:event`. `WORLD_EVENT_INTERVAL_MS` defaults to `90000`.
 
 Known limitations: world state resets on server restart; procedural crowd noise is abstract rather than recorded speech; NPCs are simple primitives; weather appears through dedicated interior display windows rather than a modeled exterior; and no admin theme/event UI exists. These are intentional seams for later phases, not blockers for the current environment.
 

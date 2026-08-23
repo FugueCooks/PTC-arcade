@@ -153,12 +153,6 @@ io.on('connection', (socket) => {
   socket.on('social:ping', (_payload, acknowledge) => {
     if (typeof acknowledge === 'function') acknowledge({ serverAt: Date.now() });
   });
-  socket.on('world:jukebox-set', (payload, acknowledge) => {
-    const result = world.setJukebox(socket.id, payload?.trackId, payload?.playing);
-    if (result.ok) statuses.noteActivityForSocket(socket.id);
-    if (typeof acknowledge === 'function') acknowledge(result);
-  });
-
   socket.on('cabinet:request-use', (payload, acknowledge) => {
     const result = cabinets.requestUse(socket.id, payload?.cabinetId);
     if (typeof acknowledge === 'function') acknowledge(result);

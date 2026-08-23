@@ -23,19 +23,18 @@ void test('world activity follows authoritative connected room population', () =
   assert.equal(world.snapshot('main').activityLevel, 'quiet');
 });
 
-void test('jukebox accepts approved tracks, rejects unknown tracks, and rate limits requests', () => {
+void test('music requests are rejected when no tracks are approved', () => {
   const { players, world } = setup(); players.join('a', 'main', undefined, identity, 1_000);
-  assert.equal(world.setJukebox('a', 'neon-drive', true, 2_000).ok, true);
-  assert.deepEqual(world.setJukebox('a', 'pixel-dreams', true, 2_100), { ok: false, reason: 'rate-limited' });
-  assert.deepEqual(world.setJukebox('a', 'stolen-track', true, 3_000), { ok: false, reason: 'unknown-track' });
-  assert.equal(world.snapshot('main').jukebox.trackId, 'neon-drive');
+  assert.deepEqual(world.setJukebox('a', 'neon-drive', true, 2_000), { ok: false, reason: 'unknown-track' });
+  assert.equal(world.snapshot('main').jukebox.playing, false);
+  assert.equal(world.snapshot('main').jukebox.trackId, null);
 });
 
-void test('jukebox and environment state are isolated by room', () => {
+void test('environment state remains isolated by room', () => {
   const { players, world } = setup(); players.join('a', 'main', undefined, identity, 1_000); players.join('b', 'other', undefined, identity, 1_000);
-  world.setJukebox('a', 'midnight-circuit', true, 2_000);
-  assert.equal(world.snapshot('main').jukebox.playing, true);
-  assert.equal(world.snapshot('other').jukebox.playing, false);
+  assert.equal(world.setTheme('main', 'retro-80s'), true);
+  assert.equal(world.snapshot('main').themeId, 'retro-80s');
+  assert.equal(world.snapshot('other').themeId, 'synthwave');
   assert.notEqual(world.snapshot('main'), world.snapshot('other'));
 });
 
