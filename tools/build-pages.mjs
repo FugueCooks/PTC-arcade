@@ -8,7 +8,7 @@ const rootFiles = [
   'index.html', 'player.html', 'style.css', 'app-bootstrap.js', 'arcade.js',
   'avatar-selection.js', 'multiplayer-client.js'
 ];
-const sourceDirectories = ['avatars', 'cabinets', 'social', 'world', 'realtime'];
+const sourceDirectories = ['avatars', 'cabinets', 'games', 'social', 'world', 'realtime'];
 const requiredPrizeModels = new Set([
   'enterprise.optimized.glb',
   'furthermore.optimized.glb',
@@ -25,7 +25,8 @@ for (const file of rootFiles) await copyFile(file);
 for (const directory of sourceDirectories) await copyTree(directory);
 await copyTree('assets', (relative, info) => {
   const normalized = relative.replaceAll('\\', '/');
-  if (normalized.startsWith('assets/games/') || normalized.startsWith('assets/bios/')) return false;
+  if (normalized.startsWith('assets/games/') && normalized !== 'assets/games/registry.json') return false;
+  if (normalized.startsWith('assets/bios/')) return false;
   if (normalized.startsWith('assets/models/') && info.isFile()) {
     return requiredPrizeModels.has(path.basename(normalized));
   }

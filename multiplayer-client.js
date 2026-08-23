@@ -156,6 +156,7 @@
       cabinetVisuals = new CabinetVisualState(arcade);
       cabinetSessions = new CabinetSessionController(arcade, new CabinetNetworkClient(socket), cabinetVisuals, await loadCabinetRegistry());
       const joinRoom = () => socket.emit('room:join', {
+        protocolVersion: 1,
         roomId: ROOM_ID,
         resumeToken: sessionStorage.getItem(RESUME_TOKEN_KEY) ?? undefined,
         identity

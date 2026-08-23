@@ -134,19 +134,20 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
   const statusLight=new THREE.Mesh(new THREE.BoxGeometry(.18,.045,.035),statusMaterial);statusLight.position.set(.48,2.48,.43);statusLight.rotation.x=-.1;g.add(statusLight);
   scene.add(g);cabinets.push({id,g,name,type:id.toUpperCase(),screen,hue,statusLight,renderLights:[floorGlow,glow],status:'syncing',occupiedByDisplayName:null,enabled:true});
 }
-makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-10.2,-10,0x36f9f6);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;Object.assign(cabinets[cabinets.length-1],{system:'psx',gameName:"Tony Hawk's Pro Skater 2",gameId:94154,hostedGame:gameAssetUrl('tony-hawks-pro-skater-2.bin')});
-makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-10.2,-5,0x8de548,false,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;Object.assign(cabinets[cabinets.length-1],{system:'psx',gameName:'Gex: Enter the Gecko',gameId:95001,hostedGame:gameAssetUrl('gex-enter-the-gecko.bin')});
-makeCabinet('crash-bandicoot','CRASH BANDICOOT',-10.2,0,0xffa62e,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;Object.assign(cabinets[cabinets.length-1],{system:'psx',gameName:'Crash Bandicoot',gameId:94900,hostedGame:gameAssetUrl('crash-bandicoot.pbp')});
-makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-10.2,5,0x934dff);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;Object.assign(cabinets[cabinets.length-1],{system:'psx',gameName:'Spyro - Year of the Dragon',gameId:2835,hostedGame:gameAssetUrl('spyro-year-of-the-dragon.chd')});
-makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-10.2,10,0xff3cac);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;Object.assign(cabinets[cabinets.length-1],{system:'psx',gameName:'Twisted Metal World Tour',gameId:567,hostedGame:gameAssetUrl('twisted-metal-world-tour.chd')});
+function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;Object.assign(cabinets[cabinets.length-1],{system:game.system,gameName:game.name,gameId:game.emulatorId,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file)})}
+makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-10.2,-10,0x36f9f6);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
+makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-10.2,-5,0x8de548,false,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
+makeCabinet('crash-bandicoot','CRASH BANDICOOT',-10.2,0,0xffa62e,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('crash-bandicoot');
+makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-10.2,5,0x934dff);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('dungeon-88');
+makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-10.2,10,0xff3cac);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('turbo-grid');
 const hostedN64Games={
-  1:{name:'Pokemon Snap',gameId:6401,rom:gameAssetUrl('pokemon-snap.n64')},
-  2:{name:'Super Mario 64',gameId:6402,rom:gameAssetUrl('super-mario-64.z64')},
-  3:{name:'Glover',gameId:6403,rom:gameAssetUrl('glover.z64')},
-  4:{name:'Doom 64',gameId:6404,rom:gameAssetUrl('doom-64.z64')},
-  5:{name:'The Legend of Zelda: Ocarina of Time',gameId:6405,rom:gameAssetUrl('zelda-ocarina-of-time.z64')}
+  1:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-01'),
+  2:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-02'),
+  3:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-03'),
+  4:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-04'),
+  5:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-05')
 };
-for(const [index,z,hue] of [[1,-10,0x8b5cf6],[2,-5,0xff4da6],[3,0,0x36f9f6],[4,5,0xffb42e],[5,10,0x7dff67]]){const hosted=hostedN64Games[index];makeCabinet(`n64-cabinet-0${index}`,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue);const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;Object.assign(cabinet,{system:'n64',gameName:hosted?.name||`N64 Game ${index}`,gameId:hosted?.gameId||6400+index,...(hosted?{hostedGame:hosted.rom}:{})})}
+for(const [index,z,hue] of [[1,-10,0x8b5cf6],[2,-5,0xff4da6],[3,0,0x36f9f6],[4,5,0xffb42e],[5,10,0x7dff67]]){const hosted=hostedN64Games[index];makeCabinet(`n64-cabinet-0${index}`,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue);const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(`n64-cabinet-0${index}`)}
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
   makeCabinet(`psx-back-cabinet-0${index}`,`PLAYSTATION // EXPANSION 0${index}`,-24.8,z,expansionCabinetColors[index-1]);

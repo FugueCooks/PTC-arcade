@@ -4,6 +4,8 @@ A Three.js/WebGL arcade floor with a lightweight Socket.IO multiplayer foundatio
 
 ## Production hosting
 
+The production frontend is deployed on Cloudflare Pages at `https://retro-arcade-om7.pages.dev/`. Run `npm run pages:build` to create the strict `.pages-dist` bundle and `npm run pages:deploy` to publish it. The bundle excludes ROMs, BIOS files, unused model experiments, and every file over Cloudflare Pages' safe per-file limit. Hosted game and BIOS URLs continue to resolve through the R2 values written into `runtime-config.js`. Render remains a rollback Node host.
+
 The Node.js service now serves only approved browser assets, exposes `/healthz`, uses proxy-safe HTTP keep-alive settings, and keeps movement traffic on compact Socket.IO messages with WebSocket support. Large game downloads are separated from realtime traffic through `GAME_ASSET_BASE_URL`; the hosted PlayStation BIOS is independently configured through `BIOS_ASSET_URL`.
 
 - Leave `GAME_ASSET_BASE_URL` blank for the existing local `assets/games/` behavior.
@@ -31,6 +33,8 @@ Cloudflare commands:
 - `npm run cloudflare:deploy` deploys the Worker after Cloudflare authentication.
 
 After deployment, set the static host's `REALTIME_URL` to the full Worker endpoint, for example `https://retro-arcade-realtime.<account>.workers.dev/realtime`. Leave it blank to roll back to Render Socket.IO. The Worker validates room IDs, display names, approved avatar IDs, movement speed and bounds, cabinet proximity/ownership, chat, reactions, and jukebox tracks. Movement remains change-only at the browser and uses proximity-aware fan-out: nearby peers receive normal updates while far peers are capped at roughly one update per 300 ms.
+
+The Worker currently accepts production WebSockets only from the approved Render and Cloudflare Pages origins (plus localhost development), limits each room to 48 active players, and validates the browser protocol version. Additional players should be distributed into additional room IDs rather than raising this limit without load testing.
 
 One room deliberately maps to one authority to prevent cabinet races. A very large worldwide audience should be split into multiple geographically named rooms in a future room-selection phase; a single shared room cannot offer local-region latency to every continent while remaining strongly authoritative.
 
@@ -189,6 +193,6 @@ The cabinet labeled **Crash Bandicoot** is configured for PlayStation. Open it, 
 
 All five N64 cabinets use EmulatorJS's `n64` target, which selects the Mupen64Plus Next browser core. Approach a cabinet, obtain multiplayer ownership, and choose a legally dumped `.z64`, `.n64`, or `.v64` image. N64 does not require the PlayStation BIOS. The ROM, emulator video, audio, controller input, browser saves, and save states remain local to the player's browser.
 
-To configure a legally distributable hosted N64 title, place its ROM under `assets/games/` and add `hostedGame`, `gameName`, and a stable numeric `gameId` to that cabinet's definition in `arcade.js`. The cabinet will then expose the same Play button and iframe lifecycle used by the hosted PlayStation cabinets.
+Hosted game metadata is centralized in `assets/games/registry.json`. To add a legally distributable title, upload its image to the configured R2 games prefix, add one enabled registry entry with a unique game ID, cabinet ID, system, filename, numeric emulator ID, and byte size, and set that cabinet's `defaultGameId` in `assets/cabinets/registry.json`. `games/game-registry.js` validates the browser copy before the scene starts. ROM and BIOS binaries remain ignored by Git and excluded from the Pages bundle.
 
 The hosted N64 wall contains Pokémon Snap (`n64-cabinet-01`), Super Mario 64 (`n64-cabinet-02`), Glover (`n64-cabinet-03`), Doom 64 (`n64-cabinet-04`), and The Legend of Zelda: Ocarina of Time (`n64-cabinet-05`).

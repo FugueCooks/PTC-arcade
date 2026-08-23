@@ -20,6 +20,8 @@ interface WorldState { roomId: string; themeId: string; weatherId: string; activ
 interface WireMessage { e?: string; d?: unknown; q?: string }
 
 const ROOM_ID = 'main';
+const PROTOCOL_VERSION = 1;
+const MAX_PLAYERS_PER_ROOM = 48;
 const PLAYER_HEIGHT = 1.65;
 const RECONNECT_GRACE_MS = 10_000;
 const MAX_SPEED_PER_SECOND = 7;
@@ -41,6 +43,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/healthz') return json({ ok: true, service: 'retro-arcade-realtime', edge: request.cf?.colo ?? null });
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') return json({ ok: false, message: 'WebSocket upgrade required.' }, 426);
+    if (!isAllowedOrigin(request.headers.get('Origin'))) return json({ ok: false, message: 'Origin is not allowed.' }, 403);
     const roomId = normalizeRoomId(url.searchParams.get('room'));
     return env.ARCADE_ROOMS.getByName(roomId).fetch(request);
   }
@@ -136,6 +139,14 @@ export class ArcadeRoom implements DurableObject {
   private async join(socket: WebSocket, attachment: SocketAttachment, payload: unknown): Promise<void> {
     if (attachment.player) return;
     const request = asObject(payload);
+    if (request?.protocolVersion !== undefined && request.protocolVersion !== PROTOCOL_VERSION) {
+      this.send(socket, 'room:error', { message: 'This arcade client is out of date. Refresh the page and try again.' });
+      return;
+    }
+    if (this.joinedSockets().length >= MAX_PLAYERS_PER_ROOM) {
+      this.send(socket, 'room:error', { message: 'This arcade room is full. Please try again shortly.' });
+      return;
+    }
     const identity = validateIdentity(request?.identity);
     if (!identity) { this.send(socket, 'room:error', { message: 'Choose a valid display name before entering the arcade.' }); return; }
     const now = Date.now();
@@ -356,6 +367,11 @@ function validateIdentity(value: unknown): { displayName: string; avatarId: stri
 function sanitizeText(value: unknown): string { return typeof value === 'string' ? value.normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim() : ''; }
 function asObject(value: unknown): Record<string, unknown> | undefined { return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined; }
 function normalizeRoomId(value: string | null): string { return typeof value === 'string' && /^[a-z0-9-]{1,32}$/.test(value) ? value : ROOM_ID; }
+function isAllowedOrigin(value: string | null): boolean {
+  if (!value) return true; // Native smoke tests and non-browser health tooling.
+  if (value === 'https://retro-arcade-multiplayer.onrender.com' || value === 'https://retro-arcade-om7.pages.dev') return true;
+  return /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(value);
+}
 function normalizeAngle(value: number): number { return Math.atan2(Math.sin(value), Math.cos(value)); }
 function chooseSpawn(players: PlayerState[]): typeof spawnPoints[number] { return spawnPoints.find((spawn) => players.every((player) => Math.hypot(player.p[0] - spawn[0], player.p[2] - spawn[2]) >= 1.4)) ?? spawnPoints[players.length % spawnPoints.length]; }
 function availableCabinet(cabinetId: string): CabinetState { return { cabinetId, occupiedByPlayerId: null, occupiedByDisplayName: null, status: 'available', reservedAt: null, sessionStartedAt: null }; }
