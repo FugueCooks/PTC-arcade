@@ -88,3 +88,23 @@ BIOS_ASSET_URL=https://games.example.com/arcade/bios/SCPH1001.BIN
 ## Database
 
 No database is required for the current rooms, movement, chat, cabinets, or world state. Add persistent storage only when accounts, cloud saves, durable scores, or profiles are introduced. Redis becomes useful only when multiple realtime server instances must share room state.
+
+## Fly.io West Coast deployment
+
+`fly.toml` runs the current authoritative Socket.IO service as one always-on
+machine in Los Angeles (`lax`). Large game and BIOS downloads continue to come
+directly from Cloudflare R2, so they never consume realtime-server bandwidth.
+
+Deploy after authenticating the Fly CLI and enabling billing:
+
+```powershell
+flyctl apps create retro-arcade-fugue --org personal
+flyctl deploy
+flyctl status
+flyctl checks list
+```
+
+Keep exactly one machine until room state is moved out of process. Adding
+replicas before regional room ownership or shared coordination exists can split
+players and cabinet ownership across independent server memories. The current
+configuration keeps the machine awake to avoid reconnects and cold-start delays.
