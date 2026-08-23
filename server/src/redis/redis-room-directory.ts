@@ -18,16 +18,27 @@ export class RedisRoomDirectory implements RoomDirectory {
 
   async get(roomId: string): Promise<RoomRecord | undefined> {
     const value = await this.client.get(this.keys.room(roomId));
-    return value ? parseRoom(value) : undefined;
+    if (!value) return undefined;
+    const room = safeParseRoom(value);
+    if (room) return room;
+    await this.client.multi().del(this.keys.room(roomId)).zRem(this.keys.roomDirectory(), roomId).exec();
+    return undefined;
   }
 
   async list(statuses?: readonly RoomStatus[]): Promise<RoomRecord[]> {
     const ids = await this.client.zRange(this.keys.roomDirectory(), 0, -1);
     if (ids.length === 0) return [];
     const values = await this.client.mGet(ids.map((id) => this.keys.room(id)));
-    const rooms = values.flatMap((value) => value ? [parseRoom(value)] : []);
-    const staleIds = ids.filter((_id, index) => values[index] === null);
-    if (staleIds.length) await this.client.zRem(this.keys.roomDirectory(), staleIds);
+    const rooms: RoomRecord[] = [];
+    const staleIds: string[] = [];
+    values.forEach((value, index) => {
+      const room = value ? safeParseRoom(value) : undefined;
+      if (room) rooms.push(room); else staleIds.push(ids[index]);
+    });
+    if (staleIds.length) {
+      await Promise.all(staleIds.map((id) => this.client.del(this.keys.room(id))));
+      await this.client.zRem(this.keys.roomDirectory(), staleIds);
+    }
     const allowed = statuses ? new Set(statuses) : undefined;
     return rooms.filter((room) => !allowed || allowed.has(room.status));
   }
@@ -47,4 +58,8 @@ function parseRoom(value: string): RoomRecord {
   const parsed = JSON.parse(value) as RoomRecord;
   if (!parsed || typeof parsed.id !== 'string' || typeof parsed.serverId !== 'string') throw new Error('Malformed room directory record.');
   return parsed;
+}
+
+function safeParseRoom(value: string): RoomRecord | undefined {
+  try { return parseRoom(value); } catch { return undefined; }
 }

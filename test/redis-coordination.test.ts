@@ -76,6 +76,17 @@ void test('Redis room directory stores isolated discoverable room records and re
   assert.equal((await directory.list()).length, 1);
 });
 
+void test('malformed room directory records are quarantined without hiding healthy rooms', async () => {
+  const redis = new FakeRedis(); const keys = new RedisKeys('arcade:v1:test');
+  const directory = new RedisRoomDirectory(redis as never, keys, 30_000);
+  await directory.register(record('room-good', 'server-a'));
+  redis.strings.set(keys.room('room-bad'), '{not-json');
+  await redis.zAdd(keys.roomDirectory(), { score: 2_000, value: 'room-bad' });
+  assert.deepEqual((await directory.list()).map(({ id }) => id), ['room-good']);
+  assert.equal(await redis.get(keys.room('room-bad')), null);
+  assert.equal(await directory.get('room-bad'), undefined);
+});
+
 void test('room ownership leases prevent duplicate owners and use fencing tokens', async () => {
   const redis = new FakeRedis(); const keys = new RedisKeys('arcade:v1:test');
   const firstOwner = new RoomOwnershipService(redis as never, keys, 'server-a', 30_000);
@@ -104,5 +115,20 @@ void test('server registrations heartbeat, filter draining servers, and clean up
   assert.deepEqual(await registry.listHealthy(11_001), []);
   await registry.stop();
   assert.equal(await redis.get(keys.server('server-a')), null);
+  runtimeMetrics.close();
+});
+
+void test('malformed server registrations are removed without breaking healthy discovery', async () => {
+  const redis = new FakeRedis(); const keys = new RedisKeys('arcade:v1:test');
+  const runtimeMetrics = new RuntimeMetrics({ connectedSockets: () => 0, activePlayers: () => 0, activeRooms: () => 0, averageRoomPopulation: () => 0, draining: () => false });
+  const config = loadServerConfig({ SERVER_ID: 'server-good', SERVER_REGION: 'test-region', MAX_SERVER_MEMORY_MB: '65536' });
+  const registry = new ServerRegistry(redis as never, keys, config, {
+    roomCount: () => 1, playerCount: () => 1, draining: () => false, healthy: () => true
+  }, runtimeMetrics, createLogger({ test: true }));
+  await registry.heartbeat(10_000);
+  redis.strings.set(keys.server('server-bad'), '{not-json');
+  await redis.zAdd(keys.serverHeartbeats(), { score: 10_000, value: 'server-bad' });
+  assert.deepEqual((await registry.listHealthy(10_001)).map(({ serverId }) => serverId), ['server-good']);
+  assert.equal(await redis.get(keys.server('server-bad')), null);
   runtimeMetrics.close();
 });

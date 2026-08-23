@@ -58,13 +58,27 @@ export class ServerRegistry {
     const ids = await this.client.zRangeByScore(this.keys.serverHeartbeats(), now - this.config.serverTtlMs, '+inf');
     if (!ids.length) return [];
     const values = await this.client.mGet(ids.map((id) => this.keys.server(id)));
-    return values.flatMap((value) => value ? [parse(value)] : []).filter((record) => record.health === 'healthy' && !record.draining);
+    const records: ServerRecord[] = [];
+    const invalidIds: string[] = [];
+    values.forEach((value, index) => {
+      const record = value ? safeParse(value) : undefined;
+      if (record) records.push(record); else invalidIds.push(ids[index]);
+    });
+    if (invalidIds.length) {
+      await Promise.all(invalidIds.map((id) => this.client.del(this.keys.server(id))));
+      await this.client.zRem(this.keys.serverHeartbeats(), invalidIds);
+    }
+    return records.filter((record) => record.health === 'healthy' && !record.draining);
   }
 
   async get(serverId: string): Promise<ServerRecord | undefined> {
     const value = await this.client.get(this.keys.server(serverId));
     if (!value) return undefined;
-    const record = parse(value);
+    const record = safeParse(value);
+    if (!record) {
+      await this.client.multi().del(this.keys.server(serverId)).zRem(this.keys.serverHeartbeats(), serverId).exec();
+      return undefined;
+    }
     return Date.now() - record.heartbeatAt <= this.config.serverTtlMs ? record : undefined;
   }
 
@@ -78,4 +92,8 @@ function parse(value: string): ServerRecord {
   const record = JSON.parse(value) as ServerRecord;
   if (!record || typeof record.serverId !== 'string' || typeof record.heartbeatAt !== 'number') throw new Error('Malformed server registration.');
   return record;
+}
+
+function safeParse(value: string): ServerRecord | undefined {
+  try { return parse(value); } catch { return undefined; }
 }
