@@ -68,7 +68,7 @@ for(const roomX of [-21,21]){
   for(let z=-12;z<=12;z+=4)box(13.5,.035,.055,0x24bfff,roomX,4.65,z,1.7);
 }
 function addRoomSign(text,x,color){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,-16.62);scene.add(sign)}
-addRoomSign('PS2 ROOM',-21,'#ff3cac');addRoomSign('N64 ROOM',21,'#36f9f6');
+addRoomSign('N64 ROOM',21,'#36f9f6');
 const pepeToyTexture=new THREE.TextureLoader().load('assets/art/pepe-toy.png?v=1');
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.png?v=1');
 function crashArt(){

@@ -201,7 +201,7 @@ The rear N64 room currently contains Star Fox 64 (`n64-back-cabinet-01`), Mega M
 
 ## PlayStation 2 room
 
-The five cabinets behind the PlayStation room are presented as the **PS2 ROOM**. God of War, Kingdom Hearts, and Grand Theft Auto: San Andreas are assigned visually to the first three cabinets, with two future PS2 slots. PCSX2 2.6.3 remains unsuitable because its Windows installer cannot execute in a webpage and EmulatorJS does not provide a PlayStation 2 core. The PCSX2 installer and PS2 ISO images are therefore neither copied into the website nor uploaded to R2.
+The five cabinets behind the PlayStation room form the rear PlayStation 2 room. God of War, Kingdom Hearts, and Grand Theft Auto: San Andreas are assigned visually to the first three cabinets, with two future PS2 slots. The temporary PS2 ROOM wall sign has been removed pending replacement artwork. PCSX2 2.6.3 remains unsuitable because its Windows installer cannot execute in a webpage and EmulatorJS does not provide a PlayStation 2 core. The PCSX2 installer and PS2 ISO images are therefore neither copied into the website nor uploaded to R2.
 
 ### Experimental PS2 prototype
 
