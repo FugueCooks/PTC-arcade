@@ -17,6 +17,23 @@ Build the production container with `docker build -t roms-retro-arcade .`. Run `
 
 Production uses one WebSocket-capable Node instance for authoritative multiplayer and a separate object-storage/CDN origin for game and BIOS downloads. This prevents multi-hundred-megabyte downloads from blocking movement, chat, cabinet ownership, or world events. A database is not necessary for the current feature set.
 
+### Cloudflare realtime backend
+
+`cloudflare/` contains an optional low-latency native WebSocket backend built with Cloudflare Workers and Durable Objects. Each room name maps to exactly one Durable Object, giving that room an atomic authority for players, cabinet ownership, chat, reactions, presence, AFK state, reconnect grace, and jukebox state. WebSocket Hibernation allows idle rooms to sleep while connections remain open. Room chat, cabinet state, reconnect records, and world state use Durable Object storage; ROMs, BIOS files, emulator frames, controller input, saves, video, and audio never enter this service.
+
+The browser uses `realtime/realtime-socket.js`, a small Socket.IO-compatible transport boundary. With no `REALTIME_URL`, it uses the existing same-origin Socket.IO server unchanged. With `REALTIME_URL` configured, it uses native WebSockets and reconnects with bounded exponential backoff. This makes Cloudflare an opt-in production switch with an immediate Render fallback.
+
+Cloudflare commands:
+
+- `npm run cloudflare:typecheck` validates the Worker separately from the Node service.
+- `npm run cloudflare:dev` starts a local Durable Object emulator.
+- `npm run cloudflare:smoke` connects two local clients and verifies join, visibility, movement, sanitized chat, and acknowledgements.
+- `npm run cloudflare:deploy` deploys the Worker after Cloudflare authentication.
+
+After deployment, set the static host's `REALTIME_URL` to the full Worker endpoint, for example `https://retro-arcade-realtime.<account>.workers.dev/realtime`. Leave it blank to roll back to Render Socket.IO. The Worker validates room IDs, display names, approved avatar IDs, movement speed and bounds, cabinet proximity/ownership, chat, reactions, and jukebox tracks. Movement remains change-only at the browser and uses proximity-aware fan-out: nearby peers receive normal updates while far peers are capped at roughly one update per 300 ms.
+
+One room deliberately maps to one authority to prevent cabinet races. A very large worldwide audience should be split into multiple geographically named rooms in a future room-selection phase; a single shared room cannot offer local-region latency to every continent while remaining strongly authoritative.
+
 ## Start the multiplayer arcade
 
 1. Close any existing PowerShell arcade server window.

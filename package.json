@@ -13,7 +13,11 @@
     "verify:games": "node tools/verify-game-assets.mjs",
     "verify:assets": "node tools/verify-game-assets.mjs",
     "storage:upload": "node tools/storage-upload.mjs",
-    "storage:verify": "node tools/verify-remote-assets.mjs"
+    "storage:verify": "node tools/verify-remote-assets.mjs",
+    "cloudflare:typecheck": "tsc -p cloudflare/tsconfig.json",
+    "cloudflare:dev": "wrangler dev --config cloudflare/wrangler.jsonc",
+    "cloudflare:deploy": "wrangler deploy --config cloudflare/wrangler.jsonc",
+    "cloudflare:smoke": "node cloudflare/test/local-smoke.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1116.0",
@@ -28,6 +32,7 @@
     "@typescript-eslint/parser": "^8.20.0",
     "eslint": "^9.17.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "wrangler": "^4.125.0"
   }
 }

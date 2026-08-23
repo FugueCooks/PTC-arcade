@@ -18,5 +18,6 @@ COPY --from=build /app/avatars ./avatars
 COPY --from=build /app/cabinets ./cabinets
 COPY --from=build /app/social ./social
 COPY --from=build /app/world ./world
+COPY --from=build /app/realtime ./realtime
 EXPOSE 8080
 CMD ["node", "dist/server/src/index.js"]

@@ -1,6 +1,6 @@
 (() => {
   const arcade = window.arcadeMultiplayer;
-  if (!arcade || typeof window.io !== 'function') {
+  if (!arcade || typeof window.createArcadeSocket !== 'function') {
     console.warn('Multiplayer client unavailable. Start the arcade with the Node launcher.');
     return;
   }
@@ -146,7 +146,7 @@
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
       // Let Socket.IO negotiate polling/WebSocket order. Some ISP and mobile
       // routes perform substantially worse when WebSocket is forced first.
-      socket = window.io({ reconnectionDelay: 500, reconnectionDelayMax: 3000 });
+      socket = window.createArcadeSocket({ reconnectionDelay: 500, reconnectionDelayMax: 3000 });
       new ChatClient(socket);
       presenceClient = new PresenceClient(socket, avatarRegistry);
       new ReactionClient(socket, (id) => id === localPlayerId ? localAvatar : remotePlayers.get(id)?.avatar);
