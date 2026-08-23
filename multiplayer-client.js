@@ -106,7 +106,9 @@
     if (!socket?.connected || !localPlayerId || now - lastSentAt < sendIntervalMs) return;
     const transform = { ...arcade.getLocalTransform(), animation: arcade.getLocalAnimationState() };
     if (!hasMeaningfullyChanged(transform)) return;
-    socket.emit('player:move', { p: [transform.position.x, transform.position.z], r: transform.rotationY });
+    // Movement is transient state. Dropping a packet during congestion is much
+    // better than replaying stale positions after the connection recovers.
+    socket.volatile.emit('player:move', { p: [transform.position.x, transform.position.z], r: transform.rotationY });
     lastSentTransform = { position: { ...transform.position }, rotationY: transform.rotationY, animation: transform.animation };
     lastSentAt = now;
   };
@@ -142,7 +144,7 @@
       // Render a local fallback immediately. The server snapshot will replace
       // its identity with the validated state once the room connection opens.
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
-      socket = window.io();
+      socket = window.io({ transports: ['websocket', 'polling'], reconnectionDelay: 500, reconnectionDelayMax: 3000 });
       new ChatClient(socket);
       presenceClient = new PresenceClient(socket, avatarRegistry);
       new ReactionClient(socket, (id) => id === localPlayerId ? localAvatar : remotePlayers.get(id)?.avatar);

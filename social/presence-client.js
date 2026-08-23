@@ -15,6 +15,7 @@ export class PresenceClient {
     toggle.addEventListener('click', () => { this.list.hidden = !this.list.hidden; toggle.setAttribute('aria-expanded', String(!this.list.hidden)); });
     socket.on('connect', () => this.connection(true));
     socket.on('disconnect', () => this.connection(false));
+    this.pingSamples = [];
     this.pingTimer = setInterval(() => this.ping(), 5000);
   }
 
@@ -50,11 +51,13 @@ export class PresenceClient {
   ping() {
     if (!this.socket.connected) return;
     const started = performance.now();
-    this.socket.timeout(2500).emit('social:ping', {}, (error) => {
+    this.socket.timeout(5000).emit('social:ping', {}, (error) => {
       if (error) return this.connection(false);
       const ping = Math.round(performance.now() - started);
-      this.dot.className = ping > 220 ? 'poor' : 'online';
-      this.stats.textContent = `${ping} MS · ${ping < 100 ? 'EXCELLENT' : ping < 220 ? 'GOOD' : 'WEAK'}`;
+      this.pingSamples.push(ping); if (this.pingSamples.length > 5) this.pingSamples.shift();
+      const samples = [...this.pingSamples].sort((a, b) => a - b), median = samples[Math.floor(samples.length / 2)];
+      this.dot.className = median > 350 ? 'poor' : 'online';
+      this.stats.textContent = `${median} MS · ${median < 150 ? 'EXCELLENT' : median < 350 ? 'GOOD' : 'WEAK'}`;
     });
   }
 }
