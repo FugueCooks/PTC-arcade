@@ -2,10 +2,11 @@ import type { Express, Request, Response } from 'express';
 import type { ServerConfig } from '../config.js';
 import type { RoomDirectory } from '../rooms/room-directory.js';
 import type { RoomPlacementService } from '../rooms/room-placement-service.js';
+import type { ReconnectDirectory } from '../players/reconnect-directory.js';
 
 const requests = new Map<string, { count: number; resetAt: number }>();
 
-export function installMatchmakingRoutes(app: Express, placement: RoomPlacementService, directory: RoomDirectory, config: ServerConfig): void {
+export function installMatchmakingRoutes(app: Express, placement: RoomPlacementService, directory: RoomDirectory, reconnects: ReconnectDirectory, config: ServerConfig): void {
   app.use('/api/rooms', (request, response, next) => {
     response.setHeader('Cache-Control', 'no-store');
     const key = request.ip || 'unknown'; const now = Date.now();
@@ -22,7 +23,9 @@ export function installMatchmakingRoutes(app: Express, placement: RoomPlacementS
   });
   app.post('/api/rooms/quick-join', async (request: Request, response: Response) => {
     const requestedRoomId = cleanRoomId(request.body?.roomId);
-    const result = await placement.placePublic({ requestedRoomId, preferredRegion: cleanRegion(request.body?.preferredRegion) });
+    const resumeToken = typeof request.body?.resumeToken === 'string' && request.body.resumeToken.length <= 128 ? request.body.resumeToken : undefined;
+    const reconnect = resumeToken ? await reconnects.get(resumeToken) : undefined;
+    const result = await placement.placePublic({ reconnectRoomId: reconnect?.roomId, requestedRoomId, preferredRegion: cleanRegion(request.body?.preferredRegion) });
     if (!result.ok || !result.room || !result.reservation) {
       response.status(503).json({ ok: false, reason: result.reason ?? 'unavailable', retryAfterMs: 1_500 }); return;
     }

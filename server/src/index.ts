@@ -31,6 +31,7 @@ import { createAdapter as createRedisStreamsAdapter } from '@socket.io/redis-str
 import { InMemoryRoomAdmission, RedisRoomAdmission } from './rooms/room-admission.js';
 import { RoomPlacementService } from './rooms/room-placement-service.js';
 import { installMatchmakingRoutes } from './http/matchmaking-routes.js';
+import { InMemoryReconnectDirectory, RedisReconnectDirectory } from './players/reconnect-directory.js';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -110,10 +111,11 @@ const roomAdmission = redis?.isReady
   ? new RedisRoomAdmission(redis.client, redisKeys, config.admissionReservationTtlMs)
   : new InMemoryRoomAdmission(config.admissionReservationTtlMs);
 const roomPlacement = new RoomPlacementService(rooms, roomDirectory, roomLifecycle, roomAdmission, serverRegistry, config, metrics);
+const reconnectDirectory = redis?.isReady ? new RedisReconnectDirectory(redis.client, redisKeys) : new InMemoryReconnectDirectory();
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
 app.use(express.json({ limit: '16kb' }));
-installMatchmakingRoutes(app, roomPlacement, roomDirectory, config);
+installMatchmakingRoutes(app, roomPlacement, roomDirectory, reconnectDirectory, config);
 installStaticHosting(app, projectRoot, publicRuntimeConfig());
 
 io.use((_socket, next) => {
@@ -227,6 +229,8 @@ io.on('connection', (socket) => {
         socket.emit('room:error', { code: 'reservation-expired', message: 'Your arcade spot expired before entry. Please retry.' });
         return;
       }
+    } else if (result.resumed && reservationToken) {
+      await roomAdmission.release(result.snapshot.roomId, undefined, reservationToken);
     } else if (!result.resumed && config.redisRequired) {
       players.removeSocketNow(socket.id);
       metrics.increment('join_rejected_missing_reservation_total');
@@ -238,6 +242,9 @@ io.on('connection', (socket) => {
     socket.emit('room:snapshot', result.snapshot);
     socket.emit('player:state', result.player);
     socket.emit('room:resume', { resumeToken: result.resumeToken, resumed: result.resumed });
+    await reconnectDirectory.save(result.resumeToken, {
+      playerId: result.player.id, roomId: result.snapshot.roomId, serverId: config.serverId, expiresAt: Date.now() + 20_000
+    });
     socket.emit('cabinet:snapshot', { roomId: result.snapshot.roomId, cabinets: cabinets.snapshot(result.snapshot.roomId) });
     socket.emit('chat:snapshot', { roomId: result.snapshot.roomId, messages: chat.snapshot(result.snapshot.roomId) });
     socket.emit('world:snapshot', world.snapshot(result.snapshot.roomId));

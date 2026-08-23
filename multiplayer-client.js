@@ -135,7 +135,9 @@
       currentRoomId = window.ARCADE_ROOM_REGISTRY?.rooms?.has(selection.roomId) ? selection.roomId : 'main';
       const identity = { displayName: selection.displayName, avatarId: selection.avatarId };
       const { RoomPlacementClient } = await import('./rooms/room-placement-client.js?v=phase7-1');
+      const lastResumeToken = sessionStorage.getItem(RESUME_TOKEN_KEY) ?? sessionStorage.getItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`) ?? undefined;
       const placement = await new RoomPlacementClient().quickJoin(currentRoomId, {
+        resumeToken: lastResumeToken,
         onWaiting: () => window.dispatchEvent(new CustomEvent('arcade:placement-waiting'))
       });
       window.dispatchEvent(new CustomEvent('arcade:placement-ready'));
@@ -151,6 +153,8 @@
       ]);
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
+      const { installAvatarStressTest } = await import('./avatars/avatar-stress-test.js?v=phase7-1');
+      installAvatarStressTest(avatarRenderer, avatarRegistry);
       // Render a local fallback immediately. The server snapshot will replace
       // its identity with the validated state once the room connection opens.
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
@@ -176,7 +180,7 @@
       // dynamically imported social modules finish initializing.
       if (socket.connected) joinRoom();
       socket.on('room:resume', ({ resumeToken }) => {
-        try { sessionStorage.setItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`, resumeToken); } catch { /* Non-persistent browser session. */ }
+        try { sessionStorage.setItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`, resumeToken); sessionStorage.setItem(RESUME_TOKEN_KEY, resumeToken); } catch { /* Non-persistent browser session. */ }
       });
       socket.on('server:draining', ({ message }) => {
         worldManager?.announce({ text: message || 'This arcade server is restarting soon.' });

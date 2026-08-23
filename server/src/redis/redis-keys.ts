@@ -9,6 +9,7 @@ export class RedisKeys {
   roomFence(roomId: string): string { return `${this.prefix}:room-fence:${roomId}`; }
   roomMembers(roomId: string): string { return `${this.prefix}:room-members:${roomId}`; }
   roomReservations(roomId: string): string { return `${this.prefix}:room-reservations:${roomId}`; }
+  reconnect(tokenHash: string): string { return `${this.prefix}:reconnect:${tokenHash}`; }
   socketStream(): string { return `${this.prefix}:socket-stream`; }
   socketSessions(): string { return `${this.prefix}:socket-session:`; }
 }

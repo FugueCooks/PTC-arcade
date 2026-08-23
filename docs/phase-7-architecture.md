@@ -35,6 +35,8 @@ Placement uses short-lived admission reservations. A Lua script atomically count
 
 Public endpoints come only from `PUBLIC_REALTIME_URL`; private hostnames and server identifiers are not rendered in the interface. A deployment using one load-balanced Socket.IO URL must still provide sticky sessions while HTTP polling is enabled. If `MATCHMAKING_URL` is absent or an older production backend does not expose the API, the client retains the established direct-connection rollback path.
 
+Reconnect routes are stored for 20 seconds under a SHA-256 hash of the opaque browser token. Placement prefers the previous room and therefore its owning server. If that room has expired or become unhealthy, ordinary placement selects a safe replacement rather than claiming that live state survived.
+
 ## Deployment state
 
 Redis activates only when `REDIS_URL` is configured. `REDIS_REQUIRED=1` makes readiness fail whenever Redis is unavailable. Local development without Redis retains the in-memory directory and the existing single-process Socket.IO adapter. The production Cloudflare Durable Object backend remains the rollback path until the Node/Redis route reaches complete protocol parity and passes load testing.

@@ -9,12 +9,12 @@ export class RoomPlacementClient {
     return (await response.json()).rooms ?? [];
   }
 
-  async quickJoin(roomId, { signal, attempts = 4, onWaiting } = {}) {
+  async quickJoin(roomId, { signal, attempts = 4, onWaiting, resumeToken } = {}) {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       try {
         const response = await fetch(`${this.baseUrl}/api/rooms/quick-join`, {
           method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: roomId || undefined })
+          body: JSON.stringify({ roomId: roomId || undefined, resumeToken })
         });
         const result = await response.json();
         if (response.ok && result.ok) return result;

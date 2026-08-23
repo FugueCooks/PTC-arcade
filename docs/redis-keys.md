@@ -13,7 +13,8 @@ All keys begin with `REDIS_KEY_PREFIX`, normally `arcade:v1:production`. Use a d
 | `:room-fence:{roomId}` | Monotonic fencing counter | 24 hours after last acquisition |
 | `:room-members:{roomId}` | Confirmed distributed admission members | refreshed temporary set |
 | `:room-reservations:{roomId}` | Expiring admission reservations | pruned atomically on reservation |
+| `:reconnect:{sha256(token)}` | Player-to-owner reconnect route | 20 seconds |
 | `:socket-stream` | Socket.IO cross-process packet stream | approximately 10,000 entries |
 | `:socket-session:*` | Optional Socket.IO recovery state | adapter-managed |
 
-Redis credentials, reconnect tokens, ROM data, local file paths, and chat history are not part of these keys. Redis must not be exposed to browsers or public networks.
+Redis credentials, raw reconnect tokens, ROM data, local file paths, and chat history are not part of these keys. Reconnect tokens are one-way hashed before key construction. Redis must not be exposed to browsers or public networks.
