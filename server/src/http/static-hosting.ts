@@ -12,6 +12,7 @@ const ROOT_FILES = [
   'index.html',
   'player.html',
   'style.css',
+  'app-bootstrap.js',
   'arcade.js',
   'avatar-selection.js',
   'multiplayer-client.js'

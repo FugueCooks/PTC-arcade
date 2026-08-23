@@ -8,6 +8,7 @@ npm-debug.log*
 .env.*
 !.env.example
 .wrangler/
+.pages-dist/
 
 # Licensed game/BIOS dumps stay local and are never published to GitHub.
 assets/games/

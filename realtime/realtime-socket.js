@@ -126,4 +126,20 @@
     if (typeof window.io === 'function') return window.io(options);
     throw new Error('No realtime transport is configured.');
   };
+
+  let socketIoLoad;
+  window.prepareArcadeRealtime = () => {
+    const endpoint = typeof runtime.realtimeUrl === 'string' ? runtime.realtimeUrl.trim() : '';
+    if (endpoint || typeof window.io === 'function') return Promise.resolve();
+    if (socketIoLoad) return socketIoLoad;
+    socketIoLoad = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '/socket.io/socket.io.js';
+      script.async = true;
+      script.addEventListener('load', resolve, { once: true });
+      script.addEventListener('error', () => reject(new Error('Unable to load the fallback realtime client.')), { once: true });
+      document.head.append(script);
+    });
+    return socketIoLoad;
+  };
 })();

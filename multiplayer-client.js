@@ -131,6 +131,7 @@
     if (started) return;
     started = true;
     try {
+      await window.prepareArcadeRealtime?.();
       const [{ AvatarRenderer }, { loadAvatarRegistry }, { CabinetNetworkClient }, { CabinetVisualState }, { CabinetSessionController }, { loadCabinetRegistry }, { ChatClient }, { PresenceClient }, { ReactionClient }, { InspectionClient }, { WorldManager }] = await Promise.all([
         import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=phase4-1'),
         import('./cabinets/cabinet-network-client.js?v=phase4-1'), import('./cabinets/cabinet-visual-state.js?v=phase4-1'),

@@ -17,7 +17,9 @@
     "cloudflare:typecheck": "tsc -p cloudflare/tsconfig.json",
     "cloudflare:dev": "wrangler dev --config cloudflare/wrangler.jsonc",
     "cloudflare:deploy": "wrangler deploy --config cloudflare/wrangler.jsonc",
-    "cloudflare:smoke": "node cloudflare/test/local-smoke.mjs"
+    "cloudflare:smoke": "node cloudflare/test/local-smoke.mjs",
+    "pages:build": "node tools/build-pages.mjs",
+    "pages:deploy": "npm run pages:build && wrangler pages deploy .pages-dist --project-name retro-arcade"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1116.0",
