@@ -93,7 +93,7 @@ function configuredRooms(maximumCapacity: number): RoomConfig[] {
   const registryPath = path.resolve(process.cwd(), 'assets', 'rooms', 'registry.json');
   const parsed = JSON.parse(readFileSync(registryPath, 'utf8')) as { rooms?: Array<{ id?: unknown; name?: unknown; capacity?: unknown; enabled?: unknown }> };
   const rooms = (parsed.rooms ?? []).filter((room) => room.enabled === true && typeof room.id === 'string'
-    && /^(main|main-[2-9])$/.test(room.id) && typeof room.name === 'string' && Number.isInteger(room.capacity) && Number(room.capacity) <= 48);
+    && /^(main|main-(?:[2-9]|10))$/.test(room.id) && typeof room.name === 'string' && Number.isInteger(room.capacity) && Number(room.capacity) <= 48);
   if (!rooms.some((room) => room.id === DEFAULT_ROOM_ID)) throw new Error('Room registry must enable the default room.');
   return rooms.map((room) => ({ ...baseRoom, id: String(room.id), name: String(room.name), capacity: Math.min(Number(room.capacity), maximumCapacity), templateId: String(room.id) }));
 }

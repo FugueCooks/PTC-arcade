@@ -13,6 +13,7 @@ export interface ServerConfig {
   maxRoomsPerServer: number;
   maxPlayersPerServer: number;
   maxPendingConnections: number;
+  reconnectGraceMs: number;
   maxMemoryMb: number;
   maxEventLoopDelayMs: number;
   drainTimeoutMs: number;
@@ -43,12 +44,13 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     serverId: deploymentId ?? generatedId,
     region: cleanIdentifier(environment.SERVER_REGION ?? environment.RENDER_REGION ?? environment.FLY_REGION) ?? 'local',
     softwareVersion: cleanVersion(environment.SOFTWARE_VERSION ?? environment.RENDER_GIT_COMMIT ?? environment.FLY_IMAGE_REF) ?? 'development',
-    maxPlayersPerRoom: integer(environment.MAX_PLAYERS_PER_ROOM, 24, 2, 48),
+    maxPlayersPerRoom: integer(environment.MAX_PLAYERS_PER_ROOM, 25, 2, 48),
     minAvailableRooms: integer(environment.MIN_AVAILABLE_ROOMS, 1, 1, 100),
     roomIdleTimeoutMs: seconds(environment.ROOM_IDLE_TIMEOUT_SECONDS, 900, 30, 86_400),
-    maxRoomsPerServer: integer(environment.MAX_ROOMS_PER_SERVER, 8, 1, 100),
-    maxPlayersPerServer: integer(environment.MAX_PLAYERS_PER_SERVER, 192, 2, 5_000),
+    maxRoomsPerServer: integer(environment.MAX_ROOMS_PER_SERVER, 10, 1, 100),
+    maxPlayersPerServer: integer(environment.MAX_PLAYERS_PER_SERVER, 250, 2, 5_000),
     maxPendingConnections: integer(environment.MAX_PENDING_CONNECTIONS, 128, 1, 10_000),
+    reconnectGraceMs: seconds(environment.RECONNECT_GRACE_SECONDS, 10, 5, 300),
     maxMemoryMb: integer(environment.MAX_SERVER_MEMORY_MB, 768, 128, 65_536),
     maxEventLoopDelayMs: integer(environment.MAX_EVENT_LOOP_DELAY_MS, 150, 10, 10_000),
     drainTimeoutMs: seconds(environment.SERVER_DRAIN_TIMEOUT_SECONDS, 45, 5, 3_600),

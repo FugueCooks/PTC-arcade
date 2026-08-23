@@ -1,13 +1,15 @@
 {
   "version": 1,
   "rooms": [
-    {"id":"main","name":"Main Arcade","capacity":48,"enabled":true},
-    {"id":"main-2","name":"Neon Annex","capacity":48,"enabled":true},
-    {"id":"main-3","name":"Synth Hall","capacity":48,"enabled":true},
-    {"id":"main-4","name":"Pixel Palace","capacity":48,"enabled":true},
-    {"id":"main-5","name":"CRT Club","capacity":48,"enabled":true},
-    {"id":"main-6","name":"Vector Vault","capacity":48,"enabled":true},
-    {"id":"main-7","name":"High Score Hall","capacity":48,"enabled":true},
-    {"id":"main-8","name":"Afterburner","capacity":48,"enabled":true}
+    {"id":"main","name":"Main Arcade","capacity":25,"enabled":true},
+    {"id":"main-2","name":"Neon Annex","capacity":25,"enabled":true},
+    {"id":"main-3","name":"Synth Hall","capacity":25,"enabled":true},
+    {"id":"main-4","name":"Pixel Palace","capacity":25,"enabled":true},
+    {"id":"main-5","name":"CRT Club","capacity":25,"enabled":true},
+    {"id":"main-6","name":"Vector Vault","capacity":25,"enabled":true},
+    {"id":"main-7","name":"High Score Hall","capacity":25,"enabled":true},
+    {"id":"main-8","name":"Afterburner","capacity":25,"enabled":true},
+    {"id":"main-9","name":"Laser Lounge","capacity":25,"enabled":true},
+    {"id":"main-10","name":"Final Stage","capacity":25,"enabled":true}
   ]
 }

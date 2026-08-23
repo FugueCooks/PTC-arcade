@@ -10,7 +10,7 @@ const MAX_WORLD_Z = 16;
 const PLAYER_HEIGHT = 1.65;
 const MAX_SPEED_PER_SECOND = 7;
 const MAX_PACKET_RATE_MS = 50;
-const RECONNECT_GRACE_MS = 10_000;
+const DEFAULT_RECONNECT_GRACE_MS = 10_000;
 const MOVEMENT_TOLERANCE = 0.3;
 
 interface ManagedPlayer {
@@ -56,7 +56,7 @@ export class PlayerManager {
   private readonly tokens = new Map<string, string>();
   private readonly listeners = new Set<(event: PlayerEvent) => void>();
 
-  constructor(private readonly rooms: RoomManager) {}
+  constructor(private readonly rooms: RoomManager, private readonly reconnectGraceMs = DEFAULT_RECONNECT_GRACE_MS) {}
 
   get connectedCount(): number {
     return [...this.players.values()].filter((player) => typeof player.socketId === 'string').length;
@@ -70,7 +70,7 @@ export class PlayerManager {
     if (!resumeToken) return false;
     const player = this.playerForToken(resumeToken);
     return Boolean(player && player.roomId === roomId && player.disconnectedAt !== undefined
-      && now - player.disconnectedAt <= RECONNECT_GRACE_MS);
+      && now - player.disconnectedAt <= this.reconnectGraceMs);
   }
 
   subscribe(listener: (event: PlayerEvent) => void): () => void {
@@ -83,7 +83,7 @@ export class PlayerManager {
     const existing = resumeToken ? this.playerForToken(resumeToken) : undefined;
 
     if (existing && existing.roomId === room.id && existing.disconnectedAt !== undefined
-      && now - existing.disconnectedAt <= RECONNECT_GRACE_MS) {
+      && now - existing.disconnectedAt <= this.reconnectGraceMs) {
       existing.socketId = socketId;
       existing.disconnectedAt = undefined;
       existing.lastAcceptedAt = now;
@@ -136,7 +136,7 @@ export class PlayerManager {
 
   sweep(now = Date.now()): void {
     for (const player of this.players.values()) {
-      if (player.disconnectedAt === undefined || now - player.disconnectedAt <= RECONNECT_GRACE_MS) continue;
+      if (player.disconnectedAt === undefined || now - player.disconnectedAt <= this.reconnectGraceMs) continue;
       this.remove(player);
     }
   }
@@ -164,6 +164,20 @@ export class PlayerManager {
 
   socketIdForPlayerId(playerId: string): string | undefined {
     return this.players.get(playerId)?.socketId;
+  }
+
+  reconnectRouteForPlayerId(playerId: string): { resumeToken: string; roomId: string; connected: boolean } | undefined {
+    const player = this.players.get(playerId);
+    return player ? { resumeToken: player.resumeToken, roomId: player.roomId, connected: typeof player.socketId === 'string' } : undefined;
+  }
+
+  reconnectRoutes(): Array<{ playerId: string; resumeToken: string; roomId: string; connected: boolean }> {
+    return [...this.players.values()].map((player) => ({
+      playerId: player.id,
+      resumeToken: player.resumeToken,
+      roomId: player.roomId,
+      connected: typeof player.socketId === 'string'
+    }));
   }
 
   connectedPlayersInRoom(roomId: string): Array<{ socketId: string; player: PlayerState }> {

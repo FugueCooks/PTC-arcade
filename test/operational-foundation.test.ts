@@ -10,14 +10,16 @@ import { createLogger } from '../server/src/logging/logger.js';
 void test('operational configuration is bounded and deployment identity is normalized', () => {
   const config = loadServerConfig({
     PORT: '9090', SERVER_ID: ' arcade server / 1 ', SERVER_REGION: 'us-west', SOFTWARE_VERSION: 'abc123',
-    MAX_PLAYERS_PER_ROOM: '24', MAX_ROOMS_PER_SERVER: '8', MAX_PLAYERS_PER_SERVER: '192',
+    MAX_PLAYERS_PER_ROOM: '25', MAX_ROOMS_PER_SERVER: '10', MAX_PLAYERS_PER_SERVER: '250',
     MAX_PENDING_CONNECTIONS: '100', MAX_SERVER_MEMORY_MB: '2048', MAX_EVENT_LOOP_DELAY_MS: '250',
     SERVER_DRAIN_TIMEOUT_SECONDS: '60', SERVER_SHUTDOWN_WARNING_SECONDS: '10'
     , PUBLIC_REALTIME_URL: 'https://west.arcade.example', MATCHMAKING_URL: 'https://match.arcade.example'
   });
   assert.equal(config.port, 9090);
   assert.equal(config.serverId, 'arcade-server-1');
-  assert.equal(config.maxPlayersPerRoom, 24);
+  assert.equal(config.maxPlayersPerRoom, 25);
+  assert.equal(config.maxRoomsPerServer, 10);
+  assert.equal(config.maxPlayersPerServer, 250);
   assert.equal(config.drainTimeoutMs, 60_000);
   assert.equal(config.publicRealtimeUrl, 'https://west.arcade.example');
   assert.throws(() => loadServerConfig({ MAX_PLAYERS_PER_ROOM: '5000' }), /Invalid numeric server configuration/);
@@ -27,7 +29,7 @@ void test('operational configuration is bounded and deployment identity is norma
 void test('configured room capacity is clamped by the per-server safety limit', () => {
   const rooms = new RoomManager(undefined, 24);
   assert.equal(rooms.getDefault().config.capacity, 24);
-  assert.equal(rooms.roomCount, 8);
+  assert.equal(rooms.roomCount, 10);
   assert.equal(rooms.activeRoomCount, 0);
 });
 

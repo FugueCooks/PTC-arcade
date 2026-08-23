@@ -48,7 +48,7 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   transports: ['websocket', 'polling']
 });
 const rooms = new RoomManager(undefined, config.maxPlayersPerRoom, config.serverId, Boolean(config.redisUrl));
-const players = new PlayerManager(rooms);
+const players = new PlayerManager(rooms, config.reconnectGraceMs);
 const cabinets = new CabinetManager(players, {
   interactionDistance: Number(process.env.CABINET_INTERACTION_DISTANCE ?? 2.6),
   activationTimeoutMs: Number(process.env.CABINET_ACTIVATION_TIMEOUT_MS ?? 5_000),
@@ -146,6 +146,17 @@ players.subscribe((event) => {
       }
       break;
     case 'PlayerDisconnected':
+      {
+        const route = players.reconnectRouteForPlayerId(event.playerId);
+        if (route) {
+          void reconnectDirectory.save(route.resumeToken, {
+            playerId: event.playerId,
+            roomId: route.roomId,
+            serverId: config.serverId,
+            expiresAt: Date.now() + config.reconnectGraceMs
+          }).catch(() => metrics.increment('reconnect_route_refresh_failure_total'));
+        }
+      }
       io.to(event.roomId).emit('player:disconnected', { id: event.playerId });
       break;
     case 'PlayerReconnected':
@@ -243,7 +254,8 @@ io.on('connection', (socket) => {
     socket.emit('player:state', result.player);
     socket.emit('room:resume', { resumeToken: result.resumeToken, resumed: result.resumed });
     await reconnectDirectory.save(result.resumeToken, {
-      playerId: result.player.id, roomId: result.snapshot.roomId, serverId: config.serverId, expiresAt: Date.now() + 20_000
+      playerId: result.player.id, roomId: result.snapshot.roomId, serverId: config.serverId,
+      expiresAt: Date.now() + Math.max(config.reconnectGraceMs + 5_000, 20_000)
     });
     socket.emit('cabinet:snapshot', { roomId: result.snapshot.roomId, cabinets: cabinets.snapshot(result.snapshot.roomId) });
     socket.emit('chat:snapshot', { roomId: result.snapshot.roomId, messages: chat.snapshot(result.snapshot.roomId) });
@@ -307,6 +319,16 @@ const cleanupTimer = setInterval(() => {
   players.sweep(); cabinets.sweep(); statuses.sweep(); roomLifecycle.closeIdle(config.roomIdleTimeoutMs);
 }, 1_000);
 cleanupTimer.unref();
+const reconnectRouteTimer = setInterval(() => {
+  const expiresAt = Date.now() + Math.max(config.reconnectGraceMs + 5_000, 20_000);
+  for (const route of players.reconnectRoutes()) {
+    if (!route.connected) continue;
+    void reconnectDirectory.save(route.resumeToken, {
+      playerId: route.playerId, roomId: route.roomId, serverId: config.serverId, expiresAt
+    }).catch(() => metrics.increment('reconnect_route_refresh_failure_total'));
+  }
+}, 5_000);
+reconnectRouteTimer.unref();
 let worldEventIndex = 0;
 const worldEventTypes = ['neon-surge', 'power-flicker', 'fireworks'] as const;
 const worldEventTimer = setInterval(() => {
@@ -320,6 +342,7 @@ const drain = new DrainController(httpServer, io, config, health, metrics, logge
   beginDraining: () => roomLifecycle.beginDraining(),
   stopTimers: async () => {
     clearInterval(cleanupTimer);
+    clearInterval(reconnectRouteTimer);
     clearInterval(worldEventTimer);
     await roomLifecycle.stop();
     await serverRegistry?.stop();

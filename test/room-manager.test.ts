@@ -60,6 +60,19 @@ void test('a short reconnect restores the same player and a stale player is clea
   assert.equal(players.snapshotFor('socket-b'), undefined);
 });
 
+void test('reconnect routing remains available for connected players and obeys the configured disconnect grace', () => {
+  const players = new PlayerManager(new RoomManager(), 5_000);
+  const joined = players.join('socket-a', 'main', undefined, identity, 1_000);
+  assert.deepEqual(players.reconnectRoutes(), [{
+    playerId: joined.player.id, resumeToken: joined.resumeToken, roomId: 'main', connected: true
+  }]);
+
+  players.disconnect('socket-a', 2_000);
+  assert.equal(players.reconnectRouteForPlayerId(joined.player.id)?.connected, false);
+  assert.equal(players.canResume(joined.resumeToken, 'main', 6_999), true);
+  assert.equal(players.canResume(joined.resumeToken, 'main', 7_001), false);
+});
+
 void test('a disconnected player can reclaim membership in a room at capacity', () => {
   const rooms = new RoomManager(undefined, 2);
   const players = new PlayerManager(rooms);

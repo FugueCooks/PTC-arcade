@@ -143,7 +143,7 @@ export class ArcadeRoom implements DurableObject {
       this.send(socket, 'room:error', { message: 'This arcade client is out of date. Refresh the page and try again.' });
       return;
     }
-    const capacity = approvedRooms.get(this.roomId)?.capacity ?? 48;
+    const capacity = approvedRooms.get(this.roomId)?.capacity ?? 25;
     if (this.joinedSockets().length >= capacity) {
       this.send(socket, 'room:error', { code: 'room-full', message: 'This arcade room is full. Moving you to another instance…' });
       return;

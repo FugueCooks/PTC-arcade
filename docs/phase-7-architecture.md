@@ -6,6 +6,8 @@ Cloudflare Pages and R2 continue to serve the browser, models, emulator code, an
 
 Each active room has exactly one owning game-server process. Its player, movement, cabinet, chat, presence, reaction, jukebox, and world simulation remains in process. Redis contains routing and short-lived coordination records, never ROM bytes, emulator frames, controller input, or game audio/video.
 
+The current public safety envelope is 10 rooms per server, 25 players per room, and 250 active players per server. These are launch guards, not measured capacity claims; they should be lowered if production load tests expose a tighter CPU, memory, or bandwidth limit.
+
 ```text
 Browser -> CDN/static assets
         -> sticky load balancer -> Node game server A --+
@@ -35,7 +37,7 @@ Placement uses short-lived admission reservations. A Lua script atomically count
 
 Public endpoints come only from `PUBLIC_REALTIME_URL`; private hostnames and server identifiers are not rendered in the interface. A deployment using one load-balanced Socket.IO URL must still provide sticky sessions while HTTP polling is enabled. If `MATCHMAKING_URL` is absent or an older production backend does not expose the API, the client retains the established direct-connection rollback path.
 
-Reconnect routes are stored for 20 seconds under a SHA-256 hash of the opaque browser token. Placement prefers the previous room and therefore its owning server. If that room has expired or become unhealthy, ordinary placement selects a safe replacement rather than claiming that live state survived.
+Reconnect routes are stored under a SHA-256 hash of the opaque browser token. Connected-player routes refresh every five seconds; disconnect changes the record TTL to `RECONNECT_GRACE_SECONDS`. Placement prefers the previous room and therefore its owning server. If that room has expired or become unhealthy, ordinary placement selects a safe replacement rather than claiming that live state survived.
 
 ## Deployment state
 

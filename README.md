@@ -40,11 +40,11 @@ Cloudflare commands:
 
 After deployment, set the static host's `REALTIME_URL` to the full Worker endpoint, for example `https://retro-arcade-realtime.<account>.workers.dev/realtime`. Leave it blank to roll back to Render Socket.IO. The Worker validates room IDs, display names, approved avatar IDs, movement speed and bounds, cabinet proximity/ownership, chat, and reactions. Movement remains change-only at the browser and uses proximity-aware fan-out: nearby peers receive normal updates while far peers are capped at roughly one update per 300 ms.
 
-The Worker currently accepts production WebSockets only from the approved Render and Cloudflare Pages origins (plus localhost development), limits each room to 48 active players, and validates the browser protocol version. Additional players should be distributed into additional room IDs rather than raising this limit without load testing.
+The Worker currently accepts production WebSockets only from the approved Render and Cloudflare Pages origins (plus localhost development), limits each room to 25 active players, and validates the browser protocol version. Additional players are distributed into additional room IDs rather than raising this limit without load testing.
 
 ### Arcade instances
 
-`assets/rooms/registry.json` defines eight approved instances with a capacity of 48 players each, for a current configured ceiling of 384 concurrent room occupants. Players choose an instance alongside their name and avatar; the selection is remembered locally. Friends must choose the same named instance to share players, chat, cabinet occupancy, world state, and announcements. If a selected Cloudflare room fills between selection and connection, the native realtime client rolls forward through the approved instances and stops with a clear error if all eight are full.
+`assets/rooms/registry.json` defines ten approved instances with a capacity of 25 players each, for a current configured ceiling of 250 concurrent room occupants. Players choose an instance alongside their name and avatar; the selection is remembered locally. Friends must choose the same named instance to share players, chat, cabinet occupancy, world state, and announcements. If a selected Cloudflare room fills between selection and connection, the native realtime client rolls forward through the approved instances and stops with a clear error if all ten are full.
 
 Room IDs are validated against the same registry by both production architectures. Cloudflare maps every ID to a separate Durable Object. The Node fallback creates matching isolated `Room` objects. Adding an instance requires one unique `main-N` registry entry and a redeploy; do not accept arbitrary client-created room IDs.
 
