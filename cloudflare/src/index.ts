@@ -185,6 +185,7 @@ export class ArcadeRoom implements DurableObject {
     const distance = Math.hypot((x as number) - player.p[0], (z as number) - player.p[2]);
     const permitted = MAX_SPEED_PER_SECOND * Math.min(elapsed, 500) / 1000 + MOVEMENT_TOLERANCE;
     if (elapsed < MOVEMENT_PACKET_MS || distance > permitted) return this.correct(socket, player);
+    const wasAway = player.s === 'away';
     player.p = [x as number, PLAYER_HEIGHT, z as number]; player.r = normalizeAngle(rotation as number);
     player.a = distance > 0.005 ? 'walk' : 'idle'; player.s = distance > 0.005 ? 'walking' : 'idle';
     attachment.lastAcceptedAt = now; attachment.lastActivityAt = now; socket.serializeAttachment(attachment);
@@ -196,6 +197,7 @@ export class ArcadeRoom implements DurableObject {
     }
     if (farBroadcastDue) this.movementBroadcastTimes.set(player.id, now);
     this.send(socket, 'player:state', player);
+    if (wasAway) void this.scheduleAlarm();
   }
 
   private correct(socket: WebSocket, player?: PlayerState): void { if (player) this.send(socket, 'player:state', player); }
@@ -206,6 +208,7 @@ export class ArcadeRoom implements DurableObject {
     if (attachment.player.s === 'away') {
       attachment.player.s = attachment.player.activeCabinetId ? (attachment.player.interactionState === 'interact' ? 'playing' : 'loading') : 'idle';
       this.broadcast('player:status', { id: attachment.player.id, status: attachment.player.s, at: Date.now() });
+      void this.scheduleAlarm();
     }
     socket.serializeAttachment(attachment);
   }
@@ -332,14 +335,14 @@ export class ArcadeRoom implements DurableObject {
   private broadcast(event: string, data: unknown, except?: WebSocket): void { for (const socket of this.joinedSockets()) if (socket !== except) this.send(socket, event, data); }
   private async scheduleAlarm(): Promise<void> {
     const now = Date.now();
-    let next = now + 10_000;
+    let next = Number.POSITIVE_INFINITY;
     for (const record of this.resumes.values()) next = Math.min(next, record.expiresAt);
     for (const state of this.cabinetStates.values()) if (state.status === 'reserved' && state.reservedAt !== null) next = Math.min(next, state.reservedAt + CABINET_TIMEOUT_MS);
     for (const socket of this.joinedSockets()) {
       const attachment = socket.deserializeAttachment() as SocketAttachment;
       if (attachment.player && !attachment.player.activeCabinetId && attachment.player.s !== 'away') next = Math.min(next, attachment.lastActivityAt + AFK_TIMEOUT_MS);
     }
-    await this.ctx.storage.setAlarm(Math.max(now + 250, next));
+    if (Number.isFinite(next)) await this.ctx.storage.setAlarm(Math.max(now + 250, next));
   }
 }
 
