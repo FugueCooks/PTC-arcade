@@ -47,11 +47,15 @@ The uploader uses multipart uploads, verifies local sizes, stores the manifest
 SHA-256 as object metadata, skips matching remote objects, and applies immutable
 one-year cache headers. `deploy/public-assets.manifest.json` is the source of
 truth for both games and BIOS. The verifier confirms public size and byte-range
-behavior without downloading every multi-hundred-megabyte object again.
+behavior plus browser CORS access without downloading every multi-hundred-megabyte
+object again. Set `ASSET_CORS_ORIGIN` only when verifying a frontend origin other
+than the production Cloudflare Pages URL.
 
-For R2, attach a public custom domain to the bucket and apply a CORS policy based
-on `deploy/r2-cors.json`. Replace the placeholder arcade origin before applying
-it. Public read access must not grant object listing or write access.
+For R2, attach a public custom domain to the bucket and apply the checked-in
+read-only browser policy with `npm run storage:cors`. The policy allows public
+origins because game and BIOS objects are already public, non-credentialed
+downloads; it still permits only `GET` and `HEAD`, including byte ranges. Public
+read access must not grant object listing or write access.
 
 ## Object-storage requirements
 
