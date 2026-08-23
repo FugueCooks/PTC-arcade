@@ -9,6 +9,6 @@ window.THREE = THREE;
 window.ARCADE_GAME_REGISTRY = await loadGameRegistry();
 window.ARCADE_ROOM_REGISTRY = await loadRoomRegistry();
 
-await import('./arcade.js?v=ps2-play-prototype-1');
+await import('./arcade.js?v=ps2-handoff-2');
 await import('./avatar-selection.js?v=text-only-1');
 await import('./multiplayer-client.js?v=network-meter-1');
