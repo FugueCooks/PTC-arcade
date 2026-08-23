@@ -243,7 +243,7 @@ function openMachine(c){
   document.querySelector('#bios-control').style.display=c.system==='psx'?'flex':'none';
   const playButton=document.querySelector('#play-hosted-game');
   playButton.style.display=c.hostedGame?'inline-block':'none';
-  if(c.hostedGame) playButton.textContent=`PLAY ${c.gameName.toUpperCase()}`;
+  if(c.hostedGame) playButton.textContent=`PLAY ${c.gameName.toUpperCase()} · ${formatDownloadSize(c.gameSizeBytes)}`;
   if(c.system==='psx') document.querySelector('#rom-name').textContent=c.hostedGame?'LICENSED GAME READY — PRESS PLAY':(c.assetNote||`LOAD A ${c.gameName.toUpperCase()} GAME FILE`);
   if(c.system==='psx') document.querySelector('#bios-name').textContent=psxBios?`BIOS READY: ${psxBios.name.toUpperCase()}`:'HOSTED BIOS READY: SCPH1001.BIN';
   if(c.system==='n64') document.querySelector('#rom-name').textContent=c.hostedGame?'LICENSED N64 GAME READY — PRESS PLAY':'N64 EMULATOR READY — LOAD A .Z64, .N64, OR .V64 ROM';
@@ -268,16 +268,19 @@ const hostedPsxBios=biosAssetUrl;
 function drawAttract(c){ctx.fillStyle='#03050c';ctx.fillRect(0,0,640,440);ctx.fillStyle='#36f9f6';ctx.font='30px monospace';ctx.textAlign='center';ctx.fillText(c.name,320,100);ctx.fillStyle='#ff3cac';ctx.font='15px monospace';ctx.fillText('INSERT ROM TO INITIALIZE',320,150);ctx.fillStyle='#a99abe';ctx.font='12px monospace';ctx.fillText('Your game appears here',320,330)}
 document.querySelector('#rom-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f||!activeCabinet)return;document.querySelector('#rom-name').textContent=`LOADED: ${f.name.toUpperCase()} · ${Math.ceil(f.size/1024)} KB`;romLoaded=true;ship={x:320,bullets:[]};});
 let emulatorObjectUrls=[],emulatorLoadTimer;
+function formatDownloadSize(bytes){if(!Number.isFinite(bytes)||bytes<=0)return'HOSTED';const mb=bytes/1048576;return mb>=100?`${Math.round(mb)} MB`:`${mb.toFixed(1)} MB`}
 function launchEmulator(gameFile){
   const host=document.querySelector('#emulator-host'),stage=document.querySelector('#emulator-stage');
-  cvs.style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${(activeCabinet?.gameName||'ARCADE GAME').toUpperCase()}...`;
+  const downloadBytes=typeof gameFile==='string'?activeCabinet?.gameSizeBytes:gameFile?.size;
+  cvs.style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${(activeCabinet?.gameName||'ARCADE GAME').toUpperCase()} · ${formatDownloadSize(downloadBytes)}...`;
   const gameUrl=typeof gameFile==='string'?gameFile:URL.createObjectURL(gameFile);
   const core=activeCabinet?.system==='n64'?'n64':'psx';
   const biosUrl=core==='psx'?(psxBios?URL.createObjectURL(psxBios):hostedPsxBios):'';
   emulatorObjectUrls=[gameUrl,biosUrl].filter(url=>url.startsWith('blob:'));
   const gameName=activeCabinet?.gameName||'Arcade Game',gameId=activeCabinet?.gameId||1;
   const player=document.createElement('iframe');player.title=`${gameName} player`;player.allow='autoplay; fullscreen';player.src=`player.html?core=${encodeURIComponent(core)}&game=${encodeURIComponent(gameUrl)}&bios=${encodeURIComponent(biosUrl)}&name=${encodeURIComponent(gameName)}&id=${gameId}`;player.style.cssText='border:0;width:100%;height:100%;background:#02030a';player.onerror=()=>{showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()};host.replaceChildren(player);
-  clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT.')}},20000);
+  const estimatedTimeout=Math.max(20000,Math.min(180000,20000+(Number(downloadBytes)||0)/524288*1000));
+  clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT. CHECK YOUR CONNECTION.')}},estimatedTimeout);
 }
 document.querySelector('#bios-file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;psxBios=file;document.querySelector('#bios-name').textContent=`BIOS READY: ${file.name.toUpperCase()}`;});
 document.querySelector('#play-hosted-game').addEventListener('click',()=>{if(activeCabinet?.hostedGame)launchEmulator(activeCabinet.hostedGame);});
