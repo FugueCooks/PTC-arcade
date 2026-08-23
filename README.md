@@ -191,8 +191,14 @@ The cabinet labeled **Crash Bandicoot** is configured for PlayStation. Open it, 
 
 ## Nintendo 64 cabinets
 
-All five N64 cabinets use EmulatorJS's `n64` target, which selects the Mupen64Plus Next browser core. Approach a cabinet, obtain multiplayer ownership, and choose a legally dumped `.z64`, `.n64`, or `.v64` image. N64 does not require the PlayStation BIOS. The ROM, emulator video, audio, controller input, browser saves, and save states remain local to the player's browser.
+All N64 cabinets use EmulatorJS's `n64` target, which selects the Mupen64Plus Next browser core. Approach a cabinet, obtain multiplayer ownership, and choose a legally dumped `.z64`, `.n64`, or `.v64` image. N64 does not require the PlayStation BIOS. The ROM, emulator video, audio, controller input, browser saves, and save states remain local to the player's browser.
 
 Hosted game metadata is centralized in `assets/games/registry.json`. To add a legally distributable title, upload its image to the configured R2 games prefix, add one enabled registry entry with a unique game ID, cabinet ID, system, filename, numeric emulator ID, and byte size, and set that cabinet's `defaultGameId` in `assets/cabinets/registry.json`. `games/game-registry.js` validates the browser copy before the scene starts. ROM and BIOS binaries remain ignored by Git and excluded from the Pages bundle.
 
 The hosted N64 wall contains Pokémon Snap (`n64-cabinet-01`), Super Mario 64 (`n64-cabinet-02`), Glover (`n64-cabinet-03`), Doom 64 (`n64-cabinet-04`), and The Legend of Zelda: Ocarina of Time (`n64-cabinet-05`).
+
+The rear N64 room currently contains Star Fox 64 (`n64-back-cabinet-01`), Mega Man 64 (`n64-back-cabinet-02`), and a second Super Mario 64 cabinet (`n64-back-cabinet-03`). Its remaining two cabinets are reserved for future N64 games.
+
+## PlayStation 2 room
+
+The five cabinets behind the PlayStation room are presented as the **PS2 ROOM**. God of War and Kingdom Hearts are assigned visually to the first two cabinets, with three future PS2 slots. All five are intentionally disabled: PCSX2 2.6.3 is a native desktop application and its Windows installer cannot execute in a webpage, while the arcade's EmulatorJS stack does not provide a PlayStation 2 core. The PCSX2 installer and PS2 ISO images are therefore neither copied into the website nor uploaded to R2. Enabling these cabinets requires a vetted browser/WebAssembly PS2 emulator integration with acceptable compatibility and memory behavior; do not relabel a PS1 core as PS2.

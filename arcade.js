@@ -67,6 +67,8 @@ for(const roomX of [-21,21]){
   box(14,5,.3,0x11182c,roomX,2.5,-16.8,.05);box(14,5,.3,0x11182c,roomX,2.5,16.8,.05);
   for(let z=-12;z<=12;z+=4)box(13.5,.035,.055,0x24bfff,roomX,4.65,z,1.7);
 }
+function addRoomSign(text,x,color){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,-16.62);scene.add(sign)}
+addRoomSign('PS2 ROOM',-21,'#ff3cac');addRoomSign('N64 ROOM',21,'#36f9f6');
 const pepeToyTexture=new THREE.TextureLoader().load('assets/art/pepe-toy.png?v=1');
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.png?v=1');
 function crashArt(){
@@ -152,13 +154,15 @@ const hostedN64Games={
 };
 for(const [index,z,hue] of [[1,-10,0x8b5cf6],[2,-5,0xff4da6],[3,0,0x36f9f6],[4,5,0xffb42e],[5,10,0x7dff67]]){const hosted=hostedN64Games[index];makeCabinet(`n64-cabinet-0${index}`,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue);const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(`n64-cabinet-0${index}`)}
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
+const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','PS2 // READY 03','PS2 // READY 04','PS2 // READY 05'];
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
-  makeCabinet(`psx-back-cabinet-0${index}`,`PLAYSTATION // EXPANSION 0${index}`,-24.8,z,expansionCabinetColors[index-1]);
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI/2;Object.assign(cabinet,{system:'psx',gameName:`PlayStation Expansion ${index}`,gameId:95010+index});
+  makeCabinet(`psx-back-cabinet-0${index}`,ps2RoomTitles[index-1],-24.8,z,expansionCabinetColors[index-1]);
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI/2;Object.assign(cabinet,{system:'ps2',gameName:ps2RoomTitles[index-1],gameId:26000+index,enabled:false,status:'disabled'});
 }
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
-  makeCabinet(`n64-back-cabinet-0${index}`,`N64 // EXPANSION 0${index}`,24.8,z,expansionCabinetColors[5-index]);
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;Object.assign(cabinet,{system:'n64',gameName:`Nintendo 64 Expansion ${index}`,gameId:6410+index});
+  const cabinetId=`n64-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
+  makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // EXPANSION 0${index}`,24.8,z,expansionCabinetColors[5-index]);
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;Object.assign(cabinet,{system:'n64',gameName:hosted?.name||`Nintendo 64 Expansion ${index}`,gameId:hosted?.emulatorId||6410+index});configureHostedCabinet(cabinetId);
 }
 // Circular prize counter in the middle of the arcade.
 const prizeCounter=new THREE.Group();prizeCounter.position.set(0,0,0);scene.add(prizeCounter);
@@ -313,9 +317,9 @@ function updateFollowCamera(){
 }
 let cabinetSnapshotReady=false,cabinetMessageUntil=0;
 function showCabinetMessage(message){prompt.querySelector('b').textContent='CABINET';prompt.querySelector('span').textContent=message;prompt.classList.add('active');cabinetMessageUntil=performance.now()+2600}
-function setCabinetState(state){const cabinet=cabinets.find(candidate=>candidate.id===state.cabinetId);if(!cabinet)return;cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
-function setCabinetStates(states,ready){cabinetSnapshotReady=ready;states.forEach(state=>setCabinetState(state));if(!ready)cabinets.forEach(c=>{c.status='syncing';c.occupiedByDisplayName=null;c.statusLight.material.color.setHex(0x6c7896);c.statusLight.material.emissive.setHex(0x6c7896)})}
-function updateCabinetPrompt(){if(performance.now()<cabinetMessageUntil)return;if(!near){prompt.classList.remove('active');return}prompt.classList.add('active');const title=prompt.querySelector('b'),detail=prompt.querySelector('span');if(!cabinetSnapshotReady){title.textContent='SYNCING';detail.textContent='CABINET STATUS';return}if(near.status==='available'){title.textContent='PRESS E';detail.textContent='TO ENTER CABINET';return}title.textContent=near.status==='reserved'?'RESERVED':'IN USE';detail.textContent=near.occupiedByDisplayName?`BY ${near.occupiedByDisplayName}`:'PLEASE WAIT'}
+function setCabinetState(state){const cabinet=cabinets.find(candidate=>candidate.id===state.cabinetId);if(!cabinet)return;if(!cabinet.enabled){cabinet.status='disabled';cabinet.occupiedByDisplayName=null;cabinet.statusLight.material.color.setHex(0x6c7896);cabinet.statusLight.material.emissive.setHex(0x26304a);return}cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
+function setCabinetStates(states,ready){cabinetSnapshotReady=ready;states.forEach(state=>setCabinetState(state));if(!ready)cabinets.forEach(c=>{c.status=c.enabled?'syncing':'disabled';c.occupiedByDisplayName=null;c.statusLight.material.color.setHex(0x6c7896);c.statusLight.material.emissive.setHex(c.enabled?0x6c7896:0x26304a)})}
+function updateCabinetPrompt(){if(performance.now()<cabinetMessageUntil)return;if(!near){prompt.classList.remove('active');return}prompt.classList.add('active');const title=prompt.querySelector('b'),detail=prompt.querySelector('span');if(!near.enabled||near.status==='disabled'){title.textContent='PS2 DISPLAY';detail.textContent='BROWSER CORE REQUIRED';return}if(!cabinetSnapshotReady){title.textContent='SYNCING';detail.textContent='CABINET STATUS';return}if(near.status==='available'){title.textContent='PRESS E';detail.textContent='TO ENTER CABINET';return}title.textContent=near.status==='reserved'?'RESERVED':'IN USE';detail.textContent=near.occupiedByDisplayName?`BY ${near.occupiedByDisplayName}`:'PLEASE WAIT'}
 function beginCabinetSession(cabinetId,alignment){const cabinet=cabinets.find(candidate=>candidate.id===cabinetId);if(!cabinet||activeCabinet)return false;if(alignment?.position){playerPosition.set(...alignment.position);yaw=alignment.rotationY}openMachine(cabinet);return true}
 function forceCloseCabinetSession(cabinetId){if(activeCabinet?.id===cabinetId)closeMachine(false)}
 function resolvePartitionWallCollisions(previousX){
