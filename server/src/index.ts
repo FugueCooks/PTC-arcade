@@ -114,6 +114,11 @@ io.on('connection', (socket) => {
       socket.emit('room:error', { message: 'Choose a valid display name before entering the arcade.' });
       return;
     }
+    const requestedRoom = rooms.get(roomId) ?? rooms.getDefault();
+    if (requestedRoom.isFull) {
+      socket.emit('room:error', { code: 'room-full', message: 'This arcade room is full. Choose another instance.' });
+      return;
+    }
     joined = true;
     const result = players.join(socket.id, roomId, resumeToken, identity);
     void socket.join(result.snapshot.roomId);

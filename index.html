@@ -40,6 +40,9 @@
         <h2 id="avatar-title">CHOOSE YOUR PLAYER</h2>
         <label class="avatar-name-label" for="display-name">DISPLAY NAME</label>
         <input id="display-name" name="display-name" maxlength="18" autocomplete="nickname" placeholder="PLAYER ONE" required />
+        <label class="avatar-name-label avatar-room-label" for="room-select">ARCADE INSTANCE</label>
+        <select id="room-select" name="room-select" aria-describedby="room-help"></select>
+        <p id="room-help">Choose the same instance as your friends. Each instance supports up to 48 players.</p>
         <div id="avatar-cards" class="avatar-cards" aria-label="Available avatars" aria-live="polite"></div>
         <p id="avatar-status" role="status">Loading avatar choices…</p>
         <button id="avatar-confirm" type="submit" disabled>ENTER ARCADE</button>

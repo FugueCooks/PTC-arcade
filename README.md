@@ -36,6 +36,12 @@ After deployment, set the static host's `REALTIME_URL` to the full Worker endpoi
 
 The Worker currently accepts production WebSockets only from the approved Render and Cloudflare Pages origins (plus localhost development), limits each room to 48 active players, and validates the browser protocol version. Additional players should be distributed into additional room IDs rather than raising this limit without load testing.
 
+### Arcade instances
+
+`assets/rooms/registry.json` defines eight approved instances with a capacity of 48 players each, for a current configured ceiling of 384 concurrent room occupants. Players choose an instance alongside their name and avatar; the selection is remembered locally. Friends must choose the same named instance to share players, chat, cabinet occupancy, jukebox state, and announcements. If a selected Cloudflare room fills between selection and connection, the native realtime client rolls forward through the approved instances and stops with a clear error if all eight are full.
+
+Room IDs are validated against the same registry by both production architectures. Cloudflare maps every ID to a separate Durable Object. The Node fallback creates matching isolated `Room` objects. Adding an instance requires one unique `main-N` registry entry and a redeploy; do not accept arbitrary client-created room IDs.
+
 One room deliberately maps to one authority to prevent cabinet races. A very large worldwide audience should be split into multiple geographically named rooms in a future room-selection phase; a single shared room cannot offer local-region latency to every continent while remaining strongly authoritative.
 
 ## Start the multiplayer arcade

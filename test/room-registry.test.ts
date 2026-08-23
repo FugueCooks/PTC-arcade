@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import test from 'node:test';
+import { RoomManager } from '../server/src/rooms/room-manager.js';
+
+void test('the room registry provides eight unique 48-player arcade instances', async () => {
+  const registry = JSON.parse(await readFile(path.resolve(process.cwd(), 'assets/rooms/registry.json'), 'utf8')) as {
+    rooms: Array<{ id: string; name: string; capacity: number; enabled: boolean }>;
+  };
+  const enabled = registry.rooms.filter((room) => room.enabled);
+  assert.equal(enabled.length, 8);
+  assert.equal(new Set(enabled.map((room) => room.id)).size, 8);
+  assert.ok(enabled.every((room) => room.capacity === 48 && room.name.length >= 2));
+});
+
+void test('the Node fallback recognizes every configured room and enforces capacity', () => {
+  const rooms = new RoomManager();
+  for (const id of ['main', 'main-2', 'main-3', 'main-4', 'main-5', 'main-6', 'main-7', 'main-8']) {
+    assert.equal(rooms.get(id)?.id, id);
+  }
+  const room = rooms.get('main-8')!;
+  for (let index = 0; index < 48; index += 1) room.add(`player-${index}`);
+  assert.equal(room.isFull, true);
+});

@@ -5,7 +5,6 @@
     return;
   }
 
-  const ROOM_ID = 'main';
   const RESUME_TOKEN_KEY = 'roms-arcade-multiplayer-resume-token';
   const sendIntervalMs = 66;
   const interpolationDelayMs = 100;
@@ -22,6 +21,8 @@
   let lastSentAt = 0;
   let lastSentTransform;
   let started = false;
+  let currentRoomId = 'main';
+  const fullRoomAttempts = new Set();
 
   const angleLerp = (from, to, alpha) => {
     const difference = Math.atan2(Math.sin(to - from), Math.cos(to - from));
@@ -127,10 +128,12 @@
     requestAnimationFrame(frame);
   };
 
-  const start = async (identity) => {
+  const start = async (selection) => {
     if (started) return;
     started = true;
     try {
+      currentRoomId = window.ARCADE_ROOM_REGISTRY?.rooms?.has(selection.roomId) ? selection.roomId : 'main';
+      const identity = { displayName: selection.displayName, avatarId: selection.avatarId };
       await window.prepareArcadeRealtime?.();
       const [{ AvatarRenderer }, { loadAvatarRegistry }, { CabinetNetworkClient }, { CabinetVisualState }, { CabinetSessionController }, { loadCabinetRegistry }, { ChatClient }, { PresenceClient }, { ReactionClient }, { InspectionClient }, { WorldManager }] = await Promise.all([
         import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=phase4-1'),
@@ -147,7 +150,7 @@
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
       // Let Socket.IO negotiate polling/WebSocket order. Some ISP and mobile
       // routes perform substantially worse when WebSocket is forced first.
-      socket = window.createArcadeSocket({ reconnectionDelay: 500, reconnectionDelayMax: 3000 });
+      socket = window.createArcadeSocket({ reconnectionDelay: 500, reconnectionDelayMax: 3000, roomId: currentRoomId });
       new ChatClient(socket);
       presenceClient = new PresenceClient(socket, avatarRegistry);
       new ReactionClient(socket, (id) => id === localPlayerId ? localAvatar : remotePlayers.get(id)?.avatar);
@@ -157,8 +160,8 @@
       cabinetSessions = new CabinetSessionController(arcade, new CabinetNetworkClient(socket), cabinetVisuals, await loadCabinetRegistry());
       const joinRoom = () => socket.emit('room:join', {
         protocolVersion: 1,
-        roomId: ROOM_ID,
-        resumeToken: sessionStorage.getItem(RESUME_TOKEN_KEY) ?? undefined,
+        roomId: currentRoomId,
+        resumeToken: sessionStorage.getItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`) ?? undefined,
         identity
       });
       socket.on('connect', joinRoom);
@@ -166,15 +169,32 @@
       // dynamically imported social modules finish initializing.
       if (socket.connected) joinRoom();
       socket.on('room:resume', ({ resumeToken }) => {
-        try { sessionStorage.setItem(RESUME_TOKEN_KEY, resumeToken); } catch { /* Non-persistent browser session. */ }
+        try { sessionStorage.setItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`, resumeToken); } catch { /* Non-persistent browser session. */ }
       });
-      socket.on('room:error', ({ message }) => {
+      socket.on('room:error', ({ message, code }) => {
+        if (code === 'room-full' && typeof socket.switchRoom === 'function') {
+          fullRoomAttempts.add(currentRoomId);
+          const roomIds = [...window.ARCADE_ROOM_REGISTRY.rooms.keys()];
+          if (fullRoomAttempts.size >= roomIds.length) {
+            started = false;
+            cabinetSessions?.dispose();
+            socket.disconnect();
+            window.dispatchEvent(new CustomEvent('arcade:connection-error', { detail: { message: 'Every arcade instance is currently full. Please try again shortly.' } }));
+            return;
+          }
+          const nextIndex = (roomIds.indexOf(currentRoomId) + 1) % roomIds.length;
+          currentRoomId = roomIds[nextIndex];
+          window.dispatchEvent(new CustomEvent('arcade:room-redirected', { detail: { roomId: currentRoomId } }));
+          socket.switchRoom(currentRoomId);
+          return;
+        }
         started = false;
         cabinetSessions?.dispose();
         socket.disconnect();
         window.dispatchEvent(new CustomEvent('arcade:connection-error', { detail: { message } }));
       });
       socket.on('room:snapshot', ({ roomId, selfId, players }) => {
+        fullRoomAttempts.clear();
         localPlayerId = selfId;
         presenceClient.snapshot(roomId, selfId, players);
         const self = players.find((player) => player.id === selfId);

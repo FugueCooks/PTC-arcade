@@ -1,6 +1,7 @@
 import cabinetRegistry from '../../assets/cabinets/registry.json';
 import avatarRegistry from '../../assets/avatars/registry.json';
 import worldConfig from '../../assets/world/config.json';
+import roomRegistry from '../../assets/rooms/registry.json';
 
 interface Env { ARCADE_ROOMS: DurableObjectNamespace }
 type AnimationState = 'idle' | 'walk' | 'run' | 'interact';
@@ -21,7 +22,6 @@ interface WireMessage { e?: string; d?: unknown; q?: string }
 
 const ROOM_ID = 'main';
 const PROTOCOL_VERSION = 1;
-const MAX_PLAYERS_PER_ROOM = 48;
 const PLAYER_HEIGHT = 1.65;
 const RECONNECT_GRACE_MS = 10_000;
 const MAX_SPEED_PER_SECOND = 7;
@@ -33,6 +33,7 @@ const AFK_TIMEOUT_MS = 120_000;
 const approvedAvatars = new Set(avatarRegistry.avatars.filter((avatar) => avatar.enabled).map((avatar) => avatar.id));
 const defaultAvatarId = 'neon-capsule';
 const cabinets = new Map(cabinetRegistry.map((cabinet) => [cabinet.id, cabinet]));
+const approvedRooms = new Map(roomRegistry.rooms.filter((room) => room.enabled).map((room) => [room.id, room]));
 const spawnPoints = [
   [0, PLAYER_HEIGHT, 11, Math.PI], [-2.2, PLAYER_HEIGHT, 11, Math.PI], [2.2, PLAYER_HEIGHT, 11, Math.PI],
   [-1.1, PLAYER_HEIGHT, 8.8, 0], [1.1, PLAYER_HEIGHT, 8.8, 0]
@@ -143,8 +144,9 @@ export class ArcadeRoom implements DurableObject {
       this.send(socket, 'room:error', { message: 'This arcade client is out of date. Refresh the page and try again.' });
       return;
     }
-    if (this.joinedSockets().length >= MAX_PLAYERS_PER_ROOM) {
-      this.send(socket, 'room:error', { message: 'This arcade room is full. Please try again shortly.' });
+    const capacity = approvedRooms.get(this.roomId)?.capacity ?? 48;
+    if (this.joinedSockets().length >= capacity) {
+      this.send(socket, 'room:error', { code: 'room-full', message: 'This arcade room is full. Moving you to another instance…' });
       return;
     }
     const identity = validateIdentity(request?.identity);
@@ -366,7 +368,7 @@ function validateIdentity(value: unknown): { displayName: string; avatarId: stri
 }
 function sanitizeText(value: unknown): string { return typeof value === 'string' ? value.normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim() : ''; }
 function asObject(value: unknown): Record<string, unknown> | undefined { return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined; }
-function normalizeRoomId(value: string | null): string { return typeof value === 'string' && /^[a-z0-9-]{1,32}$/.test(value) ? value : ROOM_ID; }
+function normalizeRoomId(value: string | null): string { return typeof value === 'string' && approvedRooms.has(value) ? value : ROOM_ID; }
 function isAllowedOrigin(value: string | null): boolean {
   if (!value) return true; // Native smoke tests and non-browser health tooling.
   if (value === 'https://retro-arcade-multiplayer.onrender.com' || value === 'https://retro-arcade-om7.pages.dev') return true;

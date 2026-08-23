@@ -20,7 +20,7 @@ export class PresenceClient {
   }
 
   snapshot(roomId, selfId, players) {
-    this.roomLabel.textContent = roomId === 'main' ? 'MAIN ARCADE' : roomId.toUpperCase();
+    this.roomLabel.textContent = window.ARCADE_ROOM_REGISTRY?.rooms?.get(roomId)?.name.toUpperCase() ?? roomId.toUpperCase();
     this.selfId = selfId;
     this.players.clear();
     players.forEach((player) => this.players.set(player.id, player));

@@ -8,6 +8,7 @@ export interface SpawnPoint {
 
 export interface RoomConfig {
   id: string;
+  capacity?: number;
   spawnPoints: readonly SpawnPoint[];
   spawnSeparation: number;
 }
@@ -39,6 +40,10 @@ export class Room {
 
   get isEmpty(): boolean {
     return this.members.size === 0;
+  }
+
+  get isFull(): boolean {
+    return this.members.size >= (this.config.capacity ?? 48);
   }
 
   chooseSpawn(occupied: readonly { x: number; z: number }[]): SpawnPoint {

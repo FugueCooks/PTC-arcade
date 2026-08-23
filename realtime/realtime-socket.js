@@ -42,10 +42,17 @@
       this.rejectPending(new Error('disconnected'));
     }
 
+    switchRoom(roomId) {
+      this.options.roomId = roomId;
+      this.closedByClient = false;
+      this.socket?.close(1000, 'switch room');
+    }
+
     connect() {
       if (this.closedByClient) return;
       const url = new URL(this.endpoint, window.location.href);
       url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      if (typeof this.options.roomId === 'string') url.searchParams.set('room', this.options.roomId);
       this.socket = new WebSocket(url);
       this.socket.addEventListener('open', () => {
         this.connected = true;

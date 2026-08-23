@@ -18,7 +18,7 @@ const ROOT_FILES = [
   'multiplayer-client.js'
 ] as const;
 
-const PUBLIC_DIRECTORIES = ['assets', 'avatars', 'cabinets', 'games', 'social', 'world', 'realtime'] as const;
+const PUBLIC_DIRECTORIES = ['assets', 'avatars', 'cabinets', 'games', 'rooms', 'social', 'world', 'realtime'] as const;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1_000;
 
 /** Build the small public configuration object injected before arcade.js. */

@@ -5,6 +5,7 @@ const namePattern = /^[A-Za-z0-9 ._-]{2,18}$/;
 const screen = document.querySelector('#avatar-screen');
 const form = document.querySelector('#avatar-form');
 const nameInput = document.querySelector('#display-name');
+const roomSelect = document.querySelector('#room-select');
 const cards = document.querySelector('#avatar-cards');
 const status = document.querySelector('#avatar-status');
 const confirmButton = document.querySelector('#avatar-confirm');
@@ -38,9 +39,18 @@ async function boot() {
   showStatus('Loading avatar choices…');
   try {
     const avatars = await loadAvatarRegistry();
+    const rooms = window.ARCADE_ROOM_REGISTRY?.rooms;
+    if (!(rooms instanceof Map) || rooms.size === 0) throw new Error('Arcade instances could not be loaded.');
     const saved = readPreferences();
     if (typeof saved.displayName === 'string') nameInput.value = saved.displayName.slice(0, 18);
     if (avatars.has(saved.avatarId)) selectedAvatarId = saved.avatarId;
+    roomSelect.replaceChildren(...[...rooms.values()].map((room) => {
+      const option = document.createElement('option');
+      option.value = room.id;
+      option.textContent = `${room.name} · ${room.capacity} MAX`;
+      return option;
+    }));
+    roomSelect.value = rooms.has(saved.roomId) ? saved.roomId : 'main';
     cards.replaceChildren(...[...avatars.values()].map((avatar) => {
       const card = document.createElement('button');
       card.type = 'button';
@@ -80,10 +90,10 @@ form.addEventListener('submit', (event) => {
     nameInput.focus();
     return;
   }
-  const identity = { displayName, avatarId: selectedAvatarId };
-  savePreferences(identity);
-  window.arcadeAvatarIdentity = identity;
-  window.dispatchEvent(new CustomEvent('arcade:identity-selected', { detail: identity }));
+  const selection = { displayName, avatarId: selectedAvatarId, roomId: roomSelect.value };
+  savePreferences(selection);
+  window.arcadeAvatarIdentity = selection;
+  window.dispatchEvent(new CustomEvent('arcade:identity-selected', { detail: selection }));
   screen.hidden = true;
   document.querySelector('#enter').click();
 });

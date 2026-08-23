@@ -103,7 +103,7 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   'room:snapshot': (payload: RoomSnapshot) => void;
   'room:resume': (payload: { resumeToken: string; resumed: boolean }) => void;
-  'room:error': (payload: { message: string }) => void;
+  'room:error': (payload: { message: string; code?: string }) => void;
   /** Server-approved local state. */
   'player:state': (payload: PlayerState) => void;
   'player:joined': (payload: PlayerState) => void;
