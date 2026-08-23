@@ -1,7 +1,7 @@
 {
   "version": 1,
   "defaultThemeId": "synthwave",
-  "defaultWeatherId": "rain",
+  "defaultWeatherId": "clear",
   "themes": [
     { "id": "day", "name": "Day Arcade", "fog": "#18233a", "ambient": "#93b9ff", "ground": "#1d2740", "neon": ["#41dfff", "#ff6fbd", "#ffe18a"], "brightness": 1.15 },
     { "id": "night", "name": "Night Arcade", "fog": "#05040d", "ambient": "#292051", "ground": "#090716", "neon": ["#23f6ff", "#a15cff", "#ff3cac"], "brightness": 0.72 },
@@ -12,8 +12,8 @@
   ],
   "weather": [
     { "id": "clear", "name": "Clear Night", "particle": null, "color": "#071329" },
-    { "id": "rain", "name": "Rain", "particle": "rain", "color": "#0b2844" },
-    { "id": "thunder", "name": "Thunderstorm", "particle": "rain", "color": "#081426" },
+    { "id": "rain", "name": "Rain", "particle": null, "color": "#0b2844" },
+    { "id": "thunder", "name": "Thunderstorm", "particle": null, "color": "#081426" },
     { "id": "sunset", "name": "Sunset", "particle": "dust", "color": "#9f315d" },
     { "id": "snow", "name": "Snow", "particle": "snow", "color": "#516b92" },
     { "id": "fog", "name": "Fog", "particle": "fog", "color": "#536070" }

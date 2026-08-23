@@ -10,7 +10,6 @@ export class EnvironmentManager {
     }
   }
   createWeatherPools() {
-    this.weatherEmitters.push(['rain', this.particles.create({ position: [13.45, 1.25, 0], color: 0x74cfff, count: 260, spread: [.2, 2.5, 15], velocity: [0, -2.8, .05], jitter: .14, size: .026, opacity: .65, maxDistance: 24 })]);
     this.weatherEmitters.push(['snow', this.particles.create({ position: [13.42, 1.25, 0], color: 0xffffff, count: 180, spread: [.25, 2.5, 15], velocity: [0, -.38, .08], jitter: .24, size: .055, opacity: .7, maxDistance: 24 })]);
     this.weatherEmitters.push(['dust', this.particles.create({ position: [13.4, 1.2, 0], color: 0xffc085, count: 100, spread: [.3, 2.3, 15], velocity: [0, .04, .05], jitter: .06, size: .04, opacity: .35, maxDistance: 24 })]);
     this.weatherEmitters.forEach(([, emitter]) => this.particles.setActive(emitter, false));

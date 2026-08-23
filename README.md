@@ -111,8 +111,8 @@ Phase 6 is configuration-driven through `assets/world/config.json`. `WorldManage
 - **AudioManager** owns one shared Web Audio context, master/ambience/music buses, cached procedural noise, positional cabinet/air-conditioning hums, activity-scaled crowd ambience, material-aware footsteps, announcement cues, and jukebox playback. Browser audio unlocks only after a user gesture. Track entries may point to approved local audio files; the included tracks are original procedural synthesizer patterns.
 - **LightingManager** discovers existing scene lights and emissive materials once, preserves their base values, and smoothly adjusts brightness for quiet, active, and busy rooms. It also supports flicker, neon surges, animated emissive accents, and future palette control.
 - **NPCManager** owns lightweight ambient NPC entities, configurable walking paths, idle pauses, distance culling, and a future-facing interaction callback. Initial NPCs deliberately use inexpensive arcade-styled geometry rather than unrelated avatar rigs.
-- **ParticleManager** pools typed position/velocity buffers for dust, rain, snow, sparks, neon bursts, and future effects. Emitters stop updating outside their configured camera distance.
-- **EnvironmentManager** creates interior window displays, applies configuration-defined theme/fog/window colors, and switches pooled rain, snow, sunset dust, and fog-style effects without affecting collision or gameplay.
+- **ParticleManager** pools typed position/velocity buffers for dust, snow, sparks, neon bursts, and future effects. Emitters stop updating outside their configured camera distance.
+- **EnvironmentManager** creates interior window displays, applies configuration-defined theme/fog/window colors, and switches pooled snow, sunset dust, and fog-style effects without affecting collision or gameplay. The former N64-wall rain particle field has been removed for performance.
 - **ObjectInteractionManager** detects nearby non-cabinet objects independently from cabinet ownership. The jukebox and prize counter use this framework; only the jukebox has full behavior in this phase. Placeholder vending-machine and information-kiosk instances were removed to keep the arcade floor uncluttered.
 
 Room-specific world state contains `themeId`, `weatherId`, `activityLevel`, population, revision, and jukebox state. The server validates all theme, weather, and track IDs against the registry. `WorldManager.setTheme()` and `setWeather()` are server-side expansion APIs for future schedules/admin controls. State is persistent for the lifetime of the server process but intentionally is not stored in a database.
@@ -126,7 +126,7 @@ To add an approved local track, place an optimized audio file under `assets/worl
 ### Themes, weather, NPCs, and objects
 
 - Add a theme under `themes` with fog, ambient, ground, neon palette, and brightness values.
-- Add weather under `weather` and map it to an existing pooled particle type (`rain`, `snow`, `dust`, or `fog`).
+- Add weather under `weather` and map it to an existing pooled particle type (`snow`, `dust`, or `fog`), or use `null` for color-only weather.
 - Add ambient walking paths under `npcPaths`; points are `[x, y, z]`, and speed is world units per second.
 - Add non-cabinet interactables under `objects` with a stable ID, type, position, and interaction distance. Implement behavior in the `WorldManager.interact()` boundary rather than inside `arcade.js`.
 
