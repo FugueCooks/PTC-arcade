@@ -110,7 +110,7 @@ Phase 6 is configuration-driven through `assets/world/config.json`. `WorldManage
 - **WorldManager** coordinates snapshots, room activity, announcements, events, themes, weather, the update loop, and the other world managers.
 - **AudioManager** owns one shared Web Audio context, ambience/effects buses, cached procedural noise, positional cabinet/air-conditioning hums, activity-scaled crowd ambience, and short interface/announcement cues. Background music and avatar walking sounds are intentionally disabled. Browser audio unlocks only after a user gesture.
 - **LightingManager** discovers existing scene lights and emissive materials once, preserves their base values, and smoothly adjusts brightness for quiet, active, and busy rooms. It also supports flicker, neon surges, animated emissive accents, and future palette control.
-- **NPCManager** owns lightweight ambient NPC entities, configurable walking paths, idle pauses, distance culling, and a future-facing interaction callback. Initial NPCs deliberately use inexpensive arcade-styled geometry rather than unrelated avatar rigs.
+- **NPCManager** remains available as a future-facing ambient-character framework, but the live arcade currently spawns no wandering NPCs.
 - **ParticleManager** pools typed position/velocity buffers for dust, snow, sparks, neon bursts, and future effects. Emitters stop updating outside their configured camera distance.
 - **EnvironmentManager** creates interior window displays, applies configuration-defined theme/fog/window colors, and switches pooled snow, sunset dust, and fog-style effects without affecting collision or gameplay. The former N64-wall rain particle field has been removed for performance.
 - **ObjectInteractionManager** detects nearby non-cabinet objects independently from cabinet ownership. The prize counter remains registered for future interaction. The jukebox, placeholder vending machine, and information kiosk were removed to keep the arcade floor and soundscape uncluttered.
@@ -121,7 +121,7 @@ Room-specific world state contains `themeId`, `weatherId`, `activityLevel`, popu
 
 - Add a theme under `themes` with fog, ambient, ground, neon palette, and brightness values.
 - Add weather under `weather` and map it to an existing pooled particle type (`snow`, `dust`, or `fog`), or use `null` for color-only weather.
-- Add ambient walking paths under `npcPaths`; points are `[x, y, z]`, and speed is world units per second.
+- Ambient NPC spawning is disabled (`npcPaths` is empty). Future paths can use `[x, y, z]` points and world-units-per-second speeds.
 - Add non-cabinet interactables under `objects` with a stable ID, type, position, and interaction distance. Implement behavior in the `WorldManager.interact()` boundary rather than inside `arcade.js`.
 
 World wire events are `world:snapshot`, `world:state-changed`, `world:announcement`, and `world:event`. `WORLD_EVENT_INTERVAL_MS` defaults to `90000`.

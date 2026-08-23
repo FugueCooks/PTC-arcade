@@ -22,9 +22,5 @@
   "objects": [
     { "id": "prize-counter", "type": "prize-counter", "name": "PRIZE COUNTER", "position": [0, 0, -14.35], "interactionDistance": 2.3 }
   ],
-  "npcPaths": [
-    { "id": "wanderer-cyan", "color": "#36f9f6", "speed": 0.75, "points": [[-5,0,8],[-4,0,-8],[3,0,-9],[5,0,6]] },
-    { "id": "wanderer-pink", "color": "#ff3cac", "speed": 0.62, "points": [[5,0,8],[7,0,1],[3,0,-6],[-3,0,-5],[-5,0,5]] },
-    { "id": "wanderer-gold", "color": "#ffcc4a", "speed": 0.55, "points": [[-2,0,10],[2,0,7],[1,0,2],[-2,0,3]] }
-  ]
+  "npcPaths": []
 }
