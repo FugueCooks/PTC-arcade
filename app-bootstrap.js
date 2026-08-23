@@ -11,4 +11,4 @@ window.ARCADE_ROOM_REGISTRY = await loadRoomRegistry();
 
 await import('./arcade.js?v=production-assets-2');
 await import('./avatar-selection.js?v=text-only-1');
-await import('./multiplayer-client.js?v=phase6-2');
+await import('./multiplayer-client.js?v=network-meter-1');

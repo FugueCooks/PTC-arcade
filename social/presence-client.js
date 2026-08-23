@@ -16,6 +16,17 @@ export class PresenceClient {
     socket.on('connect', () => this.connection(true));
     socket.on('disconnect', () => this.connection(false));
     this.pingSamples = [];
+    this.visibilityGeneration = 0;
+    document.addEventListener('visibilitychange', () => {
+      this.visibilityGeneration += 1;
+      this.pingSamples.length = 0;
+      if (document.hidden) {
+        this.stats.textContent = 'PAUSED';
+        return;
+      }
+      this.stats.textContent = 'MEASURING';
+      setTimeout(() => this.ping(), 250);
+    });
     this.pingTimer = setInterval(() => this.ping(), 5000);
   }
 
@@ -49,15 +60,19 @@ export class PresenceClient {
 
   connection(online) { this.dot.className = online ? 'online' : ''; this.stats.textContent = online ? 'ONLINE' : 'RECONNECTING'; }
   ping() {
-    if (!this.socket.connected) return;
+    if (!this.socket.connected || document.hidden) return;
+    const visibilityGeneration = this.visibilityGeneration;
     const started = performance.now();
     this.socket.timeout(5000).emit('social:ping', {}, (error) => {
       if (error) return this.connection(false);
+      if (document.hidden || visibilityGeneration !== this.visibilityGeneration) return;
       const ping = Math.round(performance.now() - started);
-      this.pingSamples.push(ping); if (this.pingSamples.length > 5) this.pingSamples.shift();
-      const samples = [...this.pingSamples].sort((a, b) => a - b), median = samples[Math.floor(samples.length / 2)];
-      this.dot.className = median > 350 ? 'poor' : 'online';
-      this.stats.textContent = `${median} MS · ${median < 150 ? 'EXCELLENT' : median < 350 ? 'GOOD' : 'WEAK'}`;
+      this.pingSamples.push(ping); if (this.pingSamples.length > 3) this.pingSamples.shift();
+      // The lowest of three recent RTTs is the best estimate of network latency;
+      // higher samples can include rendering, emulator startup, or event-loop stalls.
+      const networkPing = Math.min(...this.pingSamples);
+      this.dot.className = networkPing > 350 ? 'poor' : 'online';
+      this.stats.textContent = `${networkPing} MS · ${networkPing < 150 ? 'EXCELLENT' : networkPing < 350 ? 'GOOD' : 'WEAK'}`;
     });
   }
 }
