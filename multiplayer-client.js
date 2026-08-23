@@ -144,7 +144,9 @@
       // Render a local fallback immediately. The server snapshot will replace
       // its identity with the validated state once the room connection opens.
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
-      socket = window.io({ transports: ['websocket', 'polling'], reconnectionDelay: 500, reconnectionDelayMax: 3000 });
+      // Let Socket.IO negotiate polling/WebSocket order. Some ISP and mobile
+      // routes perform substantially worse when WebSocket is forced first.
+      socket = window.io({ reconnectionDelay: 500, reconnectionDelayMax: 3000 });
       new ChatClient(socket);
       presenceClient = new PresenceClient(socket, avatarRegistry);
       new ReactionClient(socket, (id) => id === localPlayerId ? localAvatar : remotePlayers.get(id)?.avatar);
