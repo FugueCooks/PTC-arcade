@@ -37,6 +37,7 @@
         input.files = transfer.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
         statusElement.textContent = `BOOTING ${pendingFile.name.toUpperCase()} // LARGE IMAGES MAY TAKE SEVERAL MINUTES`;
+        parent.postMessage({ type: 'arcade:ps2-file-accepted', core: 'ps2-play' }, location.origin);
         pendingFile = null;
         document.querySelector('#outputCanvas').focus();
         return true;
