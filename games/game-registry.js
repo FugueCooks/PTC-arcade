@@ -15,7 +15,7 @@ function isValidGame(game) {
   return game && typeof game.id === 'string' && /^[a-z0-9-]{2,64}$/.test(game.id)
     && typeof game.cabinetId === 'string' && /^[a-z0-9-]{2,64}$/.test(game.cabinetId)
     && typeof game.name === 'string' && game.name.length <= 80
-    && (game.system === 'psx' || game.system === 'n64')
+    && (game.system === 'psx' || game.system === 'n64' || game.system === 'ps2')
     && typeof game.file === 'string' && /^[A-Za-z0-9._-]+$/.test(game.file)
     && Number.isSafeInteger(game.emulatorId) && game.emulatorId > 0
     && Number.isSafeInteger(game.sizeBytes) && game.sizeBytes > 0

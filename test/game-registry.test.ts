@@ -7,7 +7,7 @@ interface GameDefinition {
   id: string;
   cabinetId: string;
   name: string;
-  system: 'psx' | 'n64';
+  system: 'psx' | 'n64' | 'ps2';
   file: string;
   emulatorId: number;
   sizeBytes: number;
@@ -21,7 +21,7 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 1);
-  assert.equal(registry.games.length, 13);
+  assert.equal(registry.games.length, 16);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);
@@ -55,4 +55,7 @@ void test('the rear console rooms expose hosted N64 games and tested experimenta
   assert.equal(byId.get('psx-back-cabinet-02')?.name, 'Kingdom Hearts (PS2)');
   assert.equal(byId.get('psx-back-cabinet-03')?.name, 'Grand Theft Auto: San Andreas (PS2)');
   assert.equal(byId.get('psx-back-cabinet-04')?.name, 'Dragon Ball Z: Budokai Tenkaichi 3 (PS2)');
+  assert.equal(byId.get('psx-back-cabinet-02')?.defaultGameId, 'kingdom-hearts');
+  assert.equal(byId.get('psx-back-cabinet-03')?.defaultGameId, 'gta-san-andreas');
+  assert.equal(byId.get('psx-back-cabinet-04')?.defaultGameId, 'dbz-tenkaichi-3');
 });

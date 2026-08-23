@@ -13,6 +13,9 @@
     {"id":"zelda-ocarina-of-time","cabinetId":"n64-cabinet-05","name":"The Legend of Zelda: Ocarina of Time","system":"n64","file":"zelda-ocarina-of-time.z64","emulatorId":6405,"sizeBytes":33554432,"enabled":true},
     {"id":"star-fox-64","cabinetId":"n64-back-cabinet-01","name":"Star Fox 64","system":"n64","file":"star-fox-64.z64","emulatorId":6411,"sizeBytes":12582912,"enabled":true},
     {"id":"mega-man-64","cabinetId":"n64-back-cabinet-02","name":"Mega Man 64","system":"n64","file":"mega-man-64.z64","emulatorId":6412,"sizeBytes":33554432,"enabled":true},
-    {"id":"super-mario-64-expansion","cabinetId":"n64-back-cabinet-03","name":"Super Mario 64","system":"n64","file":"super-mario-64-expansion.z64","emulatorId":6413,"sizeBytes":8388608,"enabled":true}
+    {"id":"super-mario-64-expansion","cabinetId":"n64-back-cabinet-03","name":"Super Mario 64","system":"n64","file":"super-mario-64-expansion.z64","emulatorId":6413,"sizeBytes":8388608,"enabled":true},
+    {"id":"kingdom-hearts","cabinetId":"psx-back-cabinet-02","name":"Kingdom Hearts","system":"ps2","file":"kingdom-hearts.iso","emulatorId":26002,"sizeBytes":3041132544,"enabled":true},
+    {"id":"gta-san-andreas","cabinetId":"psx-back-cabinet-03","name":"Grand Theft Auto: San Andreas","system":"ps2","file":"gta-san-andreas-v3.iso","emulatorId":26003,"sizeBytes":4517036032,"enabled":true},
+    {"id":"dbz-tenkaichi-3","cabinetId":"psx-back-cabinet-04","name":"DBZ Tenkaichi 3","system":"ps2","file":"dbz-tenkaichi-3.iso","emulatorId":26004,"sizeBytes":3020816384,"enabled":true}
   ]
 }

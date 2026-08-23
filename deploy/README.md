@@ -73,8 +73,7 @@ read access must not grant object listing or write access.
   every visitor. The browser still supports player-selected local files as a
   fallback.
 
-Run `npm run verify:games` before uploading. The public manifest covers all ten
-current games and the configured PlayStation BIOS.
+Run `npm run verify:games` before uploading. The public manifest covers the locally mirrored PS1/N64 games and configured PlayStation BIOS. `remote-ps2-assets.json` tracks the much larger PS2 images uploaded directly from approved source locations with `npm run storage:upload-external`; the remote verifier checks both manifests.
 
 ## Backend health
 

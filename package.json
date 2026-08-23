@@ -13,6 +13,7 @@
     "verify:games": "node tools/verify-game-assets.mjs",
     "verify:assets": "node tools/verify-game-assets.mjs",
     "storage:upload": "node tools/storage-upload.mjs",
+    "storage:upload-external": "node tools/storage-upload-external.mjs",
     "storage:verify": "node tools/verify-remote-assets.mjs",
     "storage:cors": "wrangler r2 bucket cors set retro-arcade-assets --file deploy/r2-cors.json --force",
     "cloudflare:typecheck": "tsc -p cloudflare/tsconfig.json",
