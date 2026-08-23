@@ -128,9 +128,11 @@
   }
 
   window.createArcadeSocket = (options = {}) => {
-    const endpoint = typeof runtime.realtimeUrl === 'string' ? runtime.realtimeUrl.trim() : '';
+    const endpoint = typeof options.endpoint === 'string' && options.endpoint.trim()
+      ? options.endpoint.trim()
+      : (typeof runtime.realtimeUrl === 'string' ? runtime.realtimeUrl.trim() : '');
     if (endpoint) return new NativeRealtimeSocket(endpoint, options);
-    if (typeof window.io === 'function') return window.io(options);
+    if (typeof window.io === 'function') return window.io(options.socketIoEndpoint, options);
     throw new Error('No realtime transport is configured.');
   };
 

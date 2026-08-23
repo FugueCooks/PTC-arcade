@@ -84,6 +84,8 @@ export interface RoomJoinRequest {
   roomId?: string;
   /** Per-browser-tab token used only for a brief reconnect window. */
   resumeToken?: string;
+  /** Short-lived capacity reservation issued by the placement endpoint. */
+  reservationToken?: string;
   identity?: { displayName?: unknown; avatarId?: unknown };
 }
 

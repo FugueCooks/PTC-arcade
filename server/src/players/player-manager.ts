@@ -129,6 +129,11 @@ export class PlayerManager {
     this.publish({ type: 'PlayerDisconnected', roomId: player.roomId, playerId: player.id, player: this.toPublic(player) });
   }
 
+  removeSocketNow(socketId: string): void {
+    const player = this.playerForSocket(socketId);
+    if (player) this.remove(player);
+  }
+
   sweep(now = Date.now()): void {
     for (const player of this.players.values()) {
       if (player.disconnectedAt === undefined || now - player.disconnectedAt <= RECONNECT_GRACE_MS) continue;

@@ -134,6 +134,12 @@
     try {
       currentRoomId = window.ARCADE_ROOM_REGISTRY?.rooms?.has(selection.roomId) ? selection.roomId : 'main';
       const identity = { displayName: selection.displayName, avatarId: selection.avatarId };
+      const { RoomPlacementClient } = await import('./rooms/room-placement-client.js?v=phase7-1');
+      const placement = await new RoomPlacementClient().quickJoin(currentRoomId, {
+        onWaiting: () => window.dispatchEvent(new CustomEvent('arcade:placement-waiting'))
+      });
+      window.dispatchEvent(new CustomEvent('arcade:placement-ready'));
+      if (placement?.roomId) currentRoomId = placement.roomId;
       await window.prepareArcadeRealtime?.();
       const [{ AvatarRenderer }, { loadAvatarRegistry }, { CabinetNetworkClient }, { CabinetVisualState }, { CabinetSessionController }, { loadCabinetRegistry }, { ChatClient }, { PresenceClient }, { ReactionClient }, { InspectionClient }, { WorldManager }] = await Promise.all([
         import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=phase4-1'),
@@ -150,7 +156,7 @@
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
       // Let Socket.IO negotiate polling/WebSocket order. Some ISP and mobile
       // routes perform substantially worse when WebSocket is forced first.
-      socket = window.createArcadeSocket({ reconnectionDelay: 500, reconnectionDelayMax: 3000, roomId: currentRoomId });
+      socket = window.createArcadeSocket({ endpoint: placement?.realtimeUrl, reconnectionDelay: 500, reconnectionDelayMax: 3000, roomId: currentRoomId });
       new ChatClient(socket);
       presenceClient = new PresenceClient(socket, avatarRegistry);
       new ReactionClient(socket, (id) => id === localPlayerId ? localAvatar : remotePlayers.get(id)?.avatar);
@@ -162,6 +168,7 @@
         protocolVersion: 1,
         roomId: currentRoomId,
         resumeToken: sessionStorage.getItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`) ?? undefined,
+        reservationToken: placement?.reservationToken,
         identity
       });
       socket.on('connect', joinRoom);

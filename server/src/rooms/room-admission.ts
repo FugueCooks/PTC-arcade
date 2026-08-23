@@ -5,7 +5,7 @@ import type { RedisKeys } from '../redis/redis-keys.js';
 export interface AdmissionReservation { roomId: string; token: string; expiresAt: number }
 export interface RoomAdmission {
   reserve(roomId: string, capacity: number, now?: number): Promise<AdmissionReservation | undefined>;
-  confirm(reservation: AdmissionReservation, playerId: string): Promise<boolean>;
+  confirm(roomId: string, reservationToken: string, playerId: string, now?: number): Promise<boolean>;
   release(roomId: string, playerId?: string, reservationToken?: string): Promise<void>;
 }
 
@@ -35,10 +35,10 @@ export class RedisRoomAdmission implements RoomAdmission {
     return Number(result) === 1 ? { roomId, token, expiresAt } : undefined;
   }
 
-  async confirm(reservation: AdmissionReservation, playerId: string): Promise<boolean> {
+  async confirm(roomId: string, reservationToken: string, playerId: string): Promise<boolean> {
     const result = await this.client.eval(CONFIRM_SCRIPT, {
-      keys: [this.keys.roomMembers(reservation.roomId), this.keys.roomReservations(reservation.roomId)],
-      arguments: [reservation.token, playerId, String(this.reservationTtlMs * 3)]
+      keys: [this.keys.roomMembers(roomId), this.keys.roomReservations(roomId)],
+      arguments: [reservationToken, playerId, String(this.reservationTtlMs * 3)]
     });
     return Number(result) === 1;
   }
@@ -65,10 +65,11 @@ export class InMemoryRoomAdmission implements RoomAdmission {
     return { roomId, token, expiresAt };
   }
 
-  async confirm(reservation: AdmissionReservation, playerId: string): Promise<boolean> {
-    const reservations = this.reservations.get(reservation.roomId);
-    if (!reservations?.delete(reservation.token) || reservation.expiresAt <= Date.now()) return false;
-    const members = this.members.get(reservation.roomId) ?? new Set<string>(); members.add(playerId); this.members.set(reservation.roomId, members);
+  async confirm(roomId: string, reservationToken: string, playerId: string, now = Date.now()): Promise<boolean> {
+    const reservations = this.reservations.get(roomId);
+    const expiresAt = reservations?.get(reservationToken);
+    if (!expiresAt || !reservations?.delete(reservationToken) || expiresAt <= now) return false;
+    const members = this.members.get(roomId) ?? new Set<string>(); members.add(playerId); this.members.set(roomId, members);
     return true;
   }
 

@@ -24,6 +24,9 @@ export interface ServerConfig {
   serverTtlMs: number;
   roomDirectoryTtlMs: number;
   roomOwnershipTtlMs: number;
+  publicRealtimeUrl?: string;
+  matchmakingUrl?: string;
+  admissionReservationTtlMs: number;
 }
 
 export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -56,8 +59,19 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     serverHeartbeatMs: seconds(environment.SERVER_HEARTBEAT_SECONDS, 10, 2, 60),
     serverTtlMs: seconds(environment.SERVER_TTL_SECONDS, 35, 10, 300),
     roomDirectoryTtlMs: seconds(environment.ROOM_DIRECTORY_TTL_SECONDS, 45, 10, 600),
-    roomOwnershipTtlMs: seconds(environment.ROOM_OWNERSHIP_TTL_SECONDS, 30, 5, 300)
+    roomOwnershipTtlMs: seconds(environment.ROOM_OWNERSHIP_TTL_SECONDS, 30, 5, 300),
+    publicRealtimeUrl: publicUrl(environment.PUBLIC_REALTIME_URL),
+    matchmakingUrl: publicUrl(environment.MATCHMAKING_URL),
+    admissionReservationTtlMs: seconds(environment.ADMISSION_RESERVATION_TTL_SECONDS, 15, 5, 60)
   };
+}
+
+function publicUrl(value: string | undefined): string | undefined {
+  const cleaned = value?.trim().replace(/\/$/, '');
+  if (!cleaned) return undefined;
+  const parsed = new URL(cleaned);
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('Public service URLs must use http:// or https://.');
+  return cleaned;
 }
 
 function integer(value: string | undefined, fallback: number, minimum: number, maximum: number): number {

@@ -44,7 +44,7 @@ void test('confirmed admission is released idempotently', async () => {
   const admission = new InMemoryRoomAdmission(10_000);
   const reservation = await admission.reserve('room-a', 1);
   assert.ok(reservation);
-  assert.equal(await admission.confirm(reservation!, 'player-a'), true);
+  assert.equal(await admission.confirm(reservation!.roomId, reservation!.token, 'player-a'), true);
   assert.equal(await admission.reserve('room-a', 1), undefined);
   await admission.release('room-a', 'player-a');
   await admission.release('room-a', 'player-a');

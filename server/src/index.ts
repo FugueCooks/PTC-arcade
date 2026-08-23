@@ -28,6 +28,9 @@ import { RedisRoomDirectory } from './redis/redis-room-directory.js';
 import { RoomOwnershipService } from './redis/room-ownership-service.js';
 import { ServerRegistry } from './servers/server-registry.js';
 import { createAdapter as createRedisStreamsAdapter } from '@socket.io/redis-streams-adapter';
+import { InMemoryRoomAdmission, RedisRoomAdmission } from './rooms/room-admission.js';
+import { RoomPlacementService } from './rooms/room-placement-service.js';
+import { installMatchmakingRoutes } from './http/matchmaking-routes.js';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -103,8 +106,14 @@ const serverRegistry = redis?.isReady ? new ServerRegistry(redis.client, redisKe
   healthy: () => redis.isReady
 }, metrics, logger) : undefined;
 await serverRegistry?.start();
+const roomAdmission = redis?.isReady
+  ? new RedisRoomAdmission(redis.client, redisKeys, config.admissionReservationTtlMs)
+  : new InMemoryRoomAdmission(config.admissionReservationTtlMs);
+const roomPlacement = new RoomPlacementService(rooms, roomDirectory, roomLifecycle, roomAdmission, serverRegistry, config, metrics);
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
+app.use(express.json({ limit: '16kb' }));
+installMatchmakingRoutes(app, roomPlacement, roomDirectory, config);
 installStaticHosting(app, projectRoot, publicRuntimeConfig());
 
 io.use((_socket, next) => {
@@ -142,6 +151,7 @@ players.subscribe((event) => {
       break;
     case 'PlayerLeft':
       presence.remove(event.playerId);
+      void roomAdmission.release(event.roomId, event.playerId).catch(() => metrics.increment('admission_release_failure_total'));
       io.to(event.roomId).emit('player:left', { id: event.playerId });
       break;
     case 'PlayerStatusChanged':
@@ -184,7 +194,7 @@ io.on('connection', (socket) => {
   let joined = false;
   metrics.increment('socket_connections_total');
 
-  socket.on('room:join', (request) => {
+  socket.on('room:join', async (request) => {
     metrics.increment('events_room_join_received_total');
     if (joined) return;
     const readiness = health.readiness();
@@ -195,6 +205,7 @@ io.on('connection', (socket) => {
     }
     const roomId = typeof request?.roomId === 'string' ? request.roomId : DEFAULT_ROOM_ID;
     const resumeToken = typeof request?.resumeToken === 'string' ? request.resumeToken : undefined;
+    const reservationToken = typeof request?.reservationToken === 'string' ? request.reservationToken : undefined;
     const identity = validateIdentity(request?.identity);
     if (!identity) {
       metrics.increment('join_rejected_invalid_identity_total');
@@ -207,8 +218,22 @@ io.on('connection', (socket) => {
       socket.emit('room:error', { code: 'room-full', message: 'This arcade room is full. Choose another instance.' });
       return;
     }
-    joined = true;
     const result = players.join(socket.id, roomId, resumeToken, identity);
+    if (!result.resumed && reservationToken) {
+      const confirmed = await roomAdmission.confirm(result.snapshot.roomId, reservationToken, result.player.id);
+      if (!confirmed) {
+        players.removeSocketNow(socket.id);
+        metrics.increment('join_rejected_expired_reservation_total');
+        socket.emit('room:error', { code: 'reservation-expired', message: 'Your arcade spot expired before entry. Please retry.' });
+        return;
+      }
+    } else if (!result.resumed && config.redisRequired) {
+      players.removeSocketNow(socket.id);
+      metrics.increment('join_rejected_missing_reservation_total');
+      socket.emit('room:error', { code: 'reservation-required', message: 'Reserve an arcade spot before connecting.' });
+      return;
+    }
+    joined = true;
     void socket.join(result.snapshot.roomId);
     socket.emit('room:snapshot', result.snapshot);
     socket.emit('player:state', result.player);

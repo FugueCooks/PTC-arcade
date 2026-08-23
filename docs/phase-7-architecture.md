@@ -29,6 +29,12 @@ Room ownership uses `SET NX PX` leases. Every acquisition increments a fencing c
 
 Placement uses short-lived admission reservations. A Lua script atomically counts active members plus non-expired reservations before granting a slot. Confirmation converts the reservation into active membership. Release is idempotent.
 
+## Placement and owner routing
+
+`GET /api/rooms` returns a sanitized browser view containing room names, population, capacity, and status. `POST /api/rooms/quick-join` atomically reserves a slot and returns a short-lived token with the public realtime endpoint of that room's authoritative owner. The browser connects directly to that endpoint, and the owner confirms the token during `room:join`.
+
+Public endpoints come only from `PUBLIC_REALTIME_URL`; private hostnames and server identifiers are not rendered in the interface. A deployment using one load-balanced Socket.IO URL must still provide sticky sessions while HTTP polling is enabled. If `MATCHMAKING_URL` is absent or an older production backend does not expose the API, the client retains the established direct-connection rollback path.
+
 ## Deployment state
 
 Redis activates only when `REDIS_URL` is configured. `REDIS_REQUIRED=1` makes readiness fail whenever Redis is unavailable. Local development without Redis retains the in-memory directory and the existing single-process Socket.IO adapter. The production Cloudflare Durable Object backend remains the rollback path until the Node/Redis route reaches complete protocol parity and passes load testing.

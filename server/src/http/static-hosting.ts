@@ -6,6 +6,7 @@ export interface PublicRuntimeConfig {
   gameAssetBaseUrl: string;
   biosAssetUrl: string;
   realtimeUrl: string;
+  matchmakingUrl: string;
 }
 
 const ROOT_FILES = [
@@ -26,7 +27,8 @@ export function publicRuntimeConfig(environment: NodeJS.ProcessEnv = process.env
   return {
     gameAssetBaseUrl: normalizeBaseUrl(environment.GAME_ASSET_BASE_URL),
     biosAssetUrl: normalizeAssetUrl(environment.BIOS_ASSET_URL),
-    realtimeUrl: normalizeAssetUrl(environment.REALTIME_URL)
+    realtimeUrl: normalizeAssetUrl(environment.REALTIME_URL),
+    matchmakingUrl: normalizeAssetUrl(environment.MATCHMAKING_URL)
   };
 }
 

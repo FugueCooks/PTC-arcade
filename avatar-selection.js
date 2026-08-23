@@ -96,4 +96,14 @@ window.addEventListener('arcade:connection-error', ({ detail }) => {
   showStatus(detail?.message ?? 'Could not connect to the arcade.', true);
 });
 
+window.addEventListener('arcade:placement-waiting', () => {
+  screen.hidden = false;
+  confirmButton.disabled = true;
+  showStatus('Arcade rooms are busy. Finding an available instance…');
+});
+window.addEventListener('arcade:placement-ready', () => {
+  screen.hidden = true;
+  confirmButton.disabled = false;
+});
+
 void boot();

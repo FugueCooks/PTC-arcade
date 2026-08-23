@@ -8,6 +8,7 @@ export type ServerHealth = 'healthy' | 'unhealthy';
 export interface ServerRecord {
   serverId: string; region: string; startupAt: number; roomCount: number; playerCount: number;
   maximumCapacity: number; heartbeatAt: number; draining: boolean; health: ServerHealth; softwareVersion: string;
+  publicRealtimeUrl?: string;
 }
 
 export interface ServerRegistrySources { roomCount(): number; playerCount(): number; draining(): boolean; healthy(): boolean }
@@ -36,7 +37,7 @@ export class ServerRegistry {
       serverId: this.config.serverId, region: this.config.region, startupAt: this.startupAt,
       roomCount: this.sources.roomCount(), playerCount: this.sources.playerCount(), maximumCapacity: this.config.maxPlayersPerServer,
       heartbeatAt: now, draining: this.sources.draining(), health: this.sources.healthy() ? 'healthy' : 'unhealthy',
-      softwareVersion: this.config.softwareVersion
+      softwareVersion: this.config.softwareVersion, publicRealtimeUrl: this.config.publicRealtimeUrl
     };
     const ttlSeconds = Math.max(1, Math.ceil(this.config.serverTtlMs / 1_000));
     await this.client.multi()
@@ -58,6 +59,13 @@ export class ServerRegistry {
     if (!ids.length) return [];
     const values = await this.client.mGet(ids.map((id) => this.keys.server(id)));
     return values.flatMap((value) => value ? [parse(value)] : []).filter((record) => record.health === 'healthy' && !record.draining);
+  }
+
+  async get(serverId: string): Promise<ServerRecord | undefined> {
+    const value = await this.client.get(this.keys.server(serverId));
+    if (!value) return undefined;
+    const record = parse(value);
+    return Date.now() - record.heartbeatAt <= this.config.serverTtlMs ? record : undefined;
   }
 
   private failed(error: unknown): void {

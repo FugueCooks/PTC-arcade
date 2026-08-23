@@ -9,7 +9,9 @@ import type { RoomRecord } from './room.js';
 
 export interface PlacementRequest { requestedRoomId?: string; reconnectRoomId?: string; preferredRegion?: string }
 export interface PlacementResult { ok: boolean; room?: RoomRecord; reservation?: AdmissionReservation; created?: boolean; reason?: 'no-capacity' | 'unavailable' }
-export interface ServerDiscovery { listHealthy(now?: number): Promise<ServerRecord[]> }
+export interface ServerDiscovery { listHealthy(now?: number): Promise<ServerRecord[]>; get?(serverId: string): Promise<ServerRecord | undefined> }
+
+export interface PublicPlacementResult extends PlacementResult { realtimeUrl?: string }
 
 export class RoomPlacementService {
   constructor(
@@ -46,6 +48,19 @@ export class RoomPlacementService {
     }
     this.metrics.increment('matchmaking_failure_total');
     return { ok: false, reason: 'no-capacity' };
+  }
+
+  async placePublic(request: PlacementRequest, now = Date.now()): Promise<PublicPlacementResult> {
+    const result = await this.place(request, now);
+    if (!result.ok || !result.room) return result;
+    const owner = result.room.serverId === this.config.serverId
+      ? { publicRealtimeUrl: this.config.publicRealtimeUrl }
+      : await this.servers?.get?.(result.room.serverId);
+    if (!owner?.publicRealtimeUrl && result.room.serverId !== this.config.serverId) {
+      await this.admission.release(result.room.id, undefined, result.reservation?.token);
+      return { ok: false, reason: 'unavailable' };
+    }
+    return { ...result, realtimeUrl: owner?.publicRealtimeUrl ?? this.config.publicRealtimeUrl };
   }
 
   private async tryRoom(room: RoomRecord, now: number): Promise<PlacementResult | undefined> {

@@ -13,11 +13,13 @@ void test('operational configuration is bounded and deployment identity is norma
     MAX_PLAYERS_PER_ROOM: '24', MAX_ROOMS_PER_SERVER: '8', MAX_PLAYERS_PER_SERVER: '192',
     MAX_PENDING_CONNECTIONS: '100', MAX_SERVER_MEMORY_MB: '2048', MAX_EVENT_LOOP_DELAY_MS: '250',
     SERVER_DRAIN_TIMEOUT_SECONDS: '60', SERVER_SHUTDOWN_WARNING_SECONDS: '10'
+    , PUBLIC_REALTIME_URL: 'https://west.arcade.example', MATCHMAKING_URL: 'https://match.arcade.example'
   });
   assert.equal(config.port, 9090);
   assert.equal(config.serverId, 'arcade-server-1');
   assert.equal(config.maxPlayersPerRoom, 24);
   assert.equal(config.drainTimeoutMs, 60_000);
+  assert.equal(config.publicRealtimeUrl, 'https://west.arcade.example');
   assert.throws(() => loadServerConfig({ MAX_PLAYERS_PER_ROOM: '5000' }), /Invalid numeric server configuration/);
   assert.throws(() => loadServerConfig({ REDIS_REQUIRED: '1' }), /requires REDIS_URL/);
 });

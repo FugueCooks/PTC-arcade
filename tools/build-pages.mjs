@@ -39,7 +39,8 @@ await copyTree('assets', (relative, info) => {
 const runtimeConfig = {
   gameAssetBaseUrl: process.env.GAME_ASSET_BASE_URL || 'https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games',
   biosAssetUrl: process.env.BIOS_ASSET_URL || 'https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN',
-  realtimeUrl: process.env.REALTIME_URL || 'https://retro-arcade-realtime.roms-retro-arcade.workers.dev'
+  realtimeUrl: process.env.REALTIME_URL || 'https://retro-arcade-realtime.roms-retro-arcade.workers.dev',
+  matchmakingUrl: process.env.MATCHMAKING_URL || ''
 };
 await writeFile(path.join(output, 'runtime-config.js'), `window.ARCADE_RUNTIME = Object.freeze(${JSON.stringify(runtimeConfig)});\n`);
 await writeFile(path.join(output, '_headers'), headersFile());
