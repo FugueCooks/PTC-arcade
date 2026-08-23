@@ -349,6 +349,7 @@ export class AvatarRenderer {
     this.registry = registry;
     this.instances = new Set();
     this.lastFrameAt = performance.now();
+    this.updateCostMs = 0;
     this.raycaster = new Raycaster();
     this.pointer = new Vector2();
   }
@@ -365,10 +366,17 @@ export class AvatarRenderer {
   }
 
   update(now) {
+    const updateStartedAt = performance.now();
     const delta = Math.min((now - this.lastFrameAt) / 1000, 0.05);
     this.lastFrameAt = now;
     const camera = this.getCamera();
     this.instances.forEach((avatar) => avatar.update(delta, camera));
+    const elapsed = performance.now() - updateStartedAt;
+    this.updateCostMs = this.updateCostMs ? this.updateCostMs * 0.9 + elapsed * 0.1 : elapsed;
+  }
+
+  getStats() {
+    return { avatarCount: this.instances.size, avatarUpdateMs: Number(this.updateCostMs.toFixed(3)) };
   }
 
   pickPlayer(clientX, clientY, width, height) {

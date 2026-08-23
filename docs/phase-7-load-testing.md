@@ -4,7 +4,7 @@ Never point load tests at production. Start the Node server and Redis in an isol
 
 Cabinet requests deliberately target one known cabinet from ordinary spawn positions. Most are expected to exercise authoritative distance or ownership rejection; dedicated cabinet-success tests remain in the automated server suite.
 
-Client rendering is a separate limit. On localhost only, append `?avatarStress=25` (supported range 1–100). The browser creates simulated remote avatars and exposes setup measurements as `window.ARCADE_STRESS`. Record FPS, frame time, draw calls, triangles, heap, animation time, and nameplate cost in browser performance tools. This switch is hard-disabled on non-local hostnames.
+Client rendering is a separate limit. On localhost only, append `?avatarStress=25` (supported range 1–100). The browser creates simulated remote avatars and refreshes `window.ARCADE_STRESS` once per second with FPS, frame time, render scale, draw calls, triangles, geometry/texture counts, JavaScript heap where the browser exposes it, avatar update cost, and nameplate count. Call `window.ARCADE_STRESS.stop()` to stop sampling. Use browser performance tools for deeper GPU timing and texture-memory analysis. This switch is hard-disabled on non-local hostnames.
 
 No capacity claim is valid until a repeatable test records hardware, region, Redis topology, server version, room size, error rate, p95/p99 latency, CPU, memory, and event-loop delay.
 

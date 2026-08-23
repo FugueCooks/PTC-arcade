@@ -154,7 +154,7 @@
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
       const { installAvatarStressTest } = await import('./avatars/avatar-stress-test.js?v=phase7-1');
-      installAvatarStressTest(avatarRenderer, avatarRegistry);
+      installAvatarStressTest(avatarRenderer, avatarRegistry, arcade.performanceProfile);
       // Render a local fallback immediately. The server snapshot will replace
       // its identity with the validated state once the room connection opens.
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
