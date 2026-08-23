@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Play! PS2 Experimental Player</title>
+    <link rel="stylesheet" href="./main.css" />
+    <style>
+      :root { color-scheme: dark; }
+      html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#02030a; color:#d9d2e6; }
+      body { font-family:"Courier New",monospace; }
+      #ps2-shell { width:100%; height:100%; display:grid; grid-template-rows:auto minmax(0,1fr) auto; place-items:center; }
+      #ps2-status { width:100%; box-sizing:border-box; padding:.55rem .8rem; color:#36f9f6; background:#080719; border-bottom:1px solid #543386; font-size:.72rem; letter-spacing:.08em; }
+      #outputCanvas { width:100%; height:100%; min-height:0; object-fit:contain; background:#000; outline:none; }
+      #root { width:100%; box-sizing:border-box; padding:.45rem .8rem; background:#080719; border-top:1px solid #543386; }
+      #root input[type="file"] { max-width:100%; color:#fff; }
+      #root button, #root input::file-selector-button { padding:.45rem .7rem; color:#36f9f6; background:#100b22; border:1px solid #36f9f6; font:inherit; cursor:pointer; }
+      span.version, span.stats { color:#a99abe; font-size:.65rem; }
+    </style>
+  </head>
+  <body>
+    <main id="ps2-shell">
+      <div id="ps2-status">PLAY! WEBASSEMBLY // INITIALIZING EXPERIMENTAL PS2 CORE…</div>
+      <canvas id="outputCanvas" width="640" height="480" tabindex="0"></canvas>
+      <div id="root"></div>
+    </main>
+    <script>
+      const statusElement = document.querySelector('#ps2-status');
+      let pendingFile = null;
+      let readySent = false;
+
+      function loadPendingFile() {
+        const input = document.querySelector('input[type="file"]');
+        if (!input || !pendingFile) return false;
+        const transfer = new DataTransfer();
+        transfer.items.add(pendingFile);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        statusElement.textContent = `BOOTING ${pendingFile.name.toUpperCase()} // LARGE IMAGES MAY TAKE SEVERAL MINUTES`;
+        pendingFile = null;
+        document.querySelector('#outputCanvas').focus();
+        return true;
+      }
+
+      addEventListener('message', (event) => {
+        if (event.origin !== location.origin || event.source !== parent) return;
+        if (event.data?.type !== 'arcade:ps2-load-file' || !(event.data.file instanceof File)) return;
+        pendingFile = event.data.file;
+        if (!loadPendingFile()) statusElement.textContent = 'PS2 CORE READYING FILE LOADER…';
+      });
+
+      const readyPoll = setInterval(() => {
+        const input = document.querySelector('input[type="file"]');
+        if (!input) return;
+        if (!readySent) {
+          readySent = true;
+          statusElement.textContent = 'PLAY! PS2 CORE READY // SELECT A LEGALLY DUMPED GAME IMAGE';
+          input.addEventListener('change', () => {
+            const file = input.files?.[0];
+            if (file) statusElement.textContent = `BOOTING ${file.name.toUpperCase()} // LARGE IMAGES MAY TAKE SEVERAL MINUTES`;
+          });
+          parent.postMessage({ type: 'arcade:emulator-ready', core: 'ps2-play' }, location.origin);
+        }
+        loadPendingFile();
+        clearInterval(readyPoll);
+      }, 100);
+
+      addEventListener('error', () => parent.postMessage({ type: 'arcade:emulator-error', core: 'ps2-play' }, location.origin));
+      addEventListener('unhandledrejection', () => parent.postMessage({ type: 'arcade:emulator-error', core: 'ps2-play' }, location.origin));
+      addEventListener('pagehide', () => parent.postMessage({ type: 'arcade:emulator-closed', core: 'ps2-play' }, location.origin));
+    </script>
+    <script defer src="./main.js"></script>
+  </body>
+</html>

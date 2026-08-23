@@ -18,7 +18,7 @@ const ROOT_FILES = [
   'multiplayer-client.js'
 ] as const;
 
-const PUBLIC_DIRECTORIES = ['assets', 'avatars', 'cabinets', 'games', 'rooms', 'social', 'world', 'realtime'] as const;
+const PUBLIC_DIRECTORIES = ['assets', 'avatars', 'cabinets', 'emulators', 'games', 'rooms', 'social', 'world', 'realtime'] as const;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1_000;
 
 /** Build the small public configuration object injected before arcade.js. */
@@ -36,6 +36,10 @@ export function installStaticHosting(app: Express, projectRoot: string, runtime 
   app.use((_request, response, next) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // Play!'s browser PS2 core uses SharedArrayBuffer workers. Credentialless
+    // isolation keeps CDN-hosted emulator and model assets usable without cookies.
+    response.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    response.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
     next();
   });
 

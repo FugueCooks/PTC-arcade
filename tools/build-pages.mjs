@@ -8,7 +8,7 @@ const rootFiles = [
   'index.html', 'player.html', 'style.css', 'app-bootstrap.js', 'arcade.js',
   'avatar-selection.js', 'multiplayer-client.js'
 ];
-const sourceDirectories = ['avatars', 'cabinets', 'games', 'rooms', 'social', 'world', 'realtime'];
+const sourceDirectories = ['avatars', 'cabinets', 'emulators', 'games', 'rooms', 'social', 'world', 'realtime'];
 const requiredPrizeModels = new Set([
   'enterprise.optimized.glb',
   'furthermore.optimized.glb',
@@ -99,6 +99,8 @@ function headersFile() {
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
 
 /index.html
   Cache-Control: no-store
@@ -113,6 +115,9 @@ function headersFile() {
   Cache-Control: public, max-age=300, must-revalidate
 
 /assets/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/emulators/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 `;
 }

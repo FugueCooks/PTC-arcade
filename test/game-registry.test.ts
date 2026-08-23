@@ -40,13 +40,15 @@ void test('every hosted game points at an approved, enabled cabinet', async () =
   }
 });
 
-void test('the rear console rooms expose hosted N64 games and safely disabled PS2 cabinets', async () => {
+void test('the rear console rooms expose hosted N64 games and one isolated experimental PS2 cabinet', async () => {
   const cabinets = await loadJson<Array<{ id: string; name: string; enabled: boolean; defaultGameId?: string }>>('assets/cabinets/registry.json');
   const byId = new Map(cabinets.map((cabinet) => [cabinet.id, cabinet]));
   assert.equal(byId.get('n64-back-cabinet-01')?.defaultGameId, 'star-fox-64');
   assert.equal(byId.get('n64-back-cabinet-02')?.defaultGameId, 'mega-man-64');
   assert.equal(byId.get('n64-back-cabinet-03')?.defaultGameId, 'super-mario-64-expansion');
-  for (let index = 1; index <= 5; index += 1) assert.equal(byId.get(`psx-back-cabinet-0${index}`)?.enabled, false);
+  assert.equal(byId.get('psx-back-cabinet-01')?.enabled, false);
+  assert.equal(byId.get('psx-back-cabinet-02')?.enabled, true);
+  for (let index = 3; index <= 5; index += 1) assert.equal(byId.get(`psx-back-cabinet-0${index}`)?.enabled, false);
   assert.equal(byId.get('psx-back-cabinet-01')?.name, 'God of War (PS2)');
   assert.equal(byId.get('psx-back-cabinet-02')?.name, 'Kingdom Hearts (PS2)');
 });
