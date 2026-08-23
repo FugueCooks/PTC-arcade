@@ -101,6 +101,7 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
+  'server:draining': (payload: { message: string; deadlineAt: number; warningMs: number }) => void;
   'room:snapshot': (payload: RoomSnapshot) => void;
   'room:resume': (payload: { resumeToken: string; resumed: boolean }) => void;
   'room:error': (payload: { message: string; code?: string }) => void;

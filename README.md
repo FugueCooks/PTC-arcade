@@ -6,7 +6,9 @@ A Three.js/WebGL arcade floor with a lightweight Socket.IO multiplayer foundatio
 
 The production frontend is deployed on Cloudflare Pages at `https://retro-arcade-om7.pages.dev/`. Run `npm run pages:build` to create the strict `.pages-dist` bundle and `npm run pages:deploy` to publish it. The bundle excludes ROMs, BIOS files, unused model experiments, and every file over Cloudflare Pages' safe per-file limit. Hosted game and BIOS URLs continue to resolve through the R2 values written into `runtime-config.js`. Render remains a rollback Node host.
 
-The Node.js service now serves only approved browser assets, exposes `/healthz`, uses proxy-safe HTTP keep-alive settings, and keeps movement traffic on compact Socket.IO messages with WebSocket support. Large game downloads are separated from realtime traffic through `GAME_ASSET_BASE_URL`; the hosted PlayStation BIOS is independently configured through `BIOS_ASSET_URL`.
+The Node.js service now serves only approved browser assets, exposes liveness at `/health` and `/healthz`, readiness at `/ready`, and Prometheus text metrics at `/metrics`. It uses proxy-safe HTTP keep-alive settings and keeps movement traffic on compact Socket.IO messages with WebSocket support. Large game downloads are separated from realtime traffic through `GAME_ASSET_BASE_URL`; the hosted PlayStation BIOS is independently configured through `BIOS_ASSET_URL`.
+
+Phase 7 operational safeguards begin with typed and bounded environment configuration, a unique server identity, structured JSON lifecycle logs, capacity-aware readiness, and graceful `SIGTERM`/`SIGINT` draining. During a normal drain the server rejects new room joins, warns connected clients, and keeps existing sessions alive until empty or `SERVER_DRAIN_TIMEOUT_SECONDS` expires.
 
 - Leave `GAME_ASSET_BASE_URL` blank for the existing local `assets/games/` behavior.
 - In production, point it at a CDN-backed object-storage `games` directory containing the exact files in `deploy/public-assets.manifest.json`.

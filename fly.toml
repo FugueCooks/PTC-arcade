@@ -29,7 +29,7 @@ primary_region = "lax"
     interval = "15s"
     method = "GET"
     timeout = "5s"
-    path = "/healthz"
+    path = "/ready"
 
 [[vm]]
   cpu_kind = "shared"

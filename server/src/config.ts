@@ -1,0 +1,64 @@
+import { randomUUID } from 'node:crypto';
+import { hostname } from 'node:os';
+
+export interface ServerConfig {
+  port: number;
+  trustProxy: boolean;
+  serverId: string;
+  region: string;
+  softwareVersion: string;
+  maxPlayersPerRoom: number;
+  maxRoomsPerServer: number;
+  maxPlayersPerServer: number;
+  maxPendingConnections: number;
+  maxMemoryMb: number;
+  maxEventLoopDelayMs: number;
+  drainTimeoutMs: number;
+  shutdownWarningMs: number;
+}
+
+export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): ServerConfig {
+  const deploymentId = cleanIdentifier(environment.SERVER_ID)
+    ?? cleanIdentifier(environment.RENDER_INSTANCE_ID)
+    ?? cleanIdentifier(environment.FLY_MACHINE_ID);
+  const generatedId = `${cleanIdentifier(hostname()) ?? 'arcade'}-${process.pid}-${randomUUID().slice(0, 8)}`;
+
+  return {
+    port: integer(environment.PORT, 8080, 1, 65_535),
+    trustProxy: environment.TRUST_PROXY === '1',
+    serverId: deploymentId ?? generatedId,
+    region: cleanIdentifier(environment.SERVER_REGION ?? environment.RENDER_REGION ?? environment.FLY_REGION) ?? 'local',
+    softwareVersion: cleanVersion(environment.SOFTWARE_VERSION ?? environment.RENDER_GIT_COMMIT ?? environment.FLY_IMAGE_REF) ?? 'development',
+    maxPlayersPerRoom: integer(environment.MAX_PLAYERS_PER_ROOM, 24, 2, 48),
+    maxRoomsPerServer: integer(environment.MAX_ROOMS_PER_SERVER, 8, 1, 100),
+    maxPlayersPerServer: integer(environment.MAX_PLAYERS_PER_SERVER, 192, 2, 5_000),
+    maxPendingConnections: integer(environment.MAX_PENDING_CONNECTIONS, 128, 1, 10_000),
+    maxMemoryMb: integer(environment.MAX_SERVER_MEMORY_MB, 768, 128, 65_536),
+    maxEventLoopDelayMs: integer(environment.MAX_EVENT_LOOP_DELAY_MS, 150, 10, 10_000),
+    drainTimeoutMs: seconds(environment.SERVER_DRAIN_TIMEOUT_SECONDS, 45, 5, 3_600),
+    shutdownWarningMs: seconds(environment.SERVER_SHUTDOWN_WARNING_SECONDS, 15, 0, 600)
+  };
+}
+
+function integer(value: string | undefined, fallback: number, minimum: number, maximum: number): number {
+  if (value === undefined || value.trim() === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
+    throw new Error(`Invalid numeric server configuration; expected an integer from ${minimum} to ${maximum}.`);
+  }
+  return parsed;
+}
+
+function seconds(value: string | undefined, fallback: number, minimum: number, maximum: number): number {
+  return integer(value, fallback, minimum, maximum) * 1_000;
+}
+
+function cleanIdentifier(value: string | undefined): string | undefined {
+  const cleaned = value?.trim().replace(/[^A-Za-z0-9._:-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 96);
+  return cleaned || undefined;
+}
+
+function cleanVersion(value: string | undefined): string | undefined {
+  const cleaned = value?.trim().replace(/[^A-Za-z0-9._:+/-]/g, '-').slice(0, 128);
+  return cleaned || undefined;
+}

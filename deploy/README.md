@@ -77,8 +77,9 @@ Run `npm run verify:games` before uploading. The public manifest covers the loca
 
 ## Backend health
 
-The service exposes `GET /healthz`. Configure the host's health check to use that
-path. The service listens on `PORT`, supports WebSocket and polling transports,
+The service exposes `GET /health` and the backwards-compatible `GET /healthz` for liveness, `GET /ready` for capacity-aware readiness, and `GET /metrics` in Prometheus text format. Configure the host's health check to use `/ready`; it returns 503 while initializing, draining, or beyond a configured safety threshold. Use `SERVER_ID`, `SERVER_REGION`, `SOFTWARE_VERSION`, `MAX_PLAYERS_PER_ROOM`, `MAX_ROOMS_PER_SERVER`, `MAX_PLAYERS_PER_SERVER`, `MAX_PENDING_CONNECTIONS`, `MAX_SERVER_MEMORY_MB`, `MAX_EVENT_LOOP_DELAY_MS`, `SERVER_DRAIN_TIMEOUT_SECONDS`, and `SERVER_SHUTDOWN_WARNING_SECONDS` to configure the operational envelope.
+
+The legacy endpoint remains available for simple liveness probes. The service listens on `PORT`, supports WebSocket and polling transports,
 uses proxy-safe keep-alive values, and never sends ROM or BIOS bytes over
 Socket.IO. Deploy exactly one backend instance for now because room state is
 in-memory. The CDN handles the large downloads independently.

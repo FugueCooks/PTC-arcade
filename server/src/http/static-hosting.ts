@@ -43,10 +43,6 @@ export function installStaticHosting(app: Express, projectRoot: string, runtime 
     next();
   });
 
-  app.get('/healthz', (_request, response) => {
-    response.setHeader('Cache-Control', 'no-store');
-    response.json({ ok: true, service: 'roms-retro-arcade', now: Date.now() });
-  });
   app.get('/runtime-config.js', (_request, response) => {
     response.type('application/javascript');
     response.setHeader('Cache-Control', 'no-store');

@@ -171,6 +171,9 @@
       socket.on('room:resume', ({ resumeToken }) => {
         try { sessionStorage.setItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`, resumeToken); } catch { /* Non-persistent browser session. */ }
       });
+      socket.on('server:draining', ({ message }) => {
+        worldManager?.announce({ text: message || 'This arcade server is restarting soon.' });
+      });
       socket.on('room:error', ({ message, code }) => {
         if (code === 'room-full' && typeof socket.switchRoom === 'function') {
           fullRoomAttempts.add(currentRoomId);

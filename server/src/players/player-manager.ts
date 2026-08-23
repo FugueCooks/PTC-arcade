@@ -58,6 +58,14 @@ export class PlayerManager {
 
   constructor(private readonly rooms: RoomManager) {}
 
+  get connectedCount(): number {
+    return [...this.players.values()].filter((player) => typeof player.socketId === 'string').length;
+  }
+
+  get managedCount(): number {
+    return this.players.size;
+  }
+
   subscribe(listener: (event: PlayerEvent) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);

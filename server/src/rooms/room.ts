@@ -42,6 +42,10 @@ export class Room {
     return this.members.size === 0;
   }
 
+  get memberCount(): number {
+    return this.members.size;
+  }
+
   get isFull(): boolean {
     return this.members.size >= (this.config.capacity ?? 48);
   }

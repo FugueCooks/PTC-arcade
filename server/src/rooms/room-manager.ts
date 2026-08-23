@@ -20,8 +20,9 @@ const defaultRoom: RoomConfig = {
 export class RoomManager {
   private readonly rooms = new Map<string, Room>();
 
-  constructor(configs: readonly RoomConfig[] = configuredRooms()) {
-    configs.forEach((config) => this.rooms.set(config.id, new Room(config)));
+  constructor(configs?: readonly RoomConfig[], maximumCapacity = 48) {
+    const roomConfigs = configs ?? configuredRooms(maximumCapacity);
+    roomConfigs.forEach((config) => this.rooms.set(config.id, new Room(config)));
   }
 
   get(roomId: string): Room | undefined {
@@ -31,13 +32,26 @@ export class RoomManager {
   getDefault(): Room {
     return this.rooms.get(DEFAULT_ROOM_ID)!;
   }
+
+  get roomCount(): number {
+    return this.rooms.size;
+  }
+
+  get activeRoomCount(): number {
+    return [...this.rooms.values()].filter((room) => !room.isEmpty).length;
+  }
+
+  get averagePopulation(): number {
+    const active = [...this.rooms.values()].filter((room) => !room.isEmpty);
+    return active.length === 0 ? 0 : active.reduce((total, room) => total + room.memberCount, 0) / active.length;
+  }
 }
 
-function configuredRooms(): RoomConfig[] {
+function configuredRooms(maximumCapacity: number): RoomConfig[] {
   const registryPath = path.resolve(process.cwd(), 'assets', 'rooms', 'registry.json');
   const parsed = JSON.parse(readFileSync(registryPath, 'utf8')) as { rooms?: Array<{ id?: unknown; capacity?: unknown; enabled?: unknown }> };
   const rooms = (parsed.rooms ?? []).filter((room) => room.enabled === true && typeof room.id === 'string'
     && /^(main|main-[2-9])$/.test(room.id) && Number.isInteger(room.capacity) && Number(room.capacity) <= 48);
   if (!rooms.some((room) => room.id === DEFAULT_ROOM_ID)) throw new Error('Room registry must enable the default room.');
-  return rooms.map((room) => ({ ...defaultRoom, id: String(room.id), capacity: Number(room.capacity) }));
+  return rooms.map((room) => ({ ...defaultRoom, id: String(room.id), capacity: Math.min(Number(room.capacity), maximumCapacity) }));
 }
