@@ -1,5 +1,5 @@
 export async function loadGameRegistry() {
-  const response = await fetch('assets/games/registry.json', { cache: 'no-cache' });
+  const response = await fetch('assets/games/registry.json?v=n64-ps2-rooms-1', { cache: 'no-cache' });
   if (!response.ok) throw new Error(`Game registry failed to load (${response.status}).`);
   const payload = await response.json();
   if (payload?.version !== 1 || !Array.isArray(payload.games)) throw new Error('Unsupported game registry.');

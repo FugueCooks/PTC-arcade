@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { loadGameRegistry } from './games/game-registry.js';
+import { loadGameRegistry } from './games/game-registry.js?v=n64-ps2-rooms-1';
 import { loadRoomRegistry } from './rooms/room-registry.js';
 
 // Legacy scene code and newer ES modules now share the exact same Three.js
