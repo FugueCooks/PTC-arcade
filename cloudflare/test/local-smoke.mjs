@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 
-const endpoint = process.env.REALTIME_TEST_URL ?? 'ws://127.0.0.1:8791/realtime?room=main';
+const endpointUrl = new URL(process.env.REALTIME_TEST_URL ?? 'ws://127.0.0.1:8791/realtime');
+endpointUrl.searchParams.set('room', `smoke-${Date.now().toString(36)}`);
+const endpoint = endpointUrl.href;
 
 class Client {
   constructor(name) {
@@ -67,6 +69,30 @@ assert.equal((await second.waitFor((message) => message.e === 'chat:message' && 
 
 const pingRequest = second.send('social:ping', {}, true);
 assert.equal(typeof (await second.waitFor((message) => message.q === pingRequest)).d.serverAt, 'number');
+
+async function moveTo(client, from, to, steps = 48) {
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  for (let index = 1; index <= steps; index += 1) {
+    const alpha = index / steps;
+    client.send('player:move', { p: [from[0] + (to[0] - from[0]) * alpha, from[1] + (to[1] - from[1]) * alpha], r: Math.PI / 2 });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
+await Promise.all([moveTo(first, [0.1, 11], [-8.2, -10]), moveTo(second, [-2.2, 11], [-8.2, -10])]);
+for (const client of [first, second]) {
+  const state = client.events.findLast((message) => message.e === 'player:state')?.d;
+  assert.ok(state && Math.hypot(state.p[0] + 8.2, state.p[2] + 10) < 0.2, `${client.name} did not reach the cabinet: ${JSON.stringify(state?.p)}`);
+}
+const firstClaim = first.send('cabinet:request-use', { cabinetId: 'pixel-rally' }, true);
+const secondClaim = second.send('cabinet:request-use', { cabinetId: 'pixel-rally' }, true);
+const [firstResult, secondResult] = await Promise.all([
+  first.waitFor((message) => message.q === firstClaim), second.waitFor((message) => message.q === secondClaim)
+]);
+assert.equal([firstResult.d.ok, secondResult.d.ok].filter(Boolean).length, 1, 'only one player may win a cabinet race');
+assert.equal([firstResult.d.reason, secondResult.d.reason].includes('occupied'), true,
+  `losing request was not rejected as occupied: ${JSON.stringify([firstResult.d, secondResult.d])}`);
+
 first.close(); second.close();
-console.log('Cloudflare local smoke test passed: join, visibility, movement, chat sanitation, and acknowledgements.');
+console.log('Cloudflare smoke test passed: two-player join, movement, chat sanitation, acknowledgements, and atomic cabinet ownership.');
 process.exit(0);

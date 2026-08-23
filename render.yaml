@@ -17,3 +17,5 @@ services:
         value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games
       - key: BIOS_ASSET_URL
         value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN
+      - key: REALTIME_URL
+        value: https://retro-arcade-realtime.roms-retro-arcade.workers.dev/realtime
