@@ -1,0 +1,55 @@
+name: retro-arcade-multiplayer
+region: sfo
+
+services:
+  - name: arcade
+    github:
+      repo: FugueCooks/retro-arcade-multiplayer
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+        type: GENERAL
+      - key: PORT
+        value: "8080"
+        scope: RUN_TIME
+        type: GENERAL
+      - key: TRUST_PROXY
+        value: "1"
+        scope: RUN_TIME
+        type: GENERAL
+      - key: GAME_ASSET_BASE_URL
+        value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games
+        scope: RUN_TIME
+        type: GENERAL
+      - key: BIOS_ASSET_URL
+        value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN
+        scope: RUN_TIME
+        type: GENERAL
+    health_check:
+      initial_delay_seconds: 20
+      period_seconds: 15
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+      http_path: /healthz
+      port: 8080
+    liveness_health_check:
+      initial_delay_seconds: 30
+      period_seconds: 30
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 5
+      http_path: /healthz
+      port: 8080
+    termination:
+      drain_seconds: 30
+      grace_period_seconds: 60

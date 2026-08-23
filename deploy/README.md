@@ -108,3 +108,21 @@ Keep exactly one machine until room state is moved out of process. Adding
 replicas before regional room ownership or shared coordination exists can split
 players and cabinet ownership across independent server memories. The current
 configuration keeps the machine awake to avoid reconnects and cold-start delays.
+
+## DigitalOcean low-cost deployment
+
+`.do/app.yaml` is the preferred low-cost deployment. It runs one fixed
+512 MiB container in DigitalOcean's San Francisco region and costs $5/month at
+current published pricing. Cloudflare R2 continues to serve game and BIOS data.
+
+Create the app from the private GitHub repository and select the existing app
+spec, or run the following after authenticating `doctl`:
+
+```powershell
+doctl apps create --spec .do/app.yaml
+```
+
+The fixed plan intentionally permits only one container, matching the current
+in-memory authoritative room architecture. If process memory approaches 400 MiB
+or the server becomes CPU-bound under load, change `instance_size_slug` to
+`apps-s-1vcpu-1gb-fixed` ($10/month) before considering horizontal scaling.
