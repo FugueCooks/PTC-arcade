@@ -108,7 +108,7 @@ Messages are normalized and stripped of control/angle-bracket characters by the 
 Phase 6 is configuration-driven through `assets/world/config.json`. `WorldManager` composes independent client systems and applies the server-owned room state without taking ownership of movement, cabinets, avatars, or emulation.
 
 - **WorldManager** coordinates snapshots, room activity, announcements, events, themes, weather, the update loop, and the other world managers.
-- **AudioManager** owns one shared Web Audio context, master/ambience/music buses, cached procedural noise, positional cabinet/air-conditioning hums, activity-scaled crowd ambience, material-aware footsteps, announcement cues, and jukebox playback. Browser audio unlocks only after a user gesture. Track entries may point to approved local audio files; the included tracks are original procedural synthesizer patterns.
+- **AudioManager** owns one shared Web Audio context, master/ambience/music buses, cached procedural noise, positional cabinet/air-conditioning hums, activity-scaled crowd ambience, announcement cues, and jukebox playback. Avatar walking sounds are intentionally disabled. Browser audio unlocks only after a user gesture. Track entries may point to approved local audio files; the included tracks are original procedural synthesizer patterns.
 - **LightingManager** discovers existing scene lights and emissive materials once, preserves their base values, and smoothly adjusts brightness for quiet, active, and busy rooms. It also supports flicker, neon surges, animated emissive accents, and future palette control.
 - **NPCManager** owns lightweight ambient NPC entities, configurable walking paths, idle pauses, distance culling, and a future-facing interaction callback. Initial NPCs deliberately use inexpensive arcade-styled geometry rather than unrelated avatar rigs.
 - **ParticleManager** pools typed position/velocity buffers for dust, snow, sparks, neon bursts, and future effects. Emitters stop updating outside their configured camera distance.
@@ -132,7 +132,7 @@ To add an approved local track, place an optimized audio file under `assets/worl
 
 World wire events are `world:snapshot`, `world:state-changed`, `world:announcement`, `world:event`, and the acknowledged `world:jukebox-set` request. `WORLD_REQUEST_COOLDOWN_MS` defaults to `500`; `WORLD_EVENT_INTERVAL_MS` defaults to `90000`.
 
-Known limitations: world state resets on server restart; procedural crowd noise is abstract rather than recorded speech; NPCs are simple primitives; weather appears through dedicated interior display windows rather than a modeled exterior; remote footsteps are not yet spatialized per avatar; and no admin theme/event UI exists. These are intentional seams for later phases, not blockers for the current environment.
+Known limitations: world state resets on server restart; procedural crowd noise is abstract rather than recorded speech; NPCs are simple primitives; weather appears through dedicated interior display windows rather than a modeled exterior; and no admin theme/event UI exists. These are intentional seams for later phases, not blockers for the current environment.
 
 ## Multiplayer cabinets
 
@@ -167,7 +167,7 @@ The approved registry lives in `assets/avatars/registry.json`. Each entry contai
 
 ### Add an approved avatar
 
-1. Put its optimized `.glb` file in `assets/avatars/models/` and a small preview image in `assets/avatars/thumbnails/`.
+1. Put its optimized `.glb` file in `assets/avatars/models/` and a small icon in `assets/avatars/thumbnails/`. The selector itself is deliberately text-only; the icon is retained for the compact multiplayer player list.
 2. Add an enabled entry to `assets/avatars/registry.json`. Use a lowercase, dash-separated unique ID.
 3. Set `scale`, `heightOffset`, and `rotationOffset` so the model rests on the floor and faces forward.
 4. Map the model's actual clip names to logical states: `idle`, `walk`, and optionally `run` and `interact`.

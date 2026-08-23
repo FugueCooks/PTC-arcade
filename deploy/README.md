@@ -65,6 +65,10 @@ read access must not grant object listing or write access.
 - Set `Cache-Control: public, max-age=31536000, immutable`.
 - Use `application/octet-stream` when a platform does not recognize a ROM extension.
 - Put a CDN/custom domain in front of the bucket for low-latency regional delivery.
+- Store PlayStation CD images as CHD (or another emulator-supported compressed
+  format) instead of raw BIN/ISO whenever possible. Compression is the only way
+  to reduce the bytes every first-time visitor must download; CDN caching reduces
+  origin latency but cannot make a multi-hundred-megabyte image small.
 - Only upload game and BIOS files that you have the right to make available to
   every visitor. The browser still supports player-selected local files as a
   fallback.

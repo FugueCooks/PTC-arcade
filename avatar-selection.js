@@ -56,14 +56,7 @@ async function boot() {
       card.type = 'button';
       card.className = 'avatar-card';
       card.dataset.avatarId = avatar.id;
-      const image = document.createElement('img');
-      image.src = avatar.thumbnailUrl;
-      image.alt = '';
-      image.loading = 'lazy';
-      image.onerror = () => { image.hidden = true; };
-      const label = document.createElement('span');
-      label.textContent = avatar.name;
-      card.append(image, label);
+      card.textContent = avatar.name;
       card.addEventListener('click', () => selectAvatar(avatar.id));
       return card;
     }));

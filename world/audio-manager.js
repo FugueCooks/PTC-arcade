@@ -1,7 +1,7 @@
 export class AudioManager {
   constructor(arcade, config) {
     this.arcade = arcade; this.config = config; this.context = null; this.master = null; this.ambience = null; this.music = null;
-    this.sources = []; this.muted = false; this.lastStepAt = 0; this.currentTrackId = null; this.musicTimer = 0; this.beat = 0; this.pendingJukeboxState = null;
+    this.sources = []; this.muted = false; this.currentTrackId = null; this.musicTimer = 0; this.beat = 0; this.pendingJukeboxState = null;
     this.toggle = document.querySelector('#audio-toggle');
     this.toggle.addEventListener('click', () => this.setMuted(!this.muted));
     const unlock = () => void this.unlock();
@@ -89,20 +89,10 @@ export class AudioManager {
 
   click() { if (this.context && !this.muted) this.playNote(84, .055, .035); }
 
-  update(now) {
+  update() {
     if (!this.context) return;
     const camera = this.arcade.getCamera(), listener = this.context.listener;
     listener.positionX.value = camera.position.x; listener.positionY.value = camera.position.y; listener.positionZ.value = camera.position.z;
-    const transform = this.arcade.getLocalTransform();
-    if (this.arcade.getLocalAnimationState() === 'walk' && now - this.lastStepAt > 390) { this.footstep(this.materialAt(transform.position)); this.lastStepAt = now; }
-  }
-
-  materialAt(position) { if (position.x < -14) return 'concrete'; if (Math.hypot(position.x, position.z) < 2.5) return 'metal'; return 'tile'; }
-  footstep(material) {
-    if (!this.context || this.muted) return; const now = this.context.currentTime; const source = this.context.createBufferSource(); source.buffer = this.noise;
-    const filter = this.context.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = material === 'metal' ? 1250 : material === 'concrete' ? 520 : 850;
-    const gain = this.context.createGain(); gain.gain.setValueAtTime(material === 'metal' ? .065 : .045, now); gain.gain.exponentialRampToValueAtTime(.001, now + .09);
-    source.connect(filter).connect(gain).connect(this.master); source.start(now, Math.random(), .1);
   }
 
   setMuted(muted) { this.muted = muted; if (this.master) this.master.gain.setTargetAtTime(muted ? 0 : .38, this.context.currentTime, .05); this.toggle.textContent = muted ? 'AUDIO OFF' : 'AUDIO ON'; this.toggle.setAttribute('aria-pressed', String(!muted)); }
