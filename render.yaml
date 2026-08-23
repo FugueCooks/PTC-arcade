@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: retro-arcade-multiplayer
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: GAME_ASSET_BASE_URL
+        value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games
+      - key: BIOS_ASSET_URL
+        value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN

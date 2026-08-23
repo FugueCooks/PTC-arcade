@@ -126,3 +126,20 @@ The fixed plan intentionally permits only one container, matching the current
 in-memory authoritative room architecture. If process memory approaches 400 MiB
 or the server becomes CPU-bound under load, change `instance_size_slug` to
 `apps-s-1vcpu-1gb-fixed` ($10/month) before considering horizontal scaling.
+
+## Render free testing deployment
+
+`render.yaml` defines a no-cost Render Web Service using the repository's
+Dockerfile. It runs one 512 MiB instance in Oregon, keeps room authority in one
+process, checks `/healthz`, and sends game and BIOS downloads directly to the
+existing Cloudflare R2 public bucket.
+
+Create a Blueprint from the private GitHub repository and accept the settings
+from `render.yaml`. No database is required. Render supplies `PORT`
+automatically, so do not hardcode it in the Blueprint.
+
+The free service is intended for remote testing. It can spin down after 15
+minutes without HTTP or WebSocket activity and may take about a minute to wake.
+It is not the production target for hundreds of concurrent players. If the
+free service reaches its included usage limits without a payment method, Render
+suspends it instead of charging the account.
