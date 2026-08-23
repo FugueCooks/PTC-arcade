@@ -268,6 +268,7 @@ function stopEmulator(){
   } catch(error) { console.warn('Could not terminate the emulator cleanly.', error); }
   document.querySelector('#emulator-host').replaceChildren();
   document.querySelector('#emulator-stage').style.display='none';
+  document.querySelector('.screen-wrap .scanlines').style.display='block';
   cvs.style.display='block';
   activeEmulatorFrame=null;pendingPs2Source=null;
   emulatorObjectUrls.forEach(url=>URL.revokeObjectURL(url));emulatorObjectUrls=[];
@@ -283,14 +284,14 @@ function formatDownloadSize(bytes){if(!Number.isFinite(bytes)||bytes<=0)return'H
 function launchEmulator(gameFile){
   const host=document.querySelector('#emulator-host'),stage=document.querySelector('#emulator-stage');
   const downloadBytes=typeof gameFile==='string'?activeCabinet?.gameSizeBytes:gameFile?.size;
-  cvs.style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${(activeCabinet?.gameName||'ARCADE GAME').toUpperCase()} · ${formatDownloadSize(downloadBytes)}...`;
+  cvs.style.display='none';document.querySelector('.screen-wrap .scanlines').style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${(activeCabinet?.gameName||'ARCADE GAME').toUpperCase()} · ${formatDownloadSize(downloadBytes)}...`;
   const isPs2=activeCabinet?.system==='ps2';
   const gameUrl=typeof gameFile==='string'?gameFile:(isPs2?'':URL.createObjectURL(gameFile));
   const core=isPs2?'ps2':(activeCabinet?.system==='n64'?'n64':'psx');
   const biosUrl=core==='psx'?(psxBios?URL.createObjectURL(psxBios):hostedPsxBios):'';
   emulatorObjectUrls=[gameUrl,biosUrl].filter(url=>url.startsWith('blob:'));
   const gameName=activeCabinet?.gameName||'Arcade Game',gameId=activeCabinet?.gameId||1;
-  const player=document.createElement('iframe');player.title=`${gameName} player`;player.allow='autoplay; fullscreen';player.src=isPs2?'emulators/play/index.html?v=ps2-remote-3':`player.html?core=${encodeURIComponent(core)}&game=${encodeURIComponent(gameUrl)}&bios=${encodeURIComponent(biosUrl)}&name=${encodeURIComponent(gameName)}&id=${gameId}`;player.style.cssText='border:0;width:100%;height:100%;background:#02030a';player.onerror=()=>{showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()};activeEmulatorFrame=player;pendingPs2Source=isPs2?(gameFile instanceof File?{file:gameFile}:{url:gameUrl,name:decodeURIComponent(new URL(gameUrl,location.href).pathname.split('/').pop()||`${gameName}.iso`),size:downloadBytes}):null;host.replaceChildren(player);
+  const player=document.createElement('iframe');player.title=`${gameName} player`;player.allow='autoplay; fullscreen';player.src=isPs2?'emulators/play/index.html?v=ps2-visual-1':`player.html?core=${encodeURIComponent(core)}&game=${encodeURIComponent(gameUrl)}&bios=${encodeURIComponent(biosUrl)}&name=${encodeURIComponent(gameName)}&id=${gameId}`;player.style.cssText='border:0;width:100%;height:100%;background:#02030a';player.onerror=()=>{showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()};activeEmulatorFrame=player;pendingPs2Source=isPs2?(gameFile instanceof File?{file:gameFile}:{url:gameUrl,name:decodeURIComponent(new URL(gameUrl,location.href).pathname.split('/').pop()||`${gameName}.iso`),size:downloadBytes}):null;host.replaceChildren(player);
   const estimatedTimeout=Math.max(20000,Math.min(180000,20000+(Number(downloadBytes)||0)/524288*1000));
   clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT. CHECK YOUR CONNECTION.')}},estimatedTimeout);
 }

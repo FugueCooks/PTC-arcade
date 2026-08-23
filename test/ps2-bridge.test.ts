@@ -18,10 +18,13 @@ void test('the PS2 cabinet waits for Play! readiness and acknowledges disc hando
   assert.match(player, /const chunkSize = 4 \* 1024 \* 1024/);
   assert.match(player, /const maxCachedChunks = 32/);
   assert.match(player, /return \{ arrayBuffer: \(\) => read\(safeStart, safeEnd\) \}/);
+  assert.match(player, /document\.body\.classList\.add\('remote-disc'\)/);
 });
 
 void test('closing a PS2 session releases the selected disc image reference', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   assert.match(arcade, /activeEmulatorFrame=null;pendingPs2Source=null/);
   assert.match(arcade, /romInput\.value='';romLoaded=false/);
+  assert.match(arcade, /querySelector\('\.screen-wrap \.scanlines'\)\.style\.display='block'/);
+  assert.match(arcade, /querySelector\('\.screen-wrap \.scanlines'\)\.style\.display='none'/);
 });

@@ -16,6 +16,9 @@
       #root input[type="file"] { max-width:100%; color:#fff; }
       #root button, #root input::file-selector-button { padding:.45rem .7rem; color:#36f9f6; background:#100b22; border:1px solid #36f9f6; font:inherit; cursor:pointer; }
       span.version, span.stats { color:#a99abe; font-size:.65rem; }
+      body.remote-disc #root { position:absolute; right:.65rem; bottom:.55rem; width:auto; padding:.28rem .5rem; border:1px solid #36f9f655; border-radius:4px; background:#050510c7; pointer-events:none; }
+      body.remote-disc #root input, body.remote-disc #root .version { display:none; }
+      body.remote-disc #root .stats { float:none; color:#8ffdfa; letter-spacing:.05em; }
     </style>
   </head>
   <body>
@@ -126,6 +129,7 @@
         if (!input || !pendingRemote) return false;
         const source = pendingRemote;
         const file = remoteDisc(source);
+        document.body.classList.add('remote-disc');
         Object.defineProperty(input, 'files', { configurable: true, value: [file] });
         input.dispatchEvent(new Event('change', { bubbles: true }));
         statusElement.textContent = `STREAMING ${source.name.toUpperCase()} // CDN RANGE MODE`;
