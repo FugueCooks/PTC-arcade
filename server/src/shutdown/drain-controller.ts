@@ -8,13 +8,14 @@ import type { RuntimeMetrics } from '../metrics/metrics.js';
 export interface DrainOptions {
   activePlayers(): number;
   beginDraining?(): void;
-  stopTimers(): void;
+  stopTimers(): void | Promise<void>;
 }
 
 export class DrainController {
   private draining = false;
   private deadlineAt = 0;
   private pollTimer?: NodeJS.Timeout;
+  private finishing = false;
 
   constructor(
     private readonly httpServer: HttpServer,
@@ -47,12 +48,20 @@ export class DrainController {
   private poll(): void {
     if (this.options.activePlayers() > 0 && Date.now() < this.deadlineAt) return;
     if (this.pollTimer) clearInterval(this.pollTimer);
-    this.options.stopTimers();
+    if (this.finishing) return;
+    this.finishing = true;
+    void this.finish();
+  }
+
+  private async finish(): Promise<void> {
+    await this.options.stopTimers();
     this.metrics.increment('server_drain_completed_total');
     this.logger.info('server_shutdown', { activePlayers: this.options.activePlayers(), durationMs: this.config.drainTimeoutMs - Math.max(0, this.deadlineAt - Date.now()) });
     this.metrics.close();
-    void this.io.close(() => {
-      this.httpServer.close(() => { process.exitCode = 0; });
+    await new Promise<void>((resolve, reject) => {
+      void this.io.close((error) => { if (error) reject(error); else resolve(); });
     });
+    await new Promise<void>((resolve) => { this.httpServer.close(() => resolve()); });
+    process.exitCode = 0;
   }
 }

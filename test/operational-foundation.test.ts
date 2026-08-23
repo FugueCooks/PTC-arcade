@@ -19,6 +19,7 @@ void test('operational configuration is bounded and deployment identity is norma
   assert.equal(config.maxPlayersPerRoom, 24);
   assert.equal(config.drainTimeoutMs, 60_000);
   assert.throws(() => loadServerConfig({ MAX_PLAYERS_PER_ROOM: '5000' }), /Invalid numeric server configuration/);
+  assert.throws(() => loadServerConfig({ REDIS_REQUIRED: '1' }), /requires REDIS_URL/);
 });
 
 void test('configured room capacity is clamped by the per-server safety limit', () => {
@@ -49,6 +50,19 @@ void test('readiness reports initialization, capacity, and draining states witho
   metrics.close();
 });
 
+void test('required Redis coordination controls readiness without exposing its URL', () => {
+  const sources = {
+    connectedSockets: () => 0, activePlayers: () => 0, activeRooms: () => 1,
+    coordinationRequired: () => true, coordinationReady: () => false
+  };
+  const metrics = new RuntimeMetrics({ ...sources, averageRoomPopulation: () => 0, draining: () => false });
+  const config = loadServerConfig({ REDIS_URL: 'redis://example.invalid:6379', REDIS_REQUIRED: '1', MAX_SERVER_MEMORY_MB: '65536' });
+  const health = new HealthService(config, metrics, sources); health.markInitialized();
+  assert.deepEqual(health.readiness().reasons, ['redis-unavailable']);
+  assert.doesNotMatch(JSON.stringify(health.readiness()), /example\.invalid/);
+  metrics.close();
+});
+
 void test('runtime metrics normalize event names and expose process gauges', () => {
   const metrics = new RuntimeMetrics({ connectedSockets: () => 3, activePlayers: () => 2, activeRooms: () => 1, averageRoomPopulation: () => 2, draining: () => false });
   metrics.increment('events:room.join received total');
@@ -59,7 +73,7 @@ void test('runtime metrics normalize event names and expose process gauges', () 
   metrics.close();
 });
 
-void test('graceful draining is idempotent and closes an empty server cleanly', () => {
+void test('graceful draining is idempotent and closes an empty server cleanly', async () => {
   let socketCloseCount = 0;
   let httpCloseCount = 0;
   let timerStopCount = 0;
@@ -79,6 +93,7 @@ void test('graceful draining is idempotent and closes an empty server cleanly', 
   });
   drain.begin('test');
   drain.begin('duplicate');
+  await new Promise((resolve) => setImmediate(resolve));
   assert.equal(health.isDraining, true);
   assert.equal(socketCloseCount, 1);
   assert.equal(httpCloseCount, 1);

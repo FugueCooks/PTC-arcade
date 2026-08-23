@@ -22,6 +22,12 @@ import { installOperationalRoutes } from './http/operational-routes.js';
 import { DrainController } from './shutdown/drain-controller.js';
 import { InMemoryRoomDirectory } from './rooms/room-directory.js';
 import { RoomLifecycleService } from './rooms/room-lifecycle-service.js';
+import { RedisConnection } from './redis/redis-connection.js';
+import { RedisKeys } from './redis/redis-keys.js';
+import { RedisRoomDirectory } from './redis/redis-room-directory.js';
+import { RoomOwnershipService } from './redis/room-ownership-service.js';
+import { ServerRegistry } from './servers/server-registry.js';
+import { createAdapter as createRedisStreamsAdapter } from '@socket.io/redis-streams-adapter';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -37,7 +43,7 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   perMessageDeflate: false,
   transports: ['websocket', 'polling']
 });
-const rooms = new RoomManager(undefined, config.maxPlayersPerRoom, config.serverId);
+const rooms = new RoomManager(undefined, config.maxPlayersPerRoom, config.serverId, Boolean(config.redisUrl));
 const players = new PlayerManager(rooms);
 const cabinets = new CabinetManager(players, {
   interactionDistance: Number(process.env.CABINET_INTERACTION_DISTANCE ?? 2.6),
@@ -62,14 +68,41 @@ const metrics = new RuntimeMetrics({
   averageRoomPopulation: () => rooms.averagePopulation,
   draining: () => health?.isDraining ?? false
 });
+const redis = config.redisUrl ? new RedisConnection(config.redisUrl, logger, metrics) : undefined;
+if (redis) {
+  try {
+    await redis.connect();
+    io.adapter(createRedisStreamsAdapter(redis.client, {
+      streamName: new RedisKeys(config.redisKeyPrefix).socketStream(),
+      sessionKeyPrefix: new RedisKeys(config.redisKeyPrefix).socketSessions(),
+      maxLen: 10_000,
+      onlyPlaintext: true
+    }));
+    logger.info('socket_redis_streams_adapter_ready');
+  } catch (error) {
+    metrics.increment('redis_startup_failure_total');
+    logger.error('redis_startup_failed', { errorMessage: error instanceof Error ? error.message : 'unknown' });
+  }
+}
 health = new HealthService(config, metrics, {
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
-  activeRooms: () => rooms.roomCount
+  activeRooms: () => rooms.roomCount,
+  coordinationRequired: () => config.redisRequired,
+  coordinationReady: () => redis?.isReady ?? false
 });
-const roomDirectory = new InMemoryRoomDirectory();
-const roomLifecycle = new RoomLifecycleService(rooms, roomDirectory, metrics, logger);
+const redisKeys = new RedisKeys(config.redisKeyPrefix);
+const roomDirectory = redis?.isReady ? new RedisRoomDirectory(redis.client, redisKeys, config.roomDirectoryTtlMs) : new InMemoryRoomDirectory();
+const roomOwnership = redis?.isReady ? new RoomOwnershipService(redis.client, redisKeys, config.serverId, config.roomOwnershipTtlMs) : undefined;
+const roomLifecycle = new RoomLifecycleService(rooms, roomDirectory, metrics, logger, roomOwnership, Math.max(1_000, Math.floor(config.roomOwnershipTtlMs / 3)));
 await roomLifecycle.start();
+const serverRegistry = redis?.isReady ? new ServerRegistry(redis.client, redisKeys, config, {
+  roomCount: () => rooms.roomCount,
+  playerCount: () => players.connectedCount,
+  draining: () => health.isDraining,
+  healthy: () => redis.isReady
+}, metrics, logger) : undefined;
+await serverRegistry?.start();
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
 installStaticHosting(app, projectRoot, publicRuntimeConfig());
@@ -253,10 +286,12 @@ worldEventTimer.unref();
 const drain = new DrainController(httpServer, io, config, health, metrics, logger, {
   activePlayers: () => players.connectedCount,
   beginDraining: () => roomLifecycle.beginDraining(),
-  stopTimers: () => {
+  stopTimers: async () => {
     clearInterval(cleanupTimer);
     clearInterval(worldEventTimer);
-    roomLifecycle.stop();
+    await roomLifecycle.stop();
+    await serverRegistry?.stop();
+    await redis?.close();
   }
 });
 

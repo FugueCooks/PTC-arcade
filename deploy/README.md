@@ -97,6 +97,8 @@ BIOS_ASSET_URL=https://games.example.com/arcade/bios/SCPH1001.BIN
 
 No database is required for the current rooms, movement, chat, cabinets, or world state. Add persistent storage only when accounts, cloud saves, durable scores, or profiles are introduced. Redis becomes useful only when multiple realtime server instances must share room state.
 
+For Phase 7 development, run `docker compose -f docker-compose.phase7.yml up redis`, set `REDIS_URL=redis://127.0.0.1:6379`, and set a non-production `REDIS_KEY_PREFIX`. Scaled deployments must set `REDIS_REQUIRED=1` and use sticky sessions while Socket.IO polling remains enabled. See `docs/phase-7-architecture.md` and `docs/redis-keys.md` for ownership, TTL, and security details.
+
 ## Fly.io West Coast deployment
 
 `fly.toml` runs the current authoritative Socket.IO service as one always-on

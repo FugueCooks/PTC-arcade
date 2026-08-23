@@ -12,6 +12,8 @@ Phase 7 operational safeguards begin with typed and bounded environment configur
 
 The Node room layer now models each arcade instance with an owning server ID, human name, lifecycle and health status, capacity, population, creation/activity timestamps, and cabinet/world/jukebox revision counters. `RoomDirectory` is deliberately transport-independent: local development uses `InMemoryRoomDirectory`, while the next scaling milestone supplies the Redis implementation without moving active room simulation out of its owning server.
 
+When `REDIS_URL` is present, the Node service uses Redis Streams for cross-process Socket.IO delivery, registers expiring server and room records, and protects each room with an exclusive renewable lease and fencing token. `REDIS_REQUIRED=1` makes loss of coordination fail readiness. Full topology and key documentation live in `docs/phase-7-architecture.md` and `docs/redis-keys.md`.
+
 - Leave `GAME_ASSET_BASE_URL` blank for the existing local `assets/games/` behavior.
 - In production, point it at a CDN-backed object-storage `games` directory containing the exact files in `deploy/public-assets.manifest.json`.
 - Point `BIOS_ASSET_URL` at the exact public BIOS object URL. Leaving it blank preserves the local `assets/bios/SCPH1001.BIN` fallback.

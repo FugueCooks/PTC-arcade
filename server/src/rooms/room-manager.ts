@@ -22,15 +22,26 @@ export class RoomManager {
   private readonly rooms = new Map<string, Room>();
   private readonly listeners = new Set<(event: RoomManagerEvent) => void>();
   private readonly templates: readonly RoomConfig[];
+  private readonly defaultRoomId: string;
 
-  constructor(configs?: readonly RoomConfig[], maximumCapacity = 48, private readonly serverId = 'local') {
-    this.templates = configs ?? configuredRooms(maximumCapacity);
-    this.templates.forEach((config) => this.addRoom({ ...config, seeded: true }, Date.now(), false));
+  constructor(configs?: readonly RoomConfig[], maximumCapacity = 48, private readonly serverId = 'local', globallyUniqueIds = false) {
+    this.templates = (configs ?? configuredRooms(maximumCapacity)).map((config) => ({
+      ...config, capacity: Math.min(config.capacity ?? maximumCapacity, maximumCapacity)
+    }));
+    if (globallyUniqueIds) {
+      const template = this.templates.find((candidate) => candidate.id === DEFAULT_ROOM_ID) ?? this.templates[0];
+      const suffix = randomUUID();
+      const room = this.addRoom({ ...template, id: `room-${suffix}`, templateId: template.id, seeded: true }, Date.now(), false);
+      this.defaultRoomId = room.id;
+    } else {
+      this.templates.forEach((config) => this.addRoom({ ...config, seeded: true }, Date.now(), false));
+      this.defaultRoomId = DEFAULT_ROOM_ID;
+    }
   }
 
   subscribe(listener: (event: RoomManagerEvent) => void): () => void { this.listeners.add(listener); return () => this.listeners.delete(listener); }
-  get(roomId: string): Room | undefined { return this.rooms.get(roomId); }
-  getDefault(): Room { return this.rooms.get(DEFAULT_ROOM_ID)!; }
+  get(roomId: string): Room | undefined { return this.rooms.get(roomId) ?? (roomId === DEFAULT_ROOM_ID ? this.getDefault() : undefined); }
+  getDefault(): Room { return this.rooms.get(this.defaultRoomId)!; }
   get roomCount(): number { return this.rooms.size; }
   get activeRoomCount(): number { return [...this.rooms.values()].filter((room) => !room.isEmpty).length; }
   get records(): RoomRecord[] { return [...this.rooms.values()].map((room) => room.record()); }

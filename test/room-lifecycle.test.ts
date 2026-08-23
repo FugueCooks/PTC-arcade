@@ -43,7 +43,7 @@ void test('room lifecycle mirrors records and closes only idle dynamic rooms', a
   await lifecycle.flush();
   assert.equal(await directory.get(dynamic.id), undefined);
   assert.equal(rooms.close('main', 2_000), false);
-  lifecycle.stop(); runtimeMetrics.close();
+  await lifecycle.stop(); runtimeMetrics.close();
 });
 
 void test('draining marks every room unavailable for new admissions', async () => {
@@ -56,5 +56,5 @@ void test('draining marks every room unavailable for new admissions', async () =
   await lifecycle.flush();
   assert.equal(rooms.getDefault().acceptsPlayers, false);
   assert.equal((await directory.get('main'))?.status, 'draining');
-  lifecycle.stop(); runtimeMetrics.close();
+  await lifecycle.stop(); runtimeMetrics.close();
 });

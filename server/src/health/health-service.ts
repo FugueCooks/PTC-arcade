@@ -5,6 +5,8 @@ export interface HealthSources {
   connectedSockets(): number;
   activePlayers(): number;
   activeRooms(): number;
+  coordinationRequired?(): boolean;
+  coordinationReady?(): boolean;
 }
 
 export interface ReadinessResult {
@@ -33,6 +35,7 @@ export class HealthService {
     if (!this.initialized) reasons.push('initializing');
     if (this.draining) reasons.push('draining');
     if (this.criticalFailure) reasons.push('critical-manager-failure');
+    if (this.sources.coordinationRequired?.() && !this.sources.coordinationReady?.()) reasons.push('redis-unavailable');
     if (this.sources.connectedSockets() >= this.config.maxPendingConnections + this.config.maxPlayersPerServer) reasons.push('connection-capacity');
     if (this.sources.activePlayers() >= this.config.maxPlayersPerServer) reasons.push('player-capacity');
     if (this.sources.activeRooms() > this.config.maxRoomsPerServer) reasons.push('room-capacity');
