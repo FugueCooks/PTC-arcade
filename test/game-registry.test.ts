@@ -49,8 +49,10 @@ void test('the rear console rooms expose hosted N64 games and tested experimenta
   assert.equal(byId.get('psx-back-cabinet-01')?.enabled, false);
   assert.equal(byId.get('psx-back-cabinet-02')?.enabled, true);
   assert.equal(byId.get('psx-back-cabinet-03')?.enabled, true);
-  for (let index = 4; index <= 5; index += 1) assert.equal(byId.get(`psx-back-cabinet-0${index}`)?.enabled, false);
+  assert.equal(byId.get('psx-back-cabinet-04')?.enabled, true);
+  assert.equal(byId.get('psx-back-cabinet-05')?.enabled, false);
   assert.equal(byId.get('psx-back-cabinet-01')?.name, 'God of War (PS2)');
   assert.equal(byId.get('psx-back-cabinet-02')?.name, 'Kingdom Hearts (PS2)');
   assert.equal(byId.get('psx-back-cabinet-03')?.name, 'Grand Theft Auto: San Andreas (PS2)');
+  assert.equal(byId.get('psx-back-cabinet-04')?.name, 'Dragon Ball Z: Budokai Tenkaichi 3 (PS2)');
 });

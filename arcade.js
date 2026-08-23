@@ -154,10 +154,10 @@ const hostedN64Games={
 };
 for(const [index,z,hue] of [[1,-10,0x8b5cf6],[2,-5,0xff4da6],[3,0,0x36f9f6],[4,5,0xffb42e],[5,10,0x7dff67]]){const hosted=hostedN64Games[index];makeCabinet(`n64-cabinet-0${index}`,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue);const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(`n64-cabinet-0${index}`)}
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
-const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','PS2 // READY 04','PS2 // READY 05'];
+const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
   makeCabinet(`psx-back-cabinet-0${index}`,ps2RoomTitles[index-1],-24.8,z,expansionCabinetColors[index-1]);
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI/2;const enabled=index===2||index===3;Object.assign(cabinet,{system:'ps2',gameName:ps2RoomTitles[index-1],gameId:26000+index,enabled,status:enabled?'available':'disabled'});
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI/2;const enabled=index>=2&&index<=4;Object.assign(cabinet,{system:'ps2',gameName:ps2RoomTitles[index-1],gameId:26000+index,enabled,status:enabled?'available':'disabled'});
 }
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
   const cabinetId=`n64-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
