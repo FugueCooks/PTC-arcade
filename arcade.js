@@ -383,8 +383,8 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false,system=''){
 function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
 makeCabinet('silent-hill','SILENT HILL',-10.2,-12,0xc94c4c,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('silent-hill');
 makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-10.2,-8,0x36f9f6,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
-makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-10.2,-4,0x8de548,false,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
-makeCabinet('crash-bandicoot','CRASH BANDICOOT',-10.2,0,0xffa62e,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('crash-bandicoot');
+makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-10.2,-4,0x8de548,false,true,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
+makeCabinet('crash-bandicoot','CRASH BANDICOOT',-10.2,0,0xffa62e,true,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('crash-bandicoot');
 makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-10.2,4,0x934dff,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('dungeon-88');
 makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-10.2,8,0xff3cac,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('turbo-grid');
 makeCabinet('metal-gear-solid','METAL GEAR SOLID',-10.2,12,0x5d75d9,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('metal-gear-solid');
