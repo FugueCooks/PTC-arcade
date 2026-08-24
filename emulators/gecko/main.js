@@ -24,13 +24,19 @@ async function streamIntoDiscBuffer(stream, totalBytes, name) {
   status.textContent = `Loading ${name}…`;
   progress.hidden = false;
   progress.value = 0;
+  // Reserving the final size avoids Vec's geometric growth temporarily needing
+  // both its old and new allocations inside WebAssembly's finite address space.
   const buffer = new runtime.DiscBuffer(totalBytes || 0);
   const reader = stream.getReader();
   let loaded = 0;
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    buffer.append(value);
+    try {
+      buffer.append(value);
+    } catch (error) {
+      throw new Error(`Gecko ran out of WebAssembly memory after ${loaded.toLocaleString()} of ${totalBytes.toLocaleString()} bytes while loading ${name}.`, { cause: error });
+    }
     loaded += value.byteLength;
     if (totalBytes > 0) progress.value = Math.min(1, loaded / totalBytes);
   }
