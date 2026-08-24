@@ -10,6 +10,7 @@ primary_region = "lax"
   TRUST_PROXY = "1"
   GAME_ASSET_BASE_URL = "https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games"
   BIOS_ASSET_URL = "https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN"
+  GAMECUBE_DSP_ASSET_URL = "https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/dsp_rom.bin"
 
 [http_service]
   internal_port = 8080

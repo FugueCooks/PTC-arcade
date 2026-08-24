@@ -13,10 +13,12 @@ const file = values.get('--file') || '';
 const bytes = Number(values.get('--bytes'));
 const sha256 = values.get('--sha256') || '';
 const system = values.get('--system') || 'unknown';
+const kind = values.get('--kind') || 'game';
 if (!source || !/^[A-Za-z0-9._-]+$/.test(file) || !Number.isSafeInteger(bytes) || bytes <= 0 || !/^[a-f0-9]{64}$/.test(sha256)) {
   throw new Error('Usage: --source=PATH --file=SAFE_NAME --bytes=INTEGER --sha256=HEX [--system=SYSTEM]');
 }
 if (!/^[a-z0-9-]{2,24}$/.test(system)) throw new Error('Invalid --system value.');
+if (!['game', 'bios'].includes(kind)) throw new Error('Invalid --kind value.');
 const required = ['STORAGE_ENDPOINT', 'STORAGE_BUCKET', 'STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY'];
 const missing = required.filter(name => !process.env[name]?.trim());
 if (missing.length) throw new Error(`Missing storage configuration: ${missing.join(', ')}`);
@@ -24,7 +26,7 @@ const details = await stat(source);
 if (details.size !== bytes) throw new Error(`Size mismatch for ${source}: expected ${bytes}, found ${details.size}`);
 
 const prefix = (process.env.STORAGE_PREFIX || 'arcade').trim().replace(/^\/+|\/+$/g, '');
-const key = [prefix, 'games', file].filter(Boolean).join('/');
+const key = [prefix, kind === 'bios' ? 'bios' : 'games', file].filter(Boolean).join('/');
 const client = new S3Client({
   endpoint: process.env.STORAGE_ENDPOINT.trim(),
   region: process.env.STORAGE_REGION?.trim() || 'auto',
@@ -57,7 +59,7 @@ const upload = new Upload({
     ContentType: 'application/octet-stream',
     ContentDisposition: 'inline',
     CacheControl: 'public, max-age=31536000, immutable',
-    Metadata: { sha256, kind: 'game', system }
+    Metadata: { sha256, kind, system }
   },
   queueSize: 1,
   partSize: 16 * 1024 * 1024,

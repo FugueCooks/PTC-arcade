@@ -5,8 +5,9 @@ The production architecture deliberately separates realtime traffic from large g
 1. Run the included Docker image on a WebSocket-capable Node.js host.
 2. Upload every asset you are legally allowed to distribute to one CDN-backed,
    S3-compatible object-storage bucket.
-3. Set `GAME_ASSET_BASE_URL` to the public `games` directory and
-   `BIOS_ASSET_URL` to the exact BIOS object URL.
+3. Set `GAME_ASSET_BASE_URL` to the public `games` directory,
+   `BIOS_ASSET_URL` to the exact PlayStation BIOS object URL, and
+   `GAMECUBE_DSP_ASSET_URL` to the exact GameCube DSP IROM object URL.
 
 For example, if `pokemon-snap.n64` is reachable at
 `https://games.example.com/arcade/games/pokemon-snap.n64`, configure:
@@ -14,6 +15,7 @@ For example, if `pokemon-snap.n64` is reachable at
 ```text
 GAME_ASSET_BASE_URL=https://games.example.com/arcade/games
 BIOS_ASSET_URL=https://games.example.com/arcade/bios/SCPH1001.BIN
+GAMECUBE_DSP_ASSET_URL=https://games.example.com/arcade/bios/dsp_rom.bin
 ```
 
 If either variable is blank, the server preserves the corresponding local

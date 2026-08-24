@@ -11,7 +11,7 @@ const clock = new THREE.Clock(), keys = {}, cabinets = [], raycaster = new THREE
 const gameAssetBaseUrl=(window.ARCADE_RUNTIME?.gameAssetBaseUrl||'assets/games').replace(/\/+$/,'');
 const gameAssetUrl=fileName=>`${gameAssetBaseUrl}/${fileName}`;
 const biosAssetUrl=window.ARCADE_RUNTIME?.biosAssetUrl||'assets/bios/SCPH1001.BIN';
-const gameCubeDspAssetUrl=window.ARCADE_RUNTIME?.gameCubeDspAssetUrl||'assets/bios/dsp_rom.bin';
+const gameCubeDspAssetUrl=window.ARCADE_RUNTIME?.gameCubeDspAssetUrl||gameAssetBaseUrl.replace(/\/games$/,'/bios/dsp_rom.bin');
 let yaw=0,pitch=0, locked=false, activeCabinet=null, localAnimationState='idle', cameraMode='third-person', socialFollowProvider=null, emulatorRuntimeActive=false;
 scene.add(new THREE.HemisphereLight(0x2b2440,0x0a0810,1.2));
 const managedSceneLights=[];

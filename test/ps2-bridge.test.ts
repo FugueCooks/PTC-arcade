@@ -72,3 +72,15 @@ void test('hosted GameCube images are cached persistently while the first downlo
   assert.match(gecko, /streamIntoDiscBuffer\(cached\.stream\(\), cached\.size, name\)/);
   assert.match(gecko, /file\.size !== totalBytes/);
 });
+
+void test('hosted GameCube sessions load and validate the required DSP system ROM', async () => {
+  const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
+  const gecko = await readFile(path.resolve(process.cwd(), 'emulators/gecko/main.js'), 'utf8');
+
+  assert.match(arcade, /gameCubeDspAssetUrl/);
+  assert.match(arcade, /dspUrl:gameCubeDspAssetUrl/);
+  assert.match(gecko, /GAMECUBE_DSP_ROM_BYTES = 8192/);
+  assert.match(gecko, /GAMECUBE_DSP_ROM_SHA256 = '49d987ee/);
+  assert.match(gecko, /Promise\.all\(\[\s*loadRemoteFile\(url, name, size\),\s*loadDspRom\(dspUrl\)/);
+  assert.match(gecko, /startRuntime\(discBuffer, name, dspBytes\)/);
+});

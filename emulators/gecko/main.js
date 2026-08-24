@@ -9,6 +9,9 @@ let runtimeReady = false;
 let lastProgressUpdate = 0;
 const CACHE_DIRECTORY = 'ptc-arcade-gamecube-v1';
 const CACHE_HEADROOM_BYTES = 64 * 1024 * 1024;
+const GAMECUBE_DSP_ROM_BYTES = 8192;
+const GAMECUBE_DSP_ROM_SHA256 = '49d987ee1eab29a157425b82d54516957a81e1bac247c8834e494642605c3e8c';
+const LOCAL_DSP_ROM_URL = new URL('../../assets/bios/dsp_rom.bin', import.meta.url).href;
 
 function updateStartState() {
   startButton.disabled = !runtimeReady || !discInput.files?.[0];
@@ -25,6 +28,23 @@ dspInput.addEventListener('change', () => selected(dspInput, '#dsp-name'));
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
   return `${(bytes / 1048576).toFixed(bytes >= 104857600 ? 0 : 1)} MB`;
+}
+
+async function validateDspRom(bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.byteLength !== GAMECUBE_DSP_ROM_BYTES) {
+    throw new Error(`The GameCube DSP ROM must be exactly ${GAMECUBE_DSP_ROM_BYTES} bytes.`);
+  }
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  const hash = [...digest].map(value => value.toString(16).padStart(2, '0')).join('');
+  if (hash !== GAMECUBE_DSP_ROM_SHA256) throw new Error('The configured GameCube DSP ROM is not compatible with Gecko.');
+  return bytes;
+}
+
+async function loadDspRom(url = LOCAL_DSP_ROM_URL) {
+  status.textContent = 'Loading GameCube system ROM…';
+  const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+  if (!response.ok) throw new Error(`GameCube system ROM failed to load (${response.status}).`);
+  return validateDspRom(new Uint8Array(await response.arrayBuffer()));
 }
 
 function cacheSupported() {
@@ -163,12 +183,16 @@ function startRuntime(discBuffer, filename, dspBytes) {
   parent.postMessage({ type: 'arcade:gamecube-source-accepted' }, location.origin);
 }
 
-async function startRemote({ url, name = 'game.rvz', size = 0 }) {
+async function startRemote({ url, name = 'game.rvz', size = 0, dspUrl = LOCAL_DSP_ROM_URL }) {
   if (!runtimeReady || typeof url !== 'string') return;
   try {
     startButton.disabled = true;
     enterHostedMode(name, Number(size) || 0);
-    startRuntime(await loadRemoteFile(url, name, size), name);
+    const [discBuffer, dspBytes] = await Promise.all([
+      loadRemoteFile(url, name, size),
+      loadDspRom(dspUrl),
+    ]);
+    startRuntime(discBuffer, name, dspBytes);
   } catch (error) {
     console.error(error);
     status.textContent = error instanceof Error ? error.message : 'The GameCube image could not load.';
@@ -177,11 +201,12 @@ async function startRemote({ url, name = 'game.rvz', size = 0 }) {
   }
 }
 
-async function startLocal(file) {
+async function startLocal(file, dspUrl = LOCAL_DSP_ROM_URL) {
   if (!runtimeReady || !(file instanceof File)) return;
   try {
     startButton.disabled = true;
-    startRuntime(await loadFile(file), file.name);
+    const [discBuffer, dspBytes] = await Promise.all([loadFile(file), loadDspRom(dspUrl)]);
+    startRuntime(discBuffer, file.name, dspBytes);
   } catch (error) {
     console.error(error);
     status.textContent = error instanceof Error ? error.message : 'The GameCube image could not load.';
@@ -212,7 +237,9 @@ startButton.addEventListener('click', async () => {
   try {
     const discBuffer = await loadFile(disc);
     const dspFile = dspInput.files?.[0];
-    const dspBytes = dspFile ? new Uint8Array(await dspFile.arrayBuffer()) : undefined;
+    const dspBytes = dspFile
+      ? await validateDspRom(new Uint8Array(await dspFile.arrayBuffer()))
+      : await loadDspRom();
     startRuntime(discBuffer, disc.name, dspBytes);
   } catch (error) {
     console.error(error);
@@ -226,7 +253,7 @@ startButton.addEventListener('click', async () => {
 addEventListener('message', event => {
   if (event.origin !== location.origin || event.source !== parent) return;
   if (event.data?.type === 'arcade:gamecube-load-remote') void startRemote(event.data);
-  if (event.data?.type === 'arcade:gamecube-load-file') void startLocal(event.data.file);
+  if (event.data?.type === 'arcade:gamecube-load-file') void startLocal(event.data.file, event.data.dspUrl);
 });
 
 initialize().catch(error => {
