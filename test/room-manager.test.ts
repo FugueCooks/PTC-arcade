@@ -37,6 +37,20 @@ void test('authoritative movement bounds include the Xbox room behind the Ninten
   assert.equal(players.move('socket-a', { p: [28, 11], r: 0 }, 6_000), undefined);
 });
 
+void test('the temporary construction barrier rejects entry into the PS2 room', () => {
+  const players = createPlayers();
+  players.join('socket-a', 'main', undefined, identity, 1_000);
+  assert.deepEqual(players.move('socket-a', { p: [0, 14], r: Math.PI }, 1_500)?.p, [0, 1.65, 14]);
+  assert.deepEqual(players.move('socket-a', { p: [0, 15], r: Math.PI }, 2_000)?.p, [0, 1.65, 15]);
+  let now = 2_500;
+  for (let x = -3; x >= -12; x -= 3) {
+    assert.equal(players.move('socket-a', { p: [x, 15], r: -Math.PI / 2 }, now)?.p[0], x);
+    now += 500;
+  }
+  assert.equal(players.move('socket-a', { p: [-14.2, 15], r: -Math.PI / 2 }, now), undefined);
+  assert.equal(players.stateFor('socket-a')?.p[0], -12);
+});
+
 void test('a stationary accepted update returns a player to idle', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);

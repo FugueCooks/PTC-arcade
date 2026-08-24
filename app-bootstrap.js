@@ -11,6 +11,6 @@ window.ARCADE_GAME_REGISTRY = await loadGameRegistry();
 window.ARCADE_ROOM_REGISTRY = await loadRoomRegistry();
 window.ARCADE_PS2_CACHE = new Ps2GameCache();
 
-await import('./arcade.js?v=ps2-local-cache-1');
+await import('./arcade.js?v=ps2-construction-1');
 await import('./avatar-selection.js?v=text-only-1');
-await import('./multiplayer-client.js?v=ps2-performance-1');
+await import('./multiplayer-client.js?v=ps2-construction-1');

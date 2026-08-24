@@ -12,6 +12,7 @@ const MAX_SPEED_PER_SECOND = 7;
 const MAX_PACKET_RATE_MS = 50;
 const DEFAULT_RECONNECT_GRACE_MS = 10_000;
 const MOVEMENT_TOLERANCE = 0.3;
+const PS2_ROOM_BOUNDARY_X = -14;
 
 interface ManagedPlayer {
   id: string;
@@ -232,6 +233,9 @@ export class PlayerManager {
     const [x, z] = input.p;
     if (![x, z, input.r].every(Number.isFinite)) return false;
     if (x < MIN_WORLD_X || x > MAX_WORLD_X || Math.abs(z) > MAX_WORLD_Z) return false;
+    // The PS2 expansion is temporarily closed. Existing sessions inside it can
+    // leave, but authoritative movement cannot cross back into the room.
+    if (player.position[0] >= PS2_ROOM_BOUNDARY_X && x < PS2_ROOM_BOUNDARY_X) return false;
     const elapsed = now - player.lastAcceptedAt;
     if (elapsed < MAX_PACKET_RATE_MS) return false;
     const permittedDistance = MAX_SPEED_PER_SECOND * Math.min(elapsed, 500) / 1000 + MOVEMENT_TOLERANCE;

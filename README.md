@@ -209,6 +209,8 @@ Star Fox 64 (`n64-cabinet-06`) and Mega Man 64 (`n64-cabinet-07`) now sit with t
 
 The five cabinets behind the PlayStation room form the rear PlayStation 2 room. God of War, Kingdom Hearts, Grand Theft Auto: San Andreas, and Dragon Ball Z: Budokai Tenkaichi 3 are assigned visually to the first four cabinets, with one future PS2 slot. The temporary PS2 ROOM wall sign has been removed pending replacement artwork. PCSX2 2.6.3 remains unsuitable because its Windows installer cannot execute in a webpage and EmulatorJS does not provide a PlayStation 2 core. Compatible PS2 images are therefore served from R2 to the experimental Play! browser core instead.
 
+The PS2 expansion is temporarily closed while browser compatibility work continues. Both entrances have visible caution-tape construction walls, nearby players see **PS2 Room Under Construction.**, and entry is prevented by both client collision and authoritative Node/Cloudflare movement validation. The room and its cabinets remain in the scene so the barrier can be removed without rebuilding the PS2 layout.
+
 ### Experimental PS2 prototype
 
 The Kingdom Hearts, Grand Theft Auto: San Andreas, and Dragon Ball Z: Budokai Tenkaichi 3 cabinets use the official experimental Play!.js WebAssembly build. Their approved disc images are hosted in Cloudflare R2 and read on demand with HTTP byte-range requests, so pressing the cabinet's PLAY button launches the configured game without asking for a local file and without loading the entire multi-gigabyte ISO into browser memory. The local ISO/CHD/CSO/ISZ/BIN/ELF selector remains available as a fallback. Play! requires no external PS2 BIOS.
