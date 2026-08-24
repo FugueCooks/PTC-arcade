@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTC Arcade // Experimental GameCube</title>
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+  <main id="setup">
+    <p class="eyebrow">EXPERIMENTAL // GECKO WEBGPU</p>
+    <h1>GAMECUBE TEST BENCH</h1>
+    <p id="status">Checking browser support…</p>
+
+    <label class="picker">
+      <span>GAME DISC</span>
+      <input id="disc" type="file" accept=".rvz,.iso,.gcm" />
+    </label>
+    <output id="disc-name">No disc selected</output>
+
+    <label class="picker">
+      <span>DSP IROM</span>
+      <input id="dsp" type="file" accept=".bin" />
+    </label>
+    <output id="dsp-name">No DSP selected</output>
+
+    <button id="start" disabled>START TEST</button>
+    <progress id="progress" max="1" value="0" hidden></progress>
+    <p class="note">Files stay in this browser session. Large disc images can require several gigabytes of memory.</p>
+  </main>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

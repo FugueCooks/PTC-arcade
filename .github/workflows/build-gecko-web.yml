@@ -58,12 +58,12 @@ jobs:
 
       - name: Commit generated runtime
         run: |
-          if git diff --quiet -- emulators/gecko; then
+          git add -A emulators/gecko
+          if git diff --cached --quiet -- emulators/gecko; then
             echo "Runtime is already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add emulators/gecko
           git commit -m "Build experimental Gecko web runtime"
           git push
