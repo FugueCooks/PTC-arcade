@@ -21,6 +21,7 @@
     "cloudflare:deploy": "wrangler deploy --config cloudflare/wrangler.jsonc",
     "cloudflare:smoke": "node cloudflare/test/local-smoke.mjs",
     "load:test": "node tools/load-test.mjs",
+    "smoke:multi-process": "npm run build && node tools/multi-process-smoke.mjs",
     "pages:build": "node tools/build-pages.mjs",
     "pages:deploy": "npm run pages:build && wrangler pages deploy .pages-dist --project-name retro-arcade"
   },

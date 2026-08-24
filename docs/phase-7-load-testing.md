@@ -1,5 +1,11 @@
 # Phase 7 load and rendering tests
 
+## Repeatable multi-process smoke test
+
+Start an isolated Redis-compatible service on localhost, set `REDIS_URL`, then run `npm run smoke:multi-process`. The harness refuses non-loopback Redis hosts, creates a unique temporary Redis namespace, launches two server processes, confirms both reach readiness, joins 26 real Socket.IO clients through matchmaking, proves the 25-player room boundary creates a second populated room, verifies two server registrations and room-owner leases, drains both processes, and removes its temporary keys. Override the default ports with `SMOKE_SERVER_A_PORT` and `SMOKE_SERVER_B_PORT` if `18081` or `18082` are occupied.
+
+The first repeatable run on 2026-08-23 passed in 902 ms: 26/26 clients joined, the two rooms contained exactly 25 and 1 players, two server registrations were present, and each room had one ownership lease. This is a coordination regression test, not a production capacity measurement.
+
 Never point load tests at production. Start the Node server and Redis in an isolated environment, then run `npm run load:test`. Configure with `LOAD_TEST_URL`, `LOAD_TEST_USERS`, `LOAD_TEST_DURATION_SECONDS`, `LOAD_TEST_RAMP_SECONDS`, and `LOAD_TEST_MOVEMENT_INTERVAL_MS`. Optional scenario intervals are `LOAD_TEST_CHAT_INTERVAL_MS` (minimum 5,000), `LOAD_TEST_CABINET_INTERVAL_MS` (minimum 7,500), and `LOAD_TEST_RECONNECT_INTERVAL_MS` (minimum 15,000); leave them at `0` to disable that traffic. Start at 10 users, then test 25, 50, 100, 250, 500, and 1,000 only when the previous level is healthy. The JSON report records successful joins, errors, movement/chat/cabinet traffic, reconnect cycles, and ping percentiles.
 
 For isolated localhost tests above the per-IP matchmaking limit, start the test server with `TRUST_PROXY=1` and set `LOAD_TEST_FORWARDED_IPS=1`. The harness then assigns each synthetic user an address from the documentation-only `198.51.100.0/24` range. Never enable this switch against a public endpoint; it exists only to exercise capacity while preserving the production per-IP guard.
