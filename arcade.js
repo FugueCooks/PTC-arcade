@@ -12,15 +12,114 @@ const gameAssetBaseUrl=(window.ARCADE_RUNTIME?.gameAssetBaseUrl||'assets/games')
 const gameAssetUrl=fileName=>`${gameAssetBaseUrl}/${fileName}`;
 const biosAssetUrl=window.ARCADE_RUNTIME?.biosAssetUrl||'assets/bios/SCPH1001.BIN';
 let yaw=0,pitch=0, locked=false, activeCabinet=null, localAnimationState='idle', cameraMode='third-person', socialFollowProvider=null, emulatorRuntimeActive=false;
-scene.add(new THREE.HemisphereLight(0x37266e,0x09030f,1.4));
+scene.add(new THREE.HemisphereLight(0x2b2440,0x0a0810,1.2));
 const managedSceneLights=[];
 const point = (color,x,y,z,intensity=6) => { const l=new THREE.PointLight(color,intensity,10,2);l.position.set(x,y,z);scene.add(l);managedSceneLights.push(l);return l };
-point(0xff32b5,-5,3,2);point(0x26fff2,5,3,-4);point(0x7836ff,0,3,-9);
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(28,34),new THREE.MeshStandardMaterial({color:0x100b22,roughness:.75,metalness:.35}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
-const grid = new THREE.GridHelper(28,28,0x4a257d,0x251447);grid.position.y=.012;scene.add(grid);
+// Muted teal instead of pure cyan, and a warm sodium pool at the back, so the
+// room lights read as a side street at night rather than a neon grid.
+point(0xff32b5,-5,3,2,5.4);point(0x2ea8c4,5,3,-4,5.4);point(0xff9a4d,0,3,-9,5.8);
+// Nu-retro terrazzo floor. The pattern is generated into one small tiling
+// canvas at startup, so the entire floor costs zero network bytes and renders
+// as a single textured quad instead of the GridHelper line meshes it replaces.
+function arcadeFloorTextures(){
+  const SIZE=512,CELL=SIZE/4; // one canvas tile covers a 4m x 4m patch
+  let seed=0x9e3779b9; // seeded so the speckle pattern is identical every session
+  const rand=()=>{seed=seed+0x6d2b79f5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const albedo=document.createElement('canvas');albedo.width=albedo.height=SIZE;
+  const gloss=document.createElement('canvas');gloss.width=gloss.height=SIZE;
+  const a=albedo.getContext('2d'),g=gloss.getContext('2d');
+  a.fillStyle='#120e1e';a.fillRect(0,0,SIZE,SIZE);
+  g.fillStyle='#6e6e6e';g.fillRect(0,0,SIZE,SIZE);
+  // Each metre tile gets its own slightly different shade so the floor does
+  // not read as one flat sheet of vinyl.
+  for(let ty=0;ty<4;ty++)for(let tx=0;tx<4;tx++){a.fillStyle=`hsl(${252+rand()*16} 30% ${7+rand()*4}%)`;a.fillRect(tx*CELL,ty*CELL,CELL,CELL)}
+  // Terrazzo flecks: reads as arcade carpet underfoot and as quiet texture
+  // from across the room. The gloss map picks the same spots up so the flecks
+  // catch the neon instead of looking painted on.
+  // Mostly muted chips with a minority of saturated pops. An even mix of bright
+  // colours reads as confetti rather than terrazzo.
+  const fleckColors=['#6d6486','#8a7fa6','#574d70','#9a93ad'],accentColors=['#ff3cac','#29eee8','#ffb42e','#7836ff','#3ad07a'];
+  for(let i=0;i<950;i++){
+    const x=rand()*SIZE,y=rand()*SIZE,r=.55+rand()*1.7,accent=rand()<.28;
+    a.globalAlpha=accent?.2+rand()*.28:.12+rand()*.24;
+    a.fillStyle=accent?accentColors[(rand()*accentColors.length)|0]:fleckColors[(rand()*fleckColors.length)|0];
+    a.beginPath();a.ellipse(x,y,r,r*(.55+rand()*.85),rand()*Math.PI,0,Math.PI*2);a.fill();
+    g.globalAlpha=.32;g.fillStyle='#b4b4b4';g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();
+  }
+  a.globalAlpha=1;g.globalAlpha=1;
+  // Inlaid metal seams replace the old wireframe grid: same retro floor plan,
+  // but lit like a trim strip instead of a glowing vector line.
+  for(let i=0;i<=4;i++){
+    const p=i*CELL;
+    a.fillStyle='#221a38';a.fillRect(p-1.5,0,3,SIZE);a.fillRect(0,p-1.5,SIZE,3);
+    a.fillStyle='#493a72';a.fillRect(p-1.5,0,1,SIZE);a.fillRect(0,p-1.5,SIZE,1);
+    g.fillStyle='#333333';g.fillRect(p-1.5,0,3,SIZE);g.fillRect(0,p-1.5,SIZE,3);
+  }
+  // A small inlay marks each seam crossing. Kept close to the seam value on
+  // purpose: any brighter and the crossings line up into a second wireframe
+  // grid, which is the look this floor is replacing.
+  for(let iy=0;iy<=4;iy++)for(let ix=0;ix<=4;ix++){
+    a.save();a.translate(ix*CELL,iy*CELL);a.rotate(Math.PI/4);
+    a.fillStyle='#2a2544';a.fillRect(-4,-4,8,8);
+    a.fillStyle='#3d4f6b';a.fillRect(-2,-2,4,4);
+    a.restore();
+  }
+  const map=new THREE.CanvasTexture(albedo),roughnessMap=new THREE.CanvasTexture(gloss);
+  const anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  for(const texture of [map,roughnessMap]){texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.anisotropy=anisotropy}
+  map.colorSpace=THREE.SRGBColorSpace;
+  return {map,roughnessMap};
+}
+const floorTextures=arcadeFloorTextures();
+floorTextures.map.repeat.set(7,8.5);floorTextures.roughnessMap.repeat.set(7,8.5);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(28,34),new THREE.MeshStandardMaterial({map:floorTextures.map,roughnessMap:floorTextures.roughnessMap,roughness:.58,metalness:.44}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
 function box(w,h,d,color,x,y,z,emissive=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissive,roughness:.43,metalness:.65}));m.position.set(x,y,z);m.castShadow=true;scene.add(m);return m}
-// ceiling beams and wall stripes
-for(let z=-14;z<14;z+=5){box(56,.18,.2,0x2c1954,0,5,z,.2);box(56,.04,.08,0x29eee8,0,4.88,z,2)}
+// Tokyo-noir ceiling. A real ceiling plane closes off what used to be an open
+// black void, and the full-width cyan light bars are replaced by short recessed
+// troffers, so the room reads as a low-lit game centre rather than an arena.
+// Every fixture here is emissive geometry only: none of it adds a real light,
+// so the ceiling costs nothing against the per-frame light budget.
+const ceiling=new THREE.Mesh(new THREE.PlaneGeometry(56,34),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06}));
+ceiling.rotation.x=Math.PI/2;ceiling.position.y=5.08;scene.add(ceiling);
+const ceilingBeamMaterial=new THREE.MeshStandardMaterial({color:0x14111f,roughness:.7,metalness:.5});
+const ceilingHousingMaterial=new THREE.MeshStandardMaterial({color:0x1b1730,roughness:.82,metalness:.3});
+// Warm sodium diffusers carry the room. The magenta row is kept to one in three
+// so the cool accents read as signage spill instead of arena striping.
+const warmPanelMaterial=new THREE.MeshStandardMaterial({color:0xffcf9a,emissive:0xffb877,emissiveIntensity:.9,roughness:.55});
+const coolPanelMaterial=new THREE.MeshStandardMaterial({color:0xffa8d6,emissive:0xff4fa8,emissiveIntensity:.6,roughness:.55});
+const haloTexture=(()=>{
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+  const c=canvas.getContext('2d'),gradient=c.createRadialGradient(64,64,0,64,64,64);
+  gradient.addColorStop(0,'rgba(255,255,255,1)');gradient.addColorStop(.45,'rgba(255,255,255,.32)');gradient.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=gradient;c.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(canvas);
+})();
+const warmHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xffb877,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending});
+const coolHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xff4fa8,transparent:true,opacity:.34,depthWrite:false,blending:THREE.AdditiveBlending});
+for(let z=-15;z<=15;z+=5)box(56,.26,.34,0x14111f,0,4.9,z,.04);
+for(const [row,z] of [-12.5,-7.5,-2.5,2.5,7.5,12.5].entries()){
+  const cool=row%3===1;
+  for(const x of [-21,-9,0,9,21]){
+    const housing=new THREE.Mesh(new THREE.BoxGeometry(3.6,.17,.52),ceilingHousingMaterial);housing.position.set(x,4.95,z);scene.add(housing);
+    const panel=new THREE.Mesh(new THREE.PlaneGeometry(3.3,.34),cool?coolPanelMaterial:warmPanelMaterial);panel.rotation.x=Math.PI/2;panel.position.set(x,4.862,z);scene.add(panel);
+    const halo=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.6),cool?coolHaloMaterial:warmHaloMaterial);halo.rotation.x=Math.PI/2;halo.position.set(x,4.84,z);scene.add(halo);
+  }
+}
+// Exposed service duct and conduit down the main aisle. The broken silhouette
+// is what stops the ceiling from reading as a flat lid.
+const ductMaterial=new THREE.MeshStandardMaterial({color:0x191527,roughness:.5,metalness:.72});
+for(const [ductX,radius] of [[-7.6,.2],[7.6,.14]]){
+  const duct=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,29,10),ductMaterial);duct.rotation.x=Math.PI/2;duct.position.set(ductX,4.68,0);scene.add(duct);
+  for(let z=-13;z<=13;z+=5){const strap=new THREE.Mesh(new THREE.BoxGeometry(.04,.3,.05),ceilingHousingMaterial);strap.position.set(ductX,4.84,z);scene.add(strap)}
+}
+// Pendant tubes over the centre aisle: the warm vertical accents a game centre
+// hangs between the cabinets rows.
+const pendantMaterial=new THREE.MeshStandardMaterial({color:0xffd9ae,emissive:0xffa860,emissiveIntensity:1.05,roughness:.4});
+for(const z of [-10,-3.5,3.5,10]){
+  const cord=new THREE.Mesh(new THREE.BoxGeometry(.02,.62,.02),ceilingHousingMaterial);cord.position.set(0,4.55,z);scene.add(cord);
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.46,10),pendantMaterial);tube.position.set(0,4.02,z);scene.add(tube);
+  const bloom=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),new THREE.MeshBasicMaterial({color:0xffa860,transparent:true,opacity:.11,depthWrite:false,blending:THREE.AdditiveBlending}));bloom.position.set(0,4.02,z);scene.add(bloom);
+}
 box(.3,5,34,0x180d31,-28,2.5,0);
 box(.3,5,34,0x180d31,28,2.5,0);
 // The main room now reaches the true rear wall. Keeping this wall aligned with
@@ -29,17 +128,17 @@ box(.3,5,34,0x180d31,28,2.5,0);
 const rearWall=box(28,5,.3,0x15182a,0,2.5,-16.8,.18);rearWall.receiveShadow=true;
 const rearPanelMaterial=new THREE.MeshStandardMaterial({color:0x17233a,emissive:0x08162b,emissiveIntensity:.5,roughness:.58,metalness:.38});
 for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,4.62,.055),rearPanelMaterial);panel.position.set(x,2.42,-16.62);panel.receiveShadow=true;scene.add(panel)}
-box(27.5,.09,.08,0x29eee8,0,4.78,-16.57,1.7);box(27.5,.12,.08,0x251447,0,.1,-16.57,.55);
+box(27.5,.09,.08,0xd18a52,0,4.78,-16.57,.85);box(27.5,.12,.08,0x251447,0,.1,-16.57,.55);
 const gangsterPepeMount=new THREE.Group();gangsterPepeMount.position.set(0,.16,0);scene.add(gangsterPepeMount);
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);gangsterPepeLight.position.set(0,.82,.55);scene.add(gangsterPepeLight);
 const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_LENGTH=13.7,PARTITION_WALL_HALF_THICKNESS=.18,PLAYER_COLLISION_RADIUS=.34;
 const playstationWallBody=box(PARTITION_WALL_HALF_THICKNESS*2,5,PARTITION_WALL_HALF_LENGTH*2,0x111425,PLAYSTATION_WALL_X,2.5,0,.08);playstationWallBody.receiveShadow=true;
-box(.42,.08,27.4,0x29eee8,PLAYSTATION_WALL_X,4.86,0,1.8);
+box(.42,.08,27.4,0xd18a52,PLAYSTATION_WALL_X,4.86,0,.9);
 box(.42,.1,27.4,0x251447,PLAYSTATION_WALL_X,.08,0,.45);
 const playstationWallTexture=new THREE.TextureLoader().load('assets/art/playstation-wall.png?v=1');
 const playstationWall=new THREE.Mesh(new THREE.PlaneGeometry(27.4,4.7),new THREE.MeshBasicMaterial({map:playstationWallTexture}));playstationWall.position.set(-13.805,2.5,0);playstationWall.rotation.y=Math.PI/2;scene.add(playstationWall);
 const n64WallBody=box(PARTITION_WALL_HALF_THICKNESS*2,5,PARTITION_WALL_HALF_LENGTH*2,0x111425,N64_WALL_X,2.5,0,.08);n64WallBody.receiveShadow=true;
-box(.42,.08,27.4,0x29eee8,N64_WALL_X,4.86,0,1.8);box(.42,.1,27.4,0x251447,N64_WALL_X,.08,0,.45);
+box(.42,.08,27.4,0xd18a52,N64_WALL_X,4.86,0,.9);box(.42,.1,27.4,0x251447,N64_WALL_X,.08,0,.45);
 // Temporary construction barriers extend both partition walls across their
 // end passages. The PS2 and Xbox rooms remain intact behind them for later work.
 function constructionTapeTexture(){const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;const context=canvas.getContext('2d');context.fillStyle='#f6c515';context.fillRect(0,0,768,512);context.save();context.strokeStyle='#17120a';context.lineWidth=70;for(let x=-520;x<1100;x+=150){context.beginPath();context.moveTo(x,512);context.lineTo(x+360,0);context.stroke()}context.restore();context.fillStyle='#f6c515';context.fillRect(0,196,768,120);context.strokeStyle='#17120a';context.lineWidth=12;context.strokeRect(0,196,768,120);context.fillStyle='#17120a';context.font='bold 64px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText('CAUTION',384,258);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture}
@@ -61,16 +160,24 @@ for(const wallX of [-27.81,-14.19,14.19,27.81]){
   }
   const baseTrim=new THREE.Mesh(new THREE.BoxGeometry(.11,.13,27.35),new THREE.MeshStandardMaterial({color:0x182d4a,emissive:0x133b64,emissiveIntensity:1.05,metalness:.7,roughness:.22}));
   baseTrim.position.set(wallX,.12,0);scene.add(baseTrim);
-  const topTrim=new THREE.Mesh(new THREE.BoxGeometry(.11,.08,27.35),new THREE.MeshStandardMaterial({color:0x29eee8,emissive:0x29eee8,emissiveIntensity:1.45,metalness:.5,roughness:.2}));
+  const topTrim=new THREE.Mesh(new THREE.BoxGeometry(.11,.08,27.35),new THREE.MeshStandardMaterial({color:0xd18a52,emissive:0xd18a52,emissiveIntensity:.8,metalness:.5,roughness:.2}));
   topTrim.position.set(wallX,4.77,0);scene.add(topTrim);
 }
+// The expansion rooms reuse the main floor canvas at their own tiling rate and
+// a cooler tint, so the second room costs one extra texture rather than a new
+// pattern and two more GridHelper meshes.
+const expansionFloorMaterial=(()=>{
+  const map=floorTextures.map.clone(),roughnessMap=floorTextures.roughnessMap.clone();
+  map.needsUpdate=roughnessMap.needsUpdate=true;
+  map.repeat.set(3.5,8.5);roughnessMap.repeat.set(3.5,8.5);
+  return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,roughness:.64,metalness:.38});
+})();
 // Mirrored expansion rooms sit behind the PlayStation and Nintendo 64 walls.
 // Both partitions end before the front edge so players can walk around them.
 for(const roomX of [-21,21]){
-  const expansionFloor=new THREE.Mesh(new THREE.PlaneGeometry(14,34),new THREE.MeshStandardMaterial({color:0x090d1c,roughness:.78,metalness:.3}));expansionFloor.rotation.x=-Math.PI/2;expansionFloor.position.set(roomX,.002,0);expansionFloor.receiveShadow=true;scene.add(expansionFloor);
-  for(const z of [-10,4]){const expansionGrid=new THREE.GridHelper(14,14,0x164d78,0x10233e);expansionGrid.position.set(roomX,.015,z);scene.add(expansionGrid)}
+  const expansionFloor=new THREE.Mesh(new THREE.PlaneGeometry(14,34),expansionFloorMaterial);expansionFloor.rotation.x=-Math.PI/2;expansionFloor.position.set(roomX,.002,0);expansionFloor.receiveShadow=true;scene.add(expansionFloor);
   box(14,5,.3,0x11182c,roomX,2.5,-16.8,.05);box(14,5,.3,0x11182c,roomX,2.5,16.8,.05);
-  for(let z=-12;z<=12;z+=4)box(13.5,.035,.055,0x24bfff,roomX,4.65,z,1.7);
+  for(let z=-12;z<=12;z+=4)box(13.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
 }
 function addRoomSign(text,x,color){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,-16.62);scene.add(sign)}
 addRoomSign('XBOX ROOM',21,'#7dff67');
@@ -87,16 +194,89 @@ function crashArt(){
   c.strokeStyle='#2b1637';c.lineWidth=12;c.beginPath();c.arc(258,270,36,.15,Math.PI-.15);c.stroke();c.fillStyle='#fff1c9';c.font='bold 46px sans-serif';c.textAlign='center';c.fillText('CRASH',256,68);
   return new THREE.CanvasTexture(canvas);
 }
+// Sleek cabinet shell. Every cabinet is the same size, so the geometry is built
+// once here and shared by all of them rather than rebuilt per cabinet, which
+// also drops the scene from roughly 300 cabinet geometries to about 20.
+function roundedRectShape(width,height,radius){
+  const w=width/2,h=height/2,r=Math.min(radius,w,h),shape=new THREE.Shape();
+  shape.moveTo(-w+r,-h);shape.lineTo(w-r,-h);shape.absarc(w-r,-h+r,r,-Math.PI/2,0,false);
+  shape.lineTo(w,h-r);shape.absarc(w-r,h-r,r,0,Math.PI/2,false);
+  shape.lineTo(-w+r,h);shape.absarc(-w+r,h-r,r,Math.PI/2,Math.PI,false);
+  shape.lineTo(-w,-h+r);shape.absarc(-w+r,-h+r,r,Math.PI,Math.PI*1.5,false);
+  return shape;
+}
+// Extrudes a rounded profile along z and chamfers the front and back edges, so
+// the silhouette has no hard 90 degree corner anywhere a player can see one.
+function roundedSlab(width,height,depth,radius,bevel=.022){
+  const geometry=new THREE.ExtrudeGeometry(roundedRectShape(width,height,radius),{depth:depth-bevel*2,bevelEnabled:true,bevelThickness:bevel,bevelSize:bevel,bevelSegments:2,curveSegments:5});
+  geometry.translate(0,0,-(depth/2-bevel));geometry.computeVertexNormals();
+  return geometry;
+}
+const cabinetGeometry={
+  plinth:roundedSlab(1.78,.1,1.2,.05),
+  body:roundedSlab(1.68,1.45,1.08,.1),
+  bodyInset:roundedSlab(1.44,1.2,.02,.07,.008),
+  head:roundedSlab(1.56,1.28,.78,.1),
+  bezel:roundedSlab(1.44,1.06,.05,.07,.012),
+  deck:roundedSlab(1.5,.12,.56,.045),
+  marqueeHousing:roundedSlab(1.62,.54,.3,.07),
+  lightRod:new THREE.CylinderGeometry(.016,.016,2.46,8),
+  lightChannel:roundedSlab(.07,2.5,.05,.03,.01),
+  screen:new THREE.PlaneGeometry(1.24,.84),
+  glassSheen:new THREE.PlaneGeometry(1.42,1.04),
+  gate:new THREE.CylinderGeometry(.14,.14,.032,18),
+  gateRing:new THREE.TorusGeometry(.1,.012,8,20),
+  stem:new THREE.CylinderGeometry(.018,.023,.115,10),
+  stick:new THREE.SphereGeometry(.052,12,10),
+  buttonWell:new THREE.CylinderGeometry(.075,.085,.025,16),
+  button:new THREE.CylinderGeometry(.052,.052,.035,16),
+  statusLight:new THREE.BoxGeometry(.18,.045,.035),
+  deckLight:new THREE.BoxGeometry(1.22,.016,.03),
+  marqueeWash:new THREE.BoxGeometry(1.5,.02,.03),
+  railLong:new THREE.BoxGeometry(1.52,.02,.045),
+  railSide:new THREE.BoxGeometry(.045,.02,.82)
+};
+const cabinetGateMaterial=new THREE.MeshStandardMaterial({color:0x02040a,metalness:1,roughness:.08});
+const cabinetStemMaterial=new THREE.MeshStandardMaterial({color:0xe0e5ef,metalness:1,roughness:.06});
+const cabinetStickMaterial=new THREE.MeshStandardMaterial({color:0x111722,metalness:.55,roughness:.15});
+const cabinetWellMaterial=new THREE.MeshStandardMaterial({color:0x03050b,metalness:1,roughness:.12});
+// The four face buttons are the same four colours on every cabinet, so one
+// material each is enough for the whole arcade.
+const cabinetButtonLayout=[[.08,.58,0xff3cac],[.28,.58,0x36f9f6],[.08,.72,0xffb42e],[.28,.72,0x934dff]].map(([bx,bz,color])=>[bx,bz,new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.55,metalness:.45,roughness:.18})]);
+// Materials with no per-cabinet tint are shared too. The hue-tinted ones and
+// the status light stay per cabinet, because setCabinetState mutates them.
+const cabinetShellMaterial=new THREE.MeshStandardMaterial({color:0x0f1220,roughness:.26,metalness:.82});
+const cabinetHeadMaterial=new THREE.MeshStandardMaterial({color:0x131828,roughness:.2,metalness:.86});
+const cabinetPlinthMaterial=new THREE.MeshStandardMaterial({color:0x0a0c16,roughness:.34,metalness:.7});
+const cabinetBezelMaterial=new THREE.MeshStandardMaterial({color:0x04060d,roughness:.09,metalness:.95});
+const cabinetDeckMaterial=new THREE.MeshStandardMaterial({color:0x0d1120,roughness:.2,metalness:.9});
+const cabinetChannelMaterial=new THREE.MeshStandardMaterial({color:0x070910,roughness:.5,metalness:.6});
+// A soft diagonal highlight sells the screen as glass without dimming it the
+// way a real transparent panel in front of the canvas would.
+const cabinetGlassMaterial=(()=>{
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
+  const c=canvas.getContext('2d'),gradient=c.createLinearGradient(0,128,128,0);
+  gradient.addColorStop(0,'rgba(255,255,255,0)');gradient.addColorStop(.42,'rgba(255,255,255,0)');
+  gradient.addColorStop(.55,'rgba(255,255,255,.5)');gradient.addColorStop(.68,'rgba(255,255,255,0)');
+  gradient.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=gradient;c.fillRect(0,0,128,128);
+  return new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),transparent:true,opacity:.13,depthWrite:false,blending:THREE.AdditiveBlending});
+})();
 function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
   const g=new THREE.Group();g.position.set(x,0,z);const shellColor=isCrash?0x542255:(isGex?0x123f37:hue);const secondaryAccent=isGex?0xff7024:hue;const dark=0x0c0f19;
-  const plinth=new THREE.Mesh(new THREE.BoxGeometry(1.86,.12,1.28),new THREE.MeshStandardMaterial({color:0x161928,roughness:.18,metalness:.9}));plinth.position.y=.06;g.add(plinth);
-  const underglowMat=new THREE.MeshBasicMaterial({color:hue,transparent:true,opacity:.88});
-  for(const [w,d,px,pz] of [[1.52,.045,0,.52],[1.52,.045,0,-.52],[.045,.82,.72,0],[.045,.82,-.72,0]]){const rail=new THREE.Mesh(new THREE.BoxGeometry(w,.025,d),underglowMat);rail.position.set(px,.028,pz);g.add(rail)}
+  const plinth=new THREE.Mesh(cabinetGeometry.plinth,cabinetPlinthMaterial);plinth.position.y=.05;g.add(plinth);
+  const underglowMat=new THREE.MeshBasicMaterial({color:hue,transparent:true,opacity:.62});
+  for(const [railGeometry,px,pz] of [[cabinetGeometry.railLong,0,.52],[cabinetGeometry.railLong,0,-.52],[cabinetGeometry.railSide,.72,0],[cabinetGeometry.railSide,-.72,0]]){const rail=new THREE.Mesh(railGeometry,underglowMat);rail.position.set(px,.106,pz);g.add(rail)}
   const floorGlow=new THREE.PointLight(hue,1.15,2.2,2);floorGlow.position.set(0,.12,0);g.add(floorGlow);
-  const lower=new THREE.Mesh(new THREE.BoxGeometry(1.68,1.45,1.08),new THREE.MeshStandardMaterial({color:dark,roughness:.22,metalness:.88}));lower.position.set(0,.78,0);g.add(lower);
-  const lowerInset=new THREE.Mesh(new THREE.BoxGeometry(1.42,1.18,.01),new THREE.MeshStandardMaterial({color:shellColor,emissive:shellColor,emissiveIntensity:.16,roughness:.32,metalness:.55}));lowerInset.position.set(0,.79,.545);g.add(lowerInset);
-  const upper=new THREE.Mesh(new THREE.BoxGeometry(1.56,1.28,.78),new THREE.MeshStandardMaterial({color:0x151a29,roughness:.18,metalness:.88}));upper.position.set(0,2.05,-.05);upper.rotation.x=-.1;g.add(upper);
-  const trimMat=new THREE.MeshStandardMaterial({color:hue,emissive:hue,emissiveIntensity:2.25,metalness:.45});for(const sx of [-.79,.79]){const strip=new THREE.Mesh(new THREE.BoxGeometry(.035,2.54,.06),trimMat);strip.position.set(sx,1.32,.54);g.add(strip)}
+  const lower=new THREE.Mesh(cabinetGeometry.body,cabinetShellMaterial);lower.position.set(0,.78,0);g.add(lower);
+  const panelTint=new THREE.Color(shellColor).multiplyScalar(.2);
+  const lowerInset=new THREE.Mesh(cabinetGeometry.bodyInset,new THREE.MeshStandardMaterial({color:panelTint,emissive:shellColor,emissiveIntensity:.05,roughness:.36,metalness:.8}));lowerInset.position.set(0,.79,.5405);g.add(lowerInset);
+  const upper=new THREE.Mesh(cabinetGeometry.head,cabinetHeadMaterial);upper.position.set(0,2.05,-.05);upper.rotation.x=-.1;g.add(upper);
+  const trimMat=new THREE.MeshStandardMaterial({color:hue,emissive:hue,emissiveIntensity:1.15,roughness:.3,metalness:.45});
+  for(const sx of [-.795,.795]){
+    const channel=new THREE.Mesh(cabinetGeometry.lightChannel,cabinetChannelMaterial);channel.position.set(sx,1.32,.529);g.add(channel);
+    const rod=new THREE.Mesh(cabinetGeometry.lightRod,trimMat);rod.position.set(sx,1.32,.545);g.add(rod);
+  }
   const art=isCrash?crashArt():null;
   const frontArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-front.png?v=2'):null;
   const sideArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-side.png'):null;
@@ -108,40 +288,43 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
   const gexBackTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-back.png?v=1'):null;
   if(isCrash){
     const frontArt=new THREE.Mesh(new THREE.PlaneGeometry(1.04,1.04),new THREE.MeshBasicMaterial({map:frontArtTexture}));frontArt.position.set(0,.78,.558);g.add(frontArt);
-    const artBorder=new THREE.Mesh(new THREE.BoxGeometry(1.16,1.16,.04),new THREE.MeshStandardMaterial({color:0xffb42e,emissive:0xe65b27,emissiveIntensity:1.2}));artBorder.position.set(0,.78,.535);g.add(artBorder);
+    const artBorder=new THREE.Mesh(roundedSlab(1.14,1.14,.022,.05,.008),new THREE.MeshStandardMaterial({color:0xc98a3a,emissive:0xe65b27,emissiveIntensity:.5,roughness:.34,metalness:.7}));artBorder.position.set(0,.78,.542);g.add(artBorder);
     const backArt=new THREE.Mesh(new THREE.PlaneGeometry(1.38,.92),new THREE.MeshBasicMaterial({map:backArtTexture}));backArt.position.set(0,.88,-.548);backArt.rotation.y=Math.PI;g.add(backArt);
-    const backBorder=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.04,.04),new THREE.MeshStandardMaterial({color:0x26c9ff,emissive:0x26c9ff,emissiveIntensity:1.1}));backBorder.position.set(0,.88,-.528);g.add(backBorder);
+    const backBorder=new THREE.Mesh(roundedSlab(1.48,1.02,.022,.05,.008),new THREE.MeshStandardMaterial({color:0x2a7ea0,emissive:0x26c9ff,emissiveIntensity:.45,roughness:.34,metalness:.7}));backBorder.position.set(0,.88,-.542);g.add(backBorder);
     backArt.position.z=-.556;
     for(const side of [-1,1]){const sideArt=new THREE.Mesh(new THREE.PlaneGeometry(.9,1.66),new THREE.MeshBasicMaterial({map:sideArtTexture,side:THREE.DoubleSide}));sideArt.position.set(side*.846,1.12,-.05);sideArt.rotation.y=side*Math.PI/2;g.add(sideArt);}
   }
   if(isGex){
     const frontArt=new THREE.Mesh(new THREE.PlaneGeometry(1.05,1.16),new THREE.MeshBasicMaterial({map:gexFrontTexture}));frontArt.position.set(0,.79,.558);g.add(frontArt);
-    const artBorder=new THREE.Mesh(new THREE.BoxGeometry(1.17,1.28,.04),new THREE.MeshStandardMaterial({color:0x8de548,emissive:0x8de548,emissiveIntensity:1.15,metalness:.6}));artBorder.position.set(0,.79,.535);g.add(artBorder);
+    const artBorder=new THREE.Mesh(roundedSlab(1.15,1.26,.022,.05,.008),new THREE.MeshStandardMaterial({color:0x5c8f36,emissive:0x8de548,emissiveIntensity:.48,roughness:.34,metalness:.7}));artBorder.position.set(0,.79,.542);g.add(artBorder);
     for(const side of [-1,1]){const sideArt=new THREE.Mesh(new THREE.PlaneGeometry(.7,1.58),new THREE.MeshBasicMaterial({map:gexSideTexture,side:THREE.DoubleSide}));sideArt.position.set(side*.846,1.05,-.05);sideArt.rotation.y=side*Math.PI/2;g.add(sideArt);}
     const backArt=new THREE.Mesh(new THREE.PlaneGeometry(1.05,1.16),new THREE.MeshBasicMaterial({map:gexBackTexture}));backArt.position.set(0,.79,-.558);backArt.rotation.y=Math.PI;g.add(backArt);
-    const backBorder=new THREE.Mesh(new THREE.BoxGeometry(1.17,1.28,.04),new THREE.MeshStandardMaterial({color:0x9b43ff,emissive:0x9b43ff,emissiveIntensity:1.1,metalness:.6}));backBorder.position.set(0,.79,-.535);g.add(backBorder);
+    const backBorder=new THREE.Mesh(roundedSlab(1.15,1.26,.022,.05,.008),new THREE.MeshStandardMaterial({color:0x62309e,emissive:0x9b43ff,emissiveIntensity:.45,roughness:.34,metalness:.7}));backBorder.position.set(0,.79,-.542);g.add(backBorder);
   }
-  const bezel=new THREE.Mesh(new THREE.BoxGeometry(1.38,1.0,.075),new THREE.MeshStandardMaterial({color:0x03050c,metalness:.9,roughness:.12}));bezel.position.set(0,2.06,.335);bezel.rotation.x=-.1;g.add(bezel);
-  const screen=new THREE.Mesh(new THREE.PlaneGeometry(1.24,.84),new THREE.MeshBasicMaterial({color:0x050710}));screen.position.set(0,2.06,.38);screen.rotation.x=-.1;g.add(screen);
-  const deck=new THREE.Mesh(new THREE.BoxGeometry(1.5,.12,.56),new THREE.MeshStandardMaterial({color:0x101525,metalness:.92,roughness:.15}));deck.position.set(0,1.4,.47);deck.rotation.x=.16;g.add(deck);
-  const deckLight=new THREE.Mesh(new THREE.BoxGeometry(1.22,.018,.035),new THREE.MeshStandardMaterial({color:secondaryAccent,emissive:secondaryAccent,emissiveIntensity:2.4}));deckLight.position.set(0,1.47,.72);deckLight.rotation.x=.16;g.add(deckLight);
+  const bezel=new THREE.Mesh(cabinetGeometry.bezel,cabinetBezelMaterial);bezel.position.set(0,2.06,.35);bezel.rotation.x=-.1;g.add(bezel);
+  const screen=new THREE.Mesh(cabinetGeometry.screen,new THREE.MeshBasicMaterial({color:0x050710}));screen.position.set(0,2.06,.38);screen.rotation.x=-.1;g.add(screen);
+  const glassSheen=new THREE.Mesh(cabinetGeometry.glassSheen,cabinetGlassMaterial);glassSheen.position.set(0,2.06,.388);glassSheen.rotation.x=-.1;g.add(glassSheen);
+  const deck=new THREE.Mesh(cabinetGeometry.deck,cabinetDeckMaterial);deck.position.set(0,1.4,.47);deck.rotation.x=.16;g.add(deck);
+  const deckLight=new THREE.Mesh(cabinetGeometry.deckLight,new THREE.MeshStandardMaterial({color:secondaryAccent,emissive:secondaryAccent,emissiveIntensity:1.5}));deckLight.position.set(0,1.47,.72);deckLight.rotation.x=.16;g.add(deckLight);
   const glow=new THREE.PointLight(hue,3.4,3);glow.position.set(0,1.95,.8);g.add(glow);
   const joystickX=-.39;
-  const gate=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.032,32),new THREE.MeshStandardMaterial({color:0x02040a,metalness:1,roughness:.08}));gate.position.set(joystickX,1.49,.64);g.add(gate);
-  const gateRing=new THREE.Mesh(new THREE.TorusGeometry(.1,.012,10,32),new THREE.MeshStandardMaterial({color:hue,emissive:hue,emissiveIntensity:.65,metalness:.7}));gateRing.rotation.x=Math.PI/2;gateRing.position.set(joystickX,1.51,.64);g.add(gateRing);
-  const stem=new THREE.Mesh(new THREE.CylinderGeometry(.018,.023,.115,16),new THREE.MeshStandardMaterial({color:0xe0e5ef,metalness:1,roughness:.06}));stem.position.set(joystickX,1.57,.64);g.add(stem);
-  const stick=new THREE.Mesh(new THREE.SphereGeometry(.052,20,20),new THREE.MeshStandardMaterial({color:0x111722,metalness:.55,roughness:.15}));stick.position.set(joystickX,1.65,.64);g.add(stick);
-  for(const [bx,bz,bColor] of [[.08,.58,0xff3cac],[.28,.58,0x36f9f6],[.08,.72,0xffb42e],[.28,.72,0x934dff]]){
-    const buttonWell=new THREE.Mesh(new THREE.CylinderGeometry(.075,.085,.025,24),new THREE.MeshStandardMaterial({color:0x03050b,metalness:1,roughness:.12}));buttonWell.position.set(bx,1.49,bz);g.add(buttonWell);
-    const button=new THREE.Mesh(new THREE.CylinderGeometry(.052,.052,.035,24),new THREE.MeshStandardMaterial({color:bColor,emissive:bColor,emissiveIntensity:.55,metalness:.45,roughness:.18}));button.position.set(bx,1.522,bz);g.add(button);
+  const gate=new THREE.Mesh(cabinetGeometry.gate,cabinetGateMaterial);gate.position.set(joystickX,1.49,.64);g.add(gate);
+  const gateRing=new THREE.Mesh(cabinetGeometry.gateRing,new THREE.MeshStandardMaterial({color:hue,emissive:hue,emissiveIntensity:.6,metalness:.7}));gateRing.rotation.x=Math.PI/2;gateRing.position.set(joystickX,1.51,.64);g.add(gateRing);
+  const stem=new THREE.Mesh(cabinetGeometry.stem,cabinetStemMaterial);stem.position.set(joystickX,1.57,.64);g.add(stem);
+  const stick=new THREE.Mesh(cabinetGeometry.stick,cabinetStickMaterial);stick.position.set(joystickX,1.65,.64);g.add(stick);
+  for(const [bx,bz,buttonMaterial] of cabinetButtonLayout){
+    const buttonWell=new THREE.Mesh(cabinetGeometry.buttonWell,cabinetWellMaterial);buttonWell.position.set(bx,1.49,bz);g.add(buttonWell);
+    const button=new THREE.Mesh(cabinetGeometry.button,buttonMaterial);button.position.set(bx,1.522,bz);g.add(button);
   }
   let plate;
   if(isCrash){plate=new THREE.Mesh(new THREE.PlaneGeometry(1.54,.47),new THREE.MeshBasicMaterial({map:marqueeTexture}));plate.position.set(0,2.68,.43);}
   else if(isGex){plate=new THREE.Mesh(new THREE.PlaneGeometry(1.54,.47),new THREE.MeshBasicMaterial({map:gexMarqueeTexture}));plate.position.set(0,2.68,.43);}
   else {const label=document.createElement('canvas');label.width=512;label.height=128;const c=label.getContext('2d');c.fillStyle='#0a0713';c.fillRect(0,0,512,128);c.fillStyle='#fff4cc';c.font='bold 29px monospace';c.textAlign='center';c.fillText(name,256,77,480);plate=new THREE.Mesh(new THREE.PlaneGeometry(1.48,.28),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(label)}));plate.position.set(0,2.7,.43);}
   plate.rotation.x=-.1;g.add(plate);
+  const marqueeHousing=new THREE.Mesh(cabinetGeometry.marqueeHousing,cabinetHeadMaterial);marqueeHousing.position.set(0,2.7,.28);marqueeHousing.rotation.x=-.1;g.add(marqueeHousing);
+  const marqueeWash=new THREE.Mesh(cabinetGeometry.marqueeWash,trimMat);marqueeWash.position.set(0,2.44,.45);marqueeWash.rotation.x=-.1;g.add(marqueeWash);
   const statusMaterial=new THREE.MeshStandardMaterial({color:0x50ff9a,emissive:0x50ff9a,emissiveIntensity:2.4});
-  const statusLight=new THREE.Mesh(new THREE.BoxGeometry(.18,.045,.035),statusMaterial);statusLight.position.set(.48,2.48,.43);statusLight.rotation.x=-.1;g.add(statusLight);
+  const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(.48,2.48,.43);statusLight.rotation.x=-.1;g.add(statusLight);
   scene.add(g);cabinets.push({id,g,name,type:id.toUpperCase(),screen,hue,statusLight,renderLights:[floorGlow,glow],status:'syncing',occupiedByDisplayName:null,enabled:true});
 }
 function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
