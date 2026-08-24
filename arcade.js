@@ -136,11 +136,11 @@ const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_LENGTH=13.7,PARTI
 const playstationWallBody=box(PARTITION_WALL_HALF_THICKNESS*2,5,PARTITION_WALL_HALF_LENGTH*2,0x111425,PLAYSTATION_WALL_X,2.5,0,.08);playstationWallBody.receiveShadow=true;
 box(.42,.08,27.4,0xd18a52,PLAYSTATION_WALL_X,4.86,0,.9);
 box(.42,.1,27.4,0x251447,PLAYSTATION_WALL_X,.08,0,.45);
-const playstationWallTexture=new THREE.TextureLoader().load('assets/art/playstation-wall.png?v=1');
+const playstationWallTexture=new THREE.TextureLoader().load('assets/art/playstation-wall.webp?v=webp-2');
 const playstationWall=new THREE.Mesh(new THREE.PlaneGeometry(27.4,4.7),new THREE.MeshBasicMaterial({map:playstationWallTexture}));playstationWall.position.set(-13.805,2.5,0);playstationWall.rotation.y=Math.PI/2;scene.add(playstationWall);
 const n64WallBody=box(PARTITION_WALL_HALF_THICKNESS*2,5,PARTITION_WALL_HALF_LENGTH*2,0x111425,N64_WALL_X,2.5,0,.08);n64WallBody.receiveShadow=true;
 box(.42,.08,27.4,0xd18a52,N64_WALL_X,4.86,0,.9);box(.42,.1,27.4,0x251447,N64_WALL_X,.08,0,.45);
-const n64WallTexture=new THREE.TextureLoader().load('assets/art/nintendo64-wall.png?v=1');
+const n64WallTexture=new THREE.TextureLoader().load('assets/art/nintendo64-wall.webp?v=webp-2');
 n64WallTexture.colorSpace=THREE.SRGBColorSpace;
 n64WallTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const n64WallGraphic=new THREE.Mesh(new THREE.PlaneGeometry(6.34,4.7),new THREE.MeshBasicMaterial({map:n64WallTexture}));
@@ -187,8 +187,7 @@ for(const roomX of [-21,21]){
 }
 function addRoomSign(text,x,color){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,-16.62);scene.add(sign)}
 addRoomSign('XBOX ROOM',21,'#7dff67');
-const pepeToyTexture=new THREE.TextureLoader().load('assets/art/pepe-toy.png?v=1');
-const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.png?v=1');
+const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
 function crashArt(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d');
   const sky=c.createLinearGradient(0,0,512,512);sky.addColorStop(0,'#e84c25');sky.addColorStop(.47,'#ffb12d');sky.addColorStop(1,'#451769');c.fillStyle=sky;c.fillRect(0,0,512,512);
@@ -283,14 +282,14 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
     const rod=new THREE.Mesh(cabinetGeometry.lightRod,trimMat);rod.position.set(sx,1.32,.545);g.add(rod);
   }
   const art=isCrash?crashArt():null;
-  const frontArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-front.png?v=2'):null;
-  const sideArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-side.png'):null;
-  const backArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-back.png'):null;
-  const marqueeTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-marquee.png?v=3'):null;
-  const gexMarqueeTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-marquee.png?v=2'):null;
-  const gexFrontTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-front.png?v=1'):null;
-  const gexSideTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-side.png?v=1'):null;
-  const gexBackTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-back.png?v=1'):null;
+  const frontArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-front.webp?v=webp-2'):null;
+  const sideArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-side.webp?v=webp-2'):null;
+  const backArtTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-back.webp?v=webp-2'):null;
+  const marqueeTexture=isCrash?new THREE.TextureLoader().load('assets/art/crash-bandicoot-marquee.webp?v=webp-2'):null;
+  const gexMarqueeTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-marquee.webp?v=webp-2'):null;
+  const gexFrontTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-front.webp?v=webp-2'):null;
+  const gexSideTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-side.webp?v=webp-2'):null;
+  const gexBackTexture=isGex?new THREE.TextureLoader().load('assets/art/gex-back.webp?v=webp-2'):null;
   if(isCrash){
     const frontArt=new THREE.Mesh(new THREE.PlaneGeometry(1.04,1.04),new THREE.MeshBasicMaterial({map:frontArtTexture}));frontArt.position.set(0,.78,.558);g.add(frontArt);
     const artBorder=new THREE.Mesh(roundedSlab(1.14,1.14,.022,.05,.008),new THREE.MeshStandardMaterial({color:0xc98a3a,emissive:0xe65b27,emissiveIntensity:.5,roughness:.34,metalness:.7}));artBorder.position.set(0,.78,.542);g.add(artBorder);
