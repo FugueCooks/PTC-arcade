@@ -32,6 +32,7 @@ import { InMemoryRoomAdmission, RedisRoomAdmission } from './rooms/room-admissio
 import { RoomPlacementService } from './rooms/room-placement-service.js';
 import { installMatchmakingRoutes } from './http/matchmaking-routes.js';
 import { InMemoryReconnectDirectory, RedisReconnectDirectory } from './players/reconnect-directory.js';
+import { DatabaseConnection } from './database/connection.js';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -98,12 +99,20 @@ if (redis) {
     logger.error('redis_startup_failed', { errorMessage: error instanceof Error ? error.message : 'unknown' });
   }
 }
+const database = config.databaseUrl ? new DatabaseConnection(config.databaseUrl, config.databasePoolMax, logger, metrics) : undefined;
+let databaseBootstrapped = false;
+if (database) {
+  databaseBootstrapped = await database.connect(config.databaseStartupTimeoutMs);
+  if (!databaseBootstrapped && config.databaseRequired) logger.error('database_startup_required_unavailable');
+}
 health = new HealthService(config, metrics, {
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
   activeRooms: () => rooms.roomCount,
   coordinationRequired: () => config.redisRequired,
-  coordinationReady: () => redisBootstrapped && (redis?.isReady ?? false)
+  coordinationReady: () => redisBootstrapped && (redis?.isReady ?? false),
+  databaseRequired: () => config.databaseRequired,
+  databaseReady: () => databaseBootstrapped && (database?.isReady ?? false)
 });
 const redisKeys = new RedisKeys(config.redisKeyPrefix);
 const roomDirectory = redisBootstrapped && redis ? new RedisRoomDirectory(redis.client, redisKeys, config.roomDirectoryTtlMs) : new InMemoryRoomDirectory();
@@ -342,6 +351,10 @@ const reconnectRouteTimer = setInterval(() => {
   }
 }, 5_000);
 reconnectRouteTimer.unref();
+const databaseHealthTimer = database ? setInterval(() => {
+  void database.check().then((ready) => { databaseBootstrapped = ready; });
+}, 15_000) : undefined;
+databaseHealthTimer?.unref();
 let worldEventIndex = 0;
 const worldEventTypes = ['neon-surge', 'power-flicker', 'fireworks'] as const;
 const worldEventTimer = setInterval(() => {
@@ -356,10 +369,12 @@ const drain = new DrainController(httpServer, io, config, health, metrics, logge
   stopTimers: async () => {
     clearInterval(cleanupTimer);
     clearInterval(reconnectRouteTimer);
+    if (databaseHealthTimer) clearInterval(databaseHealthTimer);
     clearInterval(worldEventTimer);
     await roomLifecycle.stop();
     await serverRegistry?.stop();
     await redis?.close();
+    await database?.close();
   }
 });
 

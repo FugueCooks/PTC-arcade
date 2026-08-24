@@ -21,11 +21,15 @@ void test('operational configuration is bounded and deployment identity is norma
   assert.equal(config.maxRoomsPerServer, 10);
   assert.equal(config.maxPlayersPerServer, 250);
   assert.equal(config.redisStartupTimeoutMs, 5_000);
+  assert.equal(config.databaseStartupTimeoutMs, 5_000);
+  assert.equal(config.sessionTtlMs, 30 * 24 * 60 * 60 * 1_000);
   assert.equal(config.drainTimeoutMs, 60_000);
   assert.equal(config.publicRealtimeUrl, 'https://west.arcade.example');
   assert.throws(() => loadServerConfig({ MAX_PLAYERS_PER_ROOM: '5000' }), /Invalid numeric server configuration/);
   assert.throws(() => loadServerConfig({ MIN_AVAILABLE_ROOMS: '3', MAX_ROOMS_PER_SERVER: '2' }), /cannot exceed/);
   assert.throws(() => loadServerConfig({ REDIS_REQUIRED: '1' }), /requires REDIS_URL/);
+  assert.throws(() => loadServerConfig({ DATABASE_REQUIRED: '1' }), /requires DATABASE_URL/);
+  assert.throws(() => loadServerConfig({ DATABASE_URL: 'https://example.invalid/database' }), /postgres/);
 });
 
 void test('configured room capacity is clamped by the per-server safety limit', () => {
@@ -66,6 +70,21 @@ void test('required Redis coordination controls readiness without exposing its U
   const health = new HealthService(config, metrics, sources); health.markInitialized();
   assert.deepEqual(health.readiness().reasons, ['redis-unavailable']);
   assert.doesNotMatch(JSON.stringify(health.readiness()), /example\.invalid/);
+  metrics.close();
+});
+
+void test('required PostgreSQL controls readiness without exposing its URL', () => {
+  const sources = {
+    connectedSockets: () => 0, activePlayers: () => 0, activeRooms: () => 1,
+    databaseRequired: () => true, databaseReady: () => false
+  };
+  const metrics = new RuntimeMetrics({ ...sources, averageRoomPopulation: () => 0, draining: () => false });
+  const config = loadServerConfig({
+    DATABASE_URL: 'postgresql://account:secret@example.invalid/arcade', DATABASE_REQUIRED: '1', MAX_SERVER_MEMORY_MB: '65536'
+  });
+  const health = new HealthService(config, metrics, sources); health.markInitialized();
+  assert.deepEqual(health.readiness().reasons, ['database-unavailable']);
+  assert.doesNotMatch(JSON.stringify(health.readiness()), /account|secret|example\.invalid/);
   metrics.close();
 });
 

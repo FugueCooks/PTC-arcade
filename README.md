@@ -2,6 +2,8 @@
 
 A Three.js/WebGL arcade floor with a lightweight Socket.IO multiplayer foundation. An internet connection is needed the first time to load Three.js, fonts, and EmulatorJS.
 
+Phase 8 durable identity work begins with an optional PostgreSQL/Drizzle foundation, Argon2id password primitives, opaque hashed session tokens, guest identities, bounded preferences, repeatable migrations, and database-aware readiness. This first milestone does not alter existing guest joins or multiplayer behavior. See `docs/phase-8-authentication.md` before enabling `DATABASE_REQUIRED`.
+
 ## Production hosting
 
 The production frontend is deployed on Cloudflare Pages at `https://retro-arcade-om7.pages.dev/`. Run `npm run pages:build` to create the strict `.pages-dist` bundle and `npm run pages:deploy` to publish it. The bundle excludes ROMs, BIOS files, unused model experiments, and every file over Cloudflare Pages' safe per-file limit. Hosted game and BIOS URLs continue to resolve through the R2 values written into `runtime-config.js`. Render remains a rollback Node host.

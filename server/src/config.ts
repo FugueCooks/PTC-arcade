@@ -29,6 +29,15 @@ export interface ServerConfig {
   publicRealtimeUrl?: string;
   matchmakingUrl?: string;
   admissionReservationTtlMs: number;
+  databaseUrl?: string;
+  databaseRequired: boolean;
+  databaseStartupTimeoutMs: number;
+  databasePoolMax: number;
+  sessionTtlMs: number;
+  guestSessionTtlMs: number;
+  passwordArgon2MemoryKib: number;
+  passwordArgon2Iterations: number;
+  passwordArgon2Parallelism: number;
 }
 
 export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -38,10 +47,12 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
   const generatedId = `${cleanIdentifier(hostname()) ?? 'arcade'}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
   const configuredRedisUrl = redisUrl(environment.REDIS_URL);
+  const configuredDatabaseUrl = databaseUrl(environment.DATABASE_URL);
   const minAvailableRooms = integer(environment.MIN_AVAILABLE_ROOMS, 1, 1, 100);
   const maxRoomsPerServer = integer(environment.MAX_ROOMS_PER_SERVER, 10, 1, 100);
   if (minAvailableRooms > maxRoomsPerServer) throw new Error('MIN_AVAILABLE_ROOMS cannot exceed MAX_ROOMS_PER_SERVER.');
   if (environment.REDIS_REQUIRED === '1' && !configuredRedisUrl) throw new Error('REDIS_REQUIRED=1 requires REDIS_URL.');
+  if (environment.DATABASE_REQUIRED === '1' && !configuredDatabaseUrl) throw new Error('DATABASE_REQUIRED=1 requires DATABASE_URL.');
   return {
     port: integer(environment.PORT, 8080, 1, 65_535),
     trustProxy: environment.TRUST_PROXY === '1',
@@ -69,7 +80,16 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     roomOwnershipTtlMs: seconds(environment.ROOM_OWNERSHIP_TTL_SECONDS, 30, 5, 300),
     publicRealtimeUrl: publicUrl(environment.PUBLIC_REALTIME_URL),
     matchmakingUrl: publicUrl(environment.MATCHMAKING_URL),
-    admissionReservationTtlMs: seconds(environment.ADMISSION_RESERVATION_TTL_SECONDS, 15, 5, 60)
+    admissionReservationTtlMs: seconds(environment.ADMISSION_RESERVATION_TTL_SECONDS, 15, 5, 60),
+    databaseUrl: configuredDatabaseUrl,
+    databaseRequired: environment.DATABASE_REQUIRED === '1',
+    databaseStartupTimeoutMs: seconds(environment.DATABASE_STARTUP_TIMEOUT_SECONDS, 5, 1, 60),
+    databasePoolMax: integer(environment.DATABASE_POOL_MAX, 10, 1, 100),
+    sessionTtlMs: days(environment.SESSION_TTL_DAYS, 30, 1, 365),
+    guestSessionTtlMs: days(environment.GUEST_SESSION_TTL_DAYS, 30, 1, 90),
+    passwordArgon2MemoryKib: integer(environment.PASSWORD_ARGON2_MEMORY_KIB, 19_456, 7_168, 1_048_576),
+    passwordArgon2Iterations: integer(environment.PASSWORD_ARGON2_ITERATIONS, 2, 1, 20),
+    passwordArgon2Parallelism: integer(environment.PASSWORD_ARGON2_PARALLELISM, 1, 1, 8)
   };
 }
 
@@ -94,6 +114,10 @@ function seconds(value: string | undefined, fallback: number, minimum: number, m
   return integer(value, fallback, minimum, maximum) * 1_000;
 }
 
+function days(value: string | undefined, fallback: number, minimum: number, maximum: number): number {
+  return integer(value, fallback, minimum, maximum) * 24 * 60 * 60 * 1_000;
+}
+
 function cleanIdentifier(value: string | undefined): string | undefined {
   const cleaned = value?.trim().replace(/[^A-Za-z0-9._:-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 96);
   return cleaned || undefined;
@@ -109,6 +133,16 @@ function redisUrl(value: string | undefined): string | undefined {
   if (!cleaned) return undefined;
   const parsed = new URL(cleaned);
   if (parsed.protocol !== 'redis:' && parsed.protocol !== 'rediss:') throw new Error('REDIS_URL must use redis:// or rediss://.');
+  return cleaned;
+}
+
+function databaseUrl(value: string | undefined): string | undefined {
+  const cleaned = value?.trim();
+  if (!cleaned) return undefined;
+  const parsed = new URL(cleaned);
+  if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
+    throw new Error('DATABASE_URL must use postgres:// or postgresql://.');
+  }
   return cleaned;
 }
 
