@@ -217,6 +217,8 @@ The five cabinets behind the PlayStation room form the rear PlayStation 2 room. 
 
 The PS2 and Xbox expansions are temporarily closed while their game setups continue. Both entrances to each room have visible caution-tape construction walls, nearby players see a room-specific **Room Under Construction.** notice, and entry is prevented by both client collision and authoritative Node/Cloudflare movement validation. The rooms and their cabinets remain in the scene so either barrier can be removed without rebuilding its layout.
 
+Five GameCube-ready cabinets line the front wall of the main arcade, opposite the prize counter. Their stable registry entries identify `gamecube` as the system and `dolphin` as the planned emulator. They remain disabled until a vetted browser-compatible Dolphin/WebAssembly runtime is available: the official Dolphin project currently distributes native Windows, macOS, Linux, and Android builds rather than an embeddable browser build. Games should not be assigned until that runtime is integrated and tested.
+
 ### Experimental PS2 prototype
 
 The Kingdom Hearts, Grand Theft Auto: San Andreas, and Dragon Ball Z: Budokai Tenkaichi 3 cabinets use the official experimental Play!.js WebAssembly build. Their approved disc images are hosted in Cloudflare R2 and read on demand with HTTP byte-range requests, so pressing the cabinet's PLAY button launches the configured game without asking for a local file and without loading the entire multi-gigabyte ISO into browser memory. The local ISO/CHD/CSO/ISZ/BIN/ELF selector remains available as a fallback. Play! requires no external PS2 BIOS.

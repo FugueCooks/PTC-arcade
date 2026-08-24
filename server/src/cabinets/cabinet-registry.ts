@@ -5,7 +5,7 @@ export interface CabinetPoint { x: number; y: number; z: number }
 export interface CabinetDefinition {
   id: string; name: string; sceneKey: string; enabled: boolean;
   interactionPosition: CabinetPoint; playerPosition: CabinetPoint; playerRotationY: number;
-  defaultGameId?: string;
+  defaultGameId?: string; system?: string; emulatorId?: string;
 }
 
 /** One approved registry is consumed by both the browser and authoritative server. */
@@ -29,7 +29,9 @@ function isDefinition(value: unknown): value is CabinetDefinition {
   return typeof candidate.id === 'string' && /^[a-z0-9-]+$/.test(candidate.id)
     && typeof candidate.name === 'string' && typeof candidate.sceneKey === 'string'
     && typeof candidate.enabled === 'boolean' && isPoint(candidate.interactionPosition)
-    && isPoint(candidate.playerPosition) && Number.isFinite(candidate.playerRotationY);
+    && isPoint(candidate.playerPosition) && Number.isFinite(candidate.playerRotationY)
+    && (candidate.system === undefined || typeof candidate.system === 'string')
+    && (candidate.emulatorId === undefined || typeof candidate.emulatorId === 'string');
 }
 
 function isPoint(value: unknown): value is CabinetPoint {

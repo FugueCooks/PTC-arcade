@@ -18,16 +18,17 @@ function setup(options = {}) {
   return { players, cabinets };
 }
 
-void test('the approved registry exposes consolidated N64, PS2, and fresh Xbox cabinets', () => {
+void test('the approved registry exposes consolidated N64, PS2, Xbox, and GameCube cabinets', () => {
   const { cabinets } = setup();
   const snapshot = cabinets.snapshot('main');
-  assert.equal(snapshot.length, 24);
+  assert.equal(snapshot.length, 29);
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'pixel-rally'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'silent-hill'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'metal-gear-solid'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'n64-cabinet-07'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'psx-back-cabinet-05'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'xbox-cabinet-05'));
+  assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'gamecube-cabinet-05'));
   assert.ok(!snapshot.some(({ cabinetId }) => cabinetId.startsWith('n64-back-cabinet-')));
   assert.ok(snapshot.every(({ status }) => status === 'available'));
 });

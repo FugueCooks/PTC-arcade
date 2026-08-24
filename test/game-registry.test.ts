@@ -44,7 +44,7 @@ void test('every hosted game points at an approved, enabled cabinet', async () =
 });
 
 void test('unique N64 games are consolidated in the main room and the rear room is Xbox-ready', async () => {
-  const cabinets = await loadJson<Array<{ id: string; name: string; enabled: boolean; defaultGameId?: string }>>('assets/cabinets/registry.json');
+  const cabinets = await loadJson<Array<{ id: string; name: string; enabled: boolean; defaultGameId?: string; system?: string; emulatorId?: string }>>('assets/cabinets/registry.json');
   const byId = new Map(cabinets.map((cabinet) => [cabinet.id, cabinet]));
   assert.equal(byId.get('n64-cabinet-06')?.defaultGameId, 'star-fox-64');
   assert.equal(byId.get('n64-cabinet-07')?.defaultGameId, 'mega-man-64');
@@ -52,6 +52,10 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(byId.get('metal-gear-solid')?.defaultGameId, 'metal-gear-solid');
   assert.equal([...byId].filter(([id]) => id.startsWith('n64-back-cabinet-')).length, 0);
   assert.equal([...byId].filter(([id, cabinet]) => id.startsWith('xbox-cabinet-') && !cabinet.enabled).length, 5);
+  const gamecubeCabinets = [...byId].filter(([id]) => id.startsWith('gamecube-cabinet-')).map(([, cabinet]) => cabinet);
+  assert.equal(gamecubeCabinets.length, 5);
+  assert.ok(gamecubeCabinets.every((cabinet) => !cabinet.enabled));
+  assert.ok(gamecubeCabinets.every((cabinet) => cabinet.system === 'gamecube' && cabinet.emulatorId === 'dolphin'));
   assert.equal(byId.get('psx-back-cabinet-01')?.enabled, false);
   assert.equal(byId.get('psx-back-cabinet-02')?.enabled, true);
   assert.equal(byId.get('psx-back-cabinet-03')?.enabled, true);
