@@ -21,7 +21,11 @@
   let lastSentAt = 0;
   let lastSentTransform;
   let lastAvatarFrameAt = 0;
-  const avatarFrameIntervalMs = arcade.performanceProfile?.lowPower ? 1000 / 30 : 1000 / 60;
+  // Only animation stepping is budgeted, and only on low power hardware.
+  // Throttling positions below the render rate is what makes avatars stutter.
+  const avatarFrameIntervalMs = arcade.performanceProfile?.lowPower ? 1000 / 30 : 0;
+  const localAvatarPosition = new THREE.Vector3();
+  const remoteAvatarPosition = new THREE.Vector3();
   let started = false;
   let currentRoomId = 'main';
   let placementAbortController;
@@ -67,8 +71,15 @@
     const target = asTransform(state);
     const drift = Math.hypot(local.position.x - target.position.x, local.position.z - target.position.z);
     const rotationDrift = Math.abs(Math.atan2(Math.sin(target.rotationY - local.rotationY), Math.cos(target.rotationY - local.rotationY)));
-    // Ignore tiny round-trip differences. Correcting every delayed server echo
-    // made the local camera feel sticky on higher-latency connections.
+    // A predicting client always runs about one round trip ahead of the echo it
+    // gets back, so while the player is walking the server state is legitimately
+    // stale by roughly speed x latency. Easing toward it on every packet drags
+    // the camera backwards fifteen times a second, which reads as shaking. Mid
+    // stride only a real desync is worth correcting.
+    if (arcade.getLocalAnimationState?.() === 'walk') {
+      if (drift > 1) arcade.applyAuthoritativeTransform(target, 0.28);
+      return;
+    }
     if (drift < 0.08 && rotationDrift < 0.05) return;
     arcade.applyAuthoritativeTransform(target, drift > 1 ? 0.28 : drift > 0.35 ? 0.08 : 0.025);
   };
@@ -89,15 +100,12 @@
       // An idle server state always wins. The position fallback also prevents a
       // stale final walk packet from looping forever if an idle packet is delayed.
       const animation = to.a === 'walk' && !movedBetweenSamples ? 'idle' : to.a;
-      remote.avatar.setTransform(
-        new THREE.Vector3(
-          from.p[0] + (to.p[0] - from.p[0]) * alpha,
-          Math.max(0, from.p[1] + (to.p[1] - from.p[1]) * alpha - 1.65),
-          from.p[2] + (to.p[2] - from.p[2]) * alpha
-        ),
-        angleLerp(from.r, to.r, alpha),
-        animation
+      remoteAvatarPosition.set(
+        from.p[0] + (to.p[0] - from.p[0]) * alpha,
+        Math.max(0, from.p[1] + (to.p[1] - from.p[1]) * alpha - 1.65),
+        from.p[2] + (to.p[2] - from.p[2]) * alpha
       );
+      remote.avatar.setTransform(remoteAvatarPosition, angleLerp(from.r, to.r, alpha), animation);
     });
   };
 
@@ -121,19 +129,19 @@
   };
 
   const frame = (now) => {
-    requestAnimationFrame(frame);
-    if (now - lastAvatarFrameAt < avatarFrameIntervalMs - 1) return;
-    lastAvatarFrameAt = now;
-    if (avatarRenderer && !arcade.isEmulatorActive?.()) {
-      interpolateRemotePlayers(now);
-      if (localAvatar) {
-        const local = arcade.getLocalTransform();
-        localAvatar.setHidden(arcade.isFirstPerson?.() === true);
-        localAvatar.setTransform(new THREE.Vector3(local.position.x, 0, local.position.z), local.rotationY, arcade.getLocalAnimationState());
-      }
-      avatarRenderer.update(now);
-      sendLocalTransform(now);
+    if (!avatarRenderer || arcade.isEmulatorActive?.()) return;
+    interpolateRemotePlayers(now);
+    if (localAvatar) {
+      const local = arcade.getLocalTransform();
+      localAvatar.setHidden(arcade.isFirstPerson?.() === true);
+      localAvatarPosition.set(local.position.x, 0, local.position.z);
+      localAvatar.setTransform(localAvatarPosition, local.rotationY, arcade.getLocalAnimationState());
     }
+    if (now - lastAvatarFrameAt >= avatarFrameIntervalMs - 1) {
+      lastAvatarFrameAt = now;
+      avatarRenderer.update(now);
+    }
+    sendLocalTransform(now);
   };
 
   const start = async (selection) => {
@@ -283,5 +291,8 @@
   window.addEventListener('arcade:identity-selected', ({ detail }) => void start(detail));
   window.addEventListener('arcade:placement-cancel', () => placementAbortController?.abort());
   if (window.arcadeAvatarIdentity) void start(window.arcadeAvatarIdentity);
-  requestAnimationFrame(frame);
+  // Runs inside the scene's own frame, immediately before the draw call, so an
+  // avatar is never a frame behind the camera that is following it.
+  if (typeof arcade.onBeforeRender === 'function') arcade.onBeforeRender(frame);
+  else { const loop = (now) => { requestAnimationFrame(loop); frame(now); }; requestAnimationFrame(loop); }
 })();
