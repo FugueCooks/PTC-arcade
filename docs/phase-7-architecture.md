@@ -37,6 +37,8 @@ Placement uses short-lived admission reservations. A Lua script atomically count
 
 Public endpoints come only from `PUBLIC_REALTIME_URL`; private hostnames and server identifiers are not rendered in the interface. A deployment using one load-balanced Socket.IO URL must still provide sticky sessions while HTTP polling is enabled. If `MATCHMAKING_URL` is absent or an older production backend does not expose the API, the client retains the established direct-connection rollback path.
 
+The player-select screen defaults to **Quick Join**, refreshes the sanitized live room directory on demand, and supports a validated explicit room ID for meeting friends. Explicit IDs are strict: an unavailable or full requested room never silently redirects the player into a different instance. Full rooms remain visible but cannot be selected. If placement returns temporary overload, the client uses server-directed bounded backoff capped at five seconds, shows the retry state, and exposes **Cancel Search** through an `AbortController`. Canceling removes the pending timer/listener and returns to player select without starting a socket connection. When the matchmaking API is absent, the ten approved static rooms remain a compatibility fallback.
+
 Reconnect routes are stored under a SHA-256 hash of the opaque browser token. Connected-player routes refresh every five seconds; disconnect changes the record TTL to `RECONNECT_GRACE_SECONDS`. Placement prefers the previous room and therefore its owning server. If that room has expired or become unhealthy, ordinary placement selects a safe replacement rather than claiming that live state survived.
 
 ## Deployment state
