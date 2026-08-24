@@ -73,7 +73,10 @@ function arcadeFloorTextures(){
 }
 const floorTextures=arcadeFloorTextures();
 floorTextures.map.repeat.set(7,8.5);floorTextures.roughnessMap.repeat.set(7,8.5);
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(28,34),new THREE.MeshStandardMaterial({map:floorTextures.map,roughnessMap:floorTextures.roughnessMap,roughness:.58,metalness:.44}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+// The floor needs a small non-directional base value. With a dark albedo and
+// high metalness it previously reflected almost nothing at some camera angles,
+// making the mesh appear to clip out as the player looked across the room.
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(28,34),new THREE.MeshStandardMaterial({map:floorTextures.map,roughnessMap:floorTextures.roughnessMap,emissive:0x10091c,emissiveIntensity:.42,roughness:.66,metalness:.14}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
 function box(w,h,d,color,x,y,z,emissive=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissive,roughness:.43,metalness:.65}));m.position.set(x,y,z);m.castShadow=true;scene.add(m);return m}
 // Tokyo-noir ceiling. A real ceiling plane closes off what used to be an open
 // black void, and the full-width cyan light bars are replaced by short recessed
@@ -176,7 +179,7 @@ const expansionFloorMaterial=(()=>{
   const map=floorTextures.map.clone(),roughnessMap=floorTextures.roughnessMap.clone();
   map.needsUpdate=roughnessMap.needsUpdate=true;
   map.repeat.set(3.5,8.5);roughnessMap.repeat.set(3.5,8.5);
-  return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,roughness:.64,metalness:.38});
+  return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12});
 })();
 // Mirrored expansion rooms sit behind the PlayStation and Nintendo 64 walls.
 // Both partitions end before the front edge so players can walk around them.

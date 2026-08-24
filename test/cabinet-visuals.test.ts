@@ -27,10 +27,17 @@ void test('the N64 wall loads the window-free environment module without a stale
   const world = await readFile(path.resolve(process.cwd(), 'world/world-manager.js'), 'utf8');
   const environment = await readFile(path.resolve(process.cwd(), 'world/environment-manager.js'), 'utf8');
 
-  assert.match(index, /app-bootstrap\.js\?v=controller-display-forward-2/);
-  assert.match(bootstrap, /arcade\.js\?v=controller-display-forward-2/);
+  assert.match(index, /app-bootstrap\.js\?v=stable-floor-lighting-1/);
+  assert.match(bootstrap, /arcade\.js\?v=stable-floor-lighting-1/);
   assert.match(bootstrap, /multiplayer-client\.js\?v=n64-wall-panels-removed-3/);
   assert.match(multiplayer, /world-manager\.js\?v=n64-wall-panels-removed-3/);
   assert.match(world, /environment-manager\.js\?v=n64-wall-panels-removed-3/);
   assert.doesNotMatch(environment, /createWindows/);
+});
+
+void test('floor materials stay visible from every camera direction', async () => {
+  const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
+
+  assert.match(arcade, /emissive:0x10091c,emissiveIntensity:\.42,roughness:\.66,metalness:\.14/);
+  assert.match(arcade, /emissive:0x0b1324,emissiveIntensity:\.38,roughness:\.7,metalness:\.12/);
 });
