@@ -62,6 +62,7 @@
         <div class="screen-wrap"><canvas id="game-screen" width="640" height="440"></canvas><div id="emulator-stage"><div id="emulator-host"></div></div><div class="scanlines"></div></div>
         <div id="rom-control">
           <button id="play-hosted-game" type="button">PLAY INSTALLED GAME</button>
+          <button id="cache-hosted-game" type="button" hidden>CACHE GAME LOCALLY</button>
           <label for="rom-file">LOAD GAME FILE</label>
           <input id="rom-file" type="file" accept=".zip,.nes,.gb,.gba,.smc,.sfc,.bin,.rom,.cue,.iso,.chd,.cso,.isz,.elf,.pbp,.z64,.n64,.v64" />
           <span id="rom-name">NO CARTRIDGE INSERTED</span>
@@ -80,6 +81,6 @@
     </script>
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
-    <script type="module" src="app-bootstrap.js?v=ps2-performance-1"></script>
+    <script type="module" src="app-bootstrap.js?v=ps2-local-cache-1"></script>
   </body>
 </html>
