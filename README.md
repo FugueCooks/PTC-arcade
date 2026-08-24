@@ -1,4 +1,4 @@
-# NEON//ARCADE
+# PTC Arcade
 
 A Three.js/WebGL arcade floor with a lightweight Socket.IO multiplayer foundation. An internet connection is needed the first time to load Three.js, fonts, and EmulatorJS.
 
