@@ -28,13 +28,14 @@ void test('server rejects movement packets that arrive too fast, leave bounds, o
   assert.deepEqual(players.move('socket-a', { p: [0.3, 11], r: 0 }, 1_100)?.p, [0.3, 1.65, 11]);
 });
 
-void test('authoritative movement bounds include the Xbox room behind the Nintendo 64 wall', () => {
+void test('the temporary construction barrier rejects entry into the Xbox room', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  for (let x = 3; x <= 27; x += 3) {
+  for (let x = 3; x <= 12; x += 3) {
     assert.deepEqual(players.move('socket-a', { p: [x, 11], r: 0 }, 1_000 + x / 3 * 500)?.p, [x, 1.65, 11]);
   }
-  assert.equal(players.move('socket-a', { p: [28, 11], r: 0 }, 6_000), undefined);
+  assert.equal(players.move('socket-a', { p: [14.2, 11], r: 0 }, 3_500), undefined);
+  assert.equal(players.stateFor('socket-a')?.p[0], 12);
 });
 
 void test('the temporary construction barrier rejects entry into the PS2 room', () => {

@@ -29,6 +29,7 @@ const MAX_SPEED_PER_SECOND = 7;
 const MOVEMENT_PACKET_MS = 50;
 const MOVEMENT_TOLERANCE = 0.3;
 const PS2_ROOM_BOUNDARY_X = -14;
+const XBOX_ROOM_BOUNDARY_X = 14;
 const CABINET_DISTANCE = 2.6;
 const CABINET_TIMEOUT_MS = 5_000;
 const AFK_TIMEOUT_MS = 120_000;
@@ -215,6 +216,7 @@ export class ArcadeRoom implements DurableObject {
     if (!player || player.movementLocked || ![x, z, rotation].every(Number.isFinite)) return this.correct(socket, player);
     if ((x as number) < -27 || (x as number) > 27 || Math.abs(z as number) > 16) return this.correct(socket, player);
     if (player.p[0] >= PS2_ROOM_BOUNDARY_X && (x as number) < PS2_ROOM_BOUNDARY_X) return this.correct(socket, player);
+    if (player.p[0] <= XBOX_ROOM_BOUNDARY_X && (x as number) > XBOX_ROOM_BOUNDARY_X) return this.correct(socket, player);
     const elapsed = now - attachment.lastAcceptedAt;
     const distance = Math.hypot((x as number) - player.p[0], (z as number) - player.p[2]);
     const permitted = MAX_SPEED_PER_SECOND * Math.min(elapsed, 500) / 1000 + MOVEMENT_TOLERANCE;
