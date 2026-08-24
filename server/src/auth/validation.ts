@@ -45,6 +45,30 @@ export const guestIdentitySchema = z.object({
   };
 });
 
+export const profileUpdateSchema = z.object({ displayName: z.unknown(), avatarId: z.unknown() }).strict()
+  .transform((input, context) => {
+    const displayName = normalizeDisplayName(input.displayName);
+    if (!displayName) {
+      context.addIssue({ code: 'custom', path: ['displayName'], message: 'Invalid display name.' });
+      return z.NEVER;
+    }
+    return { displayName, normalizedDisplayName: displayName.toLocaleLowerCase('en-US'), avatarId: resolveAvatarId(input.avatarId) };
+  });
+
+const volume = z.number().min(0).max(1);
+export const preferencesUpdateSchema = z.object({
+  masterVolume: volume.optional(), musicVolume: volume.optional(), effectsVolume: volume.optional(),
+  mouseSensitivity: z.number().min(0.1).max(4).optional(), reducedMotion: z.boolean().optional(),
+  graphicsPreset: z.enum(['low', 'medium', 'high', 'auto']).optional(), showNameplates: z.boolean().optional(),
+  chatVisibility: z.enum(['visible', 'hidden']).optional()
+}).strict().refine((value) => Object.keys(value).length > 0, 'At least one preference is required.');
+
+export const resetRequestSchema = z.object({ email: emailSchema }).strict()
+  .transform((input) => ({ normalizedEmail: normalizeEmail(input.email) }));
+export const resetCompleteSchema = z.object({ token: z.string().min(32).max(256), password: passwordSchema }).strict();
+export const verificationCompleteSchema = z.object({ token: z.string().min(32).max(256) }).strict();
+export const accountDeletionSchema = z.object({ password: z.string().min(1).max(128) }).strict();
+
 export function normalizeEmail(email: string): string {
   return email.normalize('NFKC').trim().toLocaleLowerCase('en-US');
 }

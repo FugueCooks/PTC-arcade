@@ -1,0 +1,134 @@
+import type { Express, Request, Response } from 'express';
+import type { ServerConfig } from '../config.js';
+import type { AuthService } from '../auth/auth-service.js';
+import type { AccountService } from '../auth/account-service.js';
+import type { SafeIdentity } from '../auth/auth-repository.js';
+import { readSessionCookie } from '../auth/session-cookie.js';
+import { accountDeletionSchema, preferencesUpdateSchema, profileUpdateSchema, resetCompleteSchema,
+  resetRequestSchema, verificationCompleteSchema } from '../auth/validation.js';
+import { RequestRateLimiter } from '../auth/request-rate-limiter.js';
+
+interface Dependencies {
+  auth?: AuthService; accounts?: AccountService; databaseReady: () => boolean;
+  identityChanged?: (identity: SafeIdentity) => void; accountDeleted?: (identity: SafeIdentity) => void;
+}
+
+export function installAccountRoutes(app: Express, config: ServerConfig, dependencies: Dependencies): void {
+  const limiter = new RequestRateLimiter(config.authRequestLimit * 2, 10 * 60_000);
+  app.use('/api/account', (request, response, next) => {
+    response.setHeader('Cache-Control', 'no-store');
+    if (request.method !== 'GET') {
+      if (crossSite(request, config.authAllowedOrigin)) {
+        response.status(403).json(error('origin-rejected', 'This request was rejected.')); return;
+      }
+      const limit = limiter.consume(`${request.ip || 'unknown'}:${request.path}`);
+      if (!limit.allowed) {
+        response.setHeader('Retry-After', String(Math.ceil(limit.retryAfterMs / 1_000)));
+        response.status(429).json(error('rate-limited', 'Too many requests. Please wait and try again.')); return;
+      }
+    }
+    if (!dependencies.auth || !dependencies.accounts || !dependencies.databaseReady()) {
+      response.status(503).json(error('account-unavailable', 'Account services are temporarily unavailable.')); return;
+    }
+    next();
+  });
+
+  app.get('/api/account/profile', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!);
+    if (!session) return unauthorized(response);
+    response.json({ ok: true, identity: session.identity });
+  });
+  app.put('/api/account/profile', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!);
+    if (!session) return unauthorized(response);
+    const parsed = profileUpdateSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
+    try {
+      const identity = await dependencies.accounts!.updateProfile(session.identity.id, parsed.data);
+      if (!identity) return unauthorized(response);
+      dependencies.identityChanged?.(identity); response.json({ ok: true, identity });
+    } catch { unavailable(response); }
+  });
+  app.get('/api/account/preferences', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    try { response.json({ ok: true, preferences: await dependencies.accounts!.preferences(session.identity.id) }); } catch { unavailable(response); }
+  });
+  app.put('/api/account/preferences', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    const parsed = preferencesUpdateSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
+    try { response.json({ ok: true, preferences: await dependencies.accounts!.updatePreferences(session.identity.id, parsed.data) }); } catch { unavailable(response); }
+  });
+  app.get('/api/account/sessions', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    try {
+      const sessions = await dependencies.accounts!.sessions(session.identity.id);
+      response.json({ ok: true, sessions: sessions.map((value) => ({ ...value, current: value.id === session.sessionId })) });
+    } catch { unavailable(response); }
+  });
+  app.delete('/api/account/sessions/:sessionId', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    if (!/^[0-9a-f-]{36}$/i.test(request.params.sessionId)) return invalid(response);
+    try { await dependencies.accounts!.revokeSession(session.identity.id, request.params.sessionId); response.status(204).end(); } catch { unavailable(response); }
+  });
+  app.post('/api/account/sessions/revoke-others', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    const token = readSessionCookie(request.get('Cookie'), config.authCookieName); if (!token) return unauthorized(response);
+    try { response.json({ ok: true, revoked: await dependencies.accounts!.revokeOthers(session.identity.id, token) }); } catch { unavailable(response); }
+  });
+  app.post('/api/account/password-reset/request', async (request, response) => {
+    const parsed = resetRequestSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
+    try {
+      const token = await dependencies.accounts!.requestReset(parsed.data.normalizedEmail);
+      response.json({ ok: true, message: 'If that account exists, password-reset instructions have been prepared.',
+        ...(config.developmentAuthTokens && token ? { developmentToken: token } : {}) });
+    } catch { response.json({ ok: true, message: 'If that account exists, password-reset instructions have been prepared.' }); }
+  });
+  app.post('/api/account/password-reset/complete', async (request, response) => {
+    const parsed = resetCompleteSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
+    try {
+      if (!await dependencies.accounts!.completeReset(parsed.data.token, parsed.data.password)) return invalidToken(response);
+      clearCookie(response, config); response.json({ ok: true });
+    } catch { unavailable(response); }
+  });
+  app.post('/api/account/email-verification/request', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    try {
+      const token = await dependencies.accounts!.requestVerification(session.identity.id);
+      response.json({ ok: true, ...(config.developmentAuthTokens ? { developmentToken: token } : {}) });
+    } catch { unavailable(response); }
+  });
+  app.post('/api/account/email-verification/complete', async (request, response) => {
+    const parsed = verificationCompleteSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
+    try { if (!await dependencies.accounts!.completeVerification(parsed.data.token)) return invalidToken(response); response.json({ ok: true }); }
+    catch { unavailable(response); }
+  });
+  app.delete('/api/account', async (request, response) => {
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    const parsed = accountDeletionSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
+    try {
+      if (!await dependencies.accounts!.deleteAccount(session.identity.id, parsed.data.password)) {
+        response.status(403).json(error('authentication-failed', 'The password was not accepted.')); return;
+      }
+      dependencies.accountDeleted?.(session.identity); clearCookie(response, config); response.status(204).end();
+    } catch { unavailable(response); }
+  });
+}
+
+async function registeredSession(request: Request, config: ServerConfig, auth: AuthService) {
+  try {
+    const session = await auth.session(readSessionCookie(request.get('Cookie'), config.authCookieName));
+    return session?.identity.type === 'registered' ? session : undefined;
+  } catch { return undefined; }
+}
+function clearCookie(response: Response, config: ServerConfig) {
+  response.clearCookie(config.authCookieName, { httpOnly: true, secure: config.authCookieSecure, sameSite: 'strict', path: '/' });
+}
+function crossSite(request: Request, allowedOrigin?: string): boolean {
+  if (request.get('Sec-Fetch-Site') === 'cross-site') return true;
+  const origin = request.get('Origin'); if (!origin) return false;
+  try { return new URL(origin).origin !== (allowedOrigin ?? `${request.protocol}://${request.get('host')}`); } catch { return true; }
+}
+function error(code: string, message: string) { return { ok: false, error: { code, message } }; }
+function unauthorized(response: Response) { response.status(401).json(error('authentication-required', 'Sign in to manage this account.')); }
+function invalid(response: Response) { response.status(400).json(error('invalid-request', 'Check the provided account details.')); }
+function invalidToken(response: Response) { response.status(400).json(error('invalid-or-expired-token', 'This link is invalid or expired.')); }
+function unavailable(response: Response) { response.status(503).json(error('account-unavailable', 'Account services are temporarily unavailable.')); }

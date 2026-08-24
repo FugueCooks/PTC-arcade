@@ -23,7 +23,7 @@ class MemoryAuthRepository implements AuthRepository {
     return { id: `guest-${this.nextId++}`, type: 'guest', displayName: input.displayName, avatarId: input.avatarId, status: 'active' };
   }
   async createSession(identity: SafeIdentity, tokenHash: string, expiresAt: Date): Promise<void> {
-    this.sessions.set(tokenHash, { identity, expiresAt, revoked: false });
+    this.sessions.set(tokenHash, { sessionId: `session-${this.sessions.size + 1}`, identity, expiresAt, revoked: false });
   }
   async findSession(tokenHash: string, now = new Date()): Promise<AuthSessionRecord | undefined> {
     const value = this.sessions.get(tokenHash);

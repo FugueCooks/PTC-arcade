@@ -12,4 +12,6 @@ export class RedisKeys {
   reconnect(tokenHash: string): string { return `${this.prefix}:reconnect:${tokenHash}`; }
   socketStream(): string { return `${this.prefix}:socket-stream`; }
   socketSessions(): string { return `${this.prefix}:socket-session:`; }
+  activeIdentity(playerId: string): string { return `${this.prefix}:active-identity:${playerId}`; }
+  identityPresence(playerId: string): string { return `${this.prefix}:identity-presence:${playerId}`; }
 }

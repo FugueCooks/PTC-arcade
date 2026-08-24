@@ -3,6 +3,7 @@ import type { ServerConfig } from '../config.js';
 import type { AuthService } from '../auth/auth-service.js';
 import { guestIdentitySchema, loginSchema, registrationSchema } from '../auth/validation.js';
 import { RequestRateLimiter } from '../auth/request-rate-limiter.js';
+import { readSessionCookie } from '../auth/session-cookie.js';
 
 interface RouteDependencies { service?: AuthService; databaseReady: () => boolean }
 
@@ -65,7 +66,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
 
   app.get('/api/auth/session', async (request, response) => {
     try {
-      const session = await dependencies.service!.session(readCookie(request, config.authCookieName));
+      const session = await dependencies.service!.session(readSessionCookie(request.get('Cookie'), config.authCookieName));
       if (!session) {
         response.status(401).json({ ok: false, error: { code: 'session-required', message: 'Sign in or continue as a guest.' } });
         return;
@@ -75,7 +76,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
   });
 
   app.post('/api/auth/logout', async (request, response) => {
-    try { await dependencies.service!.logout(readCookie(request, config.authCookieName)); } catch { /* Logout remains idempotent. */ }
+    try { await dependencies.service!.logout(readSessionCookie(request.get('Cookie'), config.authCookieName)); } catch { /* Logout remains idempotent. */ }
     clearSessionCookie(response, request, config);
     response.status(204).end();
   });
@@ -110,17 +111,6 @@ function clearSessionCookie(response: Response, request: Request, config: Server
 }
 function cookieOptions(_request: Request, config: ServerConfig, expires?: Date) {
   return { httpOnly: true, secure: config.authCookieSecure, sameSite: 'strict' as const, path: '/', expires };
-}
-function readCookie(request: Request, name: string): string | undefined {
-  const header = request.get('Cookie');
-  if (!header || header.length > 8_192) return undefined;
-  for (const item of header.split(';')) {
-    const separator = item.indexOf('=');
-    if (separator < 0 || item.slice(0, separator).trim() !== name) continue;
-    const value = item.slice(separator + 1).trim();
-    return /^[A-Za-z0-9_-]{32,256}$/.test(value) ? value : undefined;
-  }
-  return undefined;
 }
 function deviceType(request: Request): string {
   const value = request.get('Sec-CH-UA-Mobile');

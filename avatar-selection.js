@@ -14,9 +14,19 @@ const cards = document.querySelector('#avatar-cards');
 const status = document.querySelector('#avatar-status');
 const confirmButton = document.querySelector('#avatar-confirm');
 const cancelButton = document.querySelector('#placement-cancel');
+const authModePanel = document.querySelector('#auth-mode');
+const authFields = document.querySelector('#auth-fields');
+const emailInput = document.querySelector('#account-email');
+const passwordInput = document.querySelector('#account-password');
+const forgotPassword = document.querySelector('#forgot-password');
+const signedInPanel = document.querySelector('#signed-in-panel');
+const signedInLabel = document.querySelector('#signed-in-label');
+const signOutButton = document.querySelector('#sign-out');
 const placementClient = new RoomPlacementClient();
 let selectedAvatarId = 'neon-capsule';
 let staticRooms;
+let authMode = 'guest';
+let accountSession;
 
 const readPreferences = () => {
   try {
@@ -37,6 +47,34 @@ const selectAvatar = (id) => {
 const showStatus = (message, error = false) => {
   status.textContent = message;
   status.dataset.error = String(error);
+};
+
+const requestJson = async (url, options = {}) => {
+  const response = await fetch(url, { credentials: 'same-origin', ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) } });
+  const payload = response.status === 204 ? {} : await response.json().catch(() => ({}));
+  if (!response.ok) { const error = new Error(payload?.error?.message ?? 'Account request failed.'); error.status = response.status; throw error; }
+  return payload;
+};
+
+const setAuthMode = (mode) => {
+  authMode = mode;
+  authModePanel.querySelectorAll('[data-auth-mode]').forEach((button) => button.classList.toggle('selected', button.dataset.authMode === mode));
+  authFields.hidden = mode === 'guest' || Boolean(accountSession);
+  forgotPassword.hidden = mode !== 'login';
+  passwordInput.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+};
+
+const showSignedIn = (session) => {
+  accountSession = session;
+  signedInPanel.hidden = !session;
+  authModePanel.hidden = Boolean(session);
+  authFields.hidden = true;
+  if (session) {
+    signedInLabel.textContent = `${session.identity.type === 'guest' ? 'GUEST' : 'SIGNED IN'} // ${session.identity.displayName}`;
+    nameInput.value = session.identity.displayName;
+    selectedAvatarId = session.identity.avatarId;
+  }
 };
 
 const roomOption = (value, label, disabled = false) => {
@@ -103,6 +141,11 @@ async function boot() {
       card.addEventListener('click', () => selectAvatar(avatar.id));
       return card;
     }));
+    try {
+      const session = await requestJson('/api/auth/session', { method: 'GET' });
+      showSignedIn(session);
+      if (avatars.has(session.identity.avatarId)) selectedAvatarId = session.identity.avatarId;
+    } catch { showSignedIn(undefined); setAuthMode('guest'); }
     selectAvatar(selectedAvatarId);
     confirmButton.disabled = false;
     showStatus('Choose your player, then enter the arcade.');
@@ -115,14 +158,14 @@ async function boot() {
   }
 }
 
-form.addEventListener('submit', (event) => {
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (confirmButton.dataset.retry === 'true') {
     void boot();
     return;
   }
-  const displayName = nameInput.value.normalize('NFKC').trim().replace(/\s+/g, ' ');
-  if (!namePattern.test(displayName)) {
+  let displayName = nameInput.value.normalize('NFKC').trim().replace(/\s+/g, ' ');
+  if (authMode !== 'login' && !namePattern.test(displayName)) {
     showStatus('Use 2–18 letters, numbers, spaces, dots, dashes, or underscores.', true);
     nameInput.focus();
     return;
@@ -133,12 +176,53 @@ form.addEventListener('submit', (event) => {
     roomIdInput.focus();
     return;
   }
+  confirmButton.disabled = true;
+  try {
+    if (accountSession?.identity?.type === 'registered') {
+      const profile = await requestJson('/api/account/profile', { method: 'PUT', body: JSON.stringify({ displayName, avatarId: selectedAvatarId }) });
+      showSignedIn({ ...accountSession, identity: profile.identity });
+    } else if (!accountSession) {
+      const endpoint = authMode === 'register' ? '/api/auth/register' : authMode === 'login' ? '/api/auth/login' : '/api/auth/guest';
+      const body = authMode === 'login' ? { email: emailInput.value, password: passwordInput.value }
+        : authMode === 'register' ? { email: emailInput.value, password: passwordInput.value, displayName, avatarId: selectedAvatarId }
+          : { displayName, avatarId: selectedAvatarId };
+      try {
+        const session = await requestJson(endpoint, { method: 'POST', body: JSON.stringify(body) });
+        showSignedIn(session); displayName = session.identity.displayName; selectedAvatarId = session.identity.avatarId;
+      } catch (error) {
+        // Guest-only deployments remain usable until PostgreSQL is provisioned.
+        if (!(authMode === 'guest' && (error.status === 404 || error.status === 503))) throw error;
+      }
+    } else {
+      displayName = accountSession.identity.displayName; selectedAvatarId = accountSession.identity.avatarId;
+    }
+  } catch (error) {
+    confirmButton.disabled = false;
+    showStatus(error instanceof Error ? error.message : 'Account request failed.', true);
+    return;
+  }
   const selection = { displayName, avatarId: selectedAvatarId, roomId: customRoomId || roomSelect.value };
   savePreferences(selection);
   window.arcadeAvatarIdentity = selection;
   window.dispatchEvent(new CustomEvent('arcade:identity-selected', { detail: selection }));
   screen.hidden = true;
   document.querySelector('#enter').click();
+});
+
+authModePanel.addEventListener('click', (event) => {
+  const mode = event.target.closest('[data-auth-mode]')?.dataset.authMode;
+  if (mode) setAuthMode(mode);
+});
+signOutButton.addEventListener('click', async () => {
+  try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* Local state is cleared either way. */ }
+  showSignedIn(undefined); setAuthMode('guest'); showStatus('Signed out. Continue as a guest or sign in again.');
+});
+forgotPassword.addEventListener('click', async () => {
+  if (!emailInput.validity.valid) { showStatus('Enter a valid email address first.', true); emailInput.focus(); return; }
+  try {
+    const result = await requestJson('/api/account/password-reset/request', { method: 'POST', body: JSON.stringify({ email: emailInput.value }) });
+    showStatus(result.developmentToken ? `Development reset token: ${result.developmentToken}` : result.message);
+  } catch (error) { showStatus(error instanceof Error ? error.message : 'Reset request failed.', true); }
 });
 
 window.addEventListener('arcade:connection-error', ({ detail }) => {

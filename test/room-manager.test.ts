@@ -100,6 +100,20 @@ void test('a disconnected player can reclaim membership in a room at capacity', 
   assert.equal(resumed.player.id, first.player.id);
 });
 
+void test('a stable authenticated identity replaces its older socket without creating a duplicate avatar', () => {
+  const players = createPlayers();
+  const first = players.join('socket-a', 'main', undefined, identity, 1_000, 'player-stable-id');
+  const replacement = players.join('socket-b', 'main', undefined,
+    { displayName: 'UPDATED NAME', avatarId: 'extreme-gundam' }, 2_000, 'player-stable-id');
+  assert.equal(first.player.id, 'player-stable-id');
+  assert.equal(replacement.resumed, true);
+  assert.equal(replacement.replacedSocketId, 'socket-a');
+  assert.equal(replacement.snapshot.players.length, 1);
+  assert.equal(replacement.player.n, 'UPDATED NAME');
+  assert.equal(players.stateFor('socket-a'), undefined);
+  assert.equal(players.stateFor('socket-b')?.id, 'player-stable-id');
+});
+
 void test('avatar identity is included in room player state', () => {
   const players = createPlayers();
   const first = players.join('socket-a', 'main', undefined, { displayName: 'NEON KID', avatarId: 'neon-capsule' }, 1_000);

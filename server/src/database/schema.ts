@@ -111,3 +111,4 @@ export const securityAuditEvents = pgTable('security_audit_events', {
 export type UserRecord = typeof users.$inferSelect;
 export type SessionRecord = typeof sessions.$inferSelect;
 export type GuestIdentityRecord = typeof guestIdentities.$inferSelect;
+export type UserPreferenceRecord = typeof userPreferences.$inferSelect;

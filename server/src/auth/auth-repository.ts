@@ -11,7 +11,7 @@ export interface SafeIdentity {
 }
 
 export interface LoginRecord extends SafeIdentity { passwordHash: string }
-export interface AuthSessionRecord { identity: SafeIdentity; expiresAt: Date }
+export interface AuthSessionRecord { sessionId: string; identity: SafeIdentity; expiresAt: Date }
 export interface NewRegisteredIdentity {
   email: string; normalizedEmail: string; passwordHash: string;
   displayName: string; normalizedDisplayName: string; avatarId: string;
@@ -90,7 +90,7 @@ export class DrizzleAuthRepository implements AuthRepository {
       .limit(1);
     if (!row) return undefined;
     const identity = row.user ? registeredIdentity(row.user) : row.guest ? guestIdentity(row.guest) : undefined;
-    return identity ? { identity, expiresAt: row.session.expiresAt } : undefined;
+    return identity ? { sessionId: row.session.id, identity, expiresAt: row.session.expiresAt } : undefined;
   }
 
   async revokeSession(tokenHash: string, now = new Date()): Promise<boolean> {

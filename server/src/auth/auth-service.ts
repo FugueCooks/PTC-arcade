@@ -49,7 +49,7 @@ export class AuthService {
     return { ok: true, identity, token: issued.token, expiresAt: issued.expiresAt };
   }
 
-  async session(token: string | undefined): Promise<{ identity: SafeIdentity; expiresAt: Date } | undefined> {
+  async session(token: string | undefined): Promise<{ sessionId: string; identity: SafeIdentity; expiresAt: Date } | undefined> {
     if (!token) return undefined;
     const session = await this.repository.findSession(this.sessions.hash(token));
     if (!session || (session.identity.status !== 'active' && session.identity.status !== 'unverified')) return undefined;

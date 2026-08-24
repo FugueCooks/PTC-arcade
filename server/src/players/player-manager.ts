@@ -46,6 +46,7 @@ export interface JoinResult {
   snapshot: RoomSnapshot;
   resumeToken: string;
   resumed: boolean;
+  replacedSocketId?: string;
 }
 
 /**
@@ -79,8 +80,8 @@ export class PlayerManager {
     return () => this.listeners.delete(listener);
   }
 
-  join(socketId: string, requestedRoomId: string, resumeToken: string | undefined, identity: PlayerIdentity, now = Date.now()): JoinResult {
-    const room = this.rooms.get(requestedRoomId) ?? this.rooms.getDefault();
+  join(socketId: string, requestedRoomId: string, resumeToken: string | undefined, identity: PlayerIdentity, now = Date.now(), stablePlayerId?: string): JoinResult {
+    let room = this.rooms.get(requestedRoomId) ?? this.rooms.getDefault();
     const existing = resumeToken ? this.playerForToken(resumeToken) : undefined;
 
     if (existing && existing.roomId === room.id && existing.disconnectedAt !== undefined
@@ -95,8 +96,25 @@ export class PlayerManager {
       return { player, snapshot: this.snapshot(room, existing.id), resumeToken: existing.resumeToken, resumed: true };
     }
 
+    const stableExisting = stablePlayerId ? this.players.get(stablePlayerId) : undefined;
+    if (stableExisting) {
+      room = this.rooms.get(stableExisting.roomId) ?? room;
+      const replacedSocketId = stableExisting.socketId;
+      stableExisting.socketId = socketId;
+      stableExisting.disconnectedAt = undefined;
+      stableExisting.lastAcceptedAt = now;
+      stableExisting.displayName = identity.displayName;
+      stableExisting.avatarId = identity.avatarId;
+      stableExisting.status = 'idle';
+      room.add(stableExisting.id);
+      const player = this.toPublic(stableExisting);
+      this.publish({ type: 'PlayerReconnected', roomId: room.id, player, socketId });
+      return { player, snapshot: this.snapshot(room, stableExisting.id), resumeToken: stableExisting.resumeToken,
+        resumed: true, replacedSocketId: replacedSocketId === socketId ? undefined : replacedSocketId };
+    }
+
     const token = randomUUID();
-    const player = this.createPlayer(room, socketId, token, identity, now);
+    const player = this.createPlayer(room, socketId, token, identity, now, stablePlayerId);
     this.players.set(player.id, player);
     this.tokens.set(token, player.id);
     room.add(player.id);
@@ -195,6 +213,16 @@ export class PlayerManager {
     return this.toPublic(player);
   }
 
+  updateIdentity(playerId: string, identity: PlayerIdentity): PlayerState | undefined {
+    const player = this.players.get(playerId);
+    if (!player) return undefined;
+    player.displayName = identity.displayName;
+    player.avatarId = identity.avatarId;
+    const state = this.toPublic(player);
+    if (player.socketId) this.publish({ type: 'PlayerMoved', roomId: player.roomId, player: state, socketId: player.socketId });
+    return state;
+  }
+
   setCabinetState(playerId: string, cabinetId: string | null, state: 'none' | 'reserved' | 'interact', alignment?: { position: Position; rotationY: number }, now = Date.now()): PlayerState | undefined {
     const player = this.players.get(playerId);
     if (!player) return undefined;
@@ -214,14 +242,14 @@ export class PlayerManager {
     return publicPlayer;
   }
 
-  private createPlayer(room: Room, socketId: string, token: string, identity: PlayerIdentity, now: number): ManagedPlayer {
+  private createPlayer(room: Room, socketId: string, token: string, identity: PlayerIdentity, now: number, stablePlayerId?: string): ManagedPlayer {
     const occupied = room.memberIds
       .map((id) => this.players.get(id))
       .filter((player): player is ManagedPlayer => Boolean(player && player.disconnectedAt === undefined))
       .map((player) => ({ x: player.position[0], z: player.position[2] }));
     const spawn = room.chooseSpawn(occupied);
     return {
-      id: randomUUID(), resumeToken: token, socketId, roomId: room.id,
+      id: stablePlayerId ?? randomUUID(), resumeToken: token, socketId, roomId: room.id,
       displayName: identity.displayName, avatarId: identity.avatarId,
       position: [spawn.x, spawn.y, spawn.z], rotationY: spawn.rotationY,
       animation: 'idle', status: 'idle', lastAcceptedAt: now,

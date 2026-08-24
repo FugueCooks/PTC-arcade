@@ -38,6 +38,13 @@ import { SessionTokenService } from './auth/session-token-service.js';
 import { DrizzleAuthRepository } from './auth/auth-repository.js';
 import { AuthService } from './auth/auth-service.js';
 import { installAuthRoutes } from './http/auth-routes.js';
+import { readSessionCookie } from './auth/session-cookie.js';
+import type { SafeIdentity } from './auth/auth-repository.js';
+import { createHash } from 'node:crypto';
+import { AccountRepository } from './auth/account-repository.js';
+import { AccountService } from './auth/account-service.js';
+import { installAccountRoutes } from './http/account-routes.js';
+import { RedisIdentityDirectory } from './redis/identity-directory.js';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -120,6 +127,7 @@ const authService = database ? new AuthService(
   new SessionTokenService(config.sessionTtlMs), new SessionTokenService(config.guestSessionTtlMs),
   await passwordHasher.hash('not-a-real-account-password')
 ) : undefined;
+const accountService = database ? new AccountService(new AccountRepository(database.db), passwordHasher) : undefined;
 health = new HealthService(config, metrics, {
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
@@ -130,6 +138,7 @@ health = new HealthService(config, metrics, {
   databaseReady: () => databaseBootstrapped && (database?.isReady ?? false)
 });
 const redisKeys = new RedisKeys(config.redisKeyPrefix);
+const identityDirectory = redisBootstrapped && redis ? new RedisIdentityDirectory(redis.client, redisKeys, config.serverId) : undefined;
 const roomDirectory = redisBootstrapped && redis ? new RedisRoomDirectory(redis.client, redisKeys, config.roomDirectoryTtlMs) : new InMemoryRoomDirectory();
 const roomOwnership = redisBootstrapped && redis ? new RoomOwnershipService(redis.client, redisKeys, config.serverId, config.roomOwnershipTtlMs) : undefined;
 const roomLifecycle = new RoomLifecycleService(rooms, roomDirectory, metrics, logger, roomOwnership, Math.max(1_000, Math.floor(config.roomOwnershipTtlMs / 3)));
@@ -152,16 +161,46 @@ const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirect
 installOperationalRoutes(app, config, health, metrics, startedAt);
 app.use(express.json({ limit: '16kb' }));
 installAuthRoutes(app, config, { service: authService, databaseReady: () => databaseBootstrapped && (database?.isReady ?? false) });
+installAccountRoutes(app, config, {
+  auth: authService, accounts: accountService, databaseReady: () => databaseBootstrapped && (database?.isReady ?? false),
+  identityChanged: (identity) => { players.updateIdentity(stablePublicPlayerId(identity), { displayName: identity.displayName, avatarId: identity.avatarId }); },
+  accountDeleted: (identity) => {
+    const socketId = players.socketIdForPlayerId(stablePublicPlayerId(identity));
+    if (socketId) io.sockets.sockets.get(socketId)?.disconnect(true);
+  }
+});
 installMatchmakingRoutes(app, roomPlacement, roomDirectory, reconnectDirectory, config, () => health.readiness().ready);
 installStaticHosting(app, projectRoot, publicRuntimeConfig());
 
-io.use((_socket, next) => {
+const socketIdentities = new Map<string, SafeIdentity>();
+const socketPlayerIds = new Map<string, string>();
+io.use(async (socket, next) => {
   const readiness = health.readiness();
   const connectionLimit = config.maxPlayersPerServer + config.maxPendingConnections;
   if (!readiness.ready || io.engine.clientsCount > connectionLimit) {
     metrics.increment('socket_connections_rejected_total');
     next(new Error('server-unavailable'));
     return;
+  }
+  if (authService && databaseBootstrapped) {
+    try {
+      const token = readSessionCookie(socket.handshake.headers.cookie, config.authCookieName);
+      const session = await authService.session(token);
+      if (!session) {
+        metrics.increment('socket_authentication_rejected_total');
+        next(new Error('authentication-required'));
+        return;
+      }
+      socketIdentities.set(socket.id, session.identity);
+      const playerId = stablePublicPlayerId(session.identity);
+      socketPlayerIds.set(socket.id, playerId);
+      const prior = await identityDirectory?.claim(playerId, socket.id);
+      if (prior && prior.socketId !== socket.id) io.in(prior.socketId).disconnectSockets(true);
+    } catch {
+      metrics.increment('socket_authentication_failure_total');
+      next(new Error('authentication-unavailable'));
+      return;
+    }
   }
   next();
 });
@@ -256,7 +295,10 @@ io.on('connection', (socket) => {
     const roomId = typeof request?.roomId === 'string' ? request.roomId : DEFAULT_ROOM_ID;
     const resumeToken = typeof request?.resumeToken === 'string' ? request.resumeToken : undefined;
     const reservationToken = typeof request?.reservationToken === 'string' ? request.reservationToken : undefined;
-    const identity = validateIdentity(request?.identity);
+    const authenticatedIdentity = socketIdentities.get(socket.id);
+    const identity = authenticatedIdentity
+      ? { displayName: authenticatedIdentity.displayName, avatarId: authenticatedIdentity.avatarId }
+      : validateIdentity(request?.identity);
     if (!identity) {
       metrics.increment('join_rejected_invalid_identity_total');
       socket.emit('room:error', { message: 'Choose a valid display name before entering the arcade.' });
@@ -268,7 +310,13 @@ io.on('connection', (socket) => {
       socket.emit('room:error', { code: 'room-full', message: 'This arcade room is full. Choose another instance.' });
       return;
     }
-    const result = players.join(socket.id, roomId, resumeToken, identity);
+    const stablePlayerId = authenticatedIdentity ? stablePublicPlayerId(authenticatedIdentity) : undefined;
+    const result = players.join(socket.id, roomId, resumeToken, identity, Date.now(), stablePlayerId);
+    if (result.replacedSocketId) {
+      const replaced = io.sockets.sockets.get(result.replacedSocketId);
+      replaced?.emit('room:error', { code: 'session-replaced', message: 'This account continued in another browser window.' });
+      replaced?.disconnect(true);
+    }
     if (!result.resumed && reservationToken) {
       const confirmed = await roomAdmission.confirm(result.snapshot.roomId, reservationToken, result.player.id);
       if (!confirmed) {
@@ -278,7 +326,7 @@ io.on('connection', (socket) => {
         return;
       }
     } else if (result.resumed && reservationToken) {
-      await roomAdmission.release(result.snapshot.roomId, undefined, reservationToken);
+      await roomAdmission.release(requestedRoom.id, undefined, reservationToken);
     } else if (!result.resumed && config.redisRequired) {
       players.removeSocketNow(socket.id);
       metrics.increment('join_rejected_missing_reservation_total');
@@ -294,6 +342,8 @@ io.on('connection', (socket) => {
       playerId: result.player.id, roomId: result.snapshot.roomId, serverId: config.serverId,
       expiresAt: Date.now() + Math.max(config.reconnectGraceMs + 5_000, 20_000)
     });
+    if (stablePlayerId) await identityDirectory?.presence(stablePlayerId, result.snapshot.roomId, socket.id,
+      Math.max(config.reconnectGraceMs + 10_000, 30_000));
     socket.emit('cabinet:snapshot', { roomId: result.snapshot.roomId, cabinets: cabinets.snapshot(result.snapshot.roomId) });
     socket.emit('chat:snapshot', { roomId: result.snapshot.roomId, messages: chat.snapshot(result.snapshot.roomId) });
     socket.emit('world:snapshot', world.snapshot(result.snapshot.roomId));
@@ -349,8 +399,16 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     metrics.increment('socket_disconnects_total');
     players.disconnect(socket.id);
+    socketIdentities.delete(socket.id);
+    const playerId = socketPlayerIds.get(socket.id);
+    socketPlayerIds.delete(socket.id);
+    if (playerId) void identityDirectory?.release(playerId, socket.id).catch(() => metrics.increment('identity_release_failure_total'));
   });
 });
+
+function stablePublicPlayerId(identity: SafeIdentity): string {
+  return `player-${createHash('sha256').update(`${identity.type}:${identity.id}`).digest('hex').slice(0, 32)}`;
+}
 
 const cleanupTimer = setInterval(() => {
   players.sweep(); cabinets.sweep(); statuses.sweep(); roomLifecycle.closeIdle(config.roomIdleTimeoutMs);
@@ -367,6 +425,12 @@ const reconnectRouteTimer = setInterval(() => {
   }
 }, 5_000);
 reconnectRouteTimer.unref();
+const identityHeartbeatTimer = identityDirectory ? setInterval(() => {
+  for (const [socketId, playerId] of socketPlayerIds) {
+    void identityDirectory.refresh(playerId, socketId).catch(() => metrics.increment('identity_heartbeat_failure_total'));
+  }
+}, 10_000) : undefined;
+identityHeartbeatTimer?.unref();
 const databaseHealthTimer = database ? setInterval(() => {
   void database.check().then((ready) => { databaseBootstrapped = ready; });
 }, 15_000) : undefined;
@@ -385,6 +449,7 @@ const drain = new DrainController(httpServer, io, config, health, metrics, logge
   stopTimers: async () => {
     clearInterval(cleanupTimer);
     clearInterval(reconnectRouteTimer);
+    if (identityHeartbeatTimer) clearInterval(identityHeartbeatTimer);
     if (databaseHealthTimer) clearInterval(databaseHealthTimer);
     clearInterval(worldEventTimer);
     await roomLifecycle.stop();
