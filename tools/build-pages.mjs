@@ -31,6 +31,9 @@ await copyTree('assets', (relative, info) => {
   // re-encode source and would otherwise add about 6 MB to the bundle.
   if (normalized.startsWith('assets/art/') && normalized.endsWith('.png')) return false;
   if (normalized.startsWith('assets/models/') && info.isFile()) {
+    // Cabinet controller models are needed too; the allow-list below only
+    // covers the prize display.
+    if (normalized.startsWith('assets/models/controllers/')) return true;
     return requiredPrizeModels.has(path.basename(normalized));
   }
   if (normalized.startsWith('assets/avatars/models/') && info.isFile()) {
