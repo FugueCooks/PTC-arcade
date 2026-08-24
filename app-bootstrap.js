@@ -13,4 +13,4 @@ window.ARCADE_PS2_CACHE = new Ps2GameCache();
 
 await import('./arcade.js?v=controllers-1');
 await import('./avatar-selection.js?v=phase8-username-1');
-await import('./multiplayer-client.js?v=phase7-room-browser-1');
+await import('./multiplayer-client.js?v=n64-wall-panels-removed-3');

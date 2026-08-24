@@ -169,7 +169,7 @@
         import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=phase4-1'),
         import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=network-meter-1'),
         import('./social/reaction-client.js?v=phase5-2'), import('./social/inspection-client.js?v=phase5-1'),
-        import('./world/world-manager.js?v=n64-wall-panels-removed-2')
+        import('./world/world-manager.js?v=n64-wall-panels-removed-3')
       ]);
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
