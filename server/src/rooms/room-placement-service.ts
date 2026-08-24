@@ -25,11 +25,16 @@ export class RoomPlacementService {
   ) {}
 
   async place(request: PlacementRequest, now = Date.now()): Promise<PlacementResult> {
-    for (const id of [request.reconnectRoomId, request.requestedRoomId]) {
-      if (!id) continue;
-      const room = await this.directory.get(id);
+    if (request.reconnectRoomId) {
+      const room = await this.directory.get(request.reconnectRoomId);
       const result = room ? await this.tryRoom(room, now) : undefined;
       if (result) return result;
+    }
+    if (request.requestedRoomId) {
+      const room = await this.directory.get(request.requestedRoomId);
+      if (!room) return { ok: false, reason: 'unavailable' };
+      const result = await this.tryRoom(room, now);
+      return result ?? { ok: false, reason: room.status === 'full' || room.playerCount >= room.capacity ? 'no-capacity' : 'unavailable' };
     }
     const healthyServers = this.servers ? await this.servers.listHealthy(now) : [];
     const serverById = new Map(healthyServers.map((server) => [server.serverId, server]));
