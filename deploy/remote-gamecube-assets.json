@@ -1,0 +1,7 @@
+[
+  {"kind":"game","system":"gamecube","file":"wind-waker.ciso","bytes":1088455232,"sha256":"677726191ba8cc0829e9baa731c14eeff95ba399e1fe40a4f2473e7b8e0c80ac"},
+  {"kind":"game","system":"gamecube","file":"zelda-twilight-princess.ciso","bytes":1052803648,"sha256":"9bc05f5ff9f41c1f5b881ab7b68e52b21e48cb12c35082e96d1d2bb0c0a13aaf"},
+  {"kind":"game","system":"gamecube","file":"pikmin.ciso","bytes":669024832,"sha256":"b1bae19336951143cb74777d141df3bc76de9d85104a99bcd45bcb21aa5ac2c3"},
+  {"kind":"game","system":"gamecube","file":"super-smash-bros-melee.ciso","bytes":428933120,"sha256":"710992851950bdfb9dbe51278ea64a041c6cae9373e07ff7eeb282ea25cfb210"},
+  {"kind":"game","system":"gamecube","file":"super-mario-sunshine.ciso","bytes":1180729920,"sha256":"d04da8d354d59f26213288ad9d7c5c65b39003e21d7360fce587a647c1d7d5eb"}
+]

@@ -7,7 +7,7 @@ interface GameDefinition {
   id: string;
   cabinetId: string;
   name: string;
-  system: 'psx' | 'n64' | 'ps2';
+  system: 'psx' | 'n64' | 'ps2' | 'gamecube';
   file: string;
   emulatorId: number;
   sizeBytes: number;
@@ -22,12 +22,12 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 1);
-  assert.equal(registry.games.length, 17);
+  assert.equal(registry.games.length, 22);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);
   }
-  assert.ok(registry.games.every((game) => game.enabled && game.sizeBytes > 0));
+  assert.ok(registry.games.every((game) => game.sizeBytes > 0));
   const assetFiles = registry.games.flatMap((game) => game.discs?.map((disc) => disc.file) ?? [game.file]);
   assert.equal(new Set(assetFiles).size, assetFiles.length, 'every hosted disc file must be unique');
 });
@@ -37,7 +37,7 @@ void test('every hosted game points at an approved, enabled cabinet', async () =
   const cabinets = await loadJson<Array<{ id: string; enabled: boolean; defaultGameId?: string }>>('assets/cabinets/registry.json');
   const enabledCabinets = new Set(cabinets.filter((cabinet) => cabinet.enabled).map((cabinet) => cabinet.id));
   const cabinetById = new Map(cabinets.map((cabinet) => [cabinet.id, cabinet]));
-  for (const game of games) {
+  for (const game of games.filter((entry) => entry.enabled)) {
     assert.ok(enabledCabinets.has(game.cabinetId), `${game.id} uses an unknown cabinet`);
     assert.equal(cabinetById.get(game.cabinetId)?.defaultGameId, game.id, `${game.id} is not the cabinet default`);
   }
@@ -56,6 +56,13 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(gamecubeCabinets.length, 5);
   assert.ok(gamecubeCabinets.every((cabinet) => !cabinet.enabled));
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.system === 'gamecube' && cabinet.emulatorId === 'dolphin'));
+  assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [
+    'wind-waker',
+    'zelda-twilight-princess',
+    'pikmin',
+    'super-smash-bros-melee',
+    'super-mario-sunshine'
+  ]);
   assert.equal(byId.get('psx-back-cabinet-01')?.enabled, false);
   assert.equal(byId.get('psx-back-cabinet-02')?.enabled, true);
   assert.equal(byId.get('psx-back-cabinet-03')?.enabled, true);
@@ -68,6 +75,20 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(byId.get('psx-back-cabinet-02')?.defaultGameId, 'kingdom-hearts');
   assert.equal(byId.get('psx-back-cabinet-03')?.defaultGameId, 'gta-san-andreas');
   assert.equal(byId.get('psx-back-cabinet-04')?.defaultGameId, 'dbz-tenkaichi-3');
+});
+
+void test('GameCube images are registered but remain unavailable without a browser Dolphin runtime', async () => {
+  const games = (await loadJson<{ games: GameDefinition[] }>('assets/games/registry.json')).games;
+  const gamecubeGames = games.filter((game) => game.system === 'gamecube');
+  assert.equal(gamecubeGames.length, 5);
+  assert.ok(gamecubeGames.every((game) => !game.enabled && game.file.endsWith('.ciso')));
+  assert.deepEqual(gamecubeGames.map((game) => game.name), [
+    'The Legend of Zelda: The Wind Waker',
+    'The Legend of Zelda: Twilight Princess',
+    'Pikmin',
+    'Super Smash Bros. Melee',
+    'Super Mario Sunshine'
+  ]);
 });
 
 void test('Metal Gear Solid keeps both discs in one cabinet and one save identity', async () => {

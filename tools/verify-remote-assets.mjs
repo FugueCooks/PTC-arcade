@@ -4,7 +4,8 @@ import path from 'node:path';
 const root = process.cwd();
 const manifest = [
   ...JSON.parse(await readFile(path.join(root, 'deploy', 'public-assets.manifest.json'), 'utf8')),
-  ...JSON.parse(await readFile(path.join(root, 'deploy', 'remote-ps2-assets.json'), 'utf8'))
+  ...JSON.parse(await readFile(path.join(root, 'deploy', 'remote-ps2-assets.json'), 'utf8')),
+  ...JSON.parse(await readFile(path.join(root, 'deploy', 'remote-gamecube-assets.json'), 'utf8'))
 ];
 const publicBase = (process.env.STORAGE_PUBLIC_BASE_URL || process.env.REMOTE_ASSET_BASE_URL || '').trim().replace(/\/+$/, '');
 if (!publicBase) throw new Error('Set STORAGE_PUBLIC_BASE_URL or REMOTE_ASSET_BASE_URL.');

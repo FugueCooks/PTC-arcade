@@ -12,9 +12,11 @@ const source = path.resolve(values.get('--source') || '');
 const file = values.get('--file') || '';
 const bytes = Number(values.get('--bytes'));
 const sha256 = values.get('--sha256') || '';
+const system = values.get('--system') || 'unknown';
 if (!source || !/^[A-Za-z0-9._-]+$/.test(file) || !Number.isSafeInteger(bytes) || bytes <= 0 || !/^[a-f0-9]{64}$/.test(sha256)) {
-  throw new Error('Usage: --source=PATH --file=SAFE_NAME --bytes=INTEGER --sha256=HEX');
+  throw new Error('Usage: --source=PATH --file=SAFE_NAME --bytes=INTEGER --sha256=HEX [--system=SYSTEM]');
 }
+if (!/^[a-z0-9-]{2,24}$/.test(system)) throw new Error('Invalid --system value.');
 const required = ['STORAGE_ENDPOINT', 'STORAGE_BUCKET', 'STORAGE_ACCESS_KEY_ID', 'STORAGE_SECRET_ACCESS_KEY'];
 const missing = required.filter(name => !process.env[name]?.trim());
 if (missing.length) throw new Error(`Missing storage configuration: ${missing.join(', ')}`);
@@ -55,7 +57,7 @@ const upload = new Upload({
     ContentType: 'application/octet-stream',
     ContentDisposition: 'inline',
     CacheControl: 'public, max-age=31536000, immutable',
-    Metadata: { sha256, kind: 'game', system: 'ps2' }
+    Metadata: { sha256, kind: 'game', system }
   },
   queueSize: 1,
   partSize: 16 * 1024 * 1024,
