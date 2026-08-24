@@ -1,0 +1,69 @@
+name: Build Gecko Web Runtime
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/build-gecko-web.yml"
+      - "tools/gecko-web-disc.patch"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gecko-web-runtime
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout pinned Gecko source
+        run: |
+          git clone https://github.com/ioncodes/gecko.git "$RUNNER_TEMP/gecko"
+          git -C "$RUNNER_TEMP/gecko" checkout 39e82205a0da154f23fd36b95e64a8029d468618
+          git -C "$RUNNER_TEMP/gecko" submodule update --init --depth 1 submodules/beanwii
+          git -C "$RUNNER_TEMP/gecko" submodule update --init --depth 1 submodules/chipi-spec
+          git -C "$RUNNER_TEMP/gecko" submodule update --init --depth 1 submodules/solstice
+
+      - name: Add browser disc-image support
+        run: git -C "$RUNNER_TEMP/gecko" apply "$GITHUB_WORKSPACE/tools/gecko-web-disc.patch"
+
+      - name: Install Gecko Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.96.0
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.15.0 --locked
+
+      - name: Build release WebAssembly runtime
+        run: wasm-pack build crates/web --target web --out-dir pkg --release
+        working-directory: ${{ runner.temp }}/gecko
+
+      - name: Vendor runtime and license
+        run: |
+          rm -rf emulators/gecko/pkg
+          mkdir -p emulators/gecko
+          cp -R "$RUNNER_TEMP/gecko/crates/web/pkg" emulators/gecko/pkg
+          cp "$RUNNER_TEMP/gecko/crates/web/index.html" emulators/gecko/upstream-test.html
+          cp "$RUNNER_TEMP/gecko/LICENSE" emulators/gecko/LICENSE-GPL-3.0.txt
+          printf '%s\n' 'Gecko commit: 39e82205a0da154f23fd36b95e64a8029d468618' 'Local patch: tools/gecko-web-disc.patch' > emulators/gecko/BUILD.txt
+
+      - name: Commit generated runtime
+        run: |
+          if git diff --quiet -- emulators/gecko; then
+            echo "Runtime is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add emulators/gecko
+          git commit -m "Build experimental Gecko web runtime"
+          git push

@@ -1,0 +1,56 @@
+diff --git a/crates/web/Cargo.toml b/crates/web/Cargo.toml
+index 16513bd..9b1781b 100644
+--- a/crates/web/Cargo.toml
++++ b/crates/web/Cargo.toml
+@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
+ 
+ [dependencies]
+ gecko = { path = "../gecko", default-features = false }
+-image = { path = "../image", default-features = false }
++image = { path = "../image", default-features = false, features = ["rvz"] }
+ backend-wgpu = { path = "../backend-wgpu" }
+ dbglib = { path = "../dbglib", optional = true }
+ egui-phosphor = { version = "0.12.0", optional = true, features = ["fill"] }
+diff --git a/crates/web/index.html b/crates/web/index.html
+index 5ff23d2..265fd7c 100644
+--- a/crates/web/index.html
++++ b/crates/web/index.html
+@@ -119,8 +119,8 @@
+         <div class="file-row">
+-            <label class="file-label">IPL / DOL:</label>
++            <label class="file-label">IPL / DOL / DISC:</label>
+             <label class="file-picker">
+                 <span>Choose file</span>
+-                <input type="file" id="input-rom" accept=".dol,.bin">
++                <input type="file" id="input-rom" accept=".dol,.bin,.ipl,.iso,.gcm,.rvz">
+             </label>
+             <span class="name" id="rom-name">none</span>
+         </div>
+diff --git a/crates/web/src/lib.rs b/crates/web/src/lib.rs
+index e8010ab..7f79177 100644
+--- a/crates/web/src/lib.rs
++++ b/crates/web/src/lib.rs
+@@ -553,15 +553,19 @@ impl ApplicationHandler for App {
+ }
+ 
+ #[wasm_bindgen]
+-pub fn start_emulator(rom_data: &[u8], filename: String, dsp_irom: Option<Vec<u8>>) {
++pub fn start_emulator(rom_data: Vec<u8>, filename: String, dsp_irom: Option<Vec<u8>>) {
+     console_error_panic_hook::set_once();
+ 
+     let name = filename.to_lowercase();
+     let mut emulator = if name.ends_with(".bin") || name.ends_with(".ipl") {
+-        GameCube::with_ipl(rom_data, false)
+-    } else {
+-        let dol = Dol::parse(rom_data.to_vec());
++        GameCube::with_ipl(&rom_data, false)
++    } else if name.ends_with(".dol") {
++        let dol = Dol::parse(rom_data);
+         GameCube::with_image(&dol)
++    } else if name.ends_with(".iso") || name.ends_with(".gcm") || name.ends_with(".rvz") {
++        GameCube::with_ipl_hle(image::load_dvd(rom_data))
++    } else {
++        panic!("unsupported GameCube web image: {filename}")
+     };
+ 
+     if let Some(irom) = dsp_irom {
