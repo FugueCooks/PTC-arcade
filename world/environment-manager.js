@@ -1,13 +1,9 @@
 export class EnvironmentManager {
   constructor(scene, config, particles) {
-    this.scene = scene; this.config = config; this.particles = particles; this.weatherEmitters = []; this.windows = []; this.createWindows(); this.createWeatherPools();
-  }
-  createWindows() {
-    const THREE = window.THREE;
-    for (const z of [-7, 0, 7]) {
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(.12, 2.5, 3.5), new THREE.MeshStandardMaterial({ color: 0x17233d, metalness: .9, roughness: .14, emissive: 0x071628, emissiveIntensity: .3 })); frame.position.set(13.78, 2.6, z); this.scene.add(frame);
-      const glass = new THREE.Mesh(new THREE.PlaneGeometry(3.22, 2.22), new THREE.MeshBasicMaterial({ color: 0x0b2844, transparent: true, opacity: .72, side: THREE.DoubleSide })); glass.position.set(13.7, 2.6, z); glass.rotation.y = -Math.PI / 2; this.scene.add(glass); this.windows.push({ frame, glass });
-    }
+    // The Nintendo 64 partition uses one uninterrupted branded wall graphic.
+    // Keep this collection for the existing weather API, but do not place the
+    // old faux-window panels over that artwork.
+    this.scene = scene; this.config = config; this.particles = particles; this.weatherEmitters = []; this.windows = []; this.createWeatherPools();
   }
   createWeatherPools() {
     this.weatherEmitters.push(['snow', this.particles.create({ position: [13.42, 1.25, 0], color: 0xffffff, count: 180, spread: [.25, 2.5, 15], velocity: [0, -.38, .08], jitter: .24, size: .055, opacity: .7, maxDistance: 24 })]);
