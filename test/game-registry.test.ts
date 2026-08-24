@@ -96,6 +96,8 @@ void test('GameCube RVZ images are registered for the validated Gecko runtime', 
     'Super Smash Bros. Melee',
     'Super Mario Sunshine'
   ]);
+  const dockerfile = await readFile(path.resolve(process.cwd(), 'Dockerfile'), 'utf8');
+  assert.match(dockerfile, /COPY --from=build \/app\/emulators \.\/emulators/);
 });
 
 void test('Metal Gear Solid keeps both discs in one cabinet and one save identity', async () => {

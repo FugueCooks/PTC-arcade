@@ -17,6 +17,7 @@ COPY --from=build /app/index.html /app/player.html /app/style.css /app/app-boots
 COPY --from=build /app/assets ./assets
 COPY --from=build /app/avatars ./avatars
 COPY --from=build /app/cabinets ./cabinets
+COPY --from=build /app/emulators ./emulators
 COPY --from=build /app/social ./social
 COPY --from=build /app/world ./world
 COPY --from=build /app/realtime ./realtime
