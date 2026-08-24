@@ -18,10 +18,10 @@
     {"id":"kingdom-hearts","cabinetId":"psx-back-cabinet-02","name":"Kingdom Hearts","system":"ps2","file":"kingdom-hearts.iso","emulatorId":26002,"sizeBytes":3041132544,"enabled":true},
     {"id":"gta-san-andreas","cabinetId":"psx-back-cabinet-03","name":"Grand Theft Auto: San Andreas","system":"ps2","file":"gta-san-andreas-v3.iso","emulatorId":26003,"sizeBytes":4517036032,"enabled":true},
     {"id":"dbz-tenkaichi-3","cabinetId":"psx-back-cabinet-04","name":"DBZ Tenkaichi 3","system":"ps2","file":"dbz-tenkaichi-3.iso","emulatorId":26004,"sizeBytes":3020816384,"enabled":true},
-    {"id":"wind-waker","cabinetId":"gamecube-cabinet-01","name":"The Legend of Zelda: The Wind Waker","system":"gamecube","file":"wind-waker.rvz","emulatorId":32001,"sizeBytes":1084862396,"enabled":false},
-    {"id":"zelda-twilight-princess","cabinetId":"gamecube-cabinet-02","name":"The Legend of Zelda: Twilight Princess","system":"gamecube","file":"zelda-twilight-princess.rvz","emulatorId":32002,"sizeBytes":1027348044,"enabled":false},
-    {"id":"pikmin","cabinetId":"gamecube-cabinet-03","name":"Pikmin","system":"gamecube","file":"pikmin.rvz","emulatorId":32003,"sizeBytes":660192112,"enabled":false},
-    {"id":"super-smash-bros-melee","cabinetId":"gamecube-cabinet-04","name":"Super Smash Bros. Melee","system":"gamecube","file":"super-smash-bros-melee.rvz","emulatorId":32004,"sizeBytes":1426853848,"enabled":false},
-    {"id":"super-mario-sunshine","cabinetId":"gamecube-cabinet-05","name":"Super Mario Sunshine","system":"gamecube","file":"super-mario-sunshine.rvz","emulatorId":32005,"sizeBytes":1176265108,"enabled":false}
+    {"id":"wind-waker","cabinetId":"gamecube-cabinet-01","name":"The Legend of Zelda: The Wind Waker","system":"gamecube","file":"wind-waker.rvz","emulatorId":32001,"sizeBytes":1084862396,"enabled":true},
+    {"id":"zelda-twilight-princess","cabinetId":"gamecube-cabinet-02","name":"The Legend of Zelda: Twilight Princess","system":"gamecube","file":"zelda-twilight-princess.rvz","emulatorId":32002,"sizeBytes":1027348044,"enabled":true},
+    {"id":"pikmin","cabinetId":"gamecube-cabinet-03","name":"Pikmin","system":"gamecube","file":"pikmin.rvz","emulatorId":32003,"sizeBytes":660192112,"enabled":true},
+    {"id":"super-smash-bros-melee","cabinetId":"gamecube-cabinet-04","name":"Super Smash Bros. Melee","system":"gamecube","file":"super-smash-bros-melee.rvz","emulatorId":32004,"sizeBytes":1426853848,"enabled":true},
+    {"id":"super-mario-sunshine","cabinetId":"gamecube-cabinet-05","name":"Super Mario Sunshine","system":"gamecube","file":"super-mario-sunshine.rvz","emulatorId":32005,"sizeBytes":1176265108,"enabled":true}
   ]
 }

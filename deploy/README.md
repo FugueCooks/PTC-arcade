@@ -73,7 +73,7 @@ read access must not grant object listing or write access.
   every visitor. The browser still supports player-selected local files as a
   fallback.
 
-Run `npm run verify:games` before uploading. The public manifest covers the locally mirrored PS1/N64 games and configured PlayStation BIOS. `remote-ps2-assets.json` and `remote-gamecube-assets.json` track larger images uploaded directly from approved source locations with `npm run storage:upload-external`; the remote verifier checks every manifest. Pass `--system=ps2` or `--system=gamecube` so object metadata remains accurate. Registered GameCube assets are deliberately not playable until a compatible browser runtime is integrated.
+Run `npm run verify:games` before uploading. The public manifest covers the locally mirrored PS1/N64 games and configured PlayStation BIOS. `remote-ps2-assets.json` and `remote-gamecube-assets.json` track larger images uploaded directly from approved source locations with `npm run storage:upload-external`; the remote verifier checks every manifest. Pass `--system=ps2` or `--system=gamecube` so object metadata remains accurate. GameCube RVZ files are consumed by the pinned experimental Gecko WebGPU runtime and currently require enough browser memory to retain the complete compressed image.
 
 ## Backend health
 

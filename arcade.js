@@ -156,12 +156,12 @@ for(const [index,z,hue] of [[1,-12,0x8b5cf6],[2,-8,0xff4da6],[3,-4,0x36f9f6],[4,
 // Five GameCube-ready cabinets line the front wall opposite the rear prize
 // counter. Dolphin is assigned in the shared registry, but the official native
 // emulator has no browser build, so these remain disabled until a vetted web
-// runtime is integrated.
+// GameCube cabinets use the pinned Gecko WebGPU runtime and approved RVZ images.
 const gamecubeTitles=['THE LEGEND OF ZELDA: THE WIND WAKER','THE LEGEND OF ZELDA: TWILIGHT PRINCESS','PIKMIN','SUPER SMASH BROS. MELEE','SUPER MARIO SUNSHINE'];
 for(const [index,x,hue] of [[1,-8,0x8b5cf6],[2,-4,0x36f9f6],[3,0,0xff4da6],[4,4,0x7dff67],[5,8,0xffb42e]]){
   const cabinetId=`gamecube-cabinet-0${index}`;
   makeCabinet(cabinetId,gamecubeTitles[index-1],x,14.8,hue);
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI;Object.assign(cabinet,{system:'gamecube',emulator:'gecko',gameName:gamecubeTitles[index-1],enabled:false,status:'disabled'});configureHostedCabinet(cabinetId);
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI;Object.assign(cabinet,{system:'gamecube',emulator:'gecko',gameName:gamecubeTitles[index-1],enabled:true,status:'available'});configureHostedCabinet(cabinetId);
 }
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
