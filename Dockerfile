@@ -23,4 +23,4 @@ COPY --from=build /app/realtime ./realtime
 COPY --from=build /app/games ./games
 COPY --from=build /app/rooms ./rooms
 EXPOSE 8080
-CMD ["node", "dist/server/src/index.js"]
+CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then node dist/server/src/database/migrate.js; fi && exec node dist/server/src/index.js"]

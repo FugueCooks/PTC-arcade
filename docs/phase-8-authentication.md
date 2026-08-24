@@ -4,7 +4,7 @@ Phase 8 keeps durable identity separate from live arcade simulation. PostgreSQL 
 
 ## Milestone 8.1 database foundation
 
-The schema is declared in `server/src/database/schema.ts` and its reviewed SQL migration is committed under `drizzle/`. Generate a new migration with `npm run db:generate`; apply committed migrations with `npm run db:migrate`. Production deployments must run migrations as a separate release step before starting application code that requires the new schema. Never use `drizzle-kit push` against production.
+The schema is declared in `server/src/database/schema.ts` and its reviewed SQL migration is committed under `drizzle/`. Generate a new migration with `npm run db:generate`; apply committed migrations with `npm run db:migrate`. The production Docker image applies pending committed migrations before it starts the web server whenever `DATABASE_URL` is configured, and aborts startup if migration fails. Never use `drizzle-kit push` against production.
 
 `DATABASE_URL` is optional while the arcade remains guest-only. Setting `DATABASE_REQUIRED=1` makes `/ready` fail safely until PostgreSQL is reachable. Database credentials are never included in readiness responses or structured logs. The connection pool is closed during graceful shutdown.
 
