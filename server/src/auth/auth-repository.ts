@@ -13,14 +13,14 @@ export interface SafeIdentity {
 export interface LoginRecord extends SafeIdentity { passwordHash: string }
 export interface AuthSessionRecord { sessionId: string; identity: SafeIdentity; expiresAt: Date }
 export interface NewRegisteredIdentity {
-  email: string; normalizedEmail: string; passwordHash: string;
+  username: string; normalizedUsername: string; passwordHash: string;
   displayName: string; normalizedDisplayName: string; avatarId: string;
 }
 export interface NewGuestIdentity { displayName: string; normalizedDisplayName: string; avatarId: string; expiresAt: Date }
 
 export interface AuthRepository {
   createRegistered(input: NewRegisteredIdentity): Promise<SafeIdentity | undefined>;
-  findLogin(normalizedEmail: string): Promise<LoginRecord | undefined>;
+  findLogin(normalizedUsername: string): Promise<LoginRecord | undefined>;
   createGuest(input: NewGuestIdentity): Promise<SafeIdentity>;
   createSession(identity: SafeIdentity, tokenHash: string, expiresAt: Date, deviceType?: string): Promise<void>;
   findSession(tokenHash: string, now?: Date): Promise<AuthSessionRecord | undefined>;
@@ -35,9 +35,11 @@ export class DrizzleAuthRepository implements AuthRepository {
     try {
       return await this.db.transaction(async (tx) => {
         const [user] = await tx.insert(schema.users).values({
-          email: input.email, normalizedEmail: input.normalizedEmail, passwordHash: input.passwordHash,
+          username: input.username, normalizedUsername: input.normalizedUsername,
+          email: `${input.normalizedUsername}@users.invalid`, normalizedEmail: `${input.normalizedUsername}@users.invalid`,
+          passwordHash: input.passwordHash,
           displayName: input.displayName, normalizedDisplayName: input.normalizedDisplayName,
-          selectedAvatarId: input.avatarId, status: 'unverified'
+          selectedAvatarId: input.avatarId, status: 'active'
         }).returning();
         if (!user) throw new Error('User creation returned no record.');
         await tx.insert(schema.userPreferences).values({ userId: user.id });
@@ -49,9 +51,9 @@ export class DrizzleAuthRepository implements AuthRepository {
     }
   }
 
-  async findLogin(normalizedEmail: string): Promise<LoginRecord | undefined> {
+  async findLogin(normalizedUsername: string): Promise<LoginRecord | undefined> {
     const [user] = await this.db.select().from(schema.users).where(and(
-      eq(schema.users.normalizedEmail, normalizedEmail), isNull(schema.users.deletedAt)
+      eq(schema.users.normalizedUsername, normalizedUsername), isNull(schema.users.deletedAt)
     )).limit(1);
     if (!user) return undefined;
     return { ...registeredIdentity(user), passwordHash: user.passwordHash };

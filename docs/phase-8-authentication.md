@@ -1,6 +1,6 @@
 # Phase 8 authentication architecture
 
-Phase 8 keeps durable identity separate from live arcade simulation. PostgreSQL stores registered users, guest identities, opaque sessions, profile preferences, one-time recovery/verification token digests, and bounded security audit events. Redis continues to coordinate temporary presence, room routing, reconnects, rate limits, and active-connection locks. Movement, cabinets, room state, world state, and animation remain outside PostgreSQL.
+Phase 8 keeps durable identity separate from live arcade simulation. PostgreSQL stores username/password accounts, guest identities, opaque sessions, profile preferences, and bounded security audit events. Redis continues to coordinate temporary presence, room routing, reconnects, rate limits, and active-connection locks. Movement, cabinets, room state, world state, and animation remain outside PostgreSQL.
 
 ## Milestone 8.1 database foundation
 
@@ -19,7 +19,7 @@ For local development:
 
 Passwords use Argon2id version 19. Production defaults are 19,456 KiB memory, two iterations, and parallelism one. Each hash receives a library-generated random salt. Parameters are bounded configuration values so deployment tuning cannot silently disable the work factor.
 
-Session, password-reset, and email-verification credentials use 256-bit random opaque tokens. Only SHA-256 token digests are stored. Long-lived credentials must later be delivered through Secure, HttpOnly, same-origin cookies; they must never enter local storage, URLs, logs, Three.js scene state, or multiplayer payloads.
+Sessions use 256-bit random opaque tokens. Only SHA-256 token digests are stored. Long-lived credentials are delivered through Secure, HttpOnly, same-origin cookies; they never enter local storage, URLs, logs, Three.js scene state, or multiplayer payloads.
 
 Registered accounts and guests share the `sessions` table. A database constraint requires every session to reference exactly one user or one guest. Guest conversion preserves the live room until the authentication service performs an explicit identity handoff in a later milestone.
 
@@ -27,23 +27,21 @@ Registered accounts and guests share the `sessions` table. A database constraint
 
 When PostgreSQL is configured and healthy, the Node service exposes `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/guest`, `GET /api/auth/session`, and `POST /api/auth/logout`.
 
-Successful registration, login, and guest creation issue an opaque session in an `HttpOnly`, `SameSite=Strict` cookie. Only its SHA-256 hash is stored. Production enables the cookie `Secure` flag. Mutations reject cross-site browser requests, use bounded JSON bodies, and are rate limited per source and endpoint. Authentication errors never return hashes, database errors, or account existence details.
+Registration and login require only a unique 2–18 character username and a password. No email address or verification step is exposed or required. Successful registration, login, and guest creation issue an opaque session in an `HttpOnly`, `SameSite=Strict` cookie. Only its SHA-256 hash is stored. Production enables the cookie `Secure` flag. Mutations reject cross-site browser requests, use bounded JSON bodies, and are rate limited per source and endpoint. Authentication errors never return hashes, database errors, or account existence details.
 
 The Node Socket.IO path now resolves the cookie during the handshake and ignores client-supplied identity whenever PostgreSQL authentication is enabled. A stable non-database public player ID is derived from the validated subject. Redis owns a short-lived active-connection and presence mapping, and a newer connection replaces the older gameplay socket instead of creating a duplicate avatar.
 
-The production Cloudflare realtime transport uses a short-lived HMAC-SHA256 admission ticket from `POST /api/auth/realtime-ticket`. The ticket contains only the stable public player ID, validated display name, approved avatar ID, expiry, and nonce. It contains no email, database ID, session cookie, or database credential. The edge verifies the signature before accepting the WebSocket, ignores client-supplied identity, and replaces an older socket for the same identity within a room. Tickets expire after 30 seconds by default and are refreshed automatically for reconnects.
+The production Cloudflare realtime transport uses a short-lived HMAC-SHA256 admission ticket from `POST /api/auth/realtime-ticket`. The ticket contains only the stable public player ID, validated display name, approved avatar ID, expiry, and nonce. It contains no username, database ID, session cookie, or database credential. The edge verifies the signature before accepting the WebSocket, ignores client-supplied identity, and replaces an older socket for the same identity within a room. Tickets expire after 30 seconds by default and are refreshed automatically for reconnects.
 
 ## Account and profile APIs
 
-Registered users can read and update their approved display name/avatar and bounded preferences under `/api/account`. Profile changes update the active room without disconnecting the player. Session endpoints list privacy-safe device type and timestamps, revoke an individual session, or revoke every other session. Account deletion requires the current password, revokes sessions, clears live presence, and pseudonymizes unique email/display-name fields while retaining a soft-deleted row for referential integrity.
+Registered users can read and update their approved display name/avatar and bounded preferences under `/api/account`. Profile changes update the active room without disconnecting the player. Session endpoints list privacy-safe device type and timestamps, revoke an individual session, or revoke every other session. Account deletion requires the current password, revokes sessions, clears live presence, and pseudonymizes unique username/display-name fields while retaining a soft-deleted row for referential integrity. Legacy email columns and token tables remain only for additive migration compatibility and are not part of the active account flow.
 
-Password-reset and email-verification tokens are 256-bit, one-time, hashed, and expiring. Reset completion revokes existing sessions. A delivery provider is deliberately not hard-coded. In local development only, setting `AUTH_DEVELOPMENT_TOKENS=1` returns the token to the developer; production can never enable this behavior. The provider integration must send the raw token without logging it.
-
-Security audit events cover account creation, login outcome, password reset, verification, session revocation, profile identity changes, and deletion requests. Audit rows expire after 90 days and exclude passwords, tokens, IP addresses, and chat content.
+Security audit events cover account creation, login outcome, session revocation, profile identity changes, and deletion requests. Audit rows expire after 90 days and exclude passwords, tokens, IP addresses, and chat content.
 
 ## Client behavior
 
-The player-select screen supports guest entry, registration, sign-in, session restoration, sign-out, profile updates, and reset requests. No long-lived credential enters local storage. Deployments without PostgreSQL retain the established legacy guest path, preventing an account-service outage from taking down the arcade preview.
+The player-select screen supports one-field usernames for guest entry, username/password registration, username/password sign-in, session restoration, sign-out, and profile updates. The primary button clearly reflects the selected action. No long-lived credential enters local storage. Deployments without PostgreSQL retain the established guest path, preventing an account-service outage from taking down the arcade preview.
 
 ## API overview
 
@@ -55,8 +53,6 @@ The player-select screen supports guest entry, registration, sign-in, session re
 - `GET /api/account/sessions`
 - `DELETE /api/account/sessions/:sessionId`
 - `POST /api/account/sessions/revoke-others`
-- `POST /api/account/password-reset/request|complete`
-- `POST /api/account/email-verification/request|complete`
 - `DELETE /api/account`
 
 All responses use bounded, generic error envelopes. Cross-site mutations are rejected, production cookies are always Secure/HttpOnly/SameSite=Strict, bodies are limited to 16 KiB, and account/auth mutations are rate limited.
@@ -69,7 +65,7 @@ The selected Render free PostgreSQL tier is suitable for development validation,
 
 ## Environment reference
 
-`DATABASE_URL`, `DATABASE_REQUIRED`, `DATABASE_POOL_MAX`, `SESSION_TTL_DAYS`, `GUEST_SESSION_TTL_DAYS`, `PASSWORD_ARGON2_MEMORY_KIB`, `PASSWORD_ARGON2_ITERATIONS`, `PASSWORD_ARGON2_PARALLELISM`, `AUTH_COOKIE_NAME`, `AUTH_COOKIE_SECURE`, `AUTH_REQUEST_LIMIT_PER_10_MINUTES`, `PUBLIC_APP_ORIGIN`, `MULTIPLAYER_TICKET_SECRET`, `MULTIPLAYER_TICKET_TTL_SECONDS`, and development-only `AUTH_DEVELOPMENT_TOKENS` are documented in `.env.example`.
+`DATABASE_URL`, `DATABASE_REQUIRED`, `DATABASE_POOL_MAX`, `SESSION_TTL_DAYS`, `GUEST_SESSION_TTL_DAYS`, `PASSWORD_ARGON2_MEMORY_KIB`, `PASSWORD_ARGON2_ITERATIONS`, `PASSWORD_ARGON2_PARALLELISM`, `AUTH_COOKIE_NAME`, `AUTH_COOKIE_SECURE`, `AUTH_REQUEST_LIMIT_PER_10_MINUTES`, `PUBLIC_APP_ORIGIN`, `MULTIPLAYER_TICKET_SECRET`, and `MULTIPLAYER_TICKET_TTL_SECONDS` are documented in `.env.example`.
 
 `MULTIPLAYER_TICKET_SECRET` must be the same cryptographically random secret in Render and the Cloudflare realtime Worker. Store it only in provider-managed secret configuration. Never commit it, expose it in runtime configuration, or reuse a session/database credential.
 

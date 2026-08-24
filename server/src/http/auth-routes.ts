@@ -46,7 +46,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
     try {
       const result = await dependencies.service!.login({ ...parsed.data, deviceType: deviceType(request) });
       if (!result.ok) {
-        response.status(401).json({ ok: false, error: { code: 'invalid-credentials', message: 'The email or password was not accepted.' } });
+        response.status(401).json({ ok: false, error: { code: 'invalid-credentials', message: 'The username or password was not accepted.' } });
         return;
       }
       setSessionCookie(response, request, config, result.token, result.expiresAt);

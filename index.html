@@ -44,15 +44,12 @@
           <button type="button" data-auth-mode="register">CREATE ACCOUNT</button>
         </div>
         <div id="auth-fields" class="auth-fields" hidden>
-          <label class="avatar-name-label" for="account-email">EMAIL</label>
-          <input id="account-email" type="email" maxlength="320" autocomplete="email" />
-          <label class="avatar-name-label" for="account-password">PASSWORD</label>
-          <input id="account-password" type="password" minlength="12" maxlength="128" autocomplete="current-password" />
-          <button id="forgot-password" type="button">FORGOT PASSWORD</button>
+          <label class="avatar-name-label" for="account-password">PASSWORD <span>(8+ CHARACTERS)</span></label>
+          <input id="account-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" />
         </div>
         <div id="signed-in-panel" class="signed-in-panel" hidden><span id="signed-in-label"></span><button id="sign-out" type="button">SIGN OUT</button></div>
-        <label class="avatar-name-label" for="display-name">DISPLAY NAME</label>
-        <input id="display-name" name="display-name" maxlength="18" autocomplete="nickname" placeholder="PLAYER ONE" required />
+        <label class="avatar-name-label" for="display-name">USERNAME</label>
+        <input id="display-name" name="display-name" maxlength="18" autocomplete="username" placeholder="PLAYER_ONE" required />
         <label class="avatar-name-label avatar-room-label" for="room-select">ARCADE INSTANCE</label>
         <div class="room-picker-row">
           <select id="room-select" name="room-select" aria-describedby="room-help"></select>
@@ -101,6 +98,6 @@
     </script>
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
-    <script type="module" src="app-bootstrap.js?v=phase8-accounts-1"></script>
+    <script type="module" src="app-bootstrap.js?v=phase8-username-1"></script>
   </body>
 </html>

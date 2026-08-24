@@ -10,7 +10,8 @@ work
 tools/*.png
 tools/*.exe
 tools/recording-current
-assets/games
+assets/games/*
+!assets/games/registry.json
 assets/bios
 *.bin
 *.BIN

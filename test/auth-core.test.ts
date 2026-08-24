@@ -5,25 +5,25 @@ import test from 'node:test';
 import { PasswordHasher } from '../server/src/auth/password-hasher.js';
 import { createSecureToken, hashSecureToken } from '../server/src/auth/secure-token.js';
 import { SessionTokenService } from '../server/src/auth/session-token-service.js';
-import { loginSchema, normalizeEmail, registrationSchema } from '../server/src/auth/validation.js';
+import { loginSchema, normalizeUsername, registrationSchema } from '../server/src/auth/validation.js';
 
 void test('registration validation normalizes identity and resolves only approved avatars', () => {
   const parsed = registrationSchema.parse({
-    email: ' Player@Example.COM ', password: 'correct horse battery staple', displayName: '  Player   One ', avatarId: 'not-approved'
+    username: 'Player_One', password: 'correct horse battery staple', avatarId: 'not-approved'
   });
-  assert.equal(parsed.normalizedEmail, 'player@example.com');
-  assert.equal(parsed.displayName, 'Player One');
+  assert.equal(parsed.normalizedUsername, 'player_one');
+  assert.equal(parsed.displayName, 'Player_One');
   assert.equal(parsed.avatarId, 'neon-capsule');
-  assert.equal(normalizeEmail('USER@EXAMPLE.COM'), 'user@example.com');
-  assert.equal(loginSchema.parse({ email: ' USER@example.com ', password: 'anything' }).normalizedEmail, 'user@example.com');
+  assert.equal(normalizeUsername('USER_Name'), 'user_name');
+  assert.equal(loginSchema.parse({ username: ' USER_Name ', password: 'anything' }).normalizedUsername, 'user_name');
 });
 
-void test('registration rejects malformed email, weak passwords, extra fields, and invalid display names', () => {
-  const valid = { email: 'player@example.com', password: 'correct horse battery staple', displayName: 'Player One', avatarId: 'neon-capsule' };
-  assert.equal(registrationSchema.safeParse({ ...valid, email: 'nope' }).success, false);
+void test('registration rejects malformed usernames, weak passwords, and extra fields', () => {
+  const valid = { username: 'Player_One', password: 'correct horse battery staple', avatarId: 'neon-capsule' };
+  assert.equal(registrationSchema.safeParse({ ...valid, username: 'not allowed' }).success, false);
   assert.equal(registrationSchema.safeParse({ ...valid, password: 'short' }).success, false);
-  assert.equal(registrationSchema.safeParse({ ...valid, password: 'aaaaaaaaaaaa' }).success, false);
-  assert.equal(registrationSchema.safeParse({ ...valid, displayName: '<admin>' }).success, false);
+  assert.equal(registrationSchema.safeParse({ ...valid, password: 'abcdefgh' }).success, true);
+  assert.equal(registrationSchema.safeParse({ ...valid, username: '<admin>' }).success, false);
   assert.equal(registrationSchema.safeParse({ ...valid, isAdmin: true }).success, false);
 });
 
@@ -60,4 +60,12 @@ void test('initial migration enforces durable subjects, hashed tokens, and prefe
   assert.match(migration, /sessions_token_hash_unique/);
   assert.match(migration, /user_preferences_master_volume_range/);
   assert.doesNotMatch(migration, /plaintext_password|session_token"|reset_token"/);
+});
+
+void test('username migration safely backfills existing accounts and enforces uniqueness', async () => {
+  const migration = await readFile(path.resolve(process.cwd(), 'drizzle', '0001_loose_dracula.sql'), 'utf8');
+  assert.match(migration, /ADD COLUMN "username" varchar\(18\)/);
+  assert.match(migration, /ranked_users/);
+  assert.match(migration, /ALTER COLUMN "username" SET NOT NULL/);
+  assert.match(migration, /users_normalized_username_unique/);
 });

@@ -2,23 +2,22 @@ import { z } from 'zod';
 import { normalizeDisplayName } from '../players/player-identity.js';
 import { resolveAvatarId } from '../avatars/avatar-registry.js';
 
-const emailSchema = z.string().trim().max(320).email();
-const passwordSchema = z.string().min(12).max(128).refine((password) => new Set(password).size >= 6, 'Password is too repetitive.');
+const usernameSchema = z.string().trim().min(2).max(18).regex(/^[A-Za-z0-9_.-]+$/);
+const passwordSchema = z.string().min(8).max(128);
 
 export const registrationSchema = z.object({
-  email: emailSchema,
+  username: usernameSchema,
   password: passwordSchema,
-  displayName: z.unknown(),
   avatarId: z.unknown()
 }).strict().transform((input, context) => {
-  const displayName = normalizeDisplayName(input.displayName);
+  const displayName = normalizeDisplayName(input.username);
   if (!displayName) {
     context.addIssue({ code: 'custom', path: ['displayName'], message: 'Invalid display name.' });
     return z.NEVER;
   }
   return {
-    email: input.email,
-    normalizedEmail: normalizeEmail(input.email),
+    username: displayName,
+    normalizedUsername: normalizeUsername(displayName),
     password: input.password,
     displayName,
     normalizedDisplayName: displayName.toLocaleLowerCase('en-US'),
@@ -26,8 +25,8 @@ export const registrationSchema = z.object({
   };
 });
 
-export const loginSchema = z.object({ email: emailSchema, password: z.string().min(1).max(128) }).strict()
-  .transform((input) => ({ ...input, normalizedEmail: normalizeEmail(input.email) }));
+export const loginSchema = z.object({ username: usernameSchema, password: z.string().min(1).max(128) }).strict()
+  .transform((input) => ({ ...input, normalizedUsername: normalizeUsername(input.username) }));
 
 export const guestIdentitySchema = z.object({
   displayName: z.unknown(),
@@ -63,12 +62,8 @@ export const preferencesUpdateSchema = z.object({
   chatVisibility: z.enum(['visible', 'hidden']).optional()
 }).strict().refine((value) => Object.keys(value).length > 0, 'At least one preference is required.');
 
-export const resetRequestSchema = z.object({ email: emailSchema }).strict()
-  .transform((input) => ({ normalizedEmail: normalizeEmail(input.email) }));
-export const resetCompleteSchema = z.object({ token: z.string().min(32).max(256), password: passwordSchema }).strict();
-export const verificationCompleteSchema = z.object({ token: z.string().min(32).max(256) }).strict();
 export const accountDeletionSchema = z.object({ password: z.string().min(1).max(128) }).strict();
 
-export function normalizeEmail(email: string): string {
-  return email.normalize('NFKC').trim().toLocaleLowerCase('en-US');
+export function normalizeUsername(username: string): string {
+  return username.normalize('NFKC').trim().toLocaleLowerCase('en-US');
 }

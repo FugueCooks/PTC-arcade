@@ -2,7 +2,7 @@ import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=avatar-loader
 import { RoomPlacementClient } from './rooms/room-placement-client.js?v=phase7-room-browser-1';
 
 const PREFERENCE_KEY = 'roms-arcade-avatar-preferences';
-const namePattern = /^[A-Za-z0-9 ._-]{2,18}$/;
+const namePattern = /^[A-Za-z0-9_.-]{2,18}$/;
 const screen = document.querySelector('#avatar-screen');
 const form = document.querySelector('#avatar-form');
 const nameInput = document.querySelector('#display-name');
@@ -16,9 +16,7 @@ const confirmButton = document.querySelector('#avatar-confirm');
 const cancelButton = document.querySelector('#placement-cancel');
 const authModePanel = document.querySelector('#auth-mode');
 const authFields = document.querySelector('#auth-fields');
-const emailInput = document.querySelector('#account-email');
 const passwordInput = document.querySelector('#account-password');
-const forgotPassword = document.querySelector('#forgot-password');
 const signedInPanel = document.querySelector('#signed-in-panel');
 const signedInLabel = document.querySelector('#signed-in-label');
 const signOutButton = document.querySelector('#sign-out');
@@ -61,8 +59,10 @@ const setAuthMode = (mode) => {
   authMode = mode;
   authModePanel.querySelectorAll('[data-auth-mode]').forEach((button) => button.classList.toggle('selected', button.dataset.authMode === mode));
   authFields.hidden = mode === 'guest' || Boolean(accountSession);
-  forgotPassword.hidden = mode !== 'login';
+  passwordInput.disabled = mode === 'guest' || Boolean(accountSession);
+  passwordInput.required = !passwordInput.disabled;
   passwordInput.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+  confirmButton.textContent = mode === 'register' ? 'CREATE ACCOUNT & ENTER' : mode === 'login' ? 'SIGN IN & ENTER' : 'ENTER AS GUEST';
 };
 
 const showSignedIn = (session) => {
@@ -70,10 +70,12 @@ const showSignedIn = (session) => {
   signedInPanel.hidden = !session;
   authModePanel.hidden = Boolean(session);
   authFields.hidden = true;
+  passwordInput.disabled = Boolean(session);
   if (session) {
     signedInLabel.textContent = `${session.identity.type === 'guest' ? 'GUEST' : 'SIGNED IN'} // ${session.identity.displayName}`;
     nameInput.value = session.identity.displayName;
     selectedAvatarId = session.identity.avatarId;
+    confirmButton.textContent = 'ENTER ARCADE';
   }
 };
 
@@ -120,7 +122,7 @@ async function refreshRooms(announce = true) {
 
 async function boot() {
   confirmButton.disabled = true;
-  confirmButton.textContent = 'ENTER ARCADE';
+  confirmButton.textContent = 'ENTER AS GUEST';
   delete confirmButton.dataset.retry;
   showStatus('Loading avatar choices…');
   try {
@@ -165,9 +167,19 @@ form.addEventListener('submit', async (event) => {
     return;
   }
   let displayName = nameInput.value.normalize('NFKC').trim().replace(/\s+/g, ' ');
-  if (authMode !== 'login' && !namePattern.test(displayName)) {
-    showStatus('Use 2–18 letters, numbers, spaces, dots, dashes, or underscores.', true);
+  if (!accountSession && !namePattern.test(displayName)) {
+    showStatus('Use 2–18 letters, numbers, dots, dashes, or underscores.', true);
     nameInput.focus();
+    return;
+  }
+  if (!accountSession && authMode === 'register' && passwordInput.value.length < 8) {
+    showStatus('Choose a password with at least 8 characters.', true);
+    passwordInput.focus();
+    return;
+  }
+  if (!accountSession && authMode === 'login' && !passwordInput.value) {
+    showStatus('Enter your password.', true);
+    passwordInput.focus();
     return;
   }
   const customRoomId = roomIdInput.value.trim();
@@ -183,12 +195,13 @@ form.addEventListener('submit', async (event) => {
       showSignedIn({ ...accountSession, identity: profile.identity });
     } else if (!accountSession) {
       const endpoint = authMode === 'register' ? '/api/auth/register' : authMode === 'login' ? '/api/auth/login' : '/api/auth/guest';
-      const body = authMode === 'login' ? { email: emailInput.value, password: passwordInput.value }
-        : authMode === 'register' ? { email: emailInput.value, password: passwordInput.value, displayName, avatarId: selectedAvatarId }
+      const body = authMode === 'login' ? { username: displayName, password: passwordInput.value }
+        : authMode === 'register' ? { username: displayName, password: passwordInput.value, avatarId: selectedAvatarId }
           : { displayName, avatarId: selectedAvatarId };
       try {
         const session = await requestJson(endpoint, { method: 'POST', body: JSON.stringify(body) });
         showSignedIn(session); displayName = session.identity.displayName; selectedAvatarId = session.identity.avatarId;
+        passwordInput.value = '';
       } catch (error) {
         // Guest-only deployments remain usable until PostgreSQL is provisioned.
         if (!(authMode === 'guest' && (error.status === 404 || error.status === 503))) throw error;
@@ -222,20 +235,12 @@ form.addEventListener('submit', async (event) => {
 
 authModePanel.addEventListener('click', (event) => {
   const mode = event.target.closest('[data-auth-mode]')?.dataset.authMode;
-  if (mode) setAuthMode(mode);
+  if (mode) { event.preventDefault(); setAuthMode(mode); }
 });
 signOutButton.addEventListener('click', async () => {
   try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* Local state is cleared either way. */ }
   showSignedIn(undefined); setAuthMode('guest'); showStatus('Signed out. Continue as a guest or sign in again.');
 });
-forgotPassword.addEventListener('click', async () => {
-  if (!emailInput.validity.valid) { showStatus('Enter a valid email address first.', true); emailInput.focus(); return; }
-  try {
-    const result = await requestJson('/api/account/password-reset/request', { method: 'POST', body: JSON.stringify({ email: emailInput.value }) });
-    showStatus(result.developmentToken ? `Development reset token: ${result.developmentToken}` : result.message);
-  } catch (error) { showStatus(error instanceof Error ? error.message : 'Reset request failed.', true); }
-});
-
 window.addEventListener('arcade:connection-error', ({ detail }) => {
   screen.hidden = false;
   cancelButton.hidden = true;

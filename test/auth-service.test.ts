@@ -13,12 +13,12 @@ class MemoryAuthRepository implements AuthRepository {
   nextId = 1;
 
   async createRegistered(input: NewRegisteredIdentity): Promise<SafeIdentity | undefined> {
-    if (this.users.has(input.normalizedEmail)) return undefined;
+    if (this.users.has(input.normalizedUsername)) return undefined;
     const user: LoginRecord = { id: `user-${this.nextId++}`, type: 'registered', displayName: input.displayName,
-      avatarId: input.avatarId, status: 'unverified', passwordHash: input.passwordHash };
-    this.users.set(input.normalizedEmail, user); return user;
+      avatarId: input.avatarId, status: 'active', passwordHash: input.passwordHash };
+    this.users.set(input.normalizedUsername, user); return user;
   }
-  async findLogin(normalizedEmail: string): Promise<LoginRecord | undefined> { return this.users.get(normalizedEmail); }
+  async findLogin(normalizedUsername: string): Promise<LoginRecord | undefined> { return this.users.get(normalizedUsername); }
   async createGuest(input: NewGuestIdentity): Promise<SafeIdentity> {
     return { id: `guest-${this.nextId++}`, type: 'guest', displayName: input.displayName, avatarId: input.avatarId, status: 'active' };
   }
@@ -55,18 +55,18 @@ function fixture() {
   return { repository, passwords, service };
 }
 
-void test('registration creates a durable unverified identity and an opaque session', async () => {
+void test('registration creates an active username identity and an opaque session', async () => {
   const { repository, service } = fixture();
-  const result = await service.register({ email: 'Player@example.com', normalizedEmail: 'player@example.com', password: 'correct horse battery',
-    displayName: 'Player One', normalizedDisplayName: 'player one', avatarId: 'neon-capsule' });
+  const result = await service.register({ username: 'PlayerOne', normalizedUsername: 'playerone', password: 'correct horse battery',
+    displayName: 'PlayerOne', normalizedDisplayName: 'playerone', avatarId: 'neon-capsule' });
   assert.equal(result.ok, true);
   if (!result.ok) return;
-  assert.equal(result.identity.status, 'unverified'); assert.equal(repository.sessions.has(`digest:${result.token}`), true);
+  assert.equal(result.identity.status, 'active'); assert.equal(repository.sessions.has(`digest:${result.token}`), true);
   assert.deepEqual(repository.audits, ['account-created']);
 });
 
 void test('duplicate registration returns a generic failure without another session', async () => {
-  const { repository, service } = fixture(); const input = { email: 'a@example.com', normalizedEmail: 'a@example.com', password: 'long enough password',
+  const { repository, service } = fixture(); const input = { username: 'Player', normalizedUsername: 'player', password: 'long enough password',
     displayName: 'Player', normalizedDisplayName: 'player', avatarId: 'neon-capsule' };
   assert.equal((await service.register(input)).ok, true); const count = repository.sessions.size;
   assert.deepEqual(await service.register(input), { ok: false, reason: 'account-exists' });
@@ -75,7 +75,7 @@ void test('duplicate registration returns a generic failure without another sess
 
 void test('failed login performs dummy password verification and does not reveal the account', async () => {
   const { passwords, service } = fixture();
-  assert.deepEqual(await service.login({ normalizedEmail: 'missing@example.com', password: 'wrong' }), { ok: false, reason: 'invalid-credentials' });
+  assert.deepEqual(await service.login({ normalizedUsername: 'missing', password: 'wrong' }), { ok: false, reason: 'invalid-credentials' });
   assert.deepEqual(passwords.verifyCalls, ['dummy-hash']);
 });
 

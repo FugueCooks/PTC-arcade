@@ -16,7 +16,7 @@ export class AuthService {
   ) {}
 
   async register(input: {
-    email: string; normalizedEmail: string; password: string; displayName: string;
+    username: string; normalizedUsername: string; password: string; displayName: string;
     normalizedDisplayName: string; avatarId: string; deviceType?: string;
   }): Promise<AuthResult> {
     const passwordHash = await this.passwords.hash(input.password);
@@ -28,8 +28,8 @@ export class AuthService {
     return { ok: true, identity, token: issued.token, expiresAt: issued.expiresAt };
   }
 
-  async login(input: { normalizedEmail: string; password: string; deviceType?: string }): Promise<AuthResult> {
-    const login = await this.repository.findLogin(input.normalizedEmail);
+  async login(input: { normalizedUsername: string; password: string; deviceType?: string }): Promise<AuthResult> {
+    const login = await this.repository.findLogin(input.normalizedUsername);
     const passwordMatches = await this.passwords.verify(login?.passwordHash ?? this.dummyPasswordHash, input.password);
     if (!login || !passwordMatches) {
       await this.safeAudit('login-failed');

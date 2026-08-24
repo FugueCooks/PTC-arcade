@@ -8,10 +8,10 @@ import { userPreferences, users } from './schema.js';
 
 if (process.env.NODE_ENV === 'production') throw new Error('Development seed is disabled in production.');
 const databaseUrl = process.env.DATABASE_URL?.trim();
-const email = process.env.SEED_DEVELOPMENT_EMAIL?.trim().toLowerCase();
+const username = normalizeDisplayName(process.env.SEED_DEVELOPMENT_USERNAME ?? 'TestPlayer');
 const password = process.env.SEED_DEVELOPMENT_PASSWORD;
 const displayName = normalizeDisplayName(process.env.SEED_DEVELOPMENT_DISPLAY_NAME ?? 'Test Player');
-if (!databaseUrl || !email || !password || !displayName) {
+if (!databaseUrl || !username || !password || !displayName) {
   throw new Error('DATABASE_URL and explicit SEED_DEVELOPMENT_* values are required.');
 }
 
@@ -20,11 +20,13 @@ const metrics = new RuntimeMetrics({ connectedSockets: () => 0, activePlayers: (
 const database = new DatabaseConnection(databaseUrl, 1, logger, metrics);
 if (!await database.connect(5_000)) throw new Error('Development database is unavailable.');
 try {
-  const existing = await database.db.select({ id: users.id }).from(users).where(eq(users.normalizedEmail, email)).limit(1);
+  const normalizedUsername = username.toLocaleLowerCase('en-US');
+  const existing = await database.db.select({ id: users.id }).from(users).where(eq(users.normalizedUsername, normalizedUsername)).limit(1);
   if (!existing.length) {
     const hasher = new PasswordHasher();
     const [created] = await database.db.insert(users).values({
-      email, normalizedEmail: email, passwordHash: await hasher.hash(password), displayName,
+      username, normalizedUsername, email: `${normalizedUsername}@users.invalid`, normalizedEmail: `${normalizedUsername}@users.invalid`,
+      passwordHash: await hasher.hash(password), displayName,
       normalizedDisplayName: displayName.toLocaleLowerCase('en-US'), selectedAvatarId: 'neon-capsule', status: 'active', emailVerifiedAt: new Date()
     }).returning({ id: users.id });
     await database.db.insert(userPreferences).values({ userId: created.id });

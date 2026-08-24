@@ -11,6 +11,8 @@ export const chatVisibility = pgEnum('chat_visibility', ['visible', 'hidden']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
+  username: varchar('username', { length: 18 }).notNull(),
+  normalizedUsername: varchar('normalized_username', { length: 18 }).notNull(),
   email: varchar('email', { length: 320 }).notNull(),
   normalizedEmail: varchar('normalized_email', { length: 320 }).notNull(),
   passwordHash: text('password_hash').notNull(),
@@ -24,6 +26,7 @@ export const users = pgTable('users', {
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   deletedAt: timestamp('deleted_at', { withTimezone: true })
 }, (table) => [
+  uniqueIndex('users_normalized_username_unique').on(table.normalizedUsername),
   uniqueIndex('users_normalized_email_unique').on(table.normalizedEmail),
   index('users_status_idx').on(table.status)
 ]);

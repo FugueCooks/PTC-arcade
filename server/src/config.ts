@@ -42,7 +42,6 @@ export interface ServerConfig {
   authCookieSecure: boolean;
   authRequestLimit: number;
   authAllowedOrigin?: string;
-  developmentAuthTokens: boolean;
   multiplayerTicketSecret?: string;
   multiplayerTicketTtlMs: number;
 }
@@ -101,7 +100,6 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     authCookieSecure: environment.NODE_ENV === 'production' || environment.AUTH_COOKIE_SECURE === '1',
     authRequestLimit: integer(environment.AUTH_REQUEST_LIMIT_PER_10_MINUTES, 30, 5, 1_000),
     authAllowedOrigin: publicUrl(environment.PUBLIC_APP_ORIGIN),
-    developmentAuthTokens: environment.NODE_ENV !== 'production' && environment.AUTH_DEVELOPMENT_TOKENS === '1',
     multiplayerTicketSecret: secret(environment.MULTIPLAYER_TICKET_SECRET),
     multiplayerTicketTtlMs: seconds(environment.MULTIPLAYER_TICKET_TTL_SECONDS, 30, 10, 120)
   };

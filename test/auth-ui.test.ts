@@ -10,7 +10,9 @@ void test('player selection supports guest, login, registration, session restore
   ]);
   assert.match(markup, /CONTINUE AS GUEST/);
   assert.match(markup, /CREATE ACCOUNT/);
-  assert.match(markup, /id="account-email"/);
+  assert.match(markup, />USERNAME<\/label>/);
+  assert.doesNotMatch(markup, /id="account-email"|FORGOT PASSWORD|EMAIL<\/label>/);
+  assert.match(client, /CREATE ACCOUNT & ENTER/);
   assert.match(markup, /id="sign-out"/);
   for (const endpoint of ['/api/auth/session', '/api/auth/register', '/api/auth/login', '/api/auth/guest', '/api/auth/logout', '/api/account/profile']) {
     assert.match(client, new RegExp(endpoint.replaceAll('/', '\\/')));

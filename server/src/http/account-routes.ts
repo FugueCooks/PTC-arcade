@@ -4,8 +4,7 @@ import type { AuthService } from '../auth/auth-service.js';
 import type { AccountService } from '../auth/account-service.js';
 import type { SafeIdentity } from '../auth/auth-repository.js';
 import { readSessionCookie } from '../auth/session-cookie.js';
-import { accountDeletionSchema, preferencesUpdateSchema, profileUpdateSchema, resetCompleteSchema,
-  resetRequestSchema, verificationCompleteSchema } from '../auth/validation.js';
+import { accountDeletionSchema, preferencesUpdateSchema, profileUpdateSchema } from '../auth/validation.js';
 import { RequestRateLimiter } from '../auth/request-rate-limiter.js';
 
 interface Dependencies {
@@ -73,33 +72,6 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
     const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
     const token = readSessionCookie(request.get('Cookie'), config.authCookieName); if (!token) return unauthorized(response);
     try { response.json({ ok: true, revoked: await dependencies.accounts!.revokeOthers(session.identity.id, token) }); } catch { unavailable(response); }
-  });
-  app.post('/api/account/password-reset/request', async (request, response) => {
-    const parsed = resetRequestSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
-    try {
-      const token = await dependencies.accounts!.requestReset(parsed.data.normalizedEmail);
-      response.json({ ok: true, message: 'If that account exists, password-reset instructions have been prepared.',
-        ...(config.developmentAuthTokens && token ? { developmentToken: token } : {}) });
-    } catch { response.json({ ok: true, message: 'If that account exists, password-reset instructions have been prepared.' }); }
-  });
-  app.post('/api/account/password-reset/complete', async (request, response) => {
-    const parsed = resetCompleteSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
-    try {
-      if (!await dependencies.accounts!.completeReset(parsed.data.token, parsed.data.password)) return invalidToken(response);
-      clearCookie(response, config); response.json({ ok: true });
-    } catch { unavailable(response); }
-  });
-  app.post('/api/account/email-verification/request', async (request, response) => {
-    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
-    try {
-      const token = await dependencies.accounts!.requestVerification(session.identity.id);
-      response.json({ ok: true, ...(config.developmentAuthTokens ? { developmentToken: token } : {}) });
-    } catch { unavailable(response); }
-  });
-  app.post('/api/account/email-verification/complete', async (request, response) => {
-    const parsed = verificationCompleteSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
-    try { if (!await dependencies.accounts!.completeVerification(parsed.data.token)) return invalidToken(response); response.json({ ok: true }); }
-    catch { unavailable(response); }
   });
   app.delete('/api/account', async (request, response) => {
     const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);

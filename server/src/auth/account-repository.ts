@@ -7,7 +7,6 @@ export type PreferenceUpdate = Partial<Pick<schema.UserPreferenceRecord,
   'masterVolume' | 'musicVolume' | 'effectsVolume' | 'mouseSensitivity' | 'reducedMotion' | 'graphicsPreset' | 'showNameplates' | 'chatVisibility'>>;
 
 export interface SafeSessionSummary { id: string; deviceType: string; createdAt: Date; lastUsedAt: Date; expiresAt: Date }
-export type TokenKind = 'reset' | 'verification';
 
 export class AccountRepository {
   constructor(private readonly db: NodePgDatabase<typeof schema>) {}
@@ -35,11 +34,6 @@ export class AccountRepository {
     return user ? { ...identity(user), passwordHash: user.passwordHash } : undefined;
   }
 
-  async loginByEmail(normalizedEmail: string): Promise<LoginRecord | undefined> {
-    const [user] = await this.db.select().from(schema.users).where(and(eq(schema.users.normalizedEmail, normalizedEmail), isNull(schema.users.deletedAt))).limit(1);
-    return user ? { ...identity(user), passwordHash: user.passwordHash } : undefined;
-  }
-
   async sessions(userId: string): Promise<SafeSessionSummary[]> {
     return this.db.select({ id: schema.sessions.id, deviceType: schema.sessions.deviceType,
       createdAt: schema.sessions.createdAt, lastUsedAt: schema.sessions.lastUsedAt, expiresAt: schema.sessions.expiresAt })
@@ -61,36 +55,11 @@ export class AccountRepository {
     return rows.length;
   }
 
-  async createToken(kind: TokenKind, userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
-    const table = kind === 'reset' ? schema.passwordResetTokens : schema.emailVerificationTokens;
-    await this.db.insert(table).values({ userId, tokenHash, expiresAt });
-  }
-
-  async consumeToken(kind: TokenKind, tokenHash: string, now = new Date()): Promise<string | undefined> {
-    return this.db.transaction(async (tx) => {
-      const table = kind === 'reset' ? schema.passwordResetTokens : schema.emailVerificationTokens;
-      const [token] = await tx.update(table).set({ usedAt: now })
-        .where(and(eq(table.tokenHash, tokenHash), isNull(table.usedAt), gt(table.expiresAt, now))).returning({ userId: table.userId });
-      return token?.userId;
-    });
-  }
-
-  async verifyEmail(userId: string): Promise<void> {
-    await this.db.update(schema.users).set({ status: 'active', emailVerifiedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(schema.users.id, userId), isNull(schema.users.deletedAt)));
-  }
-
-  async replacePassword(userId: string, passwordHash: string): Promise<void> {
-    await this.db.transaction(async (tx) => {
-      await tx.update(schema.users).set({ passwordHash, updatedAt: new Date() }).where(eq(schema.users.id, userId));
-      await tx.update(schema.sessions).set({ revokedAt: new Date() }).where(and(eq(schema.sessions.userId, userId), isNull(schema.sessions.revokedAt)));
-    });
-  }
-
   async deleteAccount(userId: string): Promise<void> {
     await this.db.transaction(async (tx) => {
       const now = new Date();
       await tx.update(schema.users).set({ status: 'deleted', deletedAt: now, updatedAt: now,
+        username: `deleted_${userId.slice(0, 8)}`, normalizedUsername: `deleted_${userId.slice(0, 8)}`,
         email: `deleted-${userId}@invalid.local`, normalizedEmail: `deleted-${userId}@invalid.local`,
         displayName: 'DELETED PLAYER', normalizedDisplayName: `deleted-${userId}`, passwordHash: 'deleted' })
         .where(eq(schema.users.id, userId));
