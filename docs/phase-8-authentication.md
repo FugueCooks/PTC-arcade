@@ -29,8 +29,45 @@ When PostgreSQL is configured and healthy, the Node service exposes `POST /api/a
 
 Successful registration, login, and guest creation issue an opaque session in an `HttpOnly`, `SameSite=Strict` cookie. Only its SHA-256 hash is stored. Production enables the cookie `Secure` flag. Mutations reject cross-site browser requests, use bounded JSON bodies, and are rate limited per source and endpoint. Authentication errors never return hashes, database errors, or account existence details.
 
-Socket.IO still uses the existing Phase 7 join identity during this milestone. Binding these server-validated sessions to sockets is Milestone 8.8 and must happen only after deployed cookie/database behavior has been verified.
+The Node Socket.IO path now resolves the cookie during the handshake and ignores client-supplied identity whenever PostgreSQL authentication is enabled. A stable non-database public player ID is derived from the validated subject. Redis owns a short-lived active-connection and presence mapping, and a newer connection replaces the older gameplay socket instead of creating a duplicate avatar.
+
+## Account and profile APIs
+
+Registered users can read and update their approved display name/avatar and bounded preferences under `/api/account`. Profile changes update the active room without disconnecting the player. Session endpoints list privacy-safe device type and timestamps, revoke an individual session, or revoke every other session. Account deletion requires the current password, revokes sessions, clears live presence, and pseudonymizes unique email/display-name fields while retaining a soft-deleted row for referential integrity.
+
+Password-reset and email-verification tokens are 256-bit, one-time, hashed, and expiring. Reset completion revokes existing sessions. A delivery provider is deliberately not hard-coded. In local development only, setting `AUTH_DEVELOPMENT_TOKENS=1` returns the token to the developer; production can never enable this behavior. The provider integration must send the raw token without logging it.
+
+Security audit events cover account creation, login outcome, password reset, verification, session revocation, profile identity changes, and deletion requests. Audit rows expire after 90 days and exclude passwords, tokens, IP addresses, and chat content.
+
+## Client behavior
+
+The player-select screen supports guest entry, registration, sign-in, session restoration, sign-out, profile updates, and reset requests. No long-lived credential enters local storage. Deployments without PostgreSQL retain the established legacy guest path, preventing an account-service outage from taking down the arcade preview.
+
+## API overview
+
+- `POST /api/auth/register`, `/login`, `/guest`, `/logout`
+- `GET /api/auth/session`
+- `GET|PUT /api/account/profile`
+- `GET|PUT /api/account/preferences`
+- `GET /api/account/sessions`
+- `DELETE /api/account/sessions/:sessionId`
+- `POST /api/account/sessions/revoke-others`
+- `POST /api/account/password-reset/request|complete`
+- `POST /api/account/email-verification/request|complete`
+- `DELETE /api/account`
+
+All responses use bounded, generic error envelopes. Cross-site mutations are rejected, production cookies are always Secure/HttpOnly/SameSite=Strict, bodies are limited to 16 KiB, and account/auth mutations are rate limited.
 
 ## Deployment boundary still to complete
 
-The production Cloudflare Durable Object realtime path and the Node/Socket.IO fallback currently duplicate player admission. Milestone 8.8 will make both consume the same short-lived, server-validated multiplayer admission ticket. Until that work is complete, the new database does not change existing guest joins or trust semantics.
+The production Cloudflare Durable Object realtime path cannot read a cookie scoped to the Render origin and currently retains legacy guest identity validation. Phase 8 cannot be declared production-complete until the public site, account API, and realtime edge share a same-site trust boundary or the edge consumes a short-lived Node-signed admission ticket. The Node/Socket.IO path is complete; deploying accounts through the current split-origin Cloudflare Pages topology without that routing change would create inconsistent identity enforcement.
+
+The selected Render free PostgreSQL tier is suitable for development validation, not a high-availability public launch. It expires or may be suspended under Render's current free-tier policy and must be upgraded or replaced before relying on durable accounts.
+
+## Environment reference
+
+`DATABASE_URL`, `DATABASE_REQUIRED`, `DATABASE_POOL_MAX`, `SESSION_TTL_DAYS`, `GUEST_SESSION_TTL_DAYS`, `PASSWORD_ARGON2_MEMORY_KIB`, `PASSWORD_ARGON2_ITERATIONS`, `PASSWORD_ARGON2_PARALLELISM`, `AUTH_COOKIE_NAME`, `AUTH_COOKIE_SECURE`, `AUTH_REQUEST_LIMIT_PER_10_MINUTES`, `PUBLIC_APP_ORIGIN`, and development-only `AUTH_DEVELOPMENT_TOKENS` are documented in `.env.example`.
+
+## Rollback
+
+Leave `DATABASE_REQUIRED=0` and remove `DATABASE_URL` to return to legacy guest-only admission without reverting scene, cabinet, ROM, or multiplayer code. Database migrations are additive; never reset production data. Roll back application code before manually reverting a migration, and take a database backup first.

@@ -97,6 +97,12 @@ export class AccountRepository {
       await tx.update(schema.sessions).set({ revokedAt: now }).where(and(eq(schema.sessions.userId, userId), isNull(schema.sessions.revokedAt)));
     });
   }
+
+  async recordAudit(eventType: string, userId?: string): Promise<void> {
+    await this.db.insert(schema.securityAuditEvents).values({
+      userId: userId ?? null, eventType, expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1_000)
+    });
+  }
 }
 
 function identity(user: schema.UserRecord): SafeIdentity {

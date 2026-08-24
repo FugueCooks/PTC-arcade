@@ -38,6 +38,8 @@ export function installStaticHosting(app: Express, projectRoot: string, runtime 
   app.use((_request, response, next) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     // Play!'s browser PS2 core uses SharedArrayBuffer workers. Credentialless
     // isolation keeps CDN-hosted emulator and model assets usable without cookies.
     response.setHeader('Cross-Origin-Opener-Policy', 'same-origin');

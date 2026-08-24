@@ -24,6 +24,7 @@ class MemoryAccounts implements AccountStore {
   async verifyEmail(): Promise<void> { this.verified = true; }
   async replacePassword(_id: string, passwordHash: string): Promise<void> { this.password = passwordHash; }
   async deleteAccount(): Promise<void> { this.deleted = true; }
+  async recordAudit(): Promise<void> {}
 }
 const passwords = { async hash(value: string) { return `hash:${value}`; }, async verify(hash: string, value: string) { return hash === `hash:${value}`; } };
 
