@@ -458,11 +458,10 @@ let prizeModelsStarted=false,centerModelStarted=false,nextHeavyAssetCheck=0;
 // system; clones share geometry and materials, so the cost is one upload each.
 // The built-in controls stay until the model arrives, so a failed load simply
 // leaves the cabinet as it was.
-// The control deck is 1.5 wide by .56 deep. Fitting on width alone pushed the
-// N64 pad, whose footprint is nearly square because of its centre prong, a long
-// way over the front edge, so each model is fitted inside a shared footprint and
-// keeps its own proportions.
-const CONTROLLER_DECK={width:.78,depth:.54};
+// Leave a clear border around every controller so it reads as an object resting
+// on the 1.5 by .56 deck instead of becoming the deck itself. Depth remains the
+// limiting dimension for the three-pronged N64 pad.
+const CONTROLLER_DECK={width:.58,depth:.34};
 const CONTROLLER_MODELS={
   psx:{file:'playstation-controller.glb',rotation:[0,0,0],offset:[0,0,0]},
   n64:{file:'n64-controller.glb',rotation:[-Math.PI/2,0,0],offset:[0,0,0]},
@@ -492,7 +491,9 @@ async function installControllerModel(system){
       const mount=new THREE.Group();
       mount.add(fitControllerToDeck(model,config));
       // Match the deck's tilt so the controller lies on it rather than floating.
-      mount.position.set(0,1.462,.47);mount.rotation.x=.16;
+      // The mount shares the deck angle, sits just above its top surface, and is
+      // biased slightly forward so the controller is clearly in front of the CRT.
+      mount.position.set(0,1.465,.52);mount.rotation.x=.16;
       cabinet.controlSlot.clear();
       cabinet.controlSlot.add(mount);
     }
