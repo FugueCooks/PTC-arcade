@@ -30,7 +30,7 @@ async function loadFile(file, start, span) {
 
 async function initialize() {
   if (!navigator.gpu) throw new Error('WebGPU is unavailable in this browser. Try a current desktop Chrome or Edge build.');
-  runtime = await import('./pkg/gecko_web.js');
+  runtime = await import('./pkg/web.js');
   await runtime.default();
   runtimeReady = true;
   status.textContent = 'Runtime ready. Select an RVZ, ISO, or GCM image.';
