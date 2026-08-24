@@ -50,3 +50,14 @@ void test('confirmed admission is released idempotently', async () => {
   await admission.release('room-a', 'player-a');
   assert.ok(await admission.reserve('room-a', 1));
 });
+
+void test('an explicit room ID never silently places the player into another room', async () => {
+  const rooms = new RoomManager([config], 2, 'server-a'); const directory = new InMemoryRoomDirectory(); const metrics = runtimeMetrics();
+  const lifecycle = new RoomLifecycleService(rooms, directory, metrics, createLogger({ test: true })); await lifecycle.start();
+  const serverConfig = loadServerConfig({ SERVER_ID: 'server-a', MAX_PLAYERS_PER_ROOM: '2', MAX_ROOMS_PER_SERVER: '2', MAX_SERVER_MEMORY_MB: '65536' });
+  const placement = new RoomPlacementService(rooms, directory, lifecycle, new InMemoryRoomAdmission(), undefined, serverConfig, metrics);
+  const result = await placement.place({ requestedRoomId: 'friends-room' });
+  assert.deepEqual(result, { ok: false, reason: 'unavailable' });
+  assert.equal(rooms.roomCount, 1);
+  await lifecycle.stop(); metrics.close();
+});
