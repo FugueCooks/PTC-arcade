@@ -110,6 +110,8 @@ const roomDirectory = redisBootstrapped && redis ? new RedisRoomDirectory(redis.
 const roomOwnership = redisBootstrapped && redis ? new RoomOwnershipService(redis.client, redisKeys, config.serverId, config.roomOwnershipTtlMs) : undefined;
 const roomLifecycle = new RoomLifecycleService(rooms, roomDirectory, metrics, logger, roomOwnership, Math.max(1_000, Math.floor(config.roomOwnershipTtlMs / 3)));
 await roomLifecycle.start();
+roomLifecycle.ensureAvailable(config.minAvailableRooms, config.maxRoomsPerServer);
+await roomLifecycle.flush();
 const serverRegistry = redisBootstrapped && redis ? new ServerRegistry(redis.client, redisKeys, config, {
   roomCount: () => rooms.roomCount,
   playerCount: () => players.connectedCount,
@@ -327,6 +329,7 @@ io.on('connection', (socket) => {
 
 const cleanupTimer = setInterval(() => {
   players.sweep(); cabinets.sweep(); statuses.sweep(); roomLifecycle.closeIdle(config.roomIdleTimeoutMs);
+  roomLifecycle.ensureAvailable(config.minAvailableRooms, config.maxRoomsPerServer);
 }, 1_000);
 cleanupTimer.unref();
 const reconnectRouteTimer = setInterval(() => {
@@ -342,7 +345,7 @@ reconnectRouteTimer.unref();
 let worldEventIndex = 0;
 const worldEventTypes = ['neon-surge', 'power-flicker', 'fireworks'] as const;
 const worldEventTimer = setInterval(() => {
-  world.trigger(DEFAULT_ROOM_ID, worldEventTypes[worldEventIndex % worldEventTypes.length]);
+  for (const room of rooms.records) world.trigger(room.id, worldEventTypes[worldEventIndex % worldEventTypes.length]);
   worldEventIndex += 1;
 }, Number(process.env.WORLD_EVENT_INTERVAL_MS ?? 90_000));
 worldEventTimer.unref();

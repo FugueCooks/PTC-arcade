@@ -59,6 +59,24 @@ void test('draining marks every room unavailable for new admissions', async () =
   await lifecycle.stop(); runtimeMetrics.close();
 });
 
+void test('minimum available rooms are replenished without exceeding the server limit', async () => {
+  const rooms = new RoomManager([roomConfig], 2, 'server-a');
+  const directory = new InMemoryRoomDirectory();
+  const runtimeMetrics = metrics();
+  const lifecycle = new RoomLifecycleService(rooms, directory, runtimeMetrics, createLogger({ test: true }));
+  await lifecycle.start();
+  rooms.getDefault().add('one'); rooms.getDefault().add('two');
+  assert.equal(rooms.availableRoomCount, 0);
+  const created = lifecycle.ensureAvailable(2, 3, 2_000);
+  await lifecycle.flush();
+  assert.equal(created.length, 2);
+  assert.equal(rooms.roomCount, 3);
+  assert.equal(rooms.availableRoomCount, 2);
+  assert.equal((await directory.list()).length, 3);
+  assert.deepEqual(lifecycle.ensureAvailable(3, 3, 2_100), []);
+  await lifecycle.stop(); runtimeMetrics.close();
+});
+
 void test('room ownership is reacquired and republished after Redis loses leases', async () => {
   const rooms = new RoomManager([roomConfig], 2, 'server-a');
   const directory = new InMemoryRoomDirectory();

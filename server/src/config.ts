@@ -38,6 +38,9 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
   const generatedId = `${cleanIdentifier(hostname()) ?? 'arcade'}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
   const configuredRedisUrl = redisUrl(environment.REDIS_URL);
+  const minAvailableRooms = integer(environment.MIN_AVAILABLE_ROOMS, 1, 1, 100);
+  const maxRoomsPerServer = integer(environment.MAX_ROOMS_PER_SERVER, 10, 1, 100);
+  if (minAvailableRooms > maxRoomsPerServer) throw new Error('MIN_AVAILABLE_ROOMS cannot exceed MAX_ROOMS_PER_SERVER.');
   if (environment.REDIS_REQUIRED === '1' && !configuredRedisUrl) throw new Error('REDIS_REQUIRED=1 requires REDIS_URL.');
   return {
     port: integer(environment.PORT, 8080, 1, 65_535),
@@ -46,9 +49,9 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     region: cleanIdentifier(environment.SERVER_REGION ?? environment.RENDER_REGION ?? environment.FLY_REGION) ?? 'local',
     softwareVersion: cleanVersion(environment.SOFTWARE_VERSION ?? environment.RENDER_GIT_COMMIT ?? environment.FLY_IMAGE_REF) ?? 'development',
     maxPlayersPerRoom: integer(environment.MAX_PLAYERS_PER_ROOM, 25, 2, 48),
-    minAvailableRooms: integer(environment.MIN_AVAILABLE_ROOMS, 1, 1, 100),
+    minAvailableRooms,
     roomIdleTimeoutMs: seconds(environment.ROOM_IDLE_TIMEOUT_SECONDS, 900, 30, 86_400),
-    maxRoomsPerServer: integer(environment.MAX_ROOMS_PER_SERVER, 10, 1, 100),
+    maxRoomsPerServer,
     maxPlayersPerServer: integer(environment.MAX_PLAYERS_PER_SERVER, 250, 2, 5_000),
     maxPendingConnections: integer(environment.MAX_PENDING_CONNECTIONS, 128, 1, 10_000),
     reconnectGraceMs: seconds(environment.RECONNECT_GRACE_SECONDS, 10, 5, 300),

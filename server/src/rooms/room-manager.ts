@@ -43,6 +43,7 @@ export class RoomManager {
   get(roomId: string): Room | undefined { return this.rooms.get(roomId) ?? (roomId === DEFAULT_ROOM_ID ? this.getDefault() : undefined); }
   getDefault(): Room { return this.rooms.get(this.defaultRoomId)!; }
   get roomCount(): number { return this.rooms.size; }
+  get availableRoomCount(): number { return [...this.rooms.values()].filter((room) => room.acceptsPlayers).length; }
   get activeRoomCount(): number { return [...this.rooms.values()].filter((room) => !room.isEmpty).length; }
   get records(): RoomRecord[] { return [...this.rooms.values()].map((room) => room.record()); }
 
@@ -55,6 +56,12 @@ export class RoomManager {
     const template = this.templates.find((candidate) => candidate.id === templateId) ?? this.templates[0];
     const suffix = randomUUID();
     return this.addRoom({ ...template, id: `${template.id}-${suffix}`, name: `${template.name ?? 'Arcade'} ${suffix.slice(0, 4).toUpperCase()}`, seeded: false, templateId: template.id }, now, true);
+  }
+
+  ensureAvailable(minimum: number, maximumRooms: number, now = Date.now()): Room[] {
+    const created: Room[] = [];
+    while (this.availableRoomCount < minimum && this.roomCount < maximumRooms) created.push(this.create(DEFAULT_ROOM_ID, now));
+    return created;
   }
 
   close(roomId: string, now = Date.now()): boolean {

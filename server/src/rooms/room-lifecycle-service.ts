@@ -34,6 +34,9 @@ export class RoomLifecycleService {
 
   beginDraining(): void { this.rooms.setAllStatuses('draining'); }
   closeIdle(idleTimeoutMs: number, now = Date.now()): string[] { return this.rooms.closeIdle(idleTimeoutMs, now); }
+  ensureAvailable(minimum: number, maximumRooms: number, now = Date.now()): string[] {
+    return this.rooms.ensureAvailable(minimum, maximumRooms, now).map((room) => room.id);
+  }
   async flush(): Promise<void> { await this.pending; }
   async stop(): Promise<void> {
     this.unsubscribe?.(); this.unsubscribe = undefined;

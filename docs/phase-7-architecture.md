@@ -58,3 +58,5 @@ The quick-join endpoint uses the same readiness gate as Socket.IO. An unready or
 ## Runtime metrics
 
 `GET /metrics` exposes Prometheus text gauges and counters for sockets, players, rooms, room population, drain state, memory, cumulative process CPU time, event-loop mean/p50/p95/p99/max delay, and approximate Engine.IO transport bytes sent and received. Transport-byte counters measure encoded Engine.IO packet payloads and are intended for trend and regression detection; they are not a substitute for provider-level billable bandwidth metrics. Domain counters cover matchmaking, reconnects, rejected validation, cabinet conflicts, Redis errors, room lifecycle, and shutdown behavior.
+
+`MIN_AVAILABLE_ROOMS` is enforced per server process. When available rooms fall below the configured floor, the lifecycle creates globally unique rooms up to `MAX_ROOMS_PER_SERVER`; idle non-seeded rooms still close after `ROOM_IDLE_TIMEOUT_SECONDS`. Periodic world events are emitted independently to every locally owned room.

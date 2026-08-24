@@ -24,6 +24,7 @@ void test('operational configuration is bounded and deployment identity is norma
   assert.equal(config.drainTimeoutMs, 60_000);
   assert.equal(config.publicRealtimeUrl, 'https://west.arcade.example');
   assert.throws(() => loadServerConfig({ MAX_PLAYERS_PER_ROOM: '5000' }), /Invalid numeric server configuration/);
+  assert.throws(() => loadServerConfig({ MIN_AVAILABLE_ROOMS: '3', MAX_ROOMS_PER_SERVER: '2' }), /cannot exceed/);
   assert.throws(() => loadServerConfig({ REDIS_REQUIRED: '1' }), /requires REDIS_URL/);
 });
 
