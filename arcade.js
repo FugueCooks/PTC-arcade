@@ -224,7 +224,6 @@ const cabinetGeometry={
   head:roundedSlab(1.56,1.28,.78,.1),
   bezel:roundedSlab(1.44,1.06,.05,.07,.012),
   deck:roundedSlab(1.5,.12,.56,.045),
-  marqueeHousing:roundedSlab(1.62,.54,.3,.07),
   lightRod:new THREE.CylinderGeometry(.016,.016,2.46,8),
   lightChannel:roundedSlab(.07,2.5,.05,.03,.01),
   screen:new THREE.PlaneGeometry(1.24,.84),
@@ -326,7 +325,6 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
   else if(isGex){plate=new THREE.Mesh(new THREE.PlaneGeometry(1.54,.47),new THREE.MeshBasicMaterial({map:gexMarqueeTexture}));plate.position.set(0,2.68,.43);}
   else {const label=document.createElement('canvas');label.width=512;label.height=128;const c=label.getContext('2d');c.fillStyle='#0a0713';c.fillRect(0,0,512,128);c.fillStyle='#fff4cc';c.font='bold 29px monospace';c.textAlign='center';c.fillText(name,256,77,480);plate=new THREE.Mesh(new THREE.PlaneGeometry(1.48,.28),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(label)}));plate.position.set(0,2.7,.43);}
   plate.rotation.x=-.1;g.add(plate);
-  const marqueeHousing=new THREE.Mesh(cabinetGeometry.marqueeHousing,cabinetHeadMaterial);marqueeHousing.position.set(0,2.7,.28);marqueeHousing.rotation.x=-.1;g.add(marqueeHousing);
   const marqueeWash=new THREE.Mesh(cabinetGeometry.marqueeWash,trimMat);marqueeWash.position.set(0,2.44,.45);marqueeWash.rotation.x=-.1;g.add(marqueeWash);
   const statusMaterial=new THREE.MeshStandardMaterial({color:0x50ff9a,emissive:0x50ff9a,emissiveIntensity:2.4});
   const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(.48,2.48,.43);statusLight.rotation.x=-.1;g.add(statusLight);
