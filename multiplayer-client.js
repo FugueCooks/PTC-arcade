@@ -20,6 +20,8 @@
   let localAvatar;
   let lastSentAt = 0;
   let lastSentTransform;
+  let lastAvatarFrameAt = 0;
+  const avatarFrameIntervalMs = arcade.performanceProfile?.lowPower ? 1000 / 30 : 1000 / 60;
   let started = false;
   let currentRoomId = 'main';
   let placementAbortController;
@@ -64,8 +66,11 @@
     const local = arcade.getLocalTransform();
     const target = asTransform(state);
     const drift = Math.hypot(local.position.x - target.position.x, local.position.z - target.position.z);
-    if (drift < 0.005 && Math.abs(local.rotationY - target.rotationY) < 0.005) return;
-    arcade.applyAuthoritativeTransform(target, drift > 1 ? 0.28 : 0.1);
+    const rotationDrift = Math.abs(Math.atan2(Math.sin(target.rotationY - local.rotationY), Math.cos(target.rotationY - local.rotationY)));
+    // Ignore tiny round-trip differences. Correcting every delayed server echo
+    // made the local camera feel sticky on higher-latency connections.
+    if (drift < 0.08 && rotationDrift < 0.05) return;
+    arcade.applyAuthoritativeTransform(target, drift > 1 ? 0.28 : drift > 0.35 ? 0.08 : 0.025);
   };
 
   const interpolateRemotePlayers = (now) => {
@@ -116,6 +121,9 @@
   };
 
   const frame = (now) => {
+    requestAnimationFrame(frame);
+    if (now - lastAvatarFrameAt < avatarFrameIntervalMs - 1) return;
+    lastAvatarFrameAt = now;
     if (avatarRenderer && !arcade.isEmulatorActive?.()) {
       interpolateRemotePlayers(now);
       if (localAvatar) {
@@ -126,7 +134,6 @@
       avatarRenderer.update(now);
       sendLocalTransform(now);
     }
-    requestAnimationFrame(frame);
   };
 
   const start = async (selection) => {

@@ -353,7 +353,9 @@ function updateFollowCamera(){
     camera.lookAt(cameraTarget);
     return;
   }
-  followOffset.set(0,2.15+pitch*2.1,4.55).applyAxisAngle(upAxis,yaw);
+  // Match first-person mouse direction: moving the mouse upward should tilt
+  // the view upward instead of lifting the chase camera and looking downward.
+  followOffset.set(0,2.15-pitch*2.1,4.55).applyAxisAngle(upAxis,yaw);
   camera.position.copy(playerPosition).add(followOffset);
   cameraTarget.set(playerPosition.x,playerPosition.y+.78,playerPosition.z);
   camera.lookAt(cameraTarget);
