@@ -240,6 +240,55 @@ const cabinetGeometry={
   railLong:new THREE.BoxGeometry(1.52,.02,.045),
   railSide:new THREE.BoxGeometry(.045,.02,.82)
 };
+// Designed marquee for every cabinet without licensed artwork. These used to be
+// a line of monospace text on a flat plate, two thirds the height of the Crash
+// and Gex marquees, so the rows never lined up. Drawn from the cabinet hue so
+// each machine reads as its own product without copying anyone's box art.
+const SYSTEM_MARQUEE_LABEL={psx:'PLAYSTATION',n64:'NINTENDO 64',gamecube:'NINTENDO GAMECUBE',ps2:'PLAYSTATION 2',xbox:'XBOX'};
+function cabinetMarqueeTexture(name,hue,system){
+  const W=768,H=234,canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+  const c=canvas.getContext('2d');
+  const tint=v=>'#'+new THREE.Color(hue).multiplyScalar(v).getHexString();
+  const backdrop=c.createLinearGradient(0,0,0,H);
+  backdrop.addColorStop(0,'#0a0912');backdrop.addColorStop(.5,tint(.18));backdrop.addColorStop(1,'#06050c');
+  c.fillStyle=backdrop;c.fillRect(0,0,W,H);
+  // Angled sheen, the way a lit acrylic marquee catches the ceiling lights.
+  const sheen=c.createLinearGradient(0,H,W*.75,0);
+  sheen.addColorStop(0,'rgba(255,255,255,0)');sheen.addColorStop(.48,'rgba(255,255,255,0)');
+  sheen.addColorStop(.56,'rgba(255,255,255,.07)');sheen.addColorStop(.64,'rgba(255,255,255,0)');
+  c.fillStyle=sheen;c.fillRect(0,0,W,H);
+  c.strokeStyle=tint(.9);c.lineWidth=6;c.strokeRect(3,3,W-6,H-6);
+  c.strokeStyle=tint(.35);c.lineWidth=2;c.strokeRect(14,14,W-28,H-28);
+  const badge=SYSTEM_MARQUEE_LABEL[system];
+  if(badge){c.fillStyle=tint(1.25);c.font='700 21px monospace';c.textAlign='center';c.textBaseline='middle';
+    c.fillText(badge.split('').join(' '),W/2,46)}
+  // Fit the title: one line if it will fit, otherwise split on the nearest space.
+  const title=String(name).toUpperCase();
+  const maxWidth=W-96;
+  const widthAt=(text,size)=>{c.font='700 '+size+'px Impact, "Arial Black", sans-serif';return c.measureText(text).width};
+  let lines=[title],size=64;
+  while(size>26&&widthAt(title,size)>maxWidth)size-=2;
+  if(widthAt(title,size)>maxWidth||title.length>22){
+    const words=title.split(' ');let best=1,bestDelta=Infinity;
+    for(let i=1;i<words.length;i++){const delta=Math.abs(words.slice(0,i).join(' ').length-words.slice(i).join(' ').length);
+      if(delta<bestDelta){bestDelta=delta;best=i}}
+    lines=[words.slice(0,best).join(' '),words.slice(best).join(' ')];
+    size=52;while(size>20&&Math.max(widthAt(lines[0],size),widthAt(lines[1],size))>maxWidth)size-=2;
+  }
+  c.font='700 '+size+'px Impact, "Arial Black", sans-serif';
+  c.textAlign='center';c.textBaseline='middle';
+  const baseY=badge?H/2+26:H/2+8,step=size+8;
+  lines.forEach((line,index)=>{
+    const y=baseY+(index-(lines.length-1)/2)*step;
+    c.shadowColor=tint(1.4);c.shadowBlur=18;c.fillStyle='#fdf6e6';c.fillText(line,W/2,y);
+    c.shadowBlur=0;c.strokeStyle='rgba(6,5,12,.55)';c.lineWidth=1.5;c.strokeText(line,W/2,y);
+  });
+  c.fillStyle=tint(1.35);c.fillRect(28,H-22,W-56,5);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  return texture;
+}
 const cabinetGateMaterial=new THREE.MeshStandardMaterial({color:0x02040a,metalness:1,roughness:.08});
 const cabinetStemMaterial=new THREE.MeshStandardMaterial({color:0xe0e5ef,metalness:1,roughness:.06});
 const cabinetStickMaterial=new THREE.MeshStandardMaterial({color:0x111722,metalness:.55,roughness:.15});
@@ -266,7 +315,7 @@ const cabinetGlassMaterial=(()=>{
   c.fillStyle=gradient;c.fillRect(0,0,128,128);
   return new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),transparent:true,opacity:.13,depthWrite:false,blending:THREE.AdditiveBlending});
 })();
-function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
+function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false,system=''){
   const g=new THREE.Group();g.position.set(x,0,z);const shellColor=isCrash?0x542255:(isGex?0x123f37:hue);const secondaryAccent=isGex?0xff7024:hue;const dark=0x0c0f19;
   const plinth=new THREE.Mesh(cabinetGeometry.plinth,cabinetPlinthMaterial);plinth.position.y=.05;g.add(plinth);
   const underglowMat=new THREE.MeshBasicMaterial({color:hue,transparent:true,opacity:.62});
@@ -323,7 +372,7 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
   let plate;
   if(isCrash){plate=new THREE.Mesh(new THREE.PlaneGeometry(1.54,.47),new THREE.MeshBasicMaterial({map:marqueeTexture}));plate.position.set(0,2.68,.43);}
   else if(isGex){plate=new THREE.Mesh(new THREE.PlaneGeometry(1.54,.47),new THREE.MeshBasicMaterial({map:gexMarqueeTexture}));plate.position.set(0,2.68,.43);}
-  else {const label=document.createElement('canvas');label.width=512;label.height=128;const c=label.getContext('2d');c.fillStyle='#0a0713';c.fillRect(0,0,512,128);c.fillStyle='#fff4cc';c.font='bold 29px monospace';c.textAlign='center';c.fillText(name,256,77,480);plate=new THREE.Mesh(new THREE.PlaneGeometry(1.48,.28),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(label)}));plate.position.set(0,2.7,.43);}
+  else {plate=new THREE.Mesh(new THREE.PlaneGeometry(1.54,.47),new THREE.MeshBasicMaterial({map:cabinetMarqueeTexture(name,hue,system)}));plate.position.set(0,2.68,.43);}
   plate.rotation.x=-.1;g.add(plate);
   const marqueeWash=new THREE.Mesh(cabinetGeometry.marqueeWash,trimMat);marqueeWash.position.set(0,2.44,.45);marqueeWash.rotation.x=-.1;g.add(marqueeWash);
   const statusMaterial=new THREE.MeshStandardMaterial({color:0x50ff9a,emissive:0x50ff9a,emissiveIntensity:2.4});
@@ -331,14 +380,14 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false){
   scene.add(g);cabinets.push({id,g,name,type:id.toUpperCase(),screen,hue,statusLight,renderLights:[floorGlow,glow],status:'syncing',occupiedByDisplayName:null,enabled:true});
 }
 function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
-makeCabinet('silent-hill','SILENT HILL',-10.2,-12,0xc94c4c);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('silent-hill');
-makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-10.2,-8,0x36f9f6);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
+makeCabinet('silent-hill','SILENT HILL',-10.2,-12,0xc94c4c,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('silent-hill');
+makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-10.2,-8,0x36f9f6,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
 makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-10.2,-4,0x8de548,false,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
 makeCabinet('crash-bandicoot','CRASH BANDICOOT',-10.2,0,0xffa62e,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('crash-bandicoot');
-makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-10.2,4,0x934dff);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('dungeon-88');
-makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-10.2,8,0xff3cac);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('turbo-grid');
-makeCabinet('metal-gear-solid','METAL GEAR SOLID',-10.2,12,0x5d75d9);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('metal-gear-solid');
-for(const [index,z,hue] of [[1,-12,0x8b5cf6],[2,-8,0xff4da6],[3,-4,0x36f9f6],[4,0,0xffb42e],[5,4,0x7dff67],[6,8,0xff3cac],[7,12,0x42a5ff]]){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue);const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(cabinetId)}
+makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-10.2,4,0x934dff,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('dungeon-88');
+makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-10.2,8,0xff3cac,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('turbo-grid');
+makeCabinet('metal-gear-solid','METAL GEAR SOLID',-10.2,12,0x5d75d9,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('metal-gear-solid');
+for(const [index,z,hue] of [[1,-12,0x8b5cf6],[2,-8,0xff4da6],[3,-4,0x36f9f6],[4,0,0xffb42e],[5,4,0x7dff67],[6,8,0xff3cac],[7,12,0x42a5ff]]){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(cabinetId)}
 // Five GameCube-ready cabinets line the front wall opposite the rear prize
 // counter. Dolphin is assigned in the shared registry, but the official native
 // emulator has no browser build, so these remain disabled until a vetted web
@@ -346,19 +395,19 @@ for(const [index,z,hue] of [[1,-12,0x8b5cf6],[2,-8,0xff4da6],[3,-4,0x36f9f6],[4,
 const gamecubeTitles=['THE LEGEND OF ZELDA: THE WIND WAKER','THE LEGEND OF ZELDA: TWILIGHT PRINCESS','PIKMIN','SUPER SMASH BROS. MELEE','SUPER MARIO SUNSHINE'];
 for(const [index,x,hue] of [[1,-8,0x8b5cf6],[2,-4,0x36f9f6],[3,0,0xff4da6],[4,4,0x7dff67],[5,8,0xffb42e]]){
   const cabinetId=`gamecube-cabinet-0${index}`;
-  makeCabinet(cabinetId,gamecubeTitles[index-1],x,14.8,hue);
+  makeCabinet(cabinetId,gamecubeTitles[index-1],x,14.8,hue,false,false,'gamecube');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI;Object.assign(cabinet,{system:'gamecube',emulator:'gecko',gameName:gamecubeTitles[index-1],enabled:true,status:'available'});configureHostedCabinet(cabinetId);
 }
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
   const cabinetId=`psx-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
-  makeCabinet(cabinetId,ps2RoomTitles[index-1],-24.8,z,expansionCabinetColors[index-1]);
+  makeCabinet(cabinetId,ps2RoomTitles[index-1],-24.8,z,expansionCabinetColors[index-1],false,false,'ps2');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI/2;Object.assign(cabinet,{system:'ps2',gameName:hosted?.name||ps2RoomTitles[index-1],gameId:hosted?.emulatorId||26000+index,enabled:Boolean(hosted),status:hosted?'available':'disabled'});configureHostedCabinet(cabinetId);
 }
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
   const cabinetId=`xbox-cabinet-0${index}`;
-  makeCabinet(cabinetId,`XBOX // READY 0${index}`,24.8,z,expansionCabinetColors[5-index]);
+  makeCabinet(cabinetId,`XBOX // READY 0${index}`,24.8,z,expansionCabinetColors[5-index],false,false,'xbox');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;Object.assign(cabinet,{system:'xbox',gameName:`Xbox Cabinet ${index}`,enabled:false,status:'disabled'});
 }
 // Circular prize counter in the middle of the arcade.
