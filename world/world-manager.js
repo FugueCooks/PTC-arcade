@@ -15,7 +15,7 @@ export class WorldManager {
     this.audio = new AudioManager(arcade, config); this.lighting = new LightingManager(arcade.scene, config);
     this.interactions = new ObjectInteractionManager(arcade, config.objects, (object) => this.interact(object));
     this.dust = this.particles.create({ position: [0, .1, 0], color: 0xbba7dc, count: 90, spread: [24, 4.2, 26], velocity: [0, .025, 0], jitter: .025, size: .025, opacity: .18, maxDistance: 30 });
-    socket.on('world:snapshot', (state) => { this.apply(state); this.announce({ text: 'Welcome to Retro Arcade.', audioCue: 'notice' }); });
+    socket.on('world:snapshot', (state) => { this.apply(state); this.announce({ text: 'Welcome to the PTC Arcade.', audioCue: 'notice' }); });
     socket.on('world:state-changed', (state) => this.apply(state)); socket.on('world:announcement', (announcement) => this.announce(announcement)); socket.on('world:event', (event) => this.event(event));
     this.onEmulatorModeChanged = (event) => { this.suspended = Boolean(event.detail?.active); this.lastFrameAt = performance.now(); };
     window.addEventListener('arcade:emulator-mode-changed', this.onEmulatorModeChanged);
