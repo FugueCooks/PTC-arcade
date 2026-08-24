@@ -3,7 +3,7 @@ import avatarRegistry from '../../assets/avatars/registry.json';
 import worldConfig from '../../assets/world/config.json';
 import roomRegistry from '../../assets/rooms/registry.json';
 
-interface Env { ARCADE_ROOMS: DurableObjectNamespace }
+interface Env { ARCADE_ROOMS: DurableObjectNamespace; MULTIPLAYER_TICKET_SECRET?: string }
 type AnimationState = 'idle' | 'walk' | 'run' | 'interact';
 type PlayerStatus = 'idle' | 'walking' | 'playing' | 'loading' | 'away' | 'disconnected';
 type Position = [number, number, number];
@@ -13,7 +13,8 @@ interface PlayerState {
   activeCabinetId: string | null; interactionState: 'none' | 'reserved' | 'interact'; movementLocked: boolean;
   cabinetSessionStartedAt: number | null;
 }
-interface SocketAttachment { socketId: string; player?: PlayerState; resumeToken?: string; lastAcceptedAt: number; lastActivityAt: number }
+interface TicketIdentity { playerId: string; displayName: string; avatarId: string }
+interface SocketAttachment { socketId: string; player?: PlayerState; resumeToken?: string; authenticatedIdentity?: TicketIdentity; lastAcceptedAt: number; lastActivityAt: number }
 interface ResumeRecord { player: PlayerState; resumeToken: string; disconnectedAt: number; expiresAt: number }
 interface CabinetState { cabinetId: string; occupiedByPlayerId: string | null; occupiedByDisplayName: string | null; status: CabinetStatus; reservedAt: number | null; sessionStartedAt: number | null }
 interface ChatMessage { id: string; roomId: string; kind: 'chat' | 'system' | 'announcement'; playerId: string | null; displayName: string | null; text: string; at: number }
@@ -53,6 +54,7 @@ export default {
 
 export class ArcadeRoom implements DurableObject {
   private readonly ctx: DurableObjectState;
+  private readonly ticketSecret?: string;
   private roomId = ROOM_ID;
   private cabinetStates = new Map<string, CabinetState>();
   private history: ChatMessage[] = [];
@@ -63,8 +65,9 @@ export class ArcadeRoom implements DurableObject {
   private reactionTimes = new Map<string, number>();
   private movementBroadcastTimes = new Map<string, number>();
 
-  constructor(ctx: DurableObjectState) {
+  constructor(ctx: DurableObjectState, env: Env) {
     this.ctx = ctx;
+    this.ticketSecret = env.MULTIPLAYER_TICKET_SECRET;
     ctx.blockConcurrencyWhile(async () => {
       this.roomId = (await ctx.storage.get<string>('roomId')) ?? ROOM_ID;
       this.cabinetStates = new Map((await ctx.storage.get<Array<[string, CabinetState]>>('cabinets')) ?? cabinetRegistry.map(({ id }) => [id, availableCabinet(id)]));
@@ -86,7 +89,8 @@ export class ArcadeRoom implements DurableObject {
     const client = pair[0];
     const server = pair[1];
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ socketId: crypto.randomUUID(), lastAcceptedAt: Date.now(), lastActivityAt: Date.now() } satisfies SocketAttachment);
+    server.serializeAttachment({ socketId: crypto.randomUUID(), lastAcceptedAt: Date.now(),
+      lastActivityAt: Date.now() } satisfies SocketAttachment);
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -147,16 +151,29 @@ export class ArcadeRoom implements DurableObject {
       this.send(socket, 'room:error', { message: 'This arcade client is out of date. Refresh the page and try again.' });
       return;
     }
+    const authenticatedIdentity = this.ticketSecret
+      ? await verifyRealtimeTicket(typeof request?.ticket === 'string' ? request.ticket : null, this.ticketSecret)
+      : undefined;
+    if (this.ticketSecret && !authenticatedIdentity) {
+      this.send(socket, 'room:error', { code: 'authentication-required', message: 'Your multiplayer admission expired. Sign in again.' });
+      socket.close(4003, 'authentication required');
+      return;
+    }
+    attachment.authenticatedIdentity = authenticatedIdentity;
+    const duplicate = authenticatedIdentity ? this.socketForPlayer(authenticatedIdentity.playerId) : undefined;
+    if (duplicate && duplicate !== socket) duplicate.close(4001, 'session replaced');
     const capacity = approvedRooms.get(this.roomId)?.capacity ?? 25;
     if (this.joinedSockets().length >= capacity) {
       this.send(socket, 'room:error', { code: 'room-full', message: 'This arcade room is full. Moving you to another instance…' });
       return;
     }
-    const identity = validateIdentity(request?.identity);
+    const identity = authenticatedIdentity ?? validateIdentity(request?.identity);
     if (!identity) { this.send(socket, 'room:error', { message: 'Choose a valid display name before entering the arcade.' }); return; }
     const now = Date.now();
     const requestedToken = typeof request?.resumeToken === 'string' ? request.resumeToken : undefined;
-    const resumed = requestedToken ? this.resumes.get(requestedToken) : undefined;
+    const resumedCandidate = requestedToken ? this.resumes.get(requestedToken) : undefined;
+    const resumed = resumedCandidate && (!authenticatedIdentity || resumedCandidate.player.id === authenticatedIdentity.playerId)
+      ? resumedCandidate : undefined;
     let player: PlayerState;
     let resumeToken: string;
     if (resumed && resumed.expiresAt > now) {
@@ -168,7 +185,7 @@ export class ArcadeRoom implements DurableObject {
     } else {
       const spawn = chooseSpawn(this.connectedPlayers());
       player = {
-        id: crypto.randomUUID(), n: identity.displayName, v: identity.avatarId, roomId: this.roomId,
+        id: authenticatedIdentity?.playerId ?? crypto.randomUUID(), n: identity.displayName, v: identity.avatarId, roomId: this.roomId,
         p: [spawn[0], spawn[1], spawn[2]], r: spawn[3], a: 'idle', s: 'idle', activeCabinetId: null,
         interactionState: 'none', movementLocked: false, cabinetSessionStartedAt: null
       };
@@ -363,6 +380,26 @@ function isAllowedOrigin(value: string | null): boolean {
   if (!value) return true; // Native smoke tests and non-browser health tooling.
   if (value === 'https://retro-arcade-multiplayer.onrender.com' || value === 'https://retro-arcade-om7.pages.dev') return true;
   return /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(value);
+}
+async function verifyRealtimeTicket(value: string | null, secret: string): Promise<TicketIdentity | undefined> {
+  if (!value || value.length > 2_048) return undefined;
+  const parts = value.split('.');
+  if (parts.length !== 2) return undefined;
+  try {
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+    const valid = await crypto.subtle.verify('HMAC', key, decodeBase64Url(parts[1]), new TextEncoder().encode(parts[0]));
+    if (!valid) return undefined;
+    const payload = asObject(JSON.parse(new TextDecoder().decode(decodeBase64Url(parts[0]))));
+    if (!payload || payload.v !== 1 || typeof payload.pid !== 'string' || !/^player-[0-9a-f]{32}$/.test(payload.pid)) return undefined;
+    if (typeof payload.exp !== 'number' || payload.exp <= Date.now() || payload.exp > Date.now() + 120_000) return undefined;
+    const identity = validateIdentity({ displayName: payload.n, avatarId: payload.a });
+    return identity ? { playerId: payload.pid, ...identity } : undefined;
+  } catch { return undefined; }
+}
+function decodeBase64Url(value: string): Uint8Array {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
+  const binary = atob(normalized);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 function normalizeAngle(value: number): number { return Math.atan2(Math.sin(value), Math.cos(value)); }
 function chooseSpawn(players: PlayerState[]): typeof spawnPoints[number] { return spawnPoints.find((spawn) => players.every((player) => Math.hypot(player.p[0] - spawn[0], player.p[2] - spawn[2]) >= 1.4)) ?? spawnPoints[players.length % spawnPoints.length]; }

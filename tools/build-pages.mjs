@@ -44,6 +44,9 @@ const runtimeConfig = {
 };
 await writeFile(path.join(output, 'runtime-config.js'), `window.ARCADE_RUNTIME = Object.freeze(${JSON.stringify(runtimeConfig)});\n`);
 await writeFile(path.join(output, '_headers'), headersFile());
+// Authentication cookies are intentionally same-origin and HttpOnly. Keep the
+// former Pages URL as a fast redirect instead of creating a split-origin auth path.
+await writeFile(path.join(output, '_redirects'), '/* https://retro-arcade-multiplayer.onrender.com/:splat 302\n');
 
 const summary = await summarize(output);
 console.log(`Cloudflare Pages bundle: ${summary.files} files, ${(summary.bytes / 1024 / 1024).toFixed(1)} MB`);

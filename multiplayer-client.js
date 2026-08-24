@@ -165,7 +165,17 @@
       localAvatar = avatarRenderer.create({ id: 'local-preview', n: identity.displayName, v: identity.avatarId }, { showNameplate: false });
       // Let Socket.IO negotiate polling/WebSocket order. Some ISP and mobile
       // routes perform substantially worse when WebSocket is forced first.
-      socket = window.createArcadeSocket({ endpoint: placement?.realtimeUrl, reconnectionDelay: 500, reconnectionDelayMax: 3000, roomId: currentRoomId });
+      let initialTicket = selection.realtimeTicket;
+      const ticketProvider = initialTicket ? async () => {
+        if (initialTicket) { const ticket = initialTicket; initialTicket = undefined; return ticket; }
+        const response = await fetch('/api/auth/realtime-ticket', { method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || typeof payload.ticket !== 'string') throw new Error(payload?.error?.message ?? 'Secure multiplayer admission failed.');
+        return payload.ticket;
+      } : undefined;
+      socket = window.createArcadeSocket({ endpoint: placement?.realtimeUrl, reconnectionDelay: 500, reconnectionDelayMax: 3000,
+        roomId: currentRoomId, ticket: selection.realtimeTicket, ticketProvider });
       new ChatClient(socket);
       presenceClient = new PresenceClient(socket, avatarRegistry);
       new ReactionClient(socket, (id) => id === localPlayerId ? localAvatar : remotePlayers.get(id)?.avatar);
@@ -178,9 +188,13 @@
         roomId: currentRoomId,
         resumeToken: sessionStorage.getItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`) ?? undefined,
         reservationToken: placement?.reservationToken,
+        ticket: typeof socket.admissionTicket === 'function' ? socket.admissionTicket() : selection.realtimeTicket,
         identity
       });
       socket.on('connect', joinRoom);
+      socket.on('connect_error', (error) => window.dispatchEvent(new CustomEvent('arcade:connection-error', {
+        detail: { message: error?.message ?? 'Secure multiplayer connection failed.' }
+      })));
       // A cached Socket.IO transport can already be connected by the time the
       // dynamically imported social modules finish initializing.
       if (socket.connected) joinRoom();

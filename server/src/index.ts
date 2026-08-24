@@ -38,9 +38,9 @@ import { SessionTokenService } from './auth/session-token-service.js';
 import { DrizzleAuthRepository } from './auth/auth-repository.js';
 import { AuthService } from './auth/auth-service.js';
 import { installAuthRoutes } from './http/auth-routes.js';
+import { RealtimeTicketService, stablePublicPlayerId } from './auth/realtime-ticket.js';
 import { readSessionCookie } from './auth/session-cookie.js';
 import type { SafeIdentity } from './auth/auth-repository.js';
-import { createHash } from 'node:crypto';
 import { AccountRepository } from './auth/account-repository.js';
 import { AccountService } from './auth/account-service.js';
 import { installAccountRoutes } from './http/account-routes.js';
@@ -128,6 +128,9 @@ const authService = database ? new AuthService(
   await passwordHasher.hash('not-a-real-account-password')
 ) : undefined;
 const accountService = database ? new AccountService(new AccountRepository(database.db), passwordHasher) : undefined;
+const realtimeTickets = config.multiplayerTicketSecret
+  ? new RealtimeTicketService(config.multiplayerTicketSecret, config.multiplayerTicketTtlMs)
+  : undefined;
 health = new HealthService(config, metrics, {
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
@@ -160,7 +163,8 @@ const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirect
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
 app.use(express.json({ limit: '16kb' }));
-installAuthRoutes(app, config, { service: authService, databaseReady: () => databaseBootstrapped && (database?.isReady ?? false) });
+installAuthRoutes(app, config, { service: authService, tickets: realtimeTickets,
+  databaseReady: () => databaseBootstrapped && (database?.isReady ?? false) });
 installAccountRoutes(app, config, {
   auth: authService, accounts: accountService, databaseReady: () => databaseBootstrapped && (database?.isReady ?? false),
   identityChanged: (identity) => { players.updateIdentity(stablePublicPlayerId(identity), { displayName: identity.displayName, avatarId: identity.avatarId }); },
@@ -405,10 +409,6 @@ io.on('connection', (socket) => {
     if (playerId) void identityDirectory?.release(playerId, socket.id).catch(() => metrics.increment('identity_release_failure_total'));
   });
 });
-
-function stablePublicPlayerId(identity: SafeIdentity): string {
-  return `player-${createHash('sha256').update(`${identity.type}:${identity.id}`).digest('hex').slice(0, 32)}`;
-}
 
 const cleanupTimer = setInterval(() => {
   players.sweep(); cabinets.sweep(); statuses.sweep(); roomLifecycle.closeIdle(config.roomIdleTimeoutMs);

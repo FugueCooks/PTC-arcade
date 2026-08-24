@@ -48,8 +48,20 @@
       this.socket?.close(1000, 'switch room');
     }
 
-    connect() {
+    admissionTicket() { return this.ticket; }
+
+    async connect() {
       if (this.closedByClient) return;
+      let ticket = this.options.ticket;
+      try {
+        if (typeof this.options.ticketProvider === 'function') ticket = await this.options.ticketProvider();
+      } catch (error) {
+        this.dispatch('connect_error', error);
+        if (!this.closedByClient) this.scheduleReconnect();
+        return;
+      }
+      if (this.closedByClient) return;
+      this.ticket = ticket;
       const url = new URL(this.endpoint, window.location.href);
       url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
       if (typeof this.options.roomId === 'string') url.searchParams.set('room', this.options.roomId);

@@ -201,7 +201,18 @@ form.addEventListener('submit', async (event) => {
     showStatus(error instanceof Error ? error.message : 'Account request failed.', true);
     return;
   }
-  const selection = { displayName, avatarId: selectedAvatarId, roomId: customRoomId || roomSelect.value };
+  let realtimeTicket;
+  if (typeof window.ARCADE_RUNTIME?.realtimeUrl === 'string' && window.ARCADE_RUNTIME.realtimeUrl) {
+    try {
+      const admission = await requestJson('/api/auth/realtime-ticket', { method: 'POST', body: '{}' });
+      realtimeTicket = admission.ticket;
+    } catch (error) {
+      confirmButton.disabled = false;
+      showStatus(error instanceof Error ? error.message : 'Secure multiplayer admission failed.', true);
+      return;
+    }
+  }
+  const selection = { displayName, avatarId: selectedAvatarId, roomId: customRoomId || roomSelect.value, realtimeTicket };
   savePreferences(selection);
   window.arcadeAvatarIdentity = selection;
   window.dispatchEvent(new CustomEvent('arcade:identity-selected', { detail: selection }));

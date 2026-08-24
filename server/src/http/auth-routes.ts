@@ -4,8 +4,9 @@ import type { AuthService } from '../auth/auth-service.js';
 import { guestIdentitySchema, loginSchema, registrationSchema } from '../auth/validation.js';
 import { RequestRateLimiter } from '../auth/request-rate-limiter.js';
 import { readSessionCookie } from '../auth/session-cookie.js';
+import type { RealtimeTicketService } from '../auth/realtime-ticket.js';
 
-interface RouteDependencies { service?: AuthService; databaseReady: () => boolean }
+interface RouteDependencies { service?: AuthService; tickets?: RealtimeTicketService; databaseReady: () => boolean }
 
 export function installAuthRoutes(app: Express, config: ServerConfig, dependencies: RouteDependencies): void {
   const limiter = new RequestRateLimiter(config.authRequestLimit, 10 * 60_000);
@@ -72,6 +73,22 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
         return;
       }
       response.json({ ok: true, identity: session.identity, expiresAt: session.expiresAt.toISOString() });
+    } catch { unavailable(response); }
+  });
+
+  app.post('/api/auth/realtime-ticket', async (request, response) => {
+    if (!dependencies.tickets) {
+      response.status(503).json({ ok: false, error: { code: 'realtime-auth-unavailable', message: 'Secure multiplayer admission is temporarily unavailable.' } });
+      return;
+    }
+    try {
+      const session = await dependencies.service!.session(readSessionCookie(request.get('Cookie'), config.authCookieName));
+      if (!session) {
+        response.status(401).json({ ok: false, error: { code: 'session-required', message: 'Sign in or continue as a guest.' } });
+        return;
+      }
+      const issued = dependencies.tickets.issue(session.identity);
+      response.json({ ok: true, ticket: issued.ticket, expiresAt: issued.expiresAt.toISOString() });
     } catch { unavailable(response); }
   });
 

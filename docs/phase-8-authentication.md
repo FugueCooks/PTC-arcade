@@ -31,6 +31,8 @@ Successful registration, login, and guest creation issue an opaque session in an
 
 The Node Socket.IO path now resolves the cookie during the handshake and ignores client-supplied identity whenever PostgreSQL authentication is enabled. A stable non-database public player ID is derived from the validated subject. Redis owns a short-lived active-connection and presence mapping, and a newer connection replaces the older gameplay socket instead of creating a duplicate avatar.
 
+The production Cloudflare realtime transport uses a short-lived HMAC-SHA256 admission ticket from `POST /api/auth/realtime-ticket`. The ticket contains only the stable public player ID, validated display name, approved avatar ID, expiry, and nonce. It contains no email, database ID, session cookie, or database credential. The edge verifies the signature before accepting the WebSocket, ignores client-supplied identity, and replaces an older socket for the same identity within a room. Tickets expire after 30 seconds by default and are refreshed automatically for reconnects.
+
 ## Account and profile APIs
 
 Registered users can read and update their approved display name/avatar and bounded preferences under `/api/account`. Profile changes update the active room without disconnecting the player. Session endpoints list privacy-safe device type and timestamps, revoke an individual session, or revoke every other session. Account deletion requires the current password, revokes sessions, clears live presence, and pseudonymizes unique email/display-name fields while retaining a soft-deleted row for referential integrity.
@@ -47,6 +49,7 @@ The player-select screen supports guest entry, registration, sign-in, session re
 
 - `POST /api/auth/register`, `/login`, `/guest`, `/logout`
 - `GET /api/auth/session`
+- `POST /api/auth/realtime-ticket`
 - `GET|PUT /api/account/profile`
 - `GET|PUT /api/account/preferences`
 - `GET /api/account/sessions`
@@ -58,15 +61,17 @@ The player-select screen supports guest entry, registration, sign-in, session re
 
 All responses use bounded, generic error envelopes. Cross-site mutations are rejected, production cookies are always Secure/HttpOnly/SameSite=Strict, bodies are limited to 16 KiB, and account/auth mutations are rate limited.
 
-## Deployment boundary still to complete
+## Deployment boundary
 
-The production Cloudflare Durable Object realtime path cannot read a cookie scoped to the Render origin and currently retains legacy guest identity validation. Phase 8 cannot be declared production-complete until the public site, account API, and realtime edge share a same-site trust boundary or the edge consumes a short-lived Node-signed admission ticket. The Node/Socket.IO path is complete; deploying accounts through the current split-origin Cloudflare Pages topology without that routing change would create inconsistent identity enforcement.
+The account page and account API must remain same-origin so `SameSite=Strict` cookies stay protected. The Cloudflare Durable Object never receives that cookie. It receives only the short-lived admission ticket described above. The Render application URL is therefore the canonical Phase 8 entry point; any separate static mirror must redirect there rather than attempt cross-site account cookies.
 
 The selected Render free PostgreSQL tier is suitable for development validation, not a high-availability public launch. It expires or may be suspended under Render's current free-tier policy and must be upgraded or replaced before relying on durable accounts.
 
 ## Environment reference
 
-`DATABASE_URL`, `DATABASE_REQUIRED`, `DATABASE_POOL_MAX`, `SESSION_TTL_DAYS`, `GUEST_SESSION_TTL_DAYS`, `PASSWORD_ARGON2_MEMORY_KIB`, `PASSWORD_ARGON2_ITERATIONS`, `PASSWORD_ARGON2_PARALLELISM`, `AUTH_COOKIE_NAME`, `AUTH_COOKIE_SECURE`, `AUTH_REQUEST_LIMIT_PER_10_MINUTES`, `PUBLIC_APP_ORIGIN`, and development-only `AUTH_DEVELOPMENT_TOKENS` are documented in `.env.example`.
+`DATABASE_URL`, `DATABASE_REQUIRED`, `DATABASE_POOL_MAX`, `SESSION_TTL_DAYS`, `GUEST_SESSION_TTL_DAYS`, `PASSWORD_ARGON2_MEMORY_KIB`, `PASSWORD_ARGON2_ITERATIONS`, `PASSWORD_ARGON2_PARALLELISM`, `AUTH_COOKIE_NAME`, `AUTH_COOKIE_SECURE`, `AUTH_REQUEST_LIMIT_PER_10_MINUTES`, `PUBLIC_APP_ORIGIN`, `MULTIPLAYER_TICKET_SECRET`, `MULTIPLAYER_TICKET_TTL_SECONDS`, and development-only `AUTH_DEVELOPMENT_TOKENS` are documented in `.env.example`.
+
+`MULTIPLAYER_TICKET_SECRET` must be the same cryptographically random secret in Render and the Cloudflare realtime Worker. Store it only in provider-managed secret configuration. Never commit it, expose it in runtime configuration, or reuse a session/database credential.
 
 ## Rollback
 
