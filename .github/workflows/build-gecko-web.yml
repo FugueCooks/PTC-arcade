@@ -70,4 +70,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Build experimental Gecko web runtime"
+          # Other project commits may land during this long Rust build. Rebase
+          # the generated runtime so publishing remains fast-forward safe.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
