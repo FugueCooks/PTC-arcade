@@ -10,6 +10,8 @@ The Node.js service now serves only approved browser assets, exposes liveness at
 
 Phase 7 operational safeguards begin with typed and bounded environment configuration, a unique server identity, structured JSON lifecycle logs, capacity-aware readiness, and graceful `SIGTERM`/`SIGINT` draining. During a normal drain the server rejects new room joins, warns connected clients, and keeps existing sessions alive until empty or `SERVER_DRAIN_TIMEOUT_SECONDS` expires.
 
+Player selection now includes automatic Quick Join, sanitized live room populations, manual room-ID entry, refresh, and a cancelable bounded waiting-room retry flow. It falls back to the ten approved static instances when the Phase 7 matchmaking endpoint is unavailable.
+
 The Node room layer now models each arcade instance with an owning server ID, human name, lifecycle and health status, capacity, population, creation/activity timestamps, and cabinet/world/jukebox revision counters. `RoomDirectory` is deliberately transport-independent: local development uses `InMemoryRoomDirectory`, while the next scaling milestone supplies the Redis implementation without moving active room simulation out of its owning server.
 
 When `REDIS_URL` is present, the Node service uses Redis Streams for cross-process Socket.IO delivery, registers expiring server and room records, and protects each room with an exclusive renewable lease and fencing token. `REDIS_REQUIRED=1` makes loss of coordination fail readiness. Full topology and key documentation live in `docs/phase-7-architecture.md` and `docs/redis-keys.md`.

@@ -41,11 +41,17 @@
         <label class="avatar-name-label" for="display-name">DISPLAY NAME</label>
         <input id="display-name" name="display-name" maxlength="18" autocomplete="nickname" placeholder="PLAYER ONE" required />
         <label class="avatar-name-label avatar-room-label" for="room-select">ARCADE INSTANCE</label>
-        <select id="room-select" name="room-select" aria-describedby="room-help"></select>
-        <p id="room-help">Choose the same instance as your friends. Each instance supports up to 25 players.</p>
+        <div class="room-picker-row">
+          <select id="room-select" name="room-select" aria-describedby="room-help"></select>
+          <button id="room-refresh" type="button" disabled>REFRESH</button>
+        </div>
+        <label class="avatar-name-label room-id-label" for="room-id">JOIN BY ROOM ID <span>(OPTIONAL)</span></label>
+        <input id="room-id" name="room-id" maxlength="96" autocomplete="off" placeholder="LEAVE BLANK FOR QUICK JOIN" />
+        <p id="room-help">Quick Join chooses a healthy room automatically. Each instance supports up to 25 players.</p>
         <div id="avatar-cards" class="avatar-cards" aria-label="Available avatars" aria-live="polite"></div>
         <p id="avatar-status" role="status">Loading avatar choices…</p>
         <button id="avatar-confirm" type="submit" disabled>ENTER ARCADE</button>
+        <button id="placement-cancel" type="button" hidden>CANCEL SEARCH</button>
       </form>
     </section>
     <div id="start-screen">
@@ -82,6 +88,6 @@
     </script>
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
-    <script type="module" src="app-bootstrap.js?v=psx-multidisc-1"></script>
+    <script type="module" src="app-bootstrap.js?v=phase7-room-browser-1"></script>
   </body>
 </html>

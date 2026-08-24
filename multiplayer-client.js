@@ -22,6 +22,7 @@
   let lastSentTransform;
   let started = false;
   let currentRoomId = 'main';
+  let placementAbortController;
   const fullRoomAttempts = new Set();
 
   const angleLerp = (from, to, alpha) => {
@@ -132,14 +133,18 @@
     if (started) return;
     started = true;
     try {
-      currentRoomId = window.ARCADE_ROOM_REGISTRY?.rooms?.has(selection.roomId) ? selection.roomId : 'main';
+      const requestedRoomId = typeof selection.roomId === 'string' && /^[A-Za-z0-9_-]{1,96}$/.test(selection.roomId) ? selection.roomId : undefined;
+      currentRoomId = requestedRoomId || 'main';
       const identity = { displayName: selection.displayName, avatarId: selection.avatarId };
-      const { RoomPlacementClient } = await import('./rooms/room-placement-client.js?v=phase7-1');
+      const { RoomPlacementClient } = await import('./rooms/room-placement-client.js?v=phase7-room-browser-1');
       const lastResumeToken = sessionStorage.getItem(RESUME_TOKEN_KEY) ?? sessionStorage.getItem(`${RESUME_TOKEN_KEY}:${currentRoomId}`) ?? undefined;
-      const placement = await new RoomPlacementClient().quickJoin(currentRoomId, {
+      placementAbortController = new AbortController();
+      const placement = await new RoomPlacementClient().quickJoin(requestedRoomId, {
+        signal: placementAbortController.signal,
         resumeToken: lastResumeToken,
-        onWaiting: () => window.dispatchEvent(new CustomEvent('arcade:placement-waiting'))
+        onWaiting: (detail) => window.dispatchEvent(new CustomEvent('arcade:placement-waiting', { detail }))
       });
+      placementAbortController = undefined;
       window.dispatchEvent(new CustomEvent('arcade:placement-ready'));
       if (placement?.roomId) currentRoomId = placement.roomId;
       await window.prepareArcadeRealtime?.();
@@ -244,12 +249,18 @@
       ['keydown', 'pointerdown'].forEach((name) => window.addEventListener(name, activity, { passive: true }));
     } catch (error) {
       started = false;
+      placementAbortController = undefined;
+      if (error?.name === 'AbortError') {
+        window.dispatchEvent(new CustomEvent('arcade:placement-canceled'));
+        return;
+      }
       window.dispatchEvent(new CustomEvent('arcade:connection-error', { detail: { message: 'Avatar renderer could not start. Please refresh and try again.' } }));
       console.error('Avatar renderer failed to start.', error);
     }
   };
 
   window.addEventListener('arcade:identity-selected', ({ detail }) => void start(detail));
+  window.addEventListener('arcade:placement-cancel', () => placementAbortController?.abort());
   if (window.arcadeAvatarIdentity) void start(window.arcadeAvatarIdentity);
   requestAnimationFrame(frame);
 })();

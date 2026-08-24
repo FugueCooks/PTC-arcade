@@ -12,5 +12,5 @@ window.ARCADE_ROOM_REGISTRY = await loadRoomRegistry();
 window.ARCADE_PS2_CACHE = new Ps2GameCache();
 
 await import('./arcade.js?v=psx-multidisc-1');
-await import('./avatar-selection.js?v=text-only-1');
-await import('./multiplayer-client.js?v=ps2-construction-1');
+await import('./avatar-selection.js?v=phase7-room-browser-1');
+await import('./multiplayer-client.js?v=phase7-room-browser-1');
