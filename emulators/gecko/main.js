@@ -7,6 +7,8 @@ const progress = document.querySelector('#progress');
 let runtime;
 let runtimeReady = false;
 let lastProgressUpdate = 0;
+const CACHE_DIRECTORY = 'ptc-arcade-gamecube-v1';
+const CACHE_HEADROOM_BYTES = 64 * 1024 * 1024;
 
 function updateStartState() {
   startButton.disabled = !runtimeReady || !discInput.files?.[0];
@@ -25,10 +27,59 @@ function formatBytes(bytes) {
   return `${(bytes / 1048576).toFixed(bytes >= 104857600 ? 0 : 1)} MB`;
 }
 
+function cacheSupported() {
+  return typeof navigator.storage?.getDirectory === 'function';
+}
+
+function cacheFileName(name, totalBytes) {
+  const safeName = String(name || 'game.rvz').replace(/[^A-Za-z0-9._-]/g, '-').slice(-96);
+  return `${totalBytes}-${safeName}`;
+}
+
+async function gameCacheDirectory() {
+  const root = await navigator.storage.getDirectory();
+  return root.getDirectoryHandle(CACHE_DIRECTORY, { create: true });
+}
+
+async function getCachedGame(name, totalBytes) {
+  if (!cacheSupported() || !Number.isSafeInteger(totalBytes) || totalBytes <= 0) return null;
+  const entryName = cacheFileName(name, totalBytes);
+  try {
+    const directory = await gameCacheDirectory();
+    const handle = await directory.getFileHandle(entryName);
+    const file = await handle.getFile();
+    if (file.size === totalBytes) return file;
+    await directory.removeEntry(entryName);
+  } catch (error) {
+    if (error?.name !== 'NotFoundError') console.warn('Could not inspect the GameCube cache.', error);
+  }
+  return null;
+}
+
+async function prepareCacheWrite(name, totalBytes) {
+  if (!cacheSupported() || !Number.isSafeInteger(totalBytes) || totalBytes <= 0) return null;
+  try {
+    await navigator.storage.persist?.();
+    const estimate = await navigator.storage.estimate?.();
+    if (Number.isFinite(estimate?.quota) && Number.isFinite(estimate?.usage)
+      && estimate.quota - estimate.usage < totalBytes + CACHE_HEADROOM_BYTES) return null;
+    const directory = await gameCacheDirectory();
+    const entryName = cacheFileName(name, totalBytes);
+    const handle = await directory.getFileHandle(entryName, { create: true });
+    const writable = await handle.createWritable({ keepExistingData: false });
+    return { directory, entryName, handle, writable };
+  } catch (error) {
+    console.warn('GameCube caching is unavailable for this download.', error);
+    return null;
+  }
+}
+
 function enterHostedMode(name, totalBytes) {
   document.body.classList.add('hosted-game');
   document.querySelector('#setup h1').textContent = 'PREPARING GAMECUBE';
-  document.querySelector('.note').textContent = `Downloading ${formatBytes(totalBytes)} once for this browser session. Keep this window open.`;
+  document.querySelector('.note').textContent = cacheSupported()
+    ? `First launch downloads ${formatBytes(totalBytes)}. Future launches use this device's local copy.`
+    : `Downloading ${formatBytes(totalBytes)} for this browser session. Keep this window open.`;
   for (const element of document.querySelectorAll('.picker, output, #start')) element.hidden = true;
   parent.postMessage({ type: 'arcade:gamecube-source-loading' }, location.origin);
   status.textContent = `Starting download for ${name}…`;
@@ -72,13 +123,36 @@ async function loadFile(file) {
 }
 
 async function loadRemoteFile(url, name, expectedBytes = 0) {
+  const requestedBytes = Number(expectedBytes) || 0;
+  const cached = await getCachedGame(name, requestedBytes);
+  if (cached) {
+    status.textContent = `Loading ${name} from this device…`;
+    return streamIntoDiscBuffer(cached.stream(), cached.size, name);
+  }
   status.textContent = `Downloading ${name}…`;
   progress.hidden = false;
   const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
   if (!response.ok) throw new Error(`Game download failed (${response.status}).`);
   if (!response.body) throw new Error('This browser cannot stream the GameCube image.');
   const totalBytes = Number(response.headers.get('content-length')) || Number(expectedBytes) || 0;
-  return streamIntoDiscBuffer(response.body, totalBytes, name);
+  const cacheTarget = await prepareCacheWrite(name, totalBytes);
+  if (!cacheTarget) return streamIntoDiscBuffer(response.body, totalBytes, name);
+
+  const [runtimeStream, cacheStream] = response.body.tee();
+  const cacheWrite = cacheStream.pipeTo(cacheTarget.writable).then(async () => {
+    const file = await cacheTarget.handle.getFile();
+    if (file.size !== totalBytes) throw new Error('Cached GameCube image was incomplete.');
+    return file;
+  }).catch(async error => {
+    try { await cacheTarget.directory.removeEntry(cacheTarget.entryName); } catch { /* No partial file. */ }
+    console.warn('The GameCube image could not be cached locally.', error);
+    return null;
+  });
+  const [discBuffer] = await Promise.all([
+    streamIntoDiscBuffer(runtimeStream, totalBytes, name),
+    cacheWrite,
+  ]);
+  return discBuffer;
 }
 
 function startRuntime(discBuffer, filename, dspBytes) {

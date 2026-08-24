@@ -61,3 +61,14 @@ void test('hosted GameCube loading reports progress and is not canceled by the o
   assert.match(gecko, /Number\(response\.headers\.get\('content-length'\)\) \|\| Number\(expectedBytes\)/);
   assert.match(gecko, /Downloading \$\{name\} · \$\{percent\}%/);
 });
+
+void test('hosted GameCube images are cached persistently while the first download feeds Gecko', async () => {
+  const gecko = await readFile(path.resolve(process.cwd(), 'emulators/gecko/main.js'), 'utf8');
+
+  assert.match(gecko, /navigator\.storage\?\.getDirectory/);
+  assert.match(gecko, /getCachedGame\(name, requestedBytes\)/);
+  assert.match(gecko, /response\.body\.tee\(\)/);
+  assert.match(gecko, /cacheStream\.pipeTo\(cacheTarget\.writable\)/);
+  assert.match(gecko, /streamIntoDiscBuffer\(cached\.stream\(\), cached\.size, name\)/);
+  assert.match(gecko, /file\.size !== totalBytes/);
+});
