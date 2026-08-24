@@ -62,15 +62,17 @@ Each browser joins the default arcade room, renders the other players' approved 
 
 The main arcade has two facing cabinet rows, a solid paneled prize-counter wall, and two accessible expansion rooms behind the PlayStation and Nintendo 64 partitions. The PlayStation row contains:
 
+- **Silent Hill** (`silent-hill`)
 - **Tony Hawk's Pro Skater 2** (`pixel-rally`)
 - **Gex: Enter the Gecko** (`gex-enter-the-gecko`)
 - **Crash Bandicoot** (`crash-bandicoot`)
 - **Spyro - Year of the Dragon** (`dungeon-88`)
 - **Twisted Metal World Tour** (`turbo-grid`)
+- **Metal Gear Solid** (`metal-gear-solid`, Disc 1 and Disc 2)
 
 The opposite wall contains seven stable Nintendo 64 cabinets (`n64-cabinet-01` through `n64-cabinet-07`), consolidating every unique hosted N64 game in the main arcade. The room behind that wall is the Xbox room and contains five fresh disabled placeholders (`xbox-cabinet-01` through `xbox-cabinet-05`) ready for future approved games and a compatible browser emulator. The PlayStation-side rear room retains five PS2 cabinets (`psx-back-cabinet-01` through `psx-back-cabinet-05`). Nintendo 64 cabinets use EmulatorJS's browser-compatible `n64` core and accept `.z64`, `.n64`, and `.v64` files. The supplied Gopher64 Windows executable is a native desktop application and cannot run inside a web page, so it is not shipped or launched by the site.
 
-Tony Hawk's Pro Skater 2 is configured as a hosted local development image at `assets/games/tony-hawks-pro-skater-2.bin`. Spyro is hosted as a verified single-track CHD at `assets/games/spyro-year-of-the-dragon.chd`, and Twisted Metal is hosted as a verified 12-track CHD at `assets/games/twisted-metal-world-tour.chd`. Place only legally owned, browser-ready images in `assets/games/`; game and BIOS files are ignored by source control.
+Tony Hawk's Pro Skater 2 is configured as a hosted local development image at `assets/games/tony-hawks-pro-skater-2.bin`. Spyro, Twisted Metal, Silent Hill, and both Metal Gear Solid discs are stored as verified CHD images to reduce first-load download size. The Metal Gear Solid cabinet presents Disc 1 and Disc 2 separately but gives both the same emulator game ID, so browser memory-card saves remain shared between discs. Exit the emulator at the disc transition, reopen the same cabinet, and select Disc 2. Place only legally owned, browser-ready images in `assets/games/`; game and BIOS files are ignored by source control.
 
 ## Multiplayer architecture
 

@@ -68,6 +68,9 @@ export class ArcadeRoom implements DurableObject {
     ctx.blockConcurrencyWhile(async () => {
       this.roomId = (await ctx.storage.get<string>('roomId')) ?? ROOM_ID;
       this.cabinetStates = new Map((await ctx.storage.get<Array<[string, CabinetState]>>('cabinets')) ?? cabinetRegistry.map(({ id }) => [id, availableCabinet(id)]));
+      for (const { id } of cabinetRegistry) {
+        if (!this.cabinetStates.has(id)) this.cabinetStates.set(id, availableCabinet(id));
+      }
       this.history = (await ctx.storage.get<ChatMessage[]>('chat')) ?? [];
       this.world = (await ctx.storage.get<WorldState>('world')) ?? initialWorld(this.roomId);
       this.resumes = new Map((await ctx.storage.get<Array<[string, ResumeRecord]>>('resumes')) ?? []);

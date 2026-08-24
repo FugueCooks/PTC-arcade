@@ -6,6 +6,8 @@
     {"id":"crash-bandicoot","cabinetId":"crash-bandicoot","name":"Crash Bandicoot","system":"psx","file":"crash-bandicoot.pbp","emulatorId":94900,"sizeBytes":549791897,"enabled":true},
     {"id":"spyro-year-of-the-dragon","cabinetId":"dungeon-88","name":"Spyro - Year of the Dragon","system":"psx","file":"spyro-year-of-the-dragon.chd","emulatorId":2835,"sizeBytes":479947745,"enabled":true},
     {"id":"twisted-metal-world-tour","cabinetId":"turbo-grid","name":"Twisted Metal World Tour","system":"psx","file":"twisted-metal-world-tour.chd","emulatorId":567,"sizeBytes":477142162,"enabled":true},
+    {"id":"silent-hill","cabinetId":"silent-hill","name":"Silent Hill","system":"psx","file":"silent-hill.chd","emulatorId":95002,"sizeBytes":307388422,"enabled":true},
+    {"id":"metal-gear-solid","cabinetId":"metal-gear-solid","name":"Metal Gear Solid","system":"psx","file":"metal-gear-solid-disc-1.chd","emulatorId":95003,"sizeBytes":406013391,"enabled":true,"discs":[{"label":"Disc 1","file":"metal-gear-solid-disc-1.chd","sizeBytes":406013391},{"label":"Disc 2","file":"metal-gear-solid-disc-2.chd","sizeBytes":373290629}]},
     {"id":"pokemon-snap","cabinetId":"n64-cabinet-01","name":"Pokemon Snap","system":"n64","file":"pokemon-snap.n64","emulatorId":6401,"sizeBytes":16777216,"enabled":true},
     {"id":"super-mario-64","cabinetId":"n64-cabinet-02","name":"Super Mario 64","system":"n64","file":"super-mario-64.z64","emulatorId":6402,"sizeBytes":8388608,"enabled":true},
     {"id":"glover","cabinetId":"n64-cabinet-03","name":"Glover","system":"n64","file":"glover.z64","emulatorId":6403,"sizeBytes":8388608,"enabled":true},

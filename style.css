@@ -7,6 +7,9 @@
 #bios-control label { font:inherit; cursor:pointer; border:1px solid var(--cyan); background:#140e29; color:var(--cyan); padding:11px 14px; box-shadow:4px 4px 0 var(--pink); letter-spacing:.06em; font-size:11px; }
 #bios-file { display:none; }
 #bios-name { font-size:11px; color:#d4c8df; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#hosted-disc-selector { display:flex; gap:10px; flex-wrap:wrap; }
+#hosted-disc-selector[hidden] { display:none; }
+#hosted-disc-selector button { padding:11px 14px; font-size:10px; }
 canvas { display:block; } #hud { position:fixed; z-index:3; inset:0 0 auto; padding:26px 32px; display:flex; justify-content:space-between; pointer-events:none; text-shadow:0 0 12px var(--cyan); font-size:10px; letter-spacing:.12em; }.brand { font-family:"Press Start 2P"; color:var(--cyan); font-size:14px; }.status { color:#c8b7df; }
 #crosshair { position:fixed; z-index:3; left:50%; top:50%; color:var(--cyan); font-size:25px; transform:translate(-50%,-50%); text-shadow:0 0 8px var(--cyan); pointer-events:none; opacity:0; }
 #prompt { display:none; position:fixed; z-index:4; left:50%; bottom:45px; transform:translateX(-50%); padding:13px 17px; gap:12px; align-items:center; background:#110b23d9; border:1px solid var(--cyan); box-shadow:0 0 20px #36f9f655; font-size:11px; }.active { display:flex !important; }.active b { color:var(--pink); }
