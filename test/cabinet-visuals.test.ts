@@ -7,8 +7,10 @@ void test('console controllers fit within and rest on the cabinet control deck',
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
   assert.match(arcade, /const CONTROLLER_DECK=\{width:\.58,depth:\.34\}/);
-  assert.match(arcade, /mount\.position\.set\(0,1\.465,\.52\);mount\.rotation\.x=\.16/);
-  assert.match(arcade, /-scaled\.min\.y\+config\.offset\[1\]/);
+  assert.match(arcade, /controllerDisplayShelfGeometry=roundedSlab\(1,\.07,\.46/);
+  assert.match(arcade, /controllerDisplaySupportGeometry=roundedSlab\(\.34,\.18,\.34/);
+  assert.match(arcade, /mount\.position\.set\(0,1\.46,\.77\);mount\.rotation\.x=\.08/);
+  assert.match(arcade, /-scaled\.min\.y\+config\.offset\[1\]\+CONTROLLER_DISPLAY_SURFACE_Y/);
 });
 
 void test('the custom Crash and Gex cabinets use PlayStation controllers', async () => {
