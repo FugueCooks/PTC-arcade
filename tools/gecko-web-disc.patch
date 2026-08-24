@@ -30,12 +30,41 @@ diff --git a/crates/web/src/lib.rs b/crates/web/src/lib.rs
 index e8010ab..7f79177 100644
 --- a/crates/web/src/lib.rs
 +++ b/crates/web/src/lib.rs
-@@ -553,15 +553,19 @@ impl ApplicationHandler for App {
+@@ -553,15 +553,48 @@ impl ApplicationHandler for App {
  }
  
  #[wasm_bindgen]
 -pub fn start_emulator(rom_data: &[u8], filename: String, dsp_irom: Option<Vec<u8>>) {
++pub struct DiscBuffer {
++    data: Vec<u8>,
++}
++
++#[wasm_bindgen]
++impl DiscBuffer {
++    #[wasm_bindgen(constructor)]
++    pub fn new(capacity: usize) -> Self {
++        Self { data: Vec::with_capacity(capacity) }
++    }
++
++    pub fn append(&mut self, chunk: &[u8]) {
++        self.data.extend_from_slice(chunk);
++    }
++
++    pub fn len(&self) -> usize {
++        self.data.len()
++    }
++
++    pub fn start(&mut self, filename: String, dsp_irom: Option<Vec<u8>>) {
++        start_emulator_inner(std::mem::take(&mut self.data), filename, dsp_irom);
++    }
++}
++
++#[wasm_bindgen]
 +pub fn start_emulator(rom_data: Vec<u8>, filename: String, dsp_irom: Option<Vec<u8>>) {
++    start_emulator_inner(rom_data, filename, dsp_irom);
++}
++
++fn start_emulator_inner(rom_data: Vec<u8>, filename: String, dsp_irom: Option<Vec<u8>>) {
      console_error_panic_hook::set_once();
  
      let name = filename.to_lowercase();

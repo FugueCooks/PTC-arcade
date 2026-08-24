@@ -77,11 +77,11 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(byId.get('psx-back-cabinet-04')?.defaultGameId, 'dbz-tenkaichi-3');
 });
 
-void test('GameCube images are registered but remain unavailable without a browser Dolphin runtime', async () => {
+void test('GameCube RVZ images are registered but remain unavailable until Gecko boot validation passes', async () => {
   const games = (await loadJson<{ games: GameDefinition[] }>('assets/games/registry.json')).games;
   const gamecubeGames = games.filter((game) => game.system === 'gamecube');
   assert.equal(gamecubeGames.length, 5);
-  assert.ok(gamecubeGames.every((game) => !game.enabled && game.file.endsWith('.ciso')));
+  assert.ok(gamecubeGames.every((game) => !game.enabled && game.file.endsWith('.rvz')));
   assert.deepEqual(gamecubeGames.map((game) => game.name), [
     'The Legend of Zelda: The Wind Waker',
     'The Legend of Zelda: Twilight Princess',
