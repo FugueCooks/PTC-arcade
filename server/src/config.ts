@@ -38,6 +38,10 @@ export interface ServerConfig {
   passwordArgon2MemoryKib: number;
   passwordArgon2Iterations: number;
   passwordArgon2Parallelism: number;
+  authCookieName: string;
+  authCookieSecure: boolean;
+  authRequestLimit: number;
+  authAllowedOrigin?: string;
 }
 
 export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -89,7 +93,11 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     guestSessionTtlMs: days(environment.GUEST_SESSION_TTL_DAYS, 30, 1, 90),
     passwordArgon2MemoryKib: integer(environment.PASSWORD_ARGON2_MEMORY_KIB, 19_456, 7_168, 1_048_576),
     passwordArgon2Iterations: integer(environment.PASSWORD_ARGON2_ITERATIONS, 2, 1, 20),
-    passwordArgon2Parallelism: integer(environment.PASSWORD_ARGON2_PARALLELISM, 1, 1, 8)
+    passwordArgon2Parallelism: integer(environment.PASSWORD_ARGON2_PARALLELISM, 1, 1, 8),
+    authCookieName: cleanCookieName(environment.AUTH_COOKIE_NAME) ?? 'arcade_session',
+    authCookieSecure: environment.NODE_ENV === 'production' || environment.AUTH_COOKIE_SECURE === '1',
+    authRequestLimit: integer(environment.AUTH_REQUEST_LIMIT_PER_10_MINUTES, 30, 5, 1_000),
+    authAllowedOrigin: publicUrl(environment.PUBLIC_APP_ORIGIN)
   };
 }
 
@@ -149,4 +157,11 @@ function databaseUrl(value: string | undefined): string | undefined {
 function cleanKeyPrefix(value: string | undefined): string | undefined {
   const cleaned = value?.trim().replace(/[^A-Za-z0-9:_-]+/g, '-').replace(/:+/g, ':').replace(/^:|:$/g, '').slice(0, 96);
   return cleaned || undefined;
+}
+
+function cleanCookieName(value: string | undefined): string | undefined {
+  const cleaned = value?.trim();
+  if (!cleaned) return undefined;
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(cleaned)) throw new Error('AUTH_COOKIE_NAME is invalid.');
+  return cleaned;
 }

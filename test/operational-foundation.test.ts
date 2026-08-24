@@ -23,6 +23,7 @@ void test('operational configuration is bounded and deployment identity is norma
   assert.equal(config.redisStartupTimeoutMs, 5_000);
   assert.equal(config.databaseStartupTimeoutMs, 5_000);
   assert.equal(config.sessionTtlMs, 30 * 24 * 60 * 60 * 1_000);
+  assert.equal(config.authCookieSecure, false);
   assert.equal(config.drainTimeoutMs, 60_000);
   assert.equal(config.publicRealtimeUrl, 'https://west.arcade.example');
   assert.throws(() => loadServerConfig({ MAX_PLAYERS_PER_ROOM: '5000' }), /Invalid numeric server configuration/);
@@ -30,6 +31,9 @@ void test('operational configuration is bounded and deployment identity is norma
   assert.throws(() => loadServerConfig({ REDIS_REQUIRED: '1' }), /requires REDIS_URL/);
   assert.throws(() => loadServerConfig({ DATABASE_REQUIRED: '1' }), /requires DATABASE_URL/);
   assert.throws(() => loadServerConfig({ DATABASE_URL: 'https://example.invalid/database' }), /postgres/);
+  assert.throws(() => loadServerConfig({ AUTH_COOKIE_NAME: 'invalid cookie' }), /AUTH_COOKIE_NAME/);
+  assert.throws(() => loadServerConfig({ PUBLIC_APP_ORIGIN: 'ftp://example.invalid' }), /http/);
+  assert.equal(loadServerConfig({ NODE_ENV: 'production', AUTH_COOKIE_SECURE: '0' }).authCookieSecure, true);
 });
 
 void test('configured room capacity is clamped by the per-server safety limit', () => {

@@ -29,6 +29,22 @@ export const registrationSchema = z.object({
 export const loginSchema = z.object({ email: emailSchema, password: z.string().min(1).max(128) }).strict()
   .transform((input) => ({ ...input, normalizedEmail: normalizeEmail(input.email) }));
 
+export const guestIdentitySchema = z.object({
+  displayName: z.unknown(),
+  avatarId: z.unknown()
+}).strict().transform((input, context) => {
+  const displayName = normalizeDisplayName(input.displayName);
+  if (!displayName) {
+    context.addIssue({ code: 'custom', path: ['displayName'], message: 'Invalid display name.' });
+    return z.NEVER;
+  }
+  return {
+    displayName,
+    normalizedDisplayName: displayName.toLocaleLowerCase('en-US'),
+    avatarId: resolveAvatarId(input.avatarId)
+  };
+});
+
 export function normalizeEmail(email: string): string {
   return email.normalize('NFKC').trim().toLocaleLowerCase('en-US');
 }

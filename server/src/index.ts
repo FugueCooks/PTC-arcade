@@ -33,6 +33,11 @@ import { RoomPlacementService } from './rooms/room-placement-service.js';
 import { installMatchmakingRoutes } from './http/matchmaking-routes.js';
 import { InMemoryReconnectDirectory, RedisReconnectDirectory } from './players/reconnect-directory.js';
 import { DatabaseConnection } from './database/connection.js';
+import { PasswordHasher } from './auth/password-hasher.js';
+import { SessionTokenService } from './auth/session-token-service.js';
+import { DrizzleAuthRepository } from './auth/auth-repository.js';
+import { AuthService } from './auth/auth-service.js';
+import { installAuthRoutes } from './http/auth-routes.js';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -105,6 +110,16 @@ if (database) {
   databaseBootstrapped = await database.connect(config.databaseStartupTimeoutMs);
   if (!databaseBootstrapped && config.databaseRequired) logger.error('database_startup_required_unavailable');
 }
+const passwordHasher = new PasswordHasher({
+  memoryCostKib: config.passwordArgon2MemoryKib,
+  iterations: config.passwordArgon2Iterations,
+  parallelism: config.passwordArgon2Parallelism
+});
+const authService = database ? new AuthService(
+  new DrizzleAuthRepository(database.db), passwordHasher,
+  new SessionTokenService(config.sessionTtlMs), new SessionTokenService(config.guestSessionTtlMs),
+  await passwordHasher.hash('not-a-real-account-password')
+) : undefined;
 health = new HealthService(config, metrics, {
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
@@ -136,6 +151,7 @@ const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirect
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
 app.use(express.json({ limit: '16kb' }));
+installAuthRoutes(app, config, { service: authService, databaseReady: () => databaseBootstrapped && (database?.isReady ?? false) });
 installMatchmakingRoutes(app, roomPlacement, roomDirectory, reconnectDirectory, config, () => health.readiness().ready);
 installStaticHosting(app, projectRoot, publicRuntimeConfig());
 

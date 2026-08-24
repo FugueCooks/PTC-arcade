@@ -23,6 +23,14 @@ Session, password-reset, and email-verification credentials use 256-bit random o
 
 Registered accounts and guests share the `sessions` table. A database constraint requires every session to reference exactly one user or one guest. Guest conversion preserves the live room until the authentication service performs an explicit identity handoff in a later milestone.
 
+## HTTP authentication milestone
+
+When PostgreSQL is configured and healthy, the Node service exposes `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/guest`, `GET /api/auth/session`, and `POST /api/auth/logout`.
+
+Successful registration, login, and guest creation issue an opaque session in an `HttpOnly`, `SameSite=Strict` cookie. Only its SHA-256 hash is stored. Production enables the cookie `Secure` flag. Mutations reject cross-site browser requests, use bounded JSON bodies, and are rate limited per source and endpoint. Authentication errors never return hashes, database errors, or account existence details.
+
+Socket.IO still uses the existing Phase 7 join identity during this milestone. Binding these server-validated sessions to sockets is Milestone 8.8 and must happen only after deployed cookie/database behavior has been verified.
+
 ## Deployment boundary still to complete
 
 The production Cloudflare Durable Object realtime path and the Node/Socket.IO fallback currently duplicate player admission. Milestone 8.8 will make both consume the same short-lived, server-validated multiplayer admission ticket. Until that work is complete, the new database does not change existing guest joins or trust semantics.
