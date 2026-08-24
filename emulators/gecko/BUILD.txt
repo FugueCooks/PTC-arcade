@@ -1,0 +1,2 @@
+Gecko commit: 39e82205a0da154f23fd36b95e64a8029d468618
+Local patch: tools/gecko-web-disc.patch
