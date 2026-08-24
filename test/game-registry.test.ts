@@ -80,8 +80,15 @@ void test('unique N64 games are consolidated in the main room and the rear room 
 void test('GameCube RVZ images are registered but remain unavailable until Gecko boot validation passes', async () => {
   const games = (await loadJson<{ games: GameDefinition[] }>('assets/games/registry.json')).games;
   const gamecubeGames = games.filter((game) => game.system === 'gamecube');
+  const remoteAssets = await loadJson<Array<{ file: string; bytes: number; sha256: string; system: string }>>('deploy/remote-gamecube-assets.json');
   assert.equal(gamecubeGames.length, 5);
   assert.ok(gamecubeGames.every((game) => !game.enabled && game.file.endsWith('.rvz')));
+  assert.equal(remoteAssets.length, gamecubeGames.length);
+  assert.ok(remoteAssets.every((asset) => asset.system === 'gamecube' && /^[a-f0-9]{64}$/.test(asset.sha256)));
+  assert.deepEqual(
+    remoteAssets.map(({ file, bytes }) => ({ file, bytes })),
+    gamecubeGames.map((game) => ({ file: game.file, bytes: game.sizeBytes }))
+  );
   assert.deepEqual(gamecubeGames.map((game) => game.name), [
     'The Legend of Zelda: The Wind Waker',
     'The Legend of Zelda: Twilight Princess',
