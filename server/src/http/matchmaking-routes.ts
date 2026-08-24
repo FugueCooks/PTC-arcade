@@ -10,7 +10,14 @@ const MAX_REQUESTS_PER_WINDOW = 20;
 const MAX_RATE_LIMIT_BUCKETS = 10_000;
 let lastBucketPruneAt = 0;
 
-export function installMatchmakingRoutes(app: Express, placement: RoomPlacementService, directory: RoomDirectory, reconnects: ReconnectDirectory, config: ServerConfig): void {
+export function installMatchmakingRoutes(
+  app: Express,
+  placement: RoomPlacementService,
+  directory: RoomDirectory,
+  reconnects: ReconnectDirectory,
+  config: ServerConfig,
+  acceptingPlayers: () => boolean = () => true
+): void {
   app.use('/api/rooms', (request, response, next) => {
     response.setHeader('Cache-Control', 'no-store');
     const key = request.ip || 'unknown'; const now = Date.now();
@@ -37,6 +44,9 @@ export function installMatchmakingRoutes(app: Express, placement: RoomPlacementS
     }
   });
   app.post('/api/rooms/quick-join', async (request: Request, response: Response) => {
+    if (!acceptingPlayers()) {
+      response.status(503).json({ ok: false, reason: 'temporarily-unavailable', retryAfterMs: 1_500 }); return;
+    }
     try {
       const requestedRoomId = cleanRoomId(request.body?.roomId);
       const resumeToken = typeof request.body?.resumeToken === 'string' && request.body.resumeToken.length <= 128 ? request.body.resumeToken : undefined;

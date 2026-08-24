@@ -58,3 +58,25 @@ void test('draining marks every room unavailable for new admissions', async () =
   assert.equal((await directory.get('main'))?.status, 'draining');
   await lifecycle.stop(); runtimeMetrics.close();
 });
+
+void test('room ownership is reacquired and republished after Redis loses leases', async () => {
+  const rooms = new RoomManager([roomConfig], 2, 'server-a');
+  const directory = new InMemoryRoomDirectory();
+  const runtimeMetrics = metrics();
+  let acquireCount = 0;
+  const ownership = {
+    async acquire(roomId: string) {
+      acquireCount += 1;
+      return { roomId, serverId: 'server-a', fencingToken: acquireCount, value: `server-a:${acquireCount}`, expiresAt: Date.now() + 30_000 };
+    },
+    async renew() { return false; },
+    async release() { return true; }
+  };
+  const lifecycle = new RoomLifecycleService(rooms, directory, runtimeMetrics, createLogger({ test: true }), ownership as never, 60_000);
+  await lifecycle.start();
+  await (lifecycle as unknown as { refresh(): Promise<void> }).refresh();
+  assert.equal(acquireCount, 2);
+  assert.equal(rooms.getDefault().health, 'healthy');
+  assert.equal((await directory.get('main'))?.status, 'available');
+  await lifecycle.stop(); runtimeMetrics.close();
+});

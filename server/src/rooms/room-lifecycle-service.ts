@@ -79,13 +79,26 @@ export class RoomLifecycleService {
 
   private async refresh(): Promise<void> {
     for (const room of this.rooms.records) {
-      const lease = this.leases.get(room.id);
-      if (lease && this.ownership && !(await this.ownership.renew(lease))) {
-        this.rooms.setHealth(room.id, 'unhealthy');
-        this.leases.delete(room.id);
-        this.metrics.increment('room_ownership_lost_total');
-        this.logger.error('room_ownership_lost', { roomId: room.id });
-        continue;
+      if (this.ownership) {
+        const lease = this.leases.get(room.id);
+        if (lease && !(await this.ownership.renew(lease))) {
+          this.rooms.setHealth(room.id, 'unhealthy');
+          this.leases.delete(room.id);
+          this.metrics.increment('room_ownership_lost_total');
+          this.logger.error('room_ownership_lost', { roomId: room.id });
+        }
+        if (!this.leases.has(room.id)) {
+          const replacement = await this.ownership.acquire(room.id);
+          if (!replacement) {
+            this.rooms.setHealth(room.id, 'unhealthy');
+            this.metrics.increment('room_ownership_reacquire_failure_total');
+            continue;
+          }
+          this.leases.set(room.id, replacement);
+          this.rooms.setHealth(room.id, 'healthy');
+          this.metrics.increment('room_ownership_reacquired_total');
+          this.logger.info('room_ownership_reacquired', { roomId: room.id, fencingToken: replacement.fencingToken });
+        }
       }
       await this.directory.update(this.rooms.get(room.id)?.record() ?? room);
     }

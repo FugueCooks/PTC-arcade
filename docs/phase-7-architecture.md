@@ -42,3 +42,11 @@ Reconnect routes are stored under a SHA-256 hash of the opaque browser token. Co
 ## Deployment state
 
 Redis activates only when `REDIS_URL` is configured. `REDIS_REQUIRED=1` makes readiness fail whenever Redis is unavailable. Local development without Redis retains the in-memory directory and the existing single-process Socket.IO adapter. The production Cloudflare Durable Object backend remains the rollback path until the Node/Redis route reaches complete protocol parity and passes load testing.
+
+Runtime Redis reconnects use capped exponential backoff and never permanently close the client. This is required by the Socket.IO Redis Streams reader: permanently closing its client would make stream reads reject immediately and could starve the event loop. During an outage `/health` remains live, `/ready` returns unavailable when Redis is required, new joins stop, and existing process state is retained until coordination recovers.
+
+If Redis restarts and loses ephemeral coordination keys, each room's next ownership refresh obtains a new fencing token before republishing the room as healthy. A room that cannot reacquire its lease remains unhealthy and is excluded from placement, preventing two processes from claiming the same simulation.
+
+Startup waits up to `REDIS_STARTUP_TIMEOUT_SECONDS` (default 5) for coordination. If required Redis is unavailable, the HTTP process still exposes liveness and failed readiness, but it never accepts players through an in-memory multi-process fallback. Restart the process after Redis is restored; runtime outages after a successful bootstrap recover automatically.
+
+The quick-join endpoint uses the same readiness gate as Socket.IO. An unready or draining process returns `503 temporarily-unavailable` without creating an admission reservation, allowing the client waiting-room backoff to retry safely.

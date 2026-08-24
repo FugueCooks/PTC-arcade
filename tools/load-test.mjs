@@ -8,6 +8,7 @@ const movementMs = bounded('LOAD_TEST_MOVEMENT_INTERVAL_MS', 200, 50, 60_000);
 const chatMs = optionalInterval('LOAD_TEST_CHAT_INTERVAL_MS', 5_000);
 const cabinetMs = optionalInterval('LOAD_TEST_CABINET_INTERVAL_MS', 7_500);
 const reconnectMs = optionalInterval('LOAD_TEST_RECONNECT_INTERVAL_MS', 15_000);
+const forwardedIps = process.env.LOAD_TEST_FORWARDED_IPS === '1';
 const sockets = []; const latencies = [];
 let joined = 0; let errors = 0; let sent = 0; let chats = 0; let cabinetRequests = 0; let reconnects = 0;
 const started = Date.now();
@@ -23,7 +24,12 @@ if (errors || joined !== users) process.exitCode = 1;
 
 async function connectUser(index) {
   try {
-    const response = await fetch(`${target}/api/rooms/quick-join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const headers = { 'Content-Type': 'application/json' };
+    // Development-only proxy simulation: each synthetic user receives a stable
+    // documentation-range address so per-IP admission limits remain testable.
+    // The target server must explicitly enable TRUST_PROXY for this to apply.
+    if (forwardedIps) headers['X-Forwarded-For'] = `198.51.100.${1 + (index % 250)}`;
+    const response = await fetch(`${target}/api/rooms/quick-join`, { method: 'POST', headers, body: '{}' });
     const placement = await response.json();
     if (!response.ok || !placement.ok) throw new Error(placement.reason || 'placement-failed');
     const socket = io(placement.realtimeUrl || target, { transports: ['websocket'], reconnection: false, timeout: 10_000 });

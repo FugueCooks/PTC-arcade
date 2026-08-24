@@ -73,16 +73,22 @@ const metrics = new RuntimeMetrics({
   draining: () => health?.isDraining ?? false
 });
 const redis = config.redisUrl ? new RedisConnection(config.redisUrl, logger, metrics) : undefined;
+let redisBootstrapped = false;
 if (redis) {
   try {
-    await redis.connect();
-    io.adapter(createRedisStreamsAdapter(redis.client, {
-      streamName: new RedisKeys(config.redisKeyPrefix).socketStream(),
-      sessionKeyPrefix: new RedisKeys(config.redisKeyPrefix).socketSessions(),
-      maxLen: 10_000,
-      onlyPlaintext: true
-    }));
-    logger.info('socket_redis_streams_adapter_ready');
+    redisBootstrapped = await redis.connect(config.redisStartupTimeoutMs);
+    if (redisBootstrapped) {
+      io.adapter(createRedisStreamsAdapter(redis.client, {
+        streamName: new RedisKeys(config.redisKeyPrefix).socketStream(),
+        sessionKeyPrefix: new RedisKeys(config.redisKeyPrefix).socketSessions(),
+        maxLen: 10_000,
+        onlyPlaintext: true
+      }));
+      logger.info('socket_redis_streams_adapter_ready');
+    } else {
+      metrics.increment('redis_startup_timeout_total');
+      logger.error('redis_startup_unavailable', { timeoutMs: config.redisStartupTimeoutMs, restartRequired: true });
+    }
   } catch (error) {
     metrics.increment('redis_startup_failure_total');
     logger.error('redis_startup_failed', { errorMessage: error instanceof Error ? error.message : 'unknown' });
@@ -93,29 +99,29 @@ health = new HealthService(config, metrics, {
   activePlayers: () => players.connectedCount,
   activeRooms: () => rooms.roomCount,
   coordinationRequired: () => config.redisRequired,
-  coordinationReady: () => redis?.isReady ?? false
+  coordinationReady: () => redisBootstrapped && (redis?.isReady ?? false)
 });
 const redisKeys = new RedisKeys(config.redisKeyPrefix);
-const roomDirectory = redis?.isReady ? new RedisRoomDirectory(redis.client, redisKeys, config.roomDirectoryTtlMs) : new InMemoryRoomDirectory();
-const roomOwnership = redis?.isReady ? new RoomOwnershipService(redis.client, redisKeys, config.serverId, config.roomOwnershipTtlMs) : undefined;
+const roomDirectory = redisBootstrapped && redis ? new RedisRoomDirectory(redis.client, redisKeys, config.roomDirectoryTtlMs) : new InMemoryRoomDirectory();
+const roomOwnership = redisBootstrapped && redis ? new RoomOwnershipService(redis.client, redisKeys, config.serverId, config.roomOwnershipTtlMs) : undefined;
 const roomLifecycle = new RoomLifecycleService(rooms, roomDirectory, metrics, logger, roomOwnership, Math.max(1_000, Math.floor(config.roomOwnershipTtlMs / 3)));
 await roomLifecycle.start();
-const serverRegistry = redis?.isReady ? new ServerRegistry(redis.client, redisKeys, config, {
+const serverRegistry = redisBootstrapped && redis ? new ServerRegistry(redis.client, redisKeys, config, {
   roomCount: () => rooms.roomCount,
   playerCount: () => players.connectedCount,
   draining: () => health.isDraining,
   healthy: () => redis.isReady
 }, metrics, logger) : undefined;
 await serverRegistry?.start();
-const roomAdmission = redis?.isReady
+const roomAdmission = redisBootstrapped && redis
   ? new RedisRoomAdmission(redis.client, redisKeys, config.admissionReservationTtlMs)
   : new InMemoryRoomAdmission(config.admissionReservationTtlMs);
 const roomPlacement = new RoomPlacementService(rooms, roomDirectory, roomLifecycle, roomAdmission, serverRegistry, config, metrics);
-const reconnectDirectory = redis?.isReady ? new RedisReconnectDirectory(redis.client, redisKeys) : new InMemoryReconnectDirectory();
+const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirectory(redis.client, redisKeys) : new InMemoryReconnectDirectory();
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
 app.use(express.json({ limit: '16kb' }));
-installMatchmakingRoutes(app, roomPlacement, roomDirectory, reconnectDirectory, config);
+installMatchmakingRoutes(app, roomPlacement, roomDirectory, reconnectDirectory, config, () => health.readiness().ready);
 installStaticHosting(app, projectRoot, publicRuntimeConfig());
 
 io.use((_socket, next) => {

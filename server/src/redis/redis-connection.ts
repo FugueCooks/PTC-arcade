@@ -9,7 +9,11 @@ export class RedisConnection {
   constructor(url: string, private readonly logger: Logger, private readonly metrics: RuntimeMetrics) {
     this.client = createClient({
       url,
-      socket: { reconnectStrategy: (retries) => retries > 5 ? new Error('Redis startup retry limit reached.') : Math.min(250 * 2 ** Math.min(retries, 5), 5_000) }
+      // The Socket.IO Streams adapter continuously polls with XREAD. Returning
+      // an Error here permanently closes the client, after which those polls
+      // reject immediately and can starve the event loop. Keep retrying with a
+      // capped delay so liveness remains responsive during a Redis outage.
+      socket: { reconnectStrategy: redisReconnectDelay }
     });
     this.client.on('ready', () => { this.readyValue = true; this.logger.info('redis_ready'); });
     this.client.on('reconnecting', () => { this.readyValue = false; this.metrics.increment('redis_reconnect_total'); });
@@ -23,13 +27,29 @@ export class RedisConnection {
 
   get isReady(): boolean { return this.readyValue && this.client.isReady; }
 
-  async connect(): Promise<void> {
-    if (!this.client.isOpen) await this.client.connect();
+  async connect(timeoutMs?: number): Promise<boolean> {
+    if (!this.client.isOpen) {
+      const attempt = this.client.connect().then(() => true, () => false);
+      const connected = timeoutMs
+        ? await Promise.race([attempt, new Promise<boolean>((resolve) => setTimeout(() => resolve(false), timeoutMs))])
+        : await attempt;
+      if (!connected) {
+        this.readyValue = false;
+        if (this.client.isOpen) this.client.destroy();
+        return false;
+      }
+    }
     this.readyValue = this.client.isReady;
+    return this.isReady;
   }
 
   async close(): Promise<void> {
     this.readyValue = false;
-    if (this.client.isOpen) await this.client.quit();
+    if (this.client.isReady) await this.client.quit();
+    else if (this.client.isOpen) this.client.destroy();
   }
+}
+
+export function redisReconnectDelay(retries: number): number {
+  return Math.min(250 * 2 ** Math.min(Math.max(0, retries), 5), 5_000);
 }

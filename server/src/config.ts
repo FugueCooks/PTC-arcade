@@ -20,6 +20,7 @@ export interface ServerConfig {
   shutdownWarningMs: number;
   redisUrl?: string;
   redisRequired: boolean;
+  redisStartupTimeoutMs: number;
   redisKeyPrefix: string;
   serverHeartbeatMs: number;
   serverTtlMs: number;
@@ -57,6 +58,7 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     shutdownWarningMs: seconds(environment.SERVER_SHUTDOWN_WARNING_SECONDS, 15, 0, 600),
     redisUrl: configuredRedisUrl,
     redisRequired: environment.REDIS_REQUIRED === '1',
+    redisStartupTimeoutMs: seconds(environment.REDIS_STARTUP_TIMEOUT_SECONDS, 5, 1, 60),
     redisKeyPrefix: cleanKeyPrefix(environment.REDIS_KEY_PREFIX) ?? 'arcade:v1:development',
     serverHeartbeatMs: seconds(environment.SERVER_HEARTBEAT_SECONDS, 10, 2, 60),
     serverTtlMs: seconds(environment.SERVER_TTL_SECONDS, 35, 10, 300),

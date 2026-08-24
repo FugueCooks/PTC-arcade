@@ -45,4 +45,5 @@ outputs/
 work/
 tools/*.png
 tools/cloudflared.exe
+tools/memurai/
 tools/recording-current/
