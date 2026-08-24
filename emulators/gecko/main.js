@@ -6,6 +6,7 @@ const progress = document.querySelector('#progress');
 
 let runtime;
 let runtimeReady = false;
+let lastProgressUpdate = 0;
 
 function updateStartState() {
   startButton.disabled = !runtimeReady || !discInput.files?.[0];
@@ -18,6 +19,20 @@ function selected(input, output) {
 
 discInput.addEventListener('change', () => selected(discInput, '#disc-name'));
 dspInput.addEventListener('change', () => selected(dspInput, '#dsp-name'));
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
+  return `${(bytes / 1048576).toFixed(bytes >= 104857600 ? 0 : 1)} MB`;
+}
+
+function enterHostedMode(name, totalBytes) {
+  document.body.classList.add('hosted-game');
+  document.querySelector('#setup h1').textContent = 'PREPARING GAMECUBE';
+  document.querySelector('.note').textContent = `Downloading ${formatBytes(totalBytes)} once for this browser session. Keep this window open.`;
+  for (const element of document.querySelectorAll('.picker, output, #start')) element.hidden = true;
+  parent.postMessage({ type: 'arcade:gamecube-source-loading' }, location.origin);
+  status.textContent = `Starting download for ${name}…`;
+}
 
 async function streamIntoDiscBuffer(stream, totalBytes, name) {
   if (!runtime?.DiscBuffer) throw new Error('This Gecko runtime does not support chunked disc loading.');
@@ -38,7 +53,16 @@ async function streamIntoDiscBuffer(stream, totalBytes, name) {
       throw new Error(`Gecko ran out of WebAssembly memory after ${loaded.toLocaleString()} of ${totalBytes.toLocaleString()} bytes while loading ${name}.`, { cause: error });
     }
     loaded += value.byteLength;
+    const now = performance.now();
     if (totalBytes > 0) progress.value = Math.min(1, loaded / totalBytes);
+    if (now - lastProgressUpdate >= 120 || (totalBytes > 0 && loaded >= totalBytes)) {
+      const percent = totalBytes > 0 ? Math.min(100, Math.floor(loaded / totalBytes * 100)) : null;
+      status.textContent = percent === null
+        ? `Downloading ${name} · ${formatBytes(loaded)}`
+        : `Downloading ${name} · ${percent}% · ${formatBytes(loaded)} / ${formatBytes(totalBytes)}`;
+      parent.postMessage({ type: 'arcade:gamecube-load-progress', loaded, total: totalBytes, percent }, location.origin);
+      lastProgressUpdate = now;
+    }
   }
   return buffer;
 }
@@ -47,13 +71,13 @@ async function loadFile(file) {
   return streamIntoDiscBuffer(file.stream(), file.size, file.name);
 }
 
-async function loadRemoteFile(url, name) {
+async function loadRemoteFile(url, name, expectedBytes = 0) {
   status.textContent = `Downloading ${name}…`;
   progress.hidden = false;
   const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
   if (!response.ok) throw new Error(`Game download failed (${response.status}).`);
   if (!response.body) throw new Error('This browser cannot stream the GameCube image.');
-  const totalBytes = Number(response.headers.get('content-length')) || 0;
+  const totalBytes = Number(response.headers.get('content-length')) || Number(expectedBytes) || 0;
   return streamIntoDiscBuffer(response.body, totalBytes, name);
 }
 
@@ -65,11 +89,12 @@ function startRuntime(discBuffer, filename, dspBytes) {
   parent.postMessage({ type: 'arcade:gamecube-source-accepted' }, location.origin);
 }
 
-async function startRemote({ url, name = 'game.rvz' }) {
+async function startRemote({ url, name = 'game.rvz', size = 0 }) {
   if (!runtimeReady || typeof url !== 'string') return;
   try {
     startButton.disabled = true;
-    startRuntime(await loadRemoteFile(url, name), name);
+    enterHostedMode(name, Number(size) || 0);
+    startRuntime(await loadRemoteFile(url, name, size), name);
   } catch (error) {
     console.error(error);
     status.textContent = error instanceof Error ? error.message : 'The GameCube image could not load.';

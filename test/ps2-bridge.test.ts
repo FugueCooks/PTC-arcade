@@ -48,3 +48,16 @@ void test('closing a PS2 session releases the selected disc image reference', as
   assert.match(arcade, /querySelector\('\.screen-wrap \.scanlines'\)\.style\.display='block'/);
   assert.match(arcade, /querySelector\('\.screen-wrap \.scanlines'\)\.style\.display='none'/);
 });
+
+void test('hosted GameCube loading reports progress and is not canceled by the outer timeout', async () => {
+  const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
+  const gecko = await readFile(path.resolve(process.cwd(), 'emulators/gecko/main.js'), 'utf8');
+
+  assert.match(arcade, /type==='arcade:gamecube-source-loading'\)clearTimeout\(emulatorLoadTimer\)/);
+  assert.match(arcade, /type==='arcade:gamecube-load-progress'/);
+  assert.match(gecko, /document\.body\.classList\.add\('hosted-game'\)/);
+  assert.match(gecko, /type: 'arcade:gamecube-source-loading'/);
+  assert.match(gecko, /type: 'arcade:gamecube-load-progress'/);
+  assert.match(gecko, /Number\(response\.headers\.get\('content-length'\)\) \|\| Number\(expectedBytes\)/);
+  assert.match(gecko, /Downloading \$\{name\} · \$\{percent\}%/);
+});
