@@ -104,3 +104,33 @@ void test('graceful draining is idempotent and closes an empty server cleanly', 
   assert.equal(httpCloseCount, 1);
   assert.equal(timerStopCount, 1);
 });
+
+void test('graceful draining keeps active sessions until players leave', async () => {
+  let players = 1;
+  let socketCloseCount = 0;
+  let warningCount = 0;
+  let timerStopCount = 0;
+  const io = {
+    emit: (event: string) => { if (event === 'server:draining') warningCount += 1; },
+    close: (callback: () => void) => { socketCloseCount += 1; callback(); return Promise.resolve(); }
+  };
+  const httpServer = { close: (callback: () => void) => { callback(); return httpServer; } };
+  const config = loadServerConfig({ SERVER_ID: 'active-drain-test', MAX_SERVER_MEMORY_MB: '65536', MAX_EVENT_LOOP_DELAY_MS: '10000' });
+  config.drainTimeoutMs = 1_000;
+  const sources = { connectedSockets: () => players, activePlayers: () => players, activeRooms: () => 1 };
+  const metrics = new RuntimeMetrics({ ...sources, averageRoomPopulation: () => players, draining: () => true });
+  const health = new HealthService(config, metrics, sources); health.markInitialized();
+  const drain = new DrainController(httpServer as never, io as never, config, health, metrics, createLogger({ test: true }), {
+    activePlayers: () => players,
+    stopTimers: () => { timerStopCount += 1; }
+  });
+  drain.begin('test-active');
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(warningCount, 1);
+  assert.equal(socketCloseCount, 0);
+  assert.deepEqual(health.readiness().reasons, ['draining']);
+  players = 0;
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  assert.equal(socketCloseCount, 1);
+  assert.equal(timerStopCount, 1);
+});

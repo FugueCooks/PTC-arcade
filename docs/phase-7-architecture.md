@@ -50,3 +50,7 @@ If Redis restarts and loses ephemeral coordination keys, each room's next owners
 Startup waits up to `REDIS_STARTUP_TIMEOUT_SECONDS` (default 5) for coordination. If required Redis is unavailable, the HTTP process still exposes liveness and failed readiness, but it never accepts players through an in-memory multi-process fallback. Restart the process after Redis is restored; runtime outages after a successful bootstrap recover automatically.
 
 The quick-join endpoint uses the same readiness gate as Socket.IO. An unready or draining process returns `503 temporarily-unavailable` without creating an admission reservation, allowing the client waiting-room backoff to retry safely.
+
+## Graceful draining
+
+`SIGTERM` and `SIGINT` mark the process and every owned room as draining, fail readiness immediately, stop new reservations, and broadcast `server:draining` with a deadline. Existing sessions remain connected until the active-player count reaches zero or `SERVER_DRAIN_TIMEOUT_SECONDS` expires. Cleanup removes server registrations and room records, releases leases, closes Redis, then closes Socket.IO and HTTP. Repeated drain signals are idempotent.

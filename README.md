@@ -75,7 +75,7 @@ Tony Hawk's Pro Skater 2 is configured as a hosted local development image at `a
 ## Multiplayer architecture
 
 - **PlayerManager** is the authoritative source for player movement, spawn points, reconnect grace, room membership, and lifecycle events.
-- **RoomManager** currently provides one configurable `main` room, with a clear seam for adding more rooms later.
+- **RoomManager** owns isolated 25-player room instances. Local fallback exposes the ten approved registry rooms; coordinated Node deployments create globally unique owned rooms and publish them through Redis.
 - The browser predicts its own movement instantly, sends compact position updates only when it changes, and gently corrects to the server-approved state.
 - Other players are rendered from a short interpolation buffer, making their movement smooth despite network timing differences.
 - A brief connection interruption keeps a player available for ten seconds; after that, the server cleans it up.
