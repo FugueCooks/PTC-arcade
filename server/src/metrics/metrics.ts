@@ -12,6 +12,8 @@ export class RuntimeMetrics {
   private readonly startedAt = Date.now();
   private readonly counters = new Map<string, number>();
   private readonly eventLoop = monitorEventLoopDelay({ resolution: 20 });
+  private networkBytesReceived = 0;
+  private networkBytesSent = 0;
 
   constructor(private readonly sources: RuntimeMetricSources) {
     this.eventLoop.enable();
@@ -26,8 +28,15 @@ export class RuntimeMetrics {
     return Number.isFinite(mean) ? mean : 0;
   }
 
+  observeTransportPacket(direction: 'received' | 'sent', payload: unknown): void {
+    const bytes = payloadSize(payload);
+    if (direction === 'received') this.networkBytesReceived += bytes;
+    else this.networkBytesSent += bytes;
+  }
+
   render(): string {
     const memory = process.memoryUsage();
+    const cpu = process.cpuUsage();
     const lines = [
       '# HELP arcade_process_start_time_seconds Process start time.',
       '# TYPE arcade_process_start_time_seconds gauge',
@@ -39,7 +48,15 @@ export class RuntimeMetrics {
       `arcade_server_draining ${this.sources.draining() ? 1 : 0}`,
       `arcade_process_resident_memory_bytes ${memory.rss}`,
       `arcade_process_heap_used_bytes ${memory.heapUsed}`,
+      `arcade_process_external_memory_bytes ${memory.external}`,
+      `arcade_process_cpu_user_seconds_total ${(cpu.user / 1_000_000).toFixed(6)}`,
+      `arcade_process_cpu_system_seconds_total ${(cpu.system / 1_000_000).toFixed(6)}`,
+      `arcade_transport_received_bytes_total ${this.networkBytesReceived}`,
+      `arcade_transport_sent_bytes_total ${this.networkBytesSent}`,
       `arcade_event_loop_delay_mean_seconds ${(this.eventLoopDelayMs() / 1_000).toFixed(6)}`,
+      `arcade_event_loop_delay_p50_seconds ${percentileSeconds(this.eventLoop, 50).toFixed(6)}`,
+      `arcade_event_loop_delay_p95_seconds ${percentileSeconds(this.eventLoop, 95).toFixed(6)}`,
+      `arcade_event_loop_delay_p99_seconds ${percentileSeconds(this.eventLoop, 99).toFixed(6)}`,
       `arcade_event_loop_delay_max_seconds ${(this.eventLoop.max / 1_000_000_000).toFixed(6)}`
     ];
     for (const [name, value] of [...this.counters].sort(([left], [right]) => left.localeCompare(right))) {
@@ -50,6 +67,24 @@ export class RuntimeMetrics {
 
   close(): void {
     this.eventLoop.disable();
+  }
+}
+
+function percentileSeconds(histogram: ReturnType<typeof monitorEventLoopDelay>, percentile: number): number {
+  const value = histogram.percentile(percentile) / 1_000_000_000;
+  return Number.isFinite(value) ? value : 0;
+}
+
+function payloadSize(payload: unknown): number {
+  if (typeof payload === 'string') return Buffer.byteLength(payload);
+  if (Buffer.isBuffer(payload)) return payload.byteLength;
+  if (payload instanceof ArrayBuffer) return payload.byteLength;
+  if (ArrayBuffer.isView(payload)) return payload.byteLength;
+  if (payload === undefined || payload === null) return 0;
+  try {
+    return Buffer.byteLength(JSON.stringify(payload));
+  } catch {
+    return 0;
   }
 }
 

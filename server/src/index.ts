@@ -72,6 +72,10 @@ const metrics = new RuntimeMetrics({
   averageRoomPopulation: () => rooms.averagePopulation,
   draining: () => health?.isDraining ?? false
 });
+io.engine.on('connection', (transportSocket) => {
+  transportSocket.on('packet', (packet: { data?: unknown }) => metrics.observeTransportPacket('received', packet.data));
+  transportSocket.on('packetCreate', (packet: { data?: unknown }) => metrics.observeTransportPacket('sent', packet.data));
+});
 const redis = config.redisUrl ? new RedisConnection(config.redisUrl, logger, metrics) : undefined;
 let redisBootstrapped = false;
 if (redis) {

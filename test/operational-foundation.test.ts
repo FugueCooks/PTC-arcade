@@ -71,9 +71,15 @@ void test('required Redis coordination controls readiness without exposing its U
 void test('runtime metrics normalize event names and expose process gauges', () => {
   const metrics = new RuntimeMetrics({ connectedSockets: () => 3, activePlayers: () => 2, activeRooms: () => 1, averageRoomPopulation: () => 2, draining: () => false });
   metrics.increment('events:room.join received total');
+  metrics.observeTransportPacket('received', 'hello');
+  metrics.observeTransportPacket('sent', new Uint8Array([1, 2, 3]));
   const output = metrics.render();
   assert.match(output, /arcade_connected_sockets 3/);
   assert.match(output, /arcade_events:room_join_received_total 1/);
+  assert.match(output, /arcade_process_cpu_user_seconds_total \d+\.\d{6}/);
+  assert.match(output, /arcade_transport_received_bytes_total 5/);
+  assert.match(output, /arcade_transport_sent_bytes_total 3/);
+  assert.match(output, /arcade_event_loop_delay_p95_seconds \d+\.\d{6}/);
   assert.doesNotMatch(output, /token|secret|ROM/i);
   metrics.close();
 });

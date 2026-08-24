@@ -54,3 +54,7 @@ The quick-join endpoint uses the same readiness gate as Socket.IO. An unready or
 ## Graceful draining
 
 `SIGTERM` and `SIGINT` mark the process and every owned room as draining, fail readiness immediately, stop new reservations, and broadcast `server:draining` with a deadline. Existing sessions remain connected until the active-player count reaches zero or `SERVER_DRAIN_TIMEOUT_SECONDS` expires. Cleanup removes server registrations and room records, releases leases, closes Redis, then closes Socket.IO and HTTP. Repeated drain signals are idempotent.
+
+## Runtime metrics
+
+`GET /metrics` exposes Prometheus text gauges and counters for sockets, players, rooms, room population, drain state, memory, cumulative process CPU time, event-loop mean/p50/p95/p99/max delay, and approximate Engine.IO transport bytes sent and received. Transport-byte counters measure encoded Engine.IO packet payloads and are intended for trend and regression detection; they are not a substitute for provider-level billable bandwidth metrics. Domain counters cover matchmaking, reconnects, rejected validation, cabinet conflicts, Redis errors, room lifecycle, and shutdown behavior.
