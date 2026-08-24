@@ -1,6 +1,11 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const __wbg_discbuffer_free: (a: number, b: number) => void;
+export const discbuffer_append: (a: number, b: number, c: number) => void;
+export const discbuffer_len: (a: number) => number;
+export const discbuffer_new: (a: number) => number;
+export const discbuffer_start: (a: number, b: number, c: number, d: number, e: number) => void;
 export const start_emulator: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
 export const rust_zstd_wasm_shim_calloc: (a: number, b: number) => number;
 export const rust_zstd_wasm_shim_free: (a: number) => void;

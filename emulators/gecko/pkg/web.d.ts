@@ -1,12 +1,26 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export class DiscBuffer {
+    free(): void;
+    [Symbol.dispose](): void;
+    append(chunk: Uint8Array): void;
+    len(): number;
+    constructor(capacity: number);
+    start(filename: string, dsp_irom?: Uint8Array | null): void;
+}
+
 export function start_emulator(rom_data: Uint8Array, filename: string, dsp_irom?: Uint8Array | null): void;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly __wbg_discbuffer_free: (a: number, b: number) => void;
+    readonly discbuffer_append: (a: number, b: number, c: number) => void;
+    readonly discbuffer_len: (a: number) => number;
+    readonly discbuffer_new: (a: number) => number;
+    readonly discbuffer_start: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly start_emulator: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
     readonly rust_zstd_wasm_shim_calloc: (a: number, b: number) => number;
     readonly rust_zstd_wasm_shim_free: (a: number) => void;
