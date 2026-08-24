@@ -25,3 +25,7 @@ assets/bios
 *.z64
 *.n64
 *.v64
+
+# Superseded by the WebP art the arcade actually loads. The PNG originals stay
+# in the repo as the re-encode source but never need to ship.
+assets/art/*.png

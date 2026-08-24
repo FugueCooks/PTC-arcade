@@ -27,6 +27,9 @@ await copyTree('assets', (relative, info) => {
   const normalized = relative.replaceAll('\\', '/');
   if (normalized.startsWith('assets/games/') && normalized !== 'assets/games/registry.json') return false;
   if (normalized.startsWith('assets/bios/')) return false;
+  // The arcade loads WebP art. The PNG originals are kept in the repo as the
+  // re-encode source and would otherwise add about 6 MB to the bundle.
+  if (normalized.startsWith('assets/art/') && normalized.endsWith('.png')) return false;
   if (normalized.startsWith('assets/models/') && info.isFile()) {
     return requiredPrizeModels.has(path.basename(normalized));
   }
