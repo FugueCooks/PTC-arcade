@@ -19,7 +19,8 @@ export class RoomPlacementClient {
         const result = await response.json();
         if (response.ok && result.ok) return result;
         if (response.status !== 429 && response.status !== 503) throw new Error('The selected arcade is unavailable.');
-        const delay = Math.min(5_000, Number(result.retryAfterMs) || 1_500) * (attempt + 1);
+        const baseDelay = Math.min(5_000, Math.max(500, Number(result.retryAfterMs) || 1_500));
+        const delay = Math.min(5_000, baseDelay * (attempt + 1));
         onWaiting?.({ attempt: attempt + 1, delay });
         await wait(delay, signal);
       } catch (error) {
@@ -36,7 +37,8 @@ export class RoomPlacementClient {
 
 function wait(ms, signal) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Canceled', 'AbortError')); }, { once: true });
+    const aborted = () => { clearTimeout(timer); reject(new DOMException('Canceled', 'AbortError')); };
+    const timer = setTimeout(() => { signal?.removeEventListener('abort', aborted); resolve(); }, ms);
+    signal?.addEventListener('abort', aborted, { once: true });
   });
 }
