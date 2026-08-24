@@ -16,9 +16,24 @@ void test('the PS2 cabinet waits for Play! readiness and acknowledges disc hando
   assert.match(player, /Range: `bytes=\$\{start\}-\$\{end - 1\}`/);
   assert.match(player, /response\.status !== 206/);
   assert.match(player, /const chunkSize = 4 \* 1024 \* 1024/);
-  assert.match(player, /const maxCachedChunks = 32/);
+  assert.match(player, /const maxCachedChunks = 40/);
+  assert.match(player, /const readAheadChunks = navigator\.connection\?\.saveData \? 0 : 2/);
+  assert.match(player, /void cachedChunk\(nextChunk\)\.catch/);
   assert.match(player, /return \{ arrayBuffer: \(\) => read\(safeStart, safeEnd\) \}/);
   assert.match(player, /document\.body\.classList\.add\('remote-disc'\)/);
+});
+
+void test('PS2 sessions suspend competing arcade render work', async () => {
+  const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
+  const multiplayer = await readFile(path.resolve(process.cwd(), 'multiplayer-client.js'), 'utf8');
+  const world = await readFile(path.resolve(process.cwd(), 'world/world-manager.js'), 'utf8');
+
+  assert.match(arcade, /setEmulatorRuntimeActive\(true\)/);
+  assert.match(arcade, /setEmulatorRuntimeActive\(false\)/);
+  assert.match(arcade, /if\(emulatorRuntimeActive\)return/);
+  assert.match(multiplayer, /!arcade\.isEmulatorActive\?\.\(\)/);
+  assert.match(world, /arcade:emulator-mode-changed/);
+  assert.match(world, /if \(this\.suspended \|\| now < this\.nextFrameAt\) return/);
 });
 
 void test('closing a PS2 session releases the selected disc image reference', async () => {

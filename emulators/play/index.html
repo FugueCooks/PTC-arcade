@@ -50,7 +50,8 @@
 
       function remoteDisc(source) {
         const chunkSize = 4 * 1024 * 1024;
-        const maxCachedChunks = 32;
+        const maxCachedChunks = 40;
+        const readAheadChunks = navigator.connection?.saveData ? 0 : 2;
         const chunks = new Map();
 
         function cachedChunk(index) {
@@ -78,6 +79,14 @@
           const requests = [];
           for (let index = firstChunk; index <= lastChunk; index += 1) requests.push(cachedChunk(index));
           const buffers = await Promise.all(requests);
+          // Play! performs many small, nearby disc reads. Warm the next chunks
+          // after each demand read so gameplay does not repeatedly wait on CDN
+          // round trips, while retaining a strict bounded memory cache.
+          for (let offset = 1; offset <= readAheadChunks; offset += 1) {
+            const nextChunk = lastChunk + offset;
+            if (nextChunk * chunkSize >= source.size) break;
+            void cachedChunk(nextChunk).catch(() => {});
+          }
           if (buffers.length === 1) {
             const offset = start - firstChunk * chunkSize;
             return buffers[0].slice(offset, offset + (end - start));

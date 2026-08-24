@@ -115,7 +115,7 @@
   };
 
   const frame = (now) => {
-    if (avatarRenderer) {
+    if (avatarRenderer && !arcade.isEmulatorActive?.()) {
       interpolateRemotePlayers(now);
       if (localAvatar) {
         const local = arcade.getLocalTransform();
