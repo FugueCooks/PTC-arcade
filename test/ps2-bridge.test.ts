@@ -19,7 +19,12 @@ void test('the PS2 cabinet waits for Play! readiness and acknowledges disc hando
   assert.match(player, /const maxCachedChunks = 40/);
   assert.match(player, /const readAheadChunks = navigator\.connection\?\.saveData \? 0 : 2/);
   assert.match(player, /void cachedChunk\(nextChunk\)\.catch/);
-  assert.match(player, /return \{ arrayBuffer: \(\) => read\(safeStart, safeEnd\) \}/);
+  assert.match(player, /arrayBuffer: \(\) => read\(safeStart, safeEnd\)\.catch/);
+  assert.match(player, /const expectedRange = `bytes \$\{start\}-\$\{end - 1\}\//);
+  assert.match(player, /buffer\.byteLength !== end - start/);
+  assert.match(player, /type: 'arcade:ps2-disc-error'/);
+  assert.match(player, /BLACK INTRO MOVIE\? PRESS ENTER ONCE TO SKIP/);
+  assert.match(arcade, /event\.data\?\.type==='arcade:ps2-disc-error'/);
   assert.match(player, /document\.body\.classList\.add\('remote-disc'\)/);
 });
 

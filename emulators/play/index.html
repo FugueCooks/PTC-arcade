@@ -32,17 +32,40 @@
       let pendingFile = null;
       let pendingRemote = null;
       let readySent = false;
+      let discFailureReported = false;
+
+      function reportDiscFailure(error, start, end) {
+        if (discFailureReported) return;
+        discFailureReported = true;
+        const message = error instanceof Error ? error.message : 'Unknown remote disc error.';
+        console.error('PS2 remote disc read failed.', { start, end, message });
+        statusElement.textContent = `DISC READ FAILED AT ${Math.floor(start / 1024 ** 2)} MB // RETRY THE CABINET OR CACHE THE GAME LOCALLY`;
+        parent.postMessage({ type: 'arcade:ps2-disc-error', core: 'ps2-play', message }, location.origin);
+      }
 
       async function fetchRange(url, start, end) {
         let lastError;
-        for (let attempt = 1; attempt <= 3; attempt += 1) {
+        for (let attempt = 1; attempt <= 5; attempt += 1) {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 20000);
           try {
-            const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` }, credentials: 'omit' });
+            const response = await fetch(url, {
+              headers: { Range: `bytes=${start}-${end - 1}` },
+              credentials: 'omit',
+              signal: controller.signal
+            });
             if (response.status !== 206) throw new Error(`Remote disc range request failed (${response.status}).`);
-            return await response.arrayBuffer();
+            const expectedRange = `bytes ${start}-${end - 1}/`;
+            const contentRange = response.headers.get('content-range') ?? '';
+            if (!contentRange.toLowerCase().startsWith(expectedRange)) throw new Error('Remote disc returned the wrong byte range.');
+            const buffer = await response.arrayBuffer();
+            if (buffer.byteLength !== end - start) throw new Error('Remote disc returned an incomplete byte range.');
+            return buffer;
           } catch (error) {
             lastError = error;
-            if (attempt < 3) await new Promise(resolve => setTimeout(resolve, attempt * 250));
+            if (attempt < 5) await new Promise(resolve => setTimeout(resolve, attempt * 400));
+          } finally {
+            clearTimeout(timeout);
           }
         }
         throw lastError;
@@ -114,9 +137,20 @@
             const numericEnd = end === undefined ? source.size : Number(end);
             const safeStart = Math.floor(Math.max(0, Math.min(source.size, Number.isFinite(numericStart) ? numericStart : 0)));
             const safeEnd = Math.floor(Math.max(safeStart, Math.min(source.size, Number.isFinite(numericEnd) ? numericEnd : source.size)));
-            return { arrayBuffer: () => read(safeStart, safeEnd) };
+            return {
+              arrayBuffer: () => read(safeStart, safeEnd).catch(error => {
+                reportDiscFailure(error, safeStart, safeEnd);
+                throw error;
+              })
+            };
           }
         });
+      }
+
+      function bootStatus(name, mode) {
+        const title = name.toUpperCase();
+        if (/KINGDOM[-_ ]HEARTS/.test(title)) return `${mode} ${title} // BLACK INTRO MOVIE? PRESS ENTER ONCE TO SKIP`;
+        return `${mode} ${title} // LARGE IMAGES MAY TAKE SEVERAL MINUTES`;
       }
 
       function loadPendingFile() {
@@ -126,7 +160,7 @@
         transfer.items.add(pendingFile);
         input.files = transfer.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
-        statusElement.textContent = `BOOTING ${pendingFile.name.toUpperCase()} // LARGE IMAGES MAY TAKE SEVERAL MINUTES`;
+        statusElement.textContent = bootStatus(pendingFile.name, 'BOOTING');
         parent.postMessage({ type: 'arcade:ps2-source-accepted', core: 'ps2-play' }, location.origin);
         pendingFile = null;
         document.querySelector('#outputCanvas').focus();
@@ -141,7 +175,7 @@
         document.body.classList.add('remote-disc');
         Object.defineProperty(input, 'files', { configurable: true, value: [file] });
         input.dispatchEvent(new Event('change', { bubbles: true }));
-        statusElement.textContent = `STREAMING ${source.name.toUpperCase()} // CDN RANGE MODE`;
+        statusElement.textContent = bootStatus(source.name, 'STREAMING');
         parent.postMessage({ type: 'arcade:ps2-source-accepted', core: 'ps2-play' }, location.origin);
         pendingRemote = null;
         document.querySelector('#outputCanvas').focus();
@@ -171,7 +205,7 @@
           statusElement.textContent = 'PLAY! PS2 CORE READY // SELECT A LEGALLY DUMPED GAME IMAGE';
           input.addEventListener('change', () => {
             const file = input.files?.[0];
-            if (file) statusElement.textContent = `BOOTING ${file.name.toUpperCase()} // LARGE IMAGES MAY TAKE SEVERAL MINUTES`;
+            if (file) statusElement.textContent = bootStatus(file.name, 'BOOTING');
           });
           parent.postMessage({ type: 'arcade:emulator-ready', core: 'ps2-play' }, location.origin);
         }
