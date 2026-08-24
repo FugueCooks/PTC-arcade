@@ -59,6 +59,10 @@ jobs:
       - name: Commit generated runtime
         run: |
           git add -A emulators/gecko
+          # wasm-pack writes pkg/.gitignore to keep generated files out of its
+          # source repository. This project intentionally vendors the pinned
+          # browser runtime, so force-add that directory.
+          git add -f emulators/gecko/pkg
           if git diff --cached --quiet -- emulators/gecko; then
             echo "Runtime is already current."
             exit 0
