@@ -68,7 +68,7 @@ The main arcade has two facing cabinet rows, a solid paneled prize-counter wall,
 - **Spyro - Year of the Dragon** (`dungeon-88`)
 - **Twisted Metal World Tour** (`turbo-grid`)
 
-The opposite wall contains five stable Nintendo 64 cabinets (`n64-cabinet-01` through `n64-cabinet-05`). Behind each platform wall is a second room with five additional stable cabinets (`psx-back-cabinet-01` through `psx-back-cabinet-05` and `n64-back-cabinet-01` through `n64-back-cabinet-05`). These ten expansion cabinets intentionally have no hosted games yet, but they already participate in server-authoritative occupancy and accept locally selected compatible game files. Nintendo 64 cabinets use EmulatorJS's browser-compatible `n64` core and accept `.z64`, `.n64`, and `.v64` files. The supplied Gopher64 Windows executable is a native desktop application and cannot run inside a web page, so it is not shipped or launched by the site.
+The opposite wall contains seven stable Nintendo 64 cabinets (`n64-cabinet-01` through `n64-cabinet-07`), consolidating every unique hosted N64 game in the main arcade. The room behind that wall is the Xbox room and contains five fresh disabled placeholders (`xbox-cabinet-01` through `xbox-cabinet-05`) ready for future approved games and a compatible browser emulator. The PlayStation-side rear room retains five PS2 cabinets (`psx-back-cabinet-01` through `psx-back-cabinet-05`). Nintendo 64 cabinets use EmulatorJS's browser-compatible `n64` core and accept `.z64`, `.n64`, and `.v64` files. The supplied Gopher64 Windows executable is a native desktop application and cannot run inside a web page, so it is not shipped or launched by the site.
 
 Tony Hawk's Pro Skater 2 is configured as a hosted local development image at `assets/games/tony-hawks-pro-skater-2.bin`. Spyro is hosted as a verified single-track CHD at `assets/games/spyro-year-of-the-dragon.chd`, and Twisted Metal is hosted as a verified 12-track CHD at `assets/games/twisted-metal-world-tour.chd`. Place only legally owned, browser-ready images in `assets/games/`; game and BIOS files are ignored by source control.
 
@@ -203,7 +203,7 @@ Hosted game metadata is centralized in `assets/games/registry.json`. To add a le
 
 The hosted N64 wall contains Pokémon Snap (`n64-cabinet-01`), Super Mario 64 (`n64-cabinet-02`), Glover (`n64-cabinet-03`), Doom 64 (`n64-cabinet-04`), and The Legend of Zelda: Ocarina of Time (`n64-cabinet-05`).
 
-The rear N64 room currently contains Star Fox 64 (`n64-back-cabinet-01`), Mega Man 64 (`n64-back-cabinet-02`), and a second Super Mario 64 cabinet (`n64-back-cabinet-03`). Its remaining two cabinets are reserved for future N64 games.
+Star Fox 64 (`n64-cabinet-06`) and Mega Man 64 (`n64-cabinet-07`) now sit with the other five unique N64 games in the main arcade. The duplicate rear Super Mario 64 cabinet and the two old N64 expansion placeholders were removed when that rear space became the Xbox room.
 
 ## PlayStation 2 room
 

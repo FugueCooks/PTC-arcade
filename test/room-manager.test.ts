@@ -28,7 +28,7 @@ void test('server rejects movement packets that arrive too fast, leave bounds, o
   assert.deepEqual(players.move('socket-a', { p: [0.3, 11], r: 0 }, 1_100)?.p, [0.3, 1.65, 11]);
 });
 
-void test('authoritative movement bounds include the Nintendo 64 expansion room', () => {
+void test('authoritative movement bounds include the Xbox room behind the Nintendo 64 wall', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
   for (let x = 3; x <= 27; x += 3) {

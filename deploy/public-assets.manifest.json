@@ -8,7 +8,6 @@
   {"kind":"game","file":"spyro-year-of-the-dragon.chd","bytes":479947745,"sha256":"422f2cac3a3c31d77e25b749ad9e15e2d84d239d82480c7bf93efac7be7f7b4b"},
   {"kind":"game","file":"star-fox-64.z64","bytes":12582912,"sha256":"385bcf1901ed12fb1152f3c227d1968cc54ae41e8566da66695df71af40a573f"},
   {"kind":"game","file":"super-mario-64.z64","bytes":8388608,"sha256":"17ce077343c6133f8c9f2d6d6d9a4ab62c8cd2aa57c40aea1f490b4c8bb21d91"},
-  {"kind":"game","file":"super-mario-64-expansion.z64","bytes":8388608,"sha256":"17ce077343c6133f8c9f2d6d6d9a4ab62c8cd2aa57c40aea1f490b4c8bb21d91"},
   {"kind":"game","file":"tony-hawks-pro-skater-2.bin","bytes":748037136,"sha256":"7a69101183b76eadf02336963c6a89822b76aca2b3fa6537288d9f13bf6d16ed"},
   {"kind":"game","file":"twisted-metal-world-tour.chd","bytes":477142162,"sha256":"fc4565833aa30425f2dcb528b3876ee7bd2af3c1bc985c3fb5315995f90df7e4"},
   {"kind":"game","file":"zelda-ocarina-of-time.z64","bytes":33554432,"sha256":"49acd3885f13b0730119b78fb970911cc8aba614fe383368015c21565983368d"},

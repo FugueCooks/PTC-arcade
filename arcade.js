@@ -68,7 +68,7 @@ for(const roomX of [-21,21]){
   for(let z=-12;z<=12;z+=4)box(13.5,.035,.055,0x24bfff,roomX,4.65,z,1.7);
 }
 function addRoomSign(text,x,color){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,-16.62);scene.add(sign)}
-addRoomSign('N64 ROOM',21,'#36f9f6');
+addRoomSign('XBOX ROOM',21,'#7dff67');
 const pepeToyTexture=new THREE.TextureLoader().load('assets/art/pepe-toy.png?v=1');
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.png?v=1');
 function crashArt(){
@@ -145,14 +145,7 @@ makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-10.2,-5,0x8de548,false
 makeCabinet('crash-bandicoot','CRASH BANDICOOT',-10.2,0,0xffa62e,true);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('crash-bandicoot');
 makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-10.2,5,0x934dff);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('dungeon-88');
 makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-10.2,10,0xff3cac);cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('turbo-grid');
-const hostedN64Games={
-  1:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-01'),
-  2:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-02'),
-  3:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-03'),
-  4:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-04'),
-  5:window.ARCADE_GAME_REGISTRY?.byCabinetId?.get('n64-cabinet-05')
-};
-for(const [index,z,hue] of [[1,-10,0x8b5cf6],[2,-5,0xff4da6],[3,0,0x36f9f6],[4,5,0xffb42e],[5,10,0x7dff67]]){const hosted=hostedN64Games[index];makeCabinet(`n64-cabinet-0${index}`,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue);const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(`n64-cabinet-0${index}`)}
+for(const [index,z,hue] of [[1,-12,0x8b5cf6],[2,-8,0xff4da6],[3,-4,0x36f9f6],[4,0,0xffb42e],[5,4,0x7dff67],[6,8,0xff3cac],[7,12,0x42a5ff]]){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue);const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(cabinetId)}
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
@@ -161,9 +154,9 @@ for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI/2;Object.assign(cabinet,{system:'ps2',gameName:hosted?.name||ps2RoomTitles[index-1],gameId:hosted?.emulatorId||26000+index,enabled:Boolean(hosted),status:hosted?'available':'disabled'});configureHostedCabinet(cabinetId);
 }
 for(const [index,z] of [[1,-10],[2,-5],[3,0],[4,5],[5,10]]){
-  const cabinetId=`n64-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
-  makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // EXPANSION 0${index}`,24.8,z,expansionCabinetColors[5-index]);
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;Object.assign(cabinet,{system:'n64',gameName:hosted?.name||`Nintendo 64 Expansion ${index}`,gameId:hosted?.emulatorId||6410+index});configureHostedCabinet(cabinetId);
+  const cabinetId=`xbox-cabinet-0${index}`;
+  makeCabinet(cabinetId,`XBOX // READY 0${index}`,24.8,z,expansionCabinetColors[5-index]);
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;Object.assign(cabinet,{system:'xbox',gameName:`Xbox Cabinet ${index}`,enabled:false,status:'disabled'});
 }
 // Circular prize counter in the middle of the arcade.
 const prizeCounter=new THREE.Group();prizeCounter.position.set(0,0,0);scene.add(prizeCounter);
@@ -325,7 +318,7 @@ let cabinetSnapshotReady=false,cabinetMessageUntil=0;
 function showCabinetMessage(message){prompt.querySelector('b').textContent='CABINET';prompt.querySelector('span').textContent=message;prompt.classList.add('active');cabinetMessageUntil=performance.now()+2600}
 function setCabinetState(state){const cabinet=cabinets.find(candidate=>candidate.id===state.cabinetId);if(!cabinet)return;if(!cabinet.enabled){cabinet.status='disabled';cabinet.occupiedByDisplayName=null;cabinet.statusLight.material.color.setHex(0x6c7896);cabinet.statusLight.material.emissive.setHex(0x26304a);return}cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
 function setCabinetStates(states,ready){cabinetSnapshotReady=ready;states.forEach(state=>setCabinetState(state));if(!ready)cabinets.forEach(c=>{c.status=c.enabled?'syncing':'disabled';c.occupiedByDisplayName=null;c.statusLight.material.color.setHex(0x6c7896);c.statusLight.material.emissive.setHex(c.enabled?0x6c7896:0x26304a)})}
-function updateCabinetPrompt(){if(performance.now()<cabinetMessageUntil)return;if(!near){prompt.classList.remove('active');return}prompt.classList.add('active');const title=prompt.querySelector('b'),detail=prompt.querySelector('span');if(!near.enabled||near.status==='disabled'){title.textContent='PS2 DISPLAY';detail.textContent='BROWSER CORE REQUIRED';return}if(!cabinetSnapshotReady){title.textContent='SYNCING';detail.textContent='CABINET STATUS';return}if(near.status==='available'){title.textContent='PRESS E';detail.textContent='TO ENTER CABINET';return}title.textContent=near.status==='reserved'?'RESERVED':'IN USE';detail.textContent=near.occupiedByDisplayName?`BY ${near.occupiedByDisplayName}`:'PLEASE WAIT'}
+function updateCabinetPrompt(){if(performance.now()<cabinetMessageUntil)return;if(!near){prompt.classList.remove('active');return}prompt.classList.add('active');const title=prompt.querySelector('b'),detail=prompt.querySelector('span');if(!near.enabled||near.status==='disabled'){title.textContent=near.system==='xbox'?'XBOX DISPLAY':'PS2 DISPLAY';detail.textContent=near.system==='xbox'?'AWAITING GAME SETUP':'BROWSER CORE REQUIRED';return}if(!cabinetSnapshotReady){title.textContent='SYNCING';detail.textContent='CABINET STATUS';return}if(near.status==='available'){title.textContent='PRESS E';detail.textContent='TO ENTER CABINET';return}title.textContent=near.status==='reserved'?'RESERVED':'IN USE';detail.textContent=near.occupiedByDisplayName?`BY ${near.occupiedByDisplayName}`:'PLEASE WAIT'}
 function beginCabinetSession(cabinetId,alignment){const cabinet=cabinets.find(candidate=>candidate.id===cabinetId);if(!cabinet||activeCabinet)return false;if(alignment?.position){playerPosition.set(...alignment.position);yaw=alignment.rotationY}openMachine(cabinet);return true}
 function forceCloseCabinetSession(cabinetId){if(activeCabinet?.id===cabinetId)closeMachine(false)}
 function resolvePartitionWallCollisions(previousX){

@@ -13,7 +13,7 @@ export async function loadRoomRegistry() {
 }
 
 function isRoom(room) {
-  return room && typeof room.id === 'string' && /^(main|main-[2-9])$/.test(room.id)
+  return room && typeof room.id === 'string' && /^(main|main-(?:[2-9]|10))$/.test(room.id)
     && typeof room.name === 'string' && room.name.length >= 2 && room.name.length <= 32
     && Number.isInteger(room.capacity) && room.capacity >= 2 && room.capacity <= 48
     && typeof room.enabled === 'boolean';
