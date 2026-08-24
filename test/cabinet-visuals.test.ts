@@ -7,9 +7,9 @@ void test('console controllers fit within and rest on the cabinet control deck',
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
   assert.match(arcade, /const CONTROLLER_DECK=\{width:\.58,depth:\.34\}/);
-  assert.match(arcade, /controllerDisplayShelfGeometry=roundedSlab\(1,\.07,\.46/);
-  assert.match(arcade, /controllerDisplaySupportGeometry=roundedSlab\(\.34,\.18,\.34/);
-  assert.match(arcade, /mount\.position\.set\(0,1\.46,\.77\);mount\.rotation\.x=\.08/);
+  assert.match(arcade, /controllerDisplayShelfGeometry=roundedSlab\(1,\.07,\.72/);
+  assert.match(arcade, /controllerDisplaySupportGeometry=roundedSlab\(\.34,\.22,\.45/);
+  assert.match(arcade, /mount\.position\.set\(0,1\.32,1\.02\);mount\.rotation\.x=\.04/);
   assert.match(arcade, /-scaled\.min\.y\+config\.offset\[1\]\+CONTROLLER_DISPLAY_SURFACE_Y/);
 });
 
@@ -27,7 +27,8 @@ void test('the N64 wall loads the window-free environment module without a stale
   const world = await readFile(path.resolve(process.cwd(), 'world/world-manager.js'), 'utf8');
   const environment = await readFile(path.resolve(process.cwd(), 'world/environment-manager.js'), 'utf8');
 
-  assert.match(index, /app-bootstrap\.js\?v=n64-wall-panels-removed-3/);
+  assert.match(index, /app-bootstrap\.js\?v=controller-display-forward-2/);
+  assert.match(bootstrap, /arcade\.js\?v=controller-display-forward-2/);
   assert.match(bootstrap, /multiplayer-client\.js\?v=n64-wall-panels-removed-3/);
   assert.match(multiplayer, /world-manager\.js\?v=n64-wall-panels-removed-3/);
   assert.match(world, /environment-manager\.js\?v=n64-wall-panels-removed-3/);

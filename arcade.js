@@ -463,8 +463,8 @@ let prizeModelsStarted=false,centerModelStarted=false,nextHeavyAssetCheck=0;
 // limiting dimension for the three-pronged N64 pad.
 const CONTROLLER_DECK={width:.58,depth:.34};
 const CONTROLLER_DISPLAY_SURFACE_Y=.035;
-const controllerDisplayShelfGeometry=roundedSlab(1,.07,.46,.045,.015);
-const controllerDisplaySupportGeometry=roundedSlab(.34,.18,.34,.04,.015);
+const controllerDisplayShelfGeometry=roundedSlab(1,.07,.72,.045,.015);
+const controllerDisplaySupportGeometry=roundedSlab(.34,.22,.45,.04,.015);
 const controllerDisplayShelfMaterial=new THREE.MeshStandardMaterial({color:0x090c14,roughness:.2,metalness:.88});
 const CONTROLLER_MODELS={
   psx:{file:'playstation-controller.glb',rotation:[0,0,0],offset:[0,0,0]},
@@ -494,12 +494,12 @@ async function installControllerModel(system){
       model.rotation.set(...config.rotation);
       const mount=new THREE.Group();
       const shelf=new THREE.Mesh(controllerDisplayShelfGeometry,controllerDisplayShelfMaterial);shelf.position.y=-.035;mount.add(shelf);
-      const support=new THREE.Mesh(controllerDisplaySupportGeometry,controllerDisplayShelfMaterial);support.position.set(0,-.13,-.12);mount.add(support);
-      const shelfAccent=new THREE.Mesh(cabinetGeometry.deckLight,new THREE.MeshStandardMaterial({color:cabinet.hue,emissive:cabinet.hue,emissiveIntensity:1.1}));shelfAccent.position.set(0,.008,.215);mount.add(shelfAccent);
+      const support=new THREE.Mesh(controllerDisplaySupportGeometry,controllerDisplayShelfMaterial);support.position.set(0,-.14,-.27);mount.add(support);
+      const shelfAccent=new THREE.Mesh(cabinetGeometry.deckLight,new THREE.MeshStandardMaterial({color:cabinet.hue,emissive:cabinet.hue,emissiveIntensity:1.1}));shelfAccent.position.set(0,.008,.345);mount.add(shelfAccent);
       mount.add(fitControllerToDeck(model,config));
-      // A shallow retail-display shelf projects beyond the stock control deck,
-      // keeping the pad clear of the CRT while still visibly attached to the cab.
-      mount.position.set(0,1.46,.77);mount.rotation.x=.08;
+      // A lowered retail-display shelf projects beyond the stock control deck,
+      // keeping the pad visibly attached to the cabinet and clear of the CRT.
+      mount.position.set(0,1.32,1.02);mount.rotation.x=.04;
       cabinet.controlSlot.clear();
       cabinet.controlSlot.add(mount);
     }

@@ -11,6 +11,6 @@ window.ARCADE_GAME_REGISTRY = await loadGameRegistry();
 window.ARCADE_ROOM_REGISTRY = await loadRoomRegistry();
 window.ARCADE_PS2_CACHE = new Ps2GameCache();
 
-await import('./arcade.js?v=controllers-1');
+await import('./arcade.js?v=controller-display-forward-2');
 await import('./avatar-selection.js?v=phase8-username-1');
 await import('./multiplayer-client.js?v=n64-wall-panels-removed-3');
