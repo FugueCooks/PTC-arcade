@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title description">
+  <title id="title">Tung Sahur</title>
+  <desc id="description">A warm wooden arcade avatar emblem.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#09071b"/><stop offset="1" stop-color="#25102d"/></linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#7b3d1f"/><stop offset=".5" stop-color="#d38a45"/><stop offset="1" stop-color="#6c3018"/></linearGradient>
+  </defs>
+  <rect width="320" height="180" rx="18" fill="url(#background)"/>
+  <circle cx="160" cy="82" r="64" fill="#ff3cb5" opacity=".13"/>
+  <rect x="126" y="24" width="68" height="112" rx="30" fill="url(#wood)" stroke="#ffe26b" stroke-width="4"/>
+  <circle cx="145" cy="69" r="7" fill="#fff4d2"/><circle cx="175" cy="69" r="7" fill="#fff4d2"/>
+  <circle cx="145" cy="69" r="3" fill="#120913"/><circle cx="175" cy="69" r="3" fill="#120913"/>
+  <path d="M145 93 Q160 103 175 93" fill="none" stroke="#2b1010" stroke-width="5" stroke-linecap="round"/>
+  <path d="M126 105 101 132M194 105l25 27" stroke="#d38a45" stroke-width="11" stroke-linecap="round"/>
+  <path d="M145 135v24M175 135v24" stroke="#9a542d" stroke-width="12" stroke-linecap="round"/>
+  <text x="160" y="170" fill="#45ffff" font-family="monospace" font-size="18" font-weight="700" text-anchor="middle">TUNG SAHUR</text>
+</svg>

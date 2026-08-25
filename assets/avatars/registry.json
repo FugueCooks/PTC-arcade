@@ -72,6 +72,20 @@
         "walk": "Glide",
         "run": "Glide"
       }
+    },
+    {
+      "id": "tung-sahur",
+      "name": "Tung Sahur",
+      "modelUrl": "assets/avatars/models/tung-sahur.optimized.glb?v=tung-sahur-1",
+      "thumbnailUrl": "assets/avatars/tung-sahur.svg",
+      "scale": 1,
+      "heightOffset": 0.04,
+      "rotationOffset": 3.141592653589793,
+      "enabled": true,
+      "animations": {
+        "walk": "Armature|Walk",
+        "run": "Armature|Walk"
+      }
     }
   ]
 }
