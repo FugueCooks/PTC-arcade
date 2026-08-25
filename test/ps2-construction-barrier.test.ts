@@ -13,12 +13,11 @@ void test('the PS2, Xbox, and GameCube rooms have visible barriers, collision, a
   assert.match(arcade, /gamecubeConstructionBarrier\.userData\.roomName='GameCube'/);
   assert.match(arcade, /addRoomSign\('GAMECUBE ROOM'/);
   assert.match(arcade, /playerPosition\.z>13\.2&&Math\.abs\(playerPosition\.x\)<2\.5/);
-  assert.match(arcade, /makeCabinet\(cabinetId,gamecubeTitles\[index-1\],x,29\.2/);
+  assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /nearbyConstructionRoom\(\)/);
   assert.match(arcade, /Room Under Construction\./);
   assert.match(arcade, /const wallHalfLength=16\.8/);
-  assert.match(edge, /PS2_ROOM_BOUNDARY_X = -14/);
-  assert.match(edge, /XBOX_ROOM_BOUNDARY_X = 14/);
-  assert.match(edge, /player\.p\[0\] >= PS2_ROOM_BOUNDARY_X/);
-  assert.match(edge, /player\.p\[0\] <= XBOX_ROOM_BOUNDARY_X/);
+  assert.match(edge, /PARTITION_WALL_X = 14/);
+  assert.match(edge, /PLAYABLE_ROOM_DOOR_Z = -8/);
+  assert.match(edge, /Math\.abs\(crossingZ - PLAYABLE_ROOM_DOOR_Z\)/);
 });

@@ -4,30 +4,33 @@ import type { Room } from '../rooms/room.js';
 import type { RoomManager } from '../rooms/room-manager.js';
 import type { PlayerIdentity } from './player-identity.js';
 
-const MIN_WORLD_X = -27;
-const MAX_WORLD_X = 27;
+const MIN_WORLD_X = -30.5;
+const MAX_WORLD_X = 30.5;
 const MAX_WORLD_Z = 16;
 const PLAYER_HEIGHT = 1.65;
 const MAX_SPEED_PER_SECOND = 7;
 const MAX_PACKET_RATE_MS = 50;
 const DEFAULT_RECONNECT_GRACE_MS = 10_000;
 const MOVEMENT_TOLERANCE = 0.3;
-const PS2_ROOM_BOUNDARY_X = -14;
-const XBOX_ROOM_BOUNDARY_X = 14;
-const GALLERY_WALL_X = 6.2;
-const GALLERY_WALL_FRONT_Z = 9.4;
-const GALLERY_COLLISION_HALF_WIDTH = 0.49;
+const PARTITION_WALL_X = 14;
+const PARTITION_COLLISION_HALF_WIDTH = 0.52;
+const PLAYABLE_ROOM_DOOR_Z = -8;
+const ROOM_DOOR_CLEARANCE = 1.26;
 const SOCIAL_FURNITURE_RADIUS = 3.65;
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
   if (Math.hypot(toX, toZ) < SOCIAL_FURNITURE_RADIUS) return true;
-  for (const wallX of [-GALLERY_WALL_X, GALLERY_WALL_X]) {
-    if (toZ <= GALLERY_WALL_FRONT_Z && Math.abs(toX - wallX) < GALLERY_COLLISION_HALF_WIDTH) return true;
+  for (const wallX of [-PARTITION_WALL_X, PARTITION_WALL_X]) {
+    const targetInDoor = Math.abs(toZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
+    if (!targetInDoor && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
     const crossingZ = fromZ + (toZ - fromZ) * crossing;
-    if (crossing >= 0 && crossing <= 1 && crossingZ <= GALLERY_WALL_FRONT_Z) return true;
+    if (crossing >= 0 && crossing <= 1 && Math.abs(crossingZ - PLAYABLE_ROOM_DOOR_Z) >= ROOM_DOOR_CLEARANCE) return true;
   }
+  const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH;
+  if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
   return false;
 }
 
@@ -279,10 +282,6 @@ export class PlayerManager {
     if (![x, z, input.r].every(Number.isFinite)) return false;
     if (x < MIN_WORLD_X || x > MAX_WORLD_X || Math.abs(z) > MAX_WORLD_Z) return false;
     if (violatesSocialLayout(player.position[0], player.position[2], x, z)) return false;
-    // Both expansion rooms are temporarily closed. Existing sessions inside
-    // either room can leave, but cannot cross back through the barriers.
-    if (player.position[0] >= PS2_ROOM_BOUNDARY_X && x < PS2_ROOM_BOUNDARY_X) return false;
-    if (player.position[0] <= XBOX_ROOM_BOUNDARY_X && x > XBOX_ROOM_BOUNDARY_X) return false;
     const elapsed = now - player.lastAcceptedAt;
     if (elapsed < MAX_PACKET_RATE_MS) return false;
     const permittedDistance = MAX_SPEED_PER_SECOND * Math.min(elapsed, 500) / 1000 + MOVEMENT_TOLERANCE;

@@ -28,11 +28,10 @@ const RECONNECT_GRACE_MS = 10_000;
 const MAX_SPEED_PER_SECOND = 7;
 const MOVEMENT_PACKET_MS = 50;
 const MOVEMENT_TOLERANCE = 0.3;
-const PS2_ROOM_BOUNDARY_X = -14;
-const XBOX_ROOM_BOUNDARY_X = 14;
-const GALLERY_WALL_X = 6.2;
-const GALLERY_WALL_FRONT_Z = 9.4;
-const GALLERY_COLLISION_HALF_WIDTH = 0.49;
+const PARTITION_WALL_X = 14;
+const PARTITION_COLLISION_HALF_WIDTH = 0.52;
+const PLAYABLE_ROOM_DOOR_Z = -8;
+const ROOM_DOOR_CLEARANCE = 1.26;
 const SOCIAL_FURNITURE_RADIUS = 3.65;
 const CABINET_DISTANCE = 2.6;
 const CABINET_TIMEOUT_MS = 5_000;
@@ -218,10 +217,8 @@ export class ArcadeRoom implements DurableObject {
     const x = position[0]; const z = position[1]; const rotation = input?.r;
     const now = Date.now();
     if (!player || player.movementLocked || ![x, z, rotation].every(Number.isFinite)) return this.correct(socket, player);
-    if ((x as number) < -27 || (x as number) > 27 || Math.abs(z as number) > 16) return this.correct(socket, player);
+    if ((x as number) < -30.5 || (x as number) > 30.5 || Math.abs(z as number) > 16) return this.correct(socket, player);
     if (violatesSocialLayout(player.p[0], player.p[2], x as number, z as number)) return this.correct(socket, player);
-    if (player.p[0] >= PS2_ROOM_BOUNDARY_X && (x as number) < PS2_ROOM_BOUNDARY_X) return this.correct(socket, player);
-    if (player.p[0] <= XBOX_ROOM_BOUNDARY_X && (x as number) > XBOX_ROOM_BOUNDARY_X) return this.correct(socket, player);
     const elapsed = now - attachment.lastAcceptedAt;
     const distance = Math.hypot((x as number) - player.p[0], (z as number) - player.p[2]);
     const permitted = MAX_SPEED_PER_SECOND * Math.min(elapsed, 500) / 1000 + MOVEMENT_TOLERANCE;
@@ -410,13 +407,17 @@ function decodeBase64Url(value: string): Uint8Array {
 }
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
   if (Math.hypot(toX, toZ) < SOCIAL_FURNITURE_RADIUS) return true;
-  for (const wallX of [-GALLERY_WALL_X, GALLERY_WALL_X]) {
-    if (toZ <= GALLERY_WALL_FRONT_Z && Math.abs(toX - wallX) < GALLERY_COLLISION_HALF_WIDTH) return true;
+  for (const wallX of [-PARTITION_WALL_X, PARTITION_WALL_X]) {
+    const targetInDoor = Math.abs(toZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
+    if (!targetInDoor && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
     const crossingZ = fromZ + (toZ - fromZ) * crossing;
-    if (crossing >= 0 && crossing <= 1 && crossingZ <= GALLERY_WALL_FRONT_Z) return true;
+    if (crossing >= 0 && crossing <= 1 && Math.abs(crossingZ - PLAYABLE_ROOM_DOOR_Z) >= ROOM_DOOR_CLEARANCE) return true;
   }
+  const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH;
+  if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
   return false;
 }
 function normalizeAngle(value: number): number { return Math.atan2(Math.sin(value), Math.cos(value)); }

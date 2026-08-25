@@ -56,7 +56,11 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(gamecubeCabinets.length, 5);
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.enabled));
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.system === 'gamecube' && cabinet.emulatorId === 'gecko'));
-  assert.ok(gamecubeCabinets.every((cabinet) => cabinet.interactionPosition?.z === 27.2 && cabinet.playerPosition?.z === 26.85));
+  assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
+    { x: -8.2, y: 1.65, z: 23 }, { x: -8.2, y: 1.65, z: 31 },
+    { x: 8.2, y: 1.65, z: 23 }, { x: 8.2, y: 1.65, z: 31 },
+    { x: 0, y: 1.65, z: 37.2 }
+  ]);
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [
     'wind-waker',
     'zelda-twilight-princess',
