@@ -64,7 +64,7 @@
       "modelUrl": "assets/avatars/models/sora-final.optimized.glb?v=sora-final-3",
       "thumbnailUrl": "assets/avatars/sora-final.svg",
       "scale": 0.78,
-      "heightOffset": 0,
+      "heightOffset": 0.28,
       "rotationOffset": 3.141592653589793,
       "enabled": true,
       "animations": {
