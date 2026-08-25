@@ -27,8 +27,8 @@ void test('the N64 wall loads the window-free environment module without a stale
   const world = await readFile(path.resolve(process.cwd(), 'world/world-manager.js'), 'utf8');
   const environment = await readFile(path.resolve(process.cwd(), 'world/environment-manager.js'), 'utf8');
 
-  assert.match(index, /app-bootstrap\.js\?v=couch-access-gaps-1/);
-  assert.match(bootstrap, /arcade\.js\?v=couch-access-gaps-1/);
+  assert.match(index, /app-bootstrap\.js\?v=gamecube-sign-removed-1/);
+  assert.match(bootstrap, /arcade\.js\?v=gamecube-sign-removed-1/);
   assert.match(bootstrap, /multiplayer-client\.js\?v=n64-wall-panels-removed-3/);
   assert.match(multiplayer, /world-manager\.js\?v=n64-wall-panels-removed-3/);
   assert.match(world, /environment-manager\.js\?v=n64-wall-panels-removed-3/);

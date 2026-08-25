@@ -235,7 +235,6 @@ addRoomSign('PLAYSTATION ROOM',-22.5,'#d18a52');
 addRoomSign('NINTENDO 64 ROOM',22.5,'#36f9f6');
 addRoomSign('PS2 ROOM',PS2_ROOM_CENTER_X,'#ff3cac',PS2_ROOM_BACK_Z+.18);
 addRoomSign('XBOX ROOM',22.5,'#7dff67',16.62,Math.PI);
-addRoomSign('GAMECUBE ROOM',0,'#7dff67',16.62,Math.PI);
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
 function crashArt(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d');
