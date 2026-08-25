@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://cdn.emulatorjs.org" crossorigin />
     <link rel="preconnect" href="https://pub-88860093179f4c448466f5a36bf8e618.r2.dev" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=mobile-controls-2" />
   </head>
   <body>
     <div id="hud"><span class="brand">PTC ARCADE</span><span class="status">WASD · MOVE &nbsp; / &nbsp; MOUSE · LOOK &nbsp; / &nbsp; V · 3RD PERSON</span></div>
@@ -34,6 +34,15 @@
     </nav>
     <aside id="player-inspection" hidden><button id="inspection-close" type="button" aria-label="Close">×</button><p class="eyebrow">PLAYER SIGNAL</p><h3 id="inspection-name"></h3><p id="inspection-avatar"></p><p id="inspection-status"></p><button id="follow-player" type="button">FOLLOW CAMERA</button></aside>
     <button id="audio-toggle" type="button" aria-pressed="true" title="Toggle ambient audio">AUDIO ON</button>
+    <section id="mobile-controls" aria-label="Mobile arcade controls">
+      <div id="mobile-move-zone" class="mobile-stick-zone" aria-label="Move joystick">
+        <div class="mobile-stick-ring"><span id="mobile-move-thumb"></span></div>
+        <small>MOVE</small>
+      </div>
+      <div id="mobile-look-zone" aria-label="Drag to look"><span>DRAG TO LOOK</span></div>
+      <button id="mobile-view" type="button" aria-label="Toggle first or third person view">VIEW</button>
+      <button id="mobile-use" type="button" aria-label="Use nearby arcade cabinet or object">USE</button>
+    </section>
     <section id="avatar-screen" aria-labelledby="avatar-title">
       <form id="avatar-form" class="avatar-panel">
         <p class="eyebrow">PLAYER SELECT // ONLINE ARCADE</p>
@@ -102,6 +111,6 @@
     </script>
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
-    <script type="module" src="app-bootstrap.js?v=cabinet-art-3"></script>
+    <script type="module" src="app-bootstrap.js?v=mobile-controls-2"></script>
   </body>
 </html>
