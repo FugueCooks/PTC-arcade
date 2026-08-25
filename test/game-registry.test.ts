@@ -7,7 +7,7 @@ interface GameDefinition {
   id: string;
   cabinetId: string;
   name: string;
-  system: 'psx' | 'n64' | 'ps2' | 'gamecube';
+  system: 'psx' | 'n64' | 'snes' | 'ps2' | 'gamecube';
   file: string;
   emulatorId: number;
   sizeBytes: number;
@@ -22,7 +22,7 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 1);
-  assert.equal(registry.games.length, 22);
+  assert.equal(registry.games.length, 29);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);
@@ -84,8 +84,43 @@ void test('unique N64 games are consolidated in the main room and the rear room 
     .filter(([id]) => id.startsWith('megaman-cabinet-'))
     .map(([, cabinet]) => cabinet);
   assert.equal(megaManCabinets.length, 10);
-  assert.ok(megaManCabinets.every((cabinet) => cabinet.enabled && cabinet.system === 'psx'));
-  assert.ok(megaManCabinets.every((cabinet) => cabinet.defaultGameId === undefined));
+  assert.ok(megaManCabinets.every((cabinet) => cabinet.enabled));
+  assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.system), [
+    'snes', 'snes', 'snes', 'psx', 'psx', 'psx', 'psx', 'psx', 'psx', 'psx'
+  ]);
+  assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.defaultGameId), [
+    'mega-man-x',
+    'mega-man-x2',
+    'mega-man-x3',
+    'mega-man-8',
+    'mega-man-x4',
+    'mega-man-x5',
+    'mega-man-x6',
+    undefined,
+    undefined,
+    undefined
+  ]);
+});
+
+void test('every supplied Mega Man game has its own cabinet and supported image', async () => {
+  const games = (await loadJson<{ games: GameDefinition[] }>('assets/games/registry.json')).games;
+  const megaManGames = games.filter((game) => game.cabinetId.startsWith('megaman-cabinet-'));
+  assert.deepEqual(megaManGames.map((game) => game.name), [
+    'Mega Man X',
+    'Mega Man X2',
+    'Mega Man X3',
+    'Mega Man 8',
+    'Mega Man X4',
+    'Mega Man X5',
+    'Mega Man X6'
+  ]);
+  assert.equal(new Set(megaManGames.map((game) => game.cabinetId)).size, megaManGames.length);
+  assert.ok(megaManGames.filter((game) => game.system === 'snes').every((game) => game.file.endsWith('.sfc')));
+  assert.ok(megaManGames.filter((game) => game.system === 'psx').every((game) => game.file.endsWith('.chd')));
+  const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
+  const player = await readFile(path.resolve(process.cwd(), 'player.html'), 'utf8');
+  assert.match(arcade, /system==='snes'\?'snes9x'/);
+  assert.match(player, /'snes9x'/);
 });
 
 void test('GameCube RVZ images are registered for the validated Gecko runtime', async () => {

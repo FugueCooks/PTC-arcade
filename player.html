@@ -12,7 +12,8 @@
     <script>
       const parameters = new URLSearchParams(location.search);
       window.EJS_player = '#game';
-      window.EJS_core = parameters.get('core') === 'n64' ? 'n64' : 'psx';
+      const requestedCore = parameters.get('core');
+      window.EJS_core = ['psx', 'n64', 'snes9x'].includes(requestedCore) ? requestedCore : 'psx';
       window.EJS_gameUrl = parameters.get('game');
       window.EJS_biosUrl = parameters.get('bios');
       window.EJS_gameName = parameters.get('name') || 'Arcade Game';

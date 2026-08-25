@@ -232,6 +232,76 @@
       "emulatorId": 32005,
       "sizeBytes": 1176265108,
       "enabled": true
+    },
+    {
+      "id": "mega-man-x",
+      "cabinetId": "megaman-cabinet-01",
+      "name": "Mega Man X",
+      "system": "snes",
+      "file": "mega-man-x.sfc",
+      "emulatorId": 96001,
+      "sizeBytes": 1572864,
+      "enabled": true
+    },
+    {
+      "id": "mega-man-x2",
+      "cabinetId": "megaman-cabinet-02",
+      "name": "Mega Man X2",
+      "system": "snes",
+      "file": "mega-man-x2.sfc",
+      "emulatorId": 96002,
+      "sizeBytes": 1572864,
+      "enabled": true
+    },
+    {
+      "id": "mega-man-x3",
+      "cabinetId": "megaman-cabinet-03",
+      "name": "Mega Man X3",
+      "system": "snes",
+      "file": "mega-man-x3.sfc",
+      "emulatorId": 96003,
+      "sizeBytes": 2097152,
+      "enabled": true
+    },
+    {
+      "id": "mega-man-8",
+      "cabinetId": "megaman-cabinet-04",
+      "name": "Mega Man 8",
+      "system": "psx",
+      "file": "mega-man-8.chd",
+      "emulatorId": 96004,
+      "sizeBytes": 254503808,
+      "enabled": true
+    },
+    {
+      "id": "mega-man-x4",
+      "cabinetId": "megaman-cabinet-05",
+      "name": "Mega Man X4",
+      "system": "psx",
+      "file": "mega-man-x4.chd",
+      "emulatorId": 96005,
+      "sizeBytes": 380930158,
+      "enabled": true
+    },
+    {
+      "id": "mega-man-x5",
+      "cabinetId": "megaman-cabinet-06",
+      "name": "Mega Man X5",
+      "system": "psx",
+      "file": "mega-man-x5.chd",
+      "emulatorId": 96006,
+      "sizeBytes": 343977236,
+      "enabled": true
+    },
+    {
+      "id": "mega-man-x6",
+      "cabinetId": "megaman-cabinet-07",
+      "name": "Mega Man X6",
+      "system": "psx",
+      "file": "mega-man-x6.chd",
+      "emulatorId": 96007,
+      "sizeBytes": 368695214,
+      "enabled": true
     }
   ]
 }

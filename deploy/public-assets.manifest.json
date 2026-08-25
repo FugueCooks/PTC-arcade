@@ -25,6 +25,48 @@
   },
   {
     "kind": "game",
+    "file": "mega-man-8.chd",
+    "bytes": 254503808,
+    "sha256": "726d86dbc4defdfcead4cb50254f5e0bd006df1186f119b60d0f249fe0e04f72"
+  },
+  {
+    "kind": "game",
+    "file": "mega-man-x.sfc",
+    "bytes": 1572864,
+    "sha256": "b8f70a6e7fb93819f79693578887e2c11e196bdf1ac6ddc7cb924b1ad0be2d32"
+  },
+  {
+    "kind": "game",
+    "file": "mega-man-x2.sfc",
+    "bytes": 1572864,
+    "sha256": "f3246755f608a1e1dc9c848b61da3b824c7853b29b3be40df6fc7f2793a887ed"
+  },
+  {
+    "kind": "game",
+    "file": "mega-man-x3.sfc",
+    "bytes": 2097152,
+    "sha256": "65b03268afac296330e8ff8d60dd0825879e13ed658b37713c034a3bd074f1d7"
+  },
+  {
+    "kind": "game",
+    "file": "mega-man-x4.chd",
+    "bytes": 380930158,
+    "sha256": "64b8e5b9eccad78352e5802061f6807f47a20b147f900f3f4f881f6b77c323de"
+  },
+  {
+    "kind": "game",
+    "file": "mega-man-x5.chd",
+    "bytes": 343977236,
+    "sha256": "ec1d18b3a73d7714e2b030fd8362f273139c893e409cce51f771e40910b9d2df"
+  },
+  {
+    "kind": "game",
+    "file": "mega-man-x6.chd",
+    "bytes": 368695214,
+    "sha256": "3d7b68f3c59cd71bed81490ae28a05f113b7257b2f24d3898cec2939d6f259db"
+  },
+  {
+    "kind": "game",
     "file": "metal-gear-solid-disc-1.chd",
     "bytes": 406013391,
     "sha256": "dd4f62195f35279c5b471e511479c7640876c3c23bb2ec41ac6a304a217add2c"

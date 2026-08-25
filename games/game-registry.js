@@ -1,5 +1,5 @@
 export async function loadGameRegistry() {
-  const response = await fetch('assets/games/registry.json?v=psx-multidisc-1', { cache: 'no-cache' });
+  const response = await fetch('assets/games/registry.json?v=megaman-room-games-1', { cache: 'no-cache' });
   if (!response.ok) throw new Error(`Game registry failed to load (${response.status}).`);
   const payload = await response.json();
   if (payload?.version !== 1 || !Array.isArray(payload.games)) throw new Error('Unsupported game registry.');
@@ -18,7 +18,7 @@ function isValidGame(game) {
   return game && typeof game.id === 'string' && /^[a-z0-9-]{2,64}$/.test(game.id)
     && typeof game.cabinetId === 'string' && /^[a-z0-9-]{2,64}$/.test(game.cabinetId)
     && typeof game.name === 'string' && game.name.length <= 80
-    && (game.system === 'psx' || game.system === 'n64' || game.system === 'ps2' || game.system === 'gamecube')
+    && (game.system === 'psx' || game.system === 'n64' || game.system === 'snes' || game.system === 'ps2' || game.system === 'gamecube')
     && typeof game.file === 'string' && /^[A-Za-z0-9._-]+$/.test(game.file)
     && Number.isSafeInteger(game.emulatorId) && game.emulatorId > 0
     && Number.isSafeInteger(game.sizeBytes) && game.sizeBytes > 0
