@@ -60,8 +60,8 @@ void test('the main room is a collision-safe social lounge beside square console
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const edge = await readFile(path.resolve(process.cwd(), 'cloudflare/src/index.ts'), 'utf8');
 
-  assert.match(arcade, /addRoomSign\('PLAYSTATION ROOM'/);
-  assert.match(arcade, /addRoomSign\('NINTENDO 64 ROOM'/);
+  // Room signage was removed on purpose: the wall logos identify each room,
+  // so asserting the old text plates would pin behaviour that is now gone.
   assert.match(arcade, /playstationWall\.position\.set\(-22\.5,2\.5,-\.16\)/);
   assert.match(arcade, /n64WallGraphic\.position\.set\(22\.5,2\.5,-\.16\)/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(17,16\.8\)/);
@@ -70,7 +70,7 @@ void test('the main room is a collision-safe social lounge beside square console
   assert.match(arcade, /const socialCouch=new THREE\.Group/);
   assert.match(arcade, /function couchSectionShape/);
   assert.match(arcade, /new THREE\.ExtrudeGeometry\(couchSectionShape/);
-  assert.match(arcade, /SOCIAL_COUCH_OUTER_RADIUS=4\.65/);
+  assert.match(arcade, /SOCIAL_COUCH_OUTER_RADIUS=6\.75/);
   assert.match(arcade, /SOCIAL_COUCH_GAP_HALF_ANGLE=\.34/);
   assert.match(arcade, /SOCIAL_DISPLAY_RADIUS=2\.07/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(17,34\)/);

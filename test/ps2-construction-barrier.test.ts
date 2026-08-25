@@ -13,8 +13,8 @@ void test('the future, PS2, Xbox, and GameCube rooms have visible barriers, coll
   assert.match(arcade, /ps2ConstructionBarrier\.userData\.roomName='PS2'/);
   assert.match(arcade, /gamecubeConstructionBarrier\.userData\.roomName='GameCube'/);
   assert.match(arcade, /const ps2CabinetLayout=\[\[1,-29\.2,-30/);
-  assert.match(arcade, /addRoomSign\('PS2 ROOM'/);
-  assert.doesNotMatch(arcade, /addRoomSign\('GAMECUBE ROOM'/);
+  // Room signage was removed on purpose: the wall logos identify each room,
+  // so asserting the old text plates would pin behaviour that is now gone.
   assert.match(arcade, /playerPosition\.z>13\.2&&Math\.abs\(playerPosition\.x\)<2\.5/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /nearbyConstructionRoom\(\)/);

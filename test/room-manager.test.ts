@@ -68,11 +68,11 @@ void test('the social couch, room walls, rear doorway, and annex divider are aut
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
   assert.deepEqual(players.move('socket-a', { p: [0, 8], r: Math.PI }, 1_500)?.p, [0, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [0, 5], r: Math.PI }, 2_000)?.p, [0, 1.65, 5]);
-  assert.equal(players.move('socket-a', { p: [0, 3.5], r: Math.PI }, 2_500), undefined);
-  assert.deepEqual(players.move('socket-a', { p: [3, 5], r: -Math.PI / 2 }, 3_000)?.p, [3, 1.65, 5]);
-  assert.deepEqual(players.move('socket-a', { p: [6, 5], r: -Math.PI / 2 }, 3_500)?.p, [6, 1.65, 5]);
-  assert.deepEqual(players.move('socket-a', { p: [9, 5], r: -Math.PI / 2 }, 4_000)?.p, [9, 1.65, 5]);
+  assert.equal(players.move('socket-a', { p: [0, 6], r: Math.PI }, 2_000), undefined);
+  assert.deepEqual(players.move('socket-a', { p: [3, 8], r: -Math.PI / 2 }, 2_500)?.p, [3, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [6, 8], r: -Math.PI / 2 }, 3_000)?.p, [6, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [9, 8], r: Math.PI }, 3_500)?.p, [9, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [9, 5], r: Math.PI }, 4_000)?.p, [9, 1.65, 5]);
   assert.deepEqual(players.move('socket-a', { p: [12, 5], r: -Math.PI / 2 }, 4_500)?.p, [12, 1.65, 5]);
   assert.equal(players.move('socket-a', { p: [14.2, 5], r: -Math.PI / 2 }, 5_000), undefined);
   assert.deepEqual(players.move('socket-a', { p: [12, 2], r: Math.PI }, 5_500)?.p, [12, 1.65, 2]);

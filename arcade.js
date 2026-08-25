@@ -157,7 +157,7 @@ for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,
 box(27.5,.09,.08,0xd18a52,0,4.78,-16.57,.85);box(27.5,.12,.08,0x251447,0,.1,-16.57,.55);
 const gangsterPepeMount=new THREE.Group();gangsterPepeMount.position.set(0,.16,0);scene.add(gangsterPepeMount);
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);gangsterPepeLight.position.set(0,.82,.55);scene.add(gangsterPepeLight);
-const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-22.5,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,SOCIAL_COUCH_OUTER_RADIUS=4.65,SOCIAL_COUCH_INNER_RADIUS=2.01,SOCIAL_COUCH_GAP_HALF_ANGLE=.34,SOCIAL_DISPLAY_RADIUS=2.07,PLAYER_COLLISION_RADIUS=.34;
+const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-22.5,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,SOCIAL_COUCH_OUTER_RADIUS=6.75,SOCIAL_COUCH_INNER_RADIUS=2.01,SOCIAL_COUCH_GAP_HALF_ANGLE=.34,SOCIAL_DISPLAY_RADIUS=2.07,PLAYER_COLLISION_RADIUS=.34;
 function buildPartitionWall(wallX,accent){
   for(const [centerZ,depth] of [[-13.25,7.1],[-.0,12.8],[13.25,7.1]]){
     const wall=box(PARTITION_WALL_HALF_THICKNESS*2,5,depth,0x111425,wallX,2.5,centerZ,.08);wall.receiveShadow=true;
@@ -280,11 +280,6 @@ box(10.3,5,.3,0x11182c,-6.85,2.5,16.8,.06);box(10.3,5,.3,0x11182c,6.85,2.5,16.8,
 for(let x=-10;x<=10;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,40.61,.75);
 lightRoom(0,28.8,24,24,0xffb066);
 lightRoom(PS2_ROOM_CENTER_X,PS2_ROOM_CENTER_Z,17,16.8,0xff5fae);
-function addRoomSign(text,x,color,z=-16.62,rotationY=0){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,z);sign.rotation.y=rotationY;scene.add(sign)}
-addRoomSign('PLAYSTATION ROOM',-22.5,'#d18a52');
-addRoomSign('NINTENDO 64 ROOM',22.5,'#36f9f6');
-addRoomSign('PS2 ROOM',PS2_ROOM_CENTER_X,'#ff3cac',PS2_ROOM_BACK_Z+.18);
-addRoomSign('XBOX ROOM',22.5,'#7dff67',16.62,Math.PI);
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
 function crashArt(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d');
@@ -529,19 +524,19 @@ const socialCouch=new THREE.Group();socialCouch.position.set(0,0,0);scene.add(so
 const couchMaterial=new THREE.MeshStandardMaterial({color:0x33143f,emissive:0x2a0f45,emissiveIntensity:.5,roughness:.22,metalness:.62});
 const couchBackMaterial=new THREE.MeshStandardMaterial({color:0x4a1c63,emissive:0x3a1156,emissiveIntensity:.6,roughness:.18,metalness:.58});
 const couchToeMaterial=new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:1.35,roughness:.3,metalness:.55});
-function couchSectionShape(start,end){const shape=new THREE.Shape();shape.absarc(0,0,4.25,start,end,false);shape.lineTo(2.35*Math.cos(end),2.35*Math.sin(end));shape.absarc(0,0,2.35,end,start,true);shape.closePath();return shape}
+function couchSectionShape(start,end){const shape=new THREE.Shape();shape.absarc(0,0,6.32,start,end,false);shape.lineTo(2.35*Math.cos(end),2.35*Math.sin(end));shape.absarc(0,0,2.35,end,start,true);shape.closePath();return shape}
 for(const [start,end] of [[SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI-SOCIAL_COUCH_GAP_HALF_ANGLE],[Math.PI+SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI*2-SOCIAL_COUCH_GAP_HALF_ANGLE]]){
   const seatGeometry=new THREE.ExtrudeGeometry(couchSectionShape(start,end),{depth:.42,steps:1,bevelEnabled:true,bevelThickness:.08,bevelSize:.08,bevelSegments:2,curveSegments:36});seatGeometry.rotateX(Math.PI/2);seatGeometry.translate(0,.62,0);
   const seat=new THREE.Mesh(seatGeometry,couchMaterial);seat.receiveShadow=true;socialCouch.add(seat);
-  const backGeometry=new THREE.TorusGeometry(3.85,.34,12,48,end-start);backGeometry.rotateZ(start);const back=new THREE.Mesh(backGeometry,couchBackMaterial);back.rotation.x=Math.PI/2;back.position.y=.96;socialCouch.add(back);
-  const toeGeometry=new THREE.TorusGeometry(3.55,.12,10,48,end-start);toeGeometry.rotateZ(start);const toeGlow=new THREE.Mesh(toeGeometry,couchToeMaterial);toeGlow.rotation.x=Math.PI/2;toeGlow.position.y=.16;socialCouch.add(toeGlow);
+  const backGeometry=new THREE.TorusGeometry(5.92,.34,12,64,end-start);backGeometry.rotateZ(start);const back=new THREE.Mesh(backGeometry,couchBackMaterial);back.rotation.x=Math.PI/2;back.position.y=.96;socialCouch.add(back);
+  const toeGeometry=new THREE.TorusGeometry(5.62,.12,10,64,end-start);toeGeometry.rotateZ(start);const toeGlow=new THREE.Mesh(toeGeometry,couchToeMaterial);toeGlow.rotation.x=Math.PI/2;toeGlow.position.y=.16;socialCouch.add(toeGlow);
 }
 // The hub floor is a very large unbroken sheet. Lit inlays give it a centre and
 // draw the eye toward each gallery doorway, which also makes the room easier to
 // read as a space rather than an empty plane.
 const inlayMaterial=new THREE.MeshBasicMaterial({color:0x4bd8ff,transparent:true,opacity:.42,depthWrite:false,blending:THREE.AdditiveBlending});
 const inlayWarmMaterial=new THREE.MeshBasicMaterial({color:0x9fd8ff,transparent:true,opacity:.17,depthWrite:false,blending:THREE.AdditiveBlending});
-for(const radius of [6.4,6.62]){
+for(const radius of [7.75,7.97]){
   const ring=new THREE.Mesh(new THREE.RingGeometry(radius,radius+.05,96),inlayMaterial);
   ring.rotation.x=-Math.PI/2;ring.position.y=.028;scene.add(ring);
 }
@@ -550,7 +545,7 @@ for(const [angle,length] of [[0,9.5],[Math.PI,9.5],[Math.PI/2,10.5],[-Math.PI/2,
   for(const offset of [-.55,.55]){
     const strip=new THREE.Mesh(new THREE.PlaneGeometry(.07,length),inlayWarmMaterial);
     strip.rotation.x=-Math.PI/2;strip.rotation.z=-angle;
-    strip.position.set(Math.sin(angle)*(7.2+length/2)+Math.cos(angle)*offset,.026,Math.cos(angle)*(7.2+length/2)-Math.sin(angle)*offset);
+    strip.position.set(Math.sin(angle)*(8.5+length/2)+Math.cos(angle)*offset,.026,Math.cos(angle)*(8.5+length/2)-Math.sin(angle)*offset);
     scene.add(strip);
   }
 }
@@ -563,6 +558,7 @@ const finGlowGeometry=new THREE.BoxGeometry(.05,4.1,.03);
 for(const [finX,direction,glowColor] of [[-13.72,1,0xd18a52],[13.72,-1,0x36f9f6]]){
   const glowMaterial=new THREE.MeshStandardMaterial({color:glowColor,emissive:glowColor,emissiveIntensity:1.15,roughness:.3,metalness:.4});
   for(let z=-15;z<=15;z+=3.75){
+    if(Math.abs(z-PLAYABLE_ROOM_DOOR_Z)<2.4||Math.abs(z-CONSTRUCTION_ROOM_DOOR_Z)<2.4)continue;
     const fin=new THREE.Mesh(wallFinGeometry,wallFinBody);
     fin.position.set(finX+direction*.2,2.32,z);fin.rotation.y=Math.PI/2;scene.add(fin);
     const glow=new THREE.Mesh(finGlowGeometry,glowMaterial);
