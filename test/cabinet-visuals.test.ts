@@ -27,8 +27,8 @@ void test('the N64 wall loads the window-free environment module without a stale
   const world = await readFile(path.resolve(process.cwd(), 'world/world-manager.js'), 'utf8');
   const environment = await readFile(path.resolve(process.cwd(), 'world/environment-manager.js'), 'utf8');
 
-  assert.match(index, /app-bootstrap\.js\?v=ps2-connected-room-1/);
-  assert.match(bootstrap, /arcade\.js\?v=ps2-connected-room-1/);
+  assert.match(index, /app-bootstrap\.js\?v=couch-access-gaps-1/);
+  assert.match(bootstrap, /arcade\.js\?v=couch-access-gaps-1/);
   assert.match(bootstrap, /multiplayer-client\.js\?v=n64-wall-panels-removed-3/);
   assert.match(multiplayer, /world-manager\.js\?v=n64-wall-panels-removed-3/);
   assert.match(world, /environment-manager\.js\?v=n64-wall-panels-removed-3/);
@@ -54,11 +54,16 @@ void test('the main room is a collision-safe social lounge beside square console
   assert.match(arcade, /PS2_ROOM_CENTER_Z=-25\.2/);
   assert.match(arcade, /PS2_ROOM_BACK_Z=-33\.6/);
   assert.match(arcade, /const socialCouch=new THREE\.Group/);
-  assert.match(arcade, /new THREE\.ExtrudeGeometry\(couchShape/);
+  assert.match(arcade, /function couchSectionShape/);
+  assert.match(arcade, /new THREE\.ExtrudeGeometry\(couchSectionShape/);
+  assert.match(arcade, /SOCIAL_COUCH_OUTER_RADIUS=4\.65/);
+  assert.match(arcade, /SOCIAL_COUCH_GAP_HALF_ANGLE=\.34/);
+  assert.match(arcade, /SOCIAL_DISPLAY_RADIUS=2\.07/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(17,34\)/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(24,24\)/);
   assert.match(arcade, /const n64CabinetLayout=/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /resolveSocialLayoutCollisions\(previousX,previousZ\)/);
   assert.match(edge, /violatesSocialLayout\(player\.p\[0\], player\.p\[2\]/);
+  assert.match(edge, /SOCIAL_COUCH_GAP_HALF_ANGLE = 0\.34/);
 });

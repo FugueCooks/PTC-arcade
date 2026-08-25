@@ -86,6 +86,15 @@ void test('the social couch, room walls, rear doorway, and annex divider are aut
   assert.equal(players.move('socket-a', { p: [17.5, 1], r: 0 }, 9_500), undefined);
 });
 
+void test('the wider social couch has usable side openings while its glass display stays solid', () => {
+  const players = createPlayers();
+  players.join('socket-a', 'main', undefined, identity, 1_000);
+  const steps: Array<[number, number]> = [[3, 11], [6, 11], [6, 8], [6, 5], [6, 2], [5, 0], [4.3, 0], [3, 0], [2.2, 0]];
+  steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
+  assert.equal(players.move('socket-a', { p: [1.8, 0], r: -Math.PI / 2 }, 6_000), undefined);
+  assert.deepEqual(players.stateFor('socket-a')?.p, [2.2, 1.65, 0]);
+});
+
 void test('a stationary accepted update returns a player to idle', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);

@@ -18,10 +18,16 @@ const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 const PLAYABLE_ROOM_DOOR_Z = -8;
 const PS2_ROOM_DOOR_Z = -16.8;
 const ROOM_DOOR_CLEARANCE = 1.26;
-const SOCIAL_FURNITURE_RADIUS = 3.65;
+const SOCIAL_COUCH_OUTER_RADIUS = 4.65;
+const SOCIAL_COUCH_INNER_RADIUS = 2.01;
+const SOCIAL_COUCH_GAP_HALF_ANGLE = 0.34;
+const SOCIAL_DISPLAY_RADIUS = 2.07;
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
-  if (Math.hypot(toX, toZ) < SOCIAL_FURNITURE_RADIUS) return true;
+  const socialDistance = Math.hypot(toX, toZ);
+  if (socialDistance < SOCIAL_DISPLAY_RADIUS) return true;
+  const inSideGap = Math.abs(Math.sin(Math.atan2(toZ, toX))) <= Math.sin(SOCIAL_COUCH_GAP_HALF_ANGLE);
+  if (!inSideGap && socialDistance >= SOCIAL_COUCH_INNER_RADIUS && socialDistance < SOCIAL_COUCH_OUTER_RADIUS) return true;
   for (const wallX of [-PARTITION_WALL_X, PARTITION_WALL_X]) {
     const targetInDoor = Math.abs(toZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
     if (!targetInDoor && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;

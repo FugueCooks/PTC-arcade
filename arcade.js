@@ -135,7 +135,7 @@ for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,
 box(27.5,.09,.08,0xd18a52,0,4.78,-16.57,.85);box(27.5,.12,.08,0x251447,0,.1,-16.57,.55);
 const gangsterPepeMount=new THREE.Group();gangsterPepeMount.position.set(0,.16,0);scene.add(gangsterPepeMount);
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);gangsterPepeLight.position.set(0,.82,.55);scene.add(gangsterPepeLight);
-const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-22.5,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,SOCIAL_FURNITURE_RADIUS=3.65,PLAYER_COLLISION_RADIUS=.34;
+const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-22.5,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,SOCIAL_COUCH_OUTER_RADIUS=4.65,SOCIAL_COUCH_INNER_RADIUS=2.01,SOCIAL_COUCH_GAP_HALF_ANGLE=.34,SOCIAL_DISPLAY_RADIUS=2.07,PLAYER_COLLISION_RADIUS=.34;
 function buildPartitionWall(wallX,accent){
   for(const [centerZ,depth] of [[-13.25,7.1],[-.0,12.8],[13.25,7.1]]){
     const wall=box(PARTITION_WALL_HALF_THICKNESS*2,5,depth,0x111425,wallX,2.5,centerZ,.08);wall.receiveShadow=true;
@@ -477,12 +477,16 @@ const counterDisplayLight=new THREE.PointLight(0xe8f9ff,5.4,4.2,2);counterDispla
 // preserving a clear view into Trench Pepe's glass display. Its outer radius
 // is mirrored by authoritative collision below and on both multiplayer paths.
 const socialCouch=new THREE.Group();socialCouch.position.set(0,0,0);scene.add(socialCouch);
-const couchShape=new THREE.Shape();couchShape.absarc(0,0,3.2,0,Math.PI*2,false);const couchOpening=new THREE.Path();couchOpening.absarc(0,0,2.05,0,Math.PI*2,true);couchShape.holes.push(couchOpening);
-const couchSeatGeometry=new THREE.ExtrudeGeometry(couchShape,{depth:.42,steps:1,bevelEnabled:true,bevelThickness:.08,bevelSize:.08,bevelSegments:2,curveSegments:48});couchSeatGeometry.rotateX(Math.PI/2);couchSeatGeometry.translate(0,.62,0);
 const couchMaterial=new THREE.MeshStandardMaterial({color:0x3b174f,emissive:0x160923,emissiveIntensity:.48,roughness:.5,metalness:.12});
-const couchSeat=new THREE.Mesh(couchSeatGeometry,couchMaterial);couchSeat.receiveShadow=true;socialCouch.add(couchSeat);
-const couchBack=new THREE.Mesh(new THREE.TorusGeometry(2.86,.34,12,64),new THREE.MeshStandardMaterial({color:0x55206b,emissive:0x240b35,emissiveIntensity:.55,roughness:.46,metalness:.1}));couchBack.rotation.x=Math.PI/2;couchBack.position.y=.96;socialCouch.add(couchBack);
-const couchToeGlow=new THREE.Mesh(new THREE.TorusGeometry(2.62,.12,10,64),new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:1.35,roughness:.3,metalness:.55}));couchToeGlow.rotation.x=Math.PI/2;couchToeGlow.position.y=.16;socialCouch.add(couchToeGlow);
+const couchBackMaterial=new THREE.MeshStandardMaterial({color:0x55206b,emissive:0x240b35,emissiveIntensity:.55,roughness:.46,metalness:.1});
+const couchToeMaterial=new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:1.35,roughness:.3,metalness:.55});
+function couchSectionShape(start,end){const shape=new THREE.Shape();shape.absarc(0,0,4.25,start,end,false);shape.lineTo(2.35*Math.cos(end),2.35*Math.sin(end));shape.absarc(0,0,2.35,end,start,true);shape.closePath();return shape}
+for(const [start,end] of [[SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI-SOCIAL_COUCH_GAP_HALF_ANGLE],[Math.PI+SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI*2-SOCIAL_COUCH_GAP_HALF_ANGLE]]){
+  const seatGeometry=new THREE.ExtrudeGeometry(couchSectionShape(start,end),{depth:.42,steps:1,bevelEnabled:true,bevelThickness:.08,bevelSize:.08,bevelSegments:2,curveSegments:36});seatGeometry.rotateX(Math.PI/2);seatGeometry.translate(0,.62,0);
+  const seat=new THREE.Mesh(seatGeometry,couchMaterial);seat.receiveShadow=true;socialCouch.add(seat);
+  const backGeometry=new THREE.TorusGeometry(3.85,.34,12,48,end-start);backGeometry.rotateZ(start);const back=new THREE.Mesh(backGeometry,couchBackMaterial);back.rotation.x=Math.PI/2;back.position.y=.96;socialCouch.add(back);
+  const toeGeometry=new THREE.TorusGeometry(3.55,.12,10,48,end-start);toeGeometry.rotateZ(start);const toeGlow=new THREE.Mesh(toeGeometry,couchToeMaterial);toeGlow.rotation.x=Math.PI/2;toeGlow.position.y=.16;socialCouch.add(toeGlow);
+}
 // Low, oversized glass prize display set flush against the true back wall.
 const prizeDisplay=new THREE.Group();prizeDisplay.position.set(0,0,-15.65);scene.add(prizeDisplay);
 const rearCaseGlass=new THREE.Mesh(new THREE.BoxGeometry(14.2,1.225,1.8),new THREE.MeshStandardMaterial({color:0x8deeff,emissive:0x173d5d,emissiveIntensity:.26,transparent:true,opacity:.16,metalness:.65,roughness:.06,side:THREE.DoubleSide,depthWrite:false}));rearCaseGlass.position.y=.6125;prizeDisplay.add(rearCaseGlass);
@@ -776,11 +780,17 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
     else if(previousZ>=0&&playerPosition.z<frontFace)playerPosition.z=frontFace;
   }
   const distance=Math.hypot(playerPosition.x,playerPosition.z);
-  if(distance>=SOCIAL_FURNITURE_RADIUS)return;
   const previousDistance=Math.hypot(previousX,previousZ);
-  if(distance>.001){playerPosition.x*=SOCIAL_FURNITURE_RADIUS/distance;playerPosition.z*=SOCIAL_FURNITURE_RADIUS/distance}
-  else if(previousDistance>.001){playerPosition.x=previousX;playerPosition.z=previousZ}
-  else playerPosition.z=SOCIAL_FURNITURE_RADIUS;
+  if(distance<SOCIAL_DISPLAY_RADIUS){
+    if(distance>.001){playerPosition.x*=SOCIAL_DISPLAY_RADIUS/distance;playerPosition.z*=SOCIAL_DISPLAY_RADIUS/distance}
+    else if(previousDistance>.001){playerPosition.x=previousX;playerPosition.z=previousZ}
+    else playerPosition.x=SOCIAL_DISPLAY_RADIUS;
+    return;
+  }
+  const inSideGap=Math.abs(Math.sin(Math.atan2(playerPosition.z,playerPosition.x)))<=Math.sin(SOCIAL_COUCH_GAP_HALF_ANGLE);
+  if(inSideGap||distance<SOCIAL_COUCH_INNER_RADIUS||distance>=SOCIAL_COUCH_OUTER_RADIUS)return;
+  const boundary=previousDistance<=SOCIAL_COUCH_INNER_RADIUS?SOCIAL_COUCH_INNER_RADIUS:SOCIAL_COUCH_OUTER_RADIUS;
+  playerPosition.x*=boundary/distance;playerPosition.z*=boundary/distance;
 }
 function resolveRearGalleryCollision(previousZ){
   const northFace=PS2_ROOM_DOOR_Z+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
