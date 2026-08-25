@@ -135,7 +135,7 @@ for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,
 box(27.5,.09,.08,0xd18a52,0,4.78,-16.57,.85);box(27.5,.12,.08,0x251447,0,.1,-16.57,.55);
 const gangsterPepeMount=new THREE.Group();gangsterPepeMount.position.set(0,.16,0);scene.add(gangsterPepeMount);
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);gangsterPepeLight.position.set(0,.82,.55);scene.add(gangsterPepeLight);
-const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_LENGTH=13.7,PARTITION_WALL_HALF_THICKNESS=.18,PLAYER_COLLISION_RADIUS=.34;
+const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_LENGTH=13.7,PARTITION_WALL_HALF_THICKNESS=.18,GALLERY_WALL_X=6.2,GALLERY_WALL_FRONT_Z=9.4,GALLERY_WALL_HALF_THICKNESS=.15,SOCIAL_FURNITURE_RADIUS=3.65,PLAYER_COLLISION_RADIUS=.34;
 const playstationWallBody=box(PARTITION_WALL_HALF_THICKNESS*2,5,PARTITION_WALL_HALF_LENGTH*2,0x111425,PLAYSTATION_WALL_X,2.5,0,.08);playstationWallBody.receiveShadow=true;
 box(.42,.08,27.4,0xd18a52,PLAYSTATION_WALL_X,4.86,0,.9);
 box(.42,.1,27.4,0x251447,PLAYSTATION_WALL_X,.08,0,.45);
@@ -148,6 +148,15 @@ n64WallTexture.colorSpace=THREE.SRGBColorSpace;
 n64WallTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const n64WallGraphic=new THREE.Mesh(new THREE.PlaneGeometry(6.34,4.7),new THREE.MeshBasicMaterial({map:n64WallTexture}));
 n64WallGraphic.position.set(13.805,2.5,0);n64WallGraphic.rotation.y=-Math.PI/2;scene.add(n64WallGraphic);
+// Mirrored inner walls turn the existing console rows into dedicated galleries
+// without disturbing cabinet IDs, emulator wiring, or their aligned positions.
+// Wide openings at the front feed both galleries from the social antechamber.
+const galleryWallDepth=26.2,galleryWallCenterZ=(GALLERY_WALL_FRONT_Z-16.8)/2;
+for(const wallX of [-GALLERY_WALL_X,GALLERY_WALL_X]){
+  const wall=box(GALLERY_WALL_HALF_THICKNESS*2,5,galleryWallDepth,0x111425,wallX,2.5,galleryWallCenterZ,.08);wall.receiveShadow=true;
+  box(.36,.08,galleryWallDepth,wallX<0?0xd18a52:0x36f9f6,wallX,4.86,galleryWallCenterZ,.85);
+  box(.36,.1,galleryWallDepth,0x251447,wallX,.08,galleryWallCenterZ,.45);
+}
 // Temporary construction barriers extend both partition walls across their
 // end passages. The PS2 and Xbox rooms remain intact behind them for later work.
 function constructionTapeTexture(){const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;const context=canvas.getContext('2d');context.fillStyle='#f6c515';context.fillRect(0,0,768,512);context.save();context.strokeStyle='#17120a';context.lineWidth=70;for(let x=-520;x<1100;x+=150){context.beginPath();context.moveTo(x,512);context.lineTo(x+360,0);context.stroke()}context.restore();context.fillStyle='#f6c515';context.fillRect(0,196,768,120);context.strokeStyle='#17120a';context.lineWidth=12;context.strokeRect(0,196,768,120);context.fillStyle='#17120a';context.font='bold 64px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText('CAUTION',384,258);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture}
@@ -205,6 +214,8 @@ for(let x=-12;x<=12;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,30.61,.75);
 function addRoomSign(text,x,color,z=-16.62,rotationY=0){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,z);sign.rotation.y=rotationY;scene.add(sign)}
 addRoomSign('XBOX ROOM',21,'#7dff67');
 addRoomSign('GAMECUBE ROOM',0,'#7dff67',16.62,Math.PI);
+addRoomSign('PLAYSTATION ROOM',-GALLERY_WALL_X+.02,'#d18a52',5.2,Math.PI/2);
+addRoomSign('NINTENDO 64 ROOM',GALLERY_WALL_X-.02,'#36f9f6',5.2,-Math.PI/2);
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
 function crashArt(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d');
@@ -436,6 +447,16 @@ const counterGlow=new THREE.Mesh(new THREE.CylinderGeometry(1.62,1.62,.08,48),ne
 const counterTop=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,.09,48),new THREE.MeshStandardMaterial({color:0xb8f3ff,emissive:0x1c4e6a,emissiveIntensity:.34,transparent:true,opacity:.32,metalness:.65,roughness:.07,side:THREE.DoubleSide,depthWrite:false}));counterTop.position.y=1.15;prizeCounter.add(counterTop);
 const counterTopRim=new THREE.Mesh(new THREE.CylinderGeometry(1.73,1.73,.12,48,1,true),new THREE.MeshStandardMaterial({color:0x1a2d3a,emissive:0x0d1c28,emissiveIntensity:.45,metalness:.9,roughness:.12}));counterTopRim.position.y=1.15;prizeCounter.add(counterTopRim);
 const counterDisplayLight=new THREE.PointLight(0xe8f9ff,5.4,4.2,2);counterDisplayLight.position.set(0,.82,0);prizeCounter.add(counterDisplayLight);
+// A padded circular couch makes the centre a compact social lounge while
+// preserving a clear view into Trench Pepe's glass display. Its outer radius
+// is mirrored by authoritative collision below and on both multiplayer paths.
+const socialCouch=new THREE.Group();socialCouch.position.set(0,0,0);scene.add(socialCouch);
+const couchShape=new THREE.Shape();couchShape.absarc(0,0,3.2,0,Math.PI*2,false);const couchOpening=new THREE.Path();couchOpening.absarc(0,0,2.05,0,Math.PI*2,true);couchShape.holes.push(couchOpening);
+const couchSeatGeometry=new THREE.ExtrudeGeometry(couchShape,{depth:.42,steps:1,bevelEnabled:true,bevelThickness:.08,bevelSize:.08,bevelSegments:2,curveSegments:48});couchSeatGeometry.rotateX(Math.PI/2);couchSeatGeometry.translate(0,.62,0);
+const couchMaterial=new THREE.MeshStandardMaterial({color:0x3b174f,emissive:0x160923,emissiveIntensity:.48,roughness:.5,metalness:.12});
+const couchSeat=new THREE.Mesh(couchSeatGeometry,couchMaterial);couchSeat.receiveShadow=true;socialCouch.add(couchSeat);
+const couchBack=new THREE.Mesh(new THREE.TorusGeometry(2.86,.34,12,64),new THREE.MeshStandardMaterial({color:0x55206b,emissive:0x240b35,emissiveIntensity:.55,roughness:.46,metalness:.1}));couchBack.rotation.x=Math.PI/2;couchBack.position.y=.96;socialCouch.add(couchBack);
+const couchToeGlow=new THREE.Mesh(new THREE.TorusGeometry(2.62,.12,10,64),new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:1.35,roughness:.3,metalness:.55}));couchToeGlow.rotation.x=Math.PI/2;couchToeGlow.position.y=.16;socialCouch.add(couchToeGlow);
 // Low, oversized glass prize display set flush against the true back wall.
 const prizeDisplay=new THREE.Group();prizeDisplay.position.set(0,0,-15.65);scene.add(prizeDisplay);
 const rearCaseGlass=new THREE.Mesh(new THREE.BoxGeometry(14.2,1.225,1.8),new THREE.MeshStandardMaterial({color:0x8deeff,emissive:0x173d5d,emissiveIntensity:.26,transparent:true,opacity:.16,metalness:.65,roughness:.06,side:THREE.DoubleSide,depthWrite:false}));rearCaseGlass.position.y=.6125;prizeDisplay.add(rearCaseGlass);
@@ -717,6 +738,20 @@ function resolvePartitionWallCollisions(previousX){
     else if(previousX>=wallX&&playerPosition.x<rightFace)playerPosition.x=rightFace;
   }
 }
+function resolveSocialLayoutCollisions(previousX,previousZ){
+  for(const wallX of [-GALLERY_WALL_X,GALLERY_WALL_X]){
+    if(playerPosition.z>GALLERY_WALL_FRONT_Z+PLAYER_COLLISION_RADIUS)continue;
+    const leftFace=wallX-GALLERY_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS,rightFace=wallX+GALLERY_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
+    if(previousX<wallX&&playerPosition.x>leftFace)playerPosition.x=leftFace;
+    else if(previousX>=wallX&&playerPosition.x<rightFace)playerPosition.x=rightFace;
+  }
+  const distance=Math.hypot(playerPosition.x,playerPosition.z);
+  if(distance>=SOCIAL_FURNITURE_RADIUS)return;
+  const previousDistance=Math.hypot(previousX,previousZ);
+  if(distance>.001){playerPosition.x*=SOCIAL_FURNITURE_RADIUS/distance;playerPosition.z*=SOCIAL_FURNITURE_RADIUS/distance}
+  else if(previousDistance>.001){playerPosition.x=previousX;playerPosition.z=previousZ}
+  else playerPosition.z=SOCIAL_FURNITURE_RADIUS;
+}
 let lastPrizeLedDraw=0;
 const performanceStats=document.querySelector('#performance-stats');
 let performanceWindowStart=performance.now(),performanceFrames=0,slowWindows=0,fastWindows=0,latestPerformance={fps:0,frameMs:0,quality:'WARMING'};
@@ -727,6 +762,6 @@ function updatePerformanceStats(now){performanceFrames++;const elapsed=now-perfo
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
 const beforeRenderCallbacks=[];
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);if(locked){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0),0,(keys.KeyS?1:0)-(keys.KeyW?1:0));localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX);playerPosition.x=Math.max(-27,Math.min(27,playerPosition.x));playerPosition.z=Math.max(-16,Math.min(16,playerPosition.z))}near=null;let md=2.25;cabinets.forEach(c=>{const dist=c.g.position.distanceTo(playerPosition);if(dist<md){near=c;md=dist}});warmEmulatorCore(near?.system);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);if(locked){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0),0,(keys.KeyS?1:0)-(keys.KeyW?1:0));localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);playerPosition.x=Math.max(-27,Math.min(27,playerPosition.x));playerPosition.z=Math.max(-16,Math.min(16,playerPosition.z))}near=null;let md=2.25;cabinets.forEach(c=>{const dist=c.g.position.distanceTo(playerPosition);if(dist<md){near=c;md=dist}});warmEmulatorCore(near?.system);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,devicePixelRatio,pixelRatioCap);renderer.setPixelRatio(currentPixelRatio)});

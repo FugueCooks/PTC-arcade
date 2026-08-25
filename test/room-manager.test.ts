@@ -52,6 +52,20 @@ void test('the temporary construction barrier rejects entry into the PS2 room', 
   assert.equal(players.stateFor('socket-a')?.p[0], -12);
 });
 
+void test('the social couch and console gallery walls are authoritative obstacles', () => {
+  const players = createPlayers();
+  players.join('socket-a', 'main', undefined, identity, 1_000);
+  assert.deepEqual(players.move('socket-a', { p: [0, 8], r: Math.PI }, 1_500)?.p, [0, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [0, 5], r: Math.PI }, 2_000)?.p, [0, 1.65, 5]);
+  assert.equal(players.move('socket-a', { p: [0, 3.5], r: Math.PI }, 2_500), undefined);
+  assert.deepEqual(players.move('socket-a', { p: [3, 5], r: -Math.PI / 2 }, 3_000)?.p, [3, 1.65, 5]);
+  assert.deepEqual(players.move('socket-a', { p: [5.4, 5], r: -Math.PI / 2 }, 3_500)?.p, [5.4, 1.65, 5]);
+  assert.equal(players.move('socket-a', { p: [6.25, 5], r: -Math.PI / 2 }, 4_000), undefined);
+  assert.deepEqual(players.move('socket-a', { p: [5.4, 8], r: 0 }, 4_500)?.p, [5.4, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [5.4, 11], r: 0 }, 5_000)?.p, [5.4, 1.65, 11]);
+  assert.deepEqual(players.move('socket-a', { p: [6.8, 11], r: -Math.PI / 2 }, 5_500)?.p, [6.8, 1.65, 11]);
+});
+
 void test('a stationary accepted update returns a player to idle', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);

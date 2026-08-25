@@ -14,6 +14,22 @@ const DEFAULT_RECONNECT_GRACE_MS = 10_000;
 const MOVEMENT_TOLERANCE = 0.3;
 const PS2_ROOM_BOUNDARY_X = -14;
 const XBOX_ROOM_BOUNDARY_X = 14;
+const GALLERY_WALL_X = 6.2;
+const GALLERY_WALL_FRONT_Z = 9.4;
+const GALLERY_COLLISION_HALF_WIDTH = 0.49;
+const SOCIAL_FURNITURE_RADIUS = 3.65;
+
+function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
+  if (Math.hypot(toX, toZ) < SOCIAL_FURNITURE_RADIUS) return true;
+  for (const wallX of [-GALLERY_WALL_X, GALLERY_WALL_X]) {
+    if (toZ <= GALLERY_WALL_FRONT_Z && Math.abs(toX - wallX) < GALLERY_COLLISION_HALF_WIDTH) return true;
+    if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
+    const crossing = (wallX - fromX) / (toX - fromX);
+    const crossingZ = fromZ + (toZ - fromZ) * crossing;
+    if (crossing >= 0 && crossing <= 1 && crossingZ <= GALLERY_WALL_FRONT_Z) return true;
+  }
+  return false;
+}
 
 interface ManagedPlayer {
   id: string;
@@ -262,6 +278,7 @@ export class PlayerManager {
     const [x, z] = input.p;
     if (![x, z, input.r].every(Number.isFinite)) return false;
     if (x < MIN_WORLD_X || x > MAX_WORLD_X || Math.abs(z) > MAX_WORLD_Z) return false;
+    if (violatesSocialLayout(player.position[0], player.position[2], x, z)) return false;
     // Both expansion rooms are temporarily closed. Existing sessions inside
     // either room can leave, but cannot cross back through the barriers.
     if (player.position[0] >= PS2_ROOM_BOUNDARY_X && x < PS2_ROOM_BOUNDARY_X) return false;

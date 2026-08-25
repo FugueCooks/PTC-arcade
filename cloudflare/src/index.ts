@@ -30,6 +30,10 @@ const MOVEMENT_PACKET_MS = 50;
 const MOVEMENT_TOLERANCE = 0.3;
 const PS2_ROOM_BOUNDARY_X = -14;
 const XBOX_ROOM_BOUNDARY_X = 14;
+const GALLERY_WALL_X = 6.2;
+const GALLERY_WALL_FRONT_Z = 9.4;
+const GALLERY_COLLISION_HALF_WIDTH = 0.49;
+const SOCIAL_FURNITURE_RADIUS = 3.65;
 const CABINET_DISTANCE = 2.6;
 const CABINET_TIMEOUT_MS = 5_000;
 const AFK_TIMEOUT_MS = 120_000;
@@ -215,6 +219,7 @@ export class ArcadeRoom implements DurableObject {
     const now = Date.now();
     if (!player || player.movementLocked || ![x, z, rotation].every(Number.isFinite)) return this.correct(socket, player);
     if ((x as number) < -27 || (x as number) > 27 || Math.abs(z as number) > 16) return this.correct(socket, player);
+    if (violatesSocialLayout(player.p[0], player.p[2], x as number, z as number)) return this.correct(socket, player);
     if (player.p[0] >= PS2_ROOM_BOUNDARY_X && (x as number) < PS2_ROOM_BOUNDARY_X) return this.correct(socket, player);
     if (player.p[0] <= XBOX_ROOM_BOUNDARY_X && (x as number) > XBOX_ROOM_BOUNDARY_X) return this.correct(socket, player);
     const elapsed = now - attachment.lastAcceptedAt;
@@ -402,6 +407,17 @@ function decodeBase64Url(value: string): Uint8Array {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
   const binary = atob(normalized);
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
+  if (Math.hypot(toX, toZ) < SOCIAL_FURNITURE_RADIUS) return true;
+  for (const wallX of [-GALLERY_WALL_X, GALLERY_WALL_X]) {
+    if (toZ <= GALLERY_WALL_FRONT_Z && Math.abs(toX - wallX) < GALLERY_COLLISION_HALF_WIDTH) return true;
+    if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
+    const crossing = (wallX - fromX) / (toX - fromX);
+    const crossingZ = fromZ + (toZ - fromZ) * crossing;
+    if (crossing >= 0 && crossing <= 1 && crossingZ <= GALLERY_WALL_FRONT_Z) return true;
+  }
+  return false;
 }
 function normalizeAngle(value: number): number { return Math.atan2(Math.sin(value), Math.cos(value)); }
 function chooseSpawn(players: PlayerState[]): typeof spawnPoints[number] { return spawnPoints.find((spawn) => players.every((player) => Math.hypot(player.p[0] - spawn[0], player.p[2] - spawn[2]) >= 1.4)) ?? spawnPoints[players.length % spawnPoints.length]; }
