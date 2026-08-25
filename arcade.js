@@ -144,13 +144,15 @@ function buildPartitionWall(wallX,accent){
 }
 buildPartitionWall(PLAYSTATION_WALL_X,0xd18a52);
 const playstationWallTexture=new THREE.TextureLoader().load('assets/art/playstation-wall.webp?v=webp-2');
-const playstationWall=new THREE.Mesh(new THREE.PlaneGeometry(12.4,4.7),new THREE.MeshBasicMaterial({map:playstationWallTexture}));playstationWall.position.set(-13.805,2.5,0);playstationWall.rotation.y=Math.PI/2;scene.add(playstationWall);
+playstationWallTexture.colorSpace=THREE.SRGBColorSpace;
+playstationWallTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+const playstationWall=new THREE.Mesh(new THREE.PlaneGeometry(12.4,4.7),new THREE.MeshBasicMaterial({map:playstationWallTexture}));playstationWall.position.set(-22.5,2.5,-.16);playstationWall.rotation.y=Math.PI;scene.add(playstationWall);
 buildPartitionWall(N64_WALL_X,0x36f9f6);
 const n64WallTexture=new THREE.TextureLoader().load('assets/art/nintendo64-wall.webp?v=webp-2');
 n64WallTexture.colorSpace=THREE.SRGBColorSpace;
 n64WallTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const n64WallGraphic=new THREE.Mesh(new THREE.PlaneGeometry(6.34,4.7),new THREE.MeshBasicMaterial({map:n64WallTexture}));
-n64WallGraphic.position.set(13.805,2.5,0);n64WallGraphic.rotation.y=-Math.PI/2;scene.add(n64WallGraphic);
+n64WallGraphic.position.set(22.5,2.5,-.16);n64WallGraphic.rotation.y=Math.PI;scene.add(n64WallGraphic);
 // Matching construction barriers close the front doorways to the unfinished
 // PS2 and Xbox rooms. The rear doorways remain open to the playable galleries.
 function constructionTapeTexture(){const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;const context=canvas.getContext('2d');context.fillStyle='#f6c515';context.fillRect(0,0,768,512);context.save();context.strokeStyle='#17120a';context.lineWidth=70;for(let x=-520;x<1100;x+=150){context.beginPath();context.moveTo(x,512);context.lineTo(x+360,0);context.stroke()}context.restore();context.fillStyle='#f6c515';context.fillRect(0,196,768,120);context.strokeStyle='#17120a';context.lineWidth=12;context.strokeRect(0,196,768,120);context.fillStyle='#17120a';context.font='bold 64px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText('CAUTION',384,258);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture}
