@@ -271,6 +271,15 @@ const megaManCeiling=box(MEGAMAN_ROOM_SIZE,.12,MEGAMAN_ROOM_SIZE,0x090b18,MEGAMA
 box(.3,5,MEGAMAN_ROOM_SIZE,0x11182c,-55,2.5,MEGAMAN_ROOM_CENTER_Z,.06);
 box(MEGAMAN_ROOM_SIZE,5,.3,0x11182c,MEGAMAN_ROOM_CENTER_X,2.5,-19,.06);
 box(MEGAMAN_ROOM_SIZE,5,.3,0x11182c,MEGAMAN_ROOM_CENTER_X,2.5,5,.06);
+// Frame the supplied Mega Man artwork on the otherwise open front wall. This
+// stays independent of cabinet meshes so later cabinet additions can move
+// without stretching or replacing the mural.
+box(9,4.92,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,4.81,.12);
+const megaManMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural.png?v=megaman-mural-1');
+megaManMuralTexture.colorSpace=THREE.SRGBColorSpace;
+megaManMuralTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+const megaManMural=new THREE.Mesh(new THREE.PlaneGeometry(8.7,4.785),new THREE.MeshBasicMaterial({map:megaManMuralTexture}));
+megaManMural.position.set(MEGAMAN_ROOM_CENTER_X,2.5,4.75);megaManMural.rotation.y=Math.PI;scene.add(megaManMural);
 for(let x=-53;x<=-33;x+=4)box(3.82,.055,.06,0xd18a52,x,4.66,-18.81,.75);
 lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_SIZE,MEGAMAN_ROOM_SIZE,0x4aa8ff);
 // Each side annex is split into two near-square rooms. The rear pair contains
