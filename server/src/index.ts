@@ -45,6 +45,12 @@ import { AccountRepository } from './auth/account-repository.js';
 import { AccountService } from './auth/account-service.js';
 import { installAccountRoutes } from './http/account-routes.js';
 import { RedisIdentityDirectory } from './redis/identity-directory.js';
+import { InMemoryWalletChallengeStore, RedisWalletChallengeStore } from './auth/wallet-challenge-store.js';
+import { WalletChallengeService } from './auth/wallet-challenge-service.js';
+import { DrizzleWalletAccountRepository } from './auth/wallet-account-repository.js';
+import { WalletAuthService } from './auth/wallet-auth-service.js';
+import { installWalletAuthRoutes } from './http/wallet-auth-routes.js';
+import { InMemoryAsyncRateLimiter, RedisAsyncRateLimiter } from './auth/distributed-rate-limiter.js';
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -122,9 +128,11 @@ const passwordHasher = new PasswordHasher({
   iterations: config.passwordArgon2Iterations,
   parallelism: config.passwordArgon2Parallelism
 });
-const authService = database ? new AuthService(
-  new DrizzleAuthRepository(database.db), passwordHasher,
-  new SessionTokenService(config.sessionTtlMs), new SessionTokenService(config.guestSessionTtlMs),
+const authRepository = database ? new DrizzleAuthRepository(database.db) : undefined;
+const registeredSessionTokens = new SessionTokenService(config.sessionTtlMs);
+const authService = authRepository ? new AuthService(
+  authRepository, passwordHasher,
+  registeredSessionTokens, new SessionTokenService(config.guestSessionTtlMs),
   await passwordHasher.hash('not-a-real-account-password')
 ) : undefined;
 const accountService = database ? new AccountService(new AccountRepository(database.db), passwordHasher) : undefined;
@@ -141,6 +149,20 @@ health = new HealthService(config, metrics, {
   databaseReady: () => databaseBootstrapped && (database?.isReady ?? false)
 });
 const redisKeys = new RedisKeys(config.redisKeyPrefix);
+const walletChallengeStore = redisBootstrapped && redis
+  ? new RedisWalletChallengeStore(redis.client, redisKeys) : new InMemoryWalletChallengeStore();
+const walletChallenges = new WalletChallengeService(walletChallengeStore, config);
+const walletAuthService = database && authRepository ? new WalletAuthService(walletChallenges,
+  new DrizzleWalletAccountRepository(database.db), registeredSessionTokens, authRepository, config.solanaNetwork) : undefined;
+const walletChallengeLimiter = redisBootstrapped && redis
+  ? new RedisAsyncRateLimiter(redis.client, redisKeys, Math.max(5, Math.floor(config.authRequestLimit / 2)), 10 * 60_000)
+  : new InMemoryAsyncRateLimiter(Math.max(5, Math.floor(config.authRequestLimit / 2)), 10 * 60_000);
+const walletVerificationLimiter = redisBootstrapped && redis
+  ? new RedisAsyncRateLimiter(redis.client, redisKeys, config.authRequestLimit, 10 * 60_000)
+  : new InMemoryAsyncRateLimiter(config.authRequestLimit, 10 * 60_000);
+const authenticationLimiter = redisBootstrapped && redis
+  ? new RedisAsyncRateLimiter(redis.client, redisKeys, config.authRequestLimit, 10 * 60_000)
+  : new InMemoryAsyncRateLimiter(config.authRequestLimit, 10 * 60_000);
 const identityDirectory = redisBootstrapped && redis ? new RedisIdentityDirectory(redis.client, redisKeys, config.serverId) : undefined;
 const roomDirectory = redisBootstrapped && redis ? new RedisRoomDirectory(redis.client, redisKeys, config.roomDirectoryTtlMs) : new InMemoryRoomDirectory();
 const roomOwnership = redisBootstrapped && redis ? new RoomOwnershipService(redis.client, redisKeys, config.serverId, config.roomOwnershipTtlMs) : undefined;
@@ -164,7 +186,11 @@ const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirect
 installOperationalRoutes(app, config, health, metrics, startedAt);
 app.use(express.json({ limit: '16kb' }));
 installAuthRoutes(app, config, { service: authService, tickets: realtimeTickets,
+  limiter: authenticationLimiter,
   databaseReady: () => databaseBootstrapped && (database?.isReady ?? false) });
+installWalletAuthRoutes(app, config, { challenges: walletChallenges, walletAuth: walletAuthService,
+  challengeLimiter: walletChallengeLimiter, verificationLimiter: walletVerificationLimiter,
+  ready: () => databaseBootstrapped && (database?.isReady ?? false) && (!config.redisRequired || Boolean(redis?.isReady)) });
 installAccountRoutes(app, config, {
   auth: authService, accounts: accountService, databaseReady: () => databaseBootstrapped && (database?.isReady ?? false),
   identityChanged: (identity) => { players.updateIdentity(stablePublicPlayerId(identity), { displayName: identity.displayName, avatarId: identity.avatarId }); },

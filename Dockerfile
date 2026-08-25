@@ -21,6 +21,7 @@ COPY --from=build /app/emulators ./emulators
 COPY --from=build /app/social ./social
 COPY --from=build /app/world ./world
 COPY --from=build /app/realtime ./realtime
+COPY --from=build /app/wallet ./wallet
 COPY --from=build /app/games ./games
 COPY --from=build /app/rooms ./rooms
 EXPOSE 8080

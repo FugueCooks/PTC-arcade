@@ -2,7 +2,7 @@ import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=avatar-loader
 import { RoomPlacementClient } from './rooms/room-placement-client.js?v=phase7-room-browser-1';
 
 const PREFERENCE_KEY = 'roms-arcade-avatar-preferences';
-const namePattern = /^[A-Za-z0-9_.-]{2,18}$/;
+const namePattern = /^[A-Za-z0-9 ._-]{2,18}$/;
 const screen = document.querySelector('#avatar-screen');
 const form = document.querySelector('#avatar-form');
 const nameInput = document.querySelector('#display-name');
@@ -14,17 +14,21 @@ const cards = document.querySelector('#avatar-cards');
 const status = document.querySelector('#avatar-status');
 const confirmButton = document.querySelector('#avatar-confirm');
 const cancelButton = document.querySelector('#placement-cancel');
-const authModePanel = document.querySelector('#auth-mode');
-const authFields = document.querySelector('#auth-fields');
-const passwordInput = document.querySelector('#account-password');
-const signedInPanel = document.querySelector('#signed-in-panel');
-const signedInLabel = document.querySelector('#signed-in-label');
-const signOutButton = document.querySelector('#sign-out');
+const walletPanel = document.querySelector('#wallet-panel');
+const walletSelect = document.querySelector('#wallet-select');
+const walletConnect = document.querySelector('#wallet-connect');
+const walletSignout = document.querySelector('#wallet-signout');
+const walletChange = document.querySelector('#wallet-change');
+const walletCopy = document.querySelector('#wallet-copy');
+const walletAddress = document.querySelector('#wallet-address');
+const identityMode = document.querySelector('#identity-mode');
+const profileFields = document.querySelector('#wallet-profile-fields');
 const placementClient = new RoomPlacementClient();
 let selectedAvatarId = 'neon-capsule';
 let staticRooms;
-let authMode = 'guest';
 let accountSession;
+let avatarRegistry;
+let walletClient;
 
 const readPreferences = () => {
   try {
@@ -33,8 +37,9 @@ const readPreferences = () => {
   } catch { return {}; }
 };
 
-const savePreferences = (identity) => {
-  try { localStorage.setItem(PREFERENCE_KEY, JSON.stringify(identity)); } catch { /* Private browsing may disable storage. */ }
+const savePreferences = (selection, persistent) => {
+  const value = persistent ? selection : { roomId: selection.roomId };
+  try { localStorage.setItem(PREFERENCE_KEY, JSON.stringify(value)); } catch { /* Private browsing may disable storage. */ }
 };
 
 const selectAvatar = (id) => {
@@ -51,33 +56,64 @@ const requestJson = async (url, options = {}) => {
   const response = await fetch(url, { credentials: 'same-origin', ...options,
     headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) } });
   const payload = response.status === 204 ? {} : await response.json().catch(() => ({}));
-  if (!response.ok) { const error = new Error(payload?.error?.message ?? 'Account request failed.'); error.status = response.status; throw error; }
+  if (!response.ok) { const error = new Error(payload?.error?.message ?? 'Arcade request failed.'); error.status = response.status; throw error; }
   return payload;
 };
 
-const setAuthMode = (mode) => {
-  authMode = mode;
-  authModePanel.querySelectorAll('[data-auth-mode]').forEach((button) => button.classList.toggle('selected', button.dataset.authMode === mode));
-  authFields.hidden = mode === 'guest' || Boolean(accountSession);
-  passwordInput.disabled = mode === 'guest' || Boolean(accountSession);
-  passwordInput.required = !passwordInput.disabled;
-  passwordInput.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
-  confirmButton.textContent = mode === 'register' ? 'CREATE ACCOUNT & ENTER' : mode === 'login' ? 'SIGN IN & ENTER' : 'ENTER AS GUEST';
-};
+const isWalletSession = () => accountSession?.identity?.type === 'registered' && accountSession.identity.walletAuthenticated === true;
 
-const showSignedIn = (session) => {
-  accountSession = session;
-  signedInPanel.hidden = !session;
-  authModePanel.hidden = Boolean(session);
-  authFields.hidden = true;
-  passwordInput.disabled = Boolean(session);
-  if (session) {
-    signedInLabel.textContent = `${session.identity.type === 'guest' ? 'GUEST' : 'SIGNED IN'} // ${session.identity.displayName}`;
-    nameInput.value = session.identity.displayName;
-    selectedAvatarId = session.identity.avatarId;
-    confirmButton.textContent = 'ENTER ARCADE';
+const showIdentityMode = () => {
+  const authenticated = isWalletSession();
+  walletPanel.dataset.authenticated = String(authenticated);
+  identityMode.textContent = authenticated ? 'WALLET ACCOUNT' : 'GUEST MODE';
+  profileFields.hidden = !authenticated;
+  walletSignout.hidden = !authenticated;
+  walletChange.hidden = !authenticated;
+  walletCopy.hidden = !authenticated;
+  walletConnect.hidden = authenticated;
+  walletSelect.hidden = authenticated;
+  confirmButton.textContent = authenticated ? 'ENTER ARCADE' : 'PLAY AS GUEST';
+  if (authenticated) {
+    const address = accountSession.identity.walletAddress ?? '';
+    walletAddress.textContent = address ? `${address.slice(0, 4)}…${address.slice(-4)} · AUTHENTICATED` : 'AUTHENTICATED';
+    walletAddress.hidden = false;
+    nameInput.value = accountSession.identity.displayName;
+    selectedAvatarId = avatarRegistry?.has(accountSession.identity.avatarId) ? accountSession.identity.avatarId : 'neon-capsule';
+    selectAvatar(selectedAvatarId);
+  } else {
+    walletAddress.hidden = true;
+    nameInput.value = '';
+    selectedAvatarId = 'neon-capsule';
   }
 };
+
+async function initializeWallets() {
+  try {
+    const { PtcWalletClient } = await import('./wallet/wallet-standard-bundle.js?v=phase9-1');
+    walletClient = new PtcWalletClient({ appName: 'PTC Arcade', appUri: location.origin,
+      network: window.ARCADE_RUNTIME?.solanaNetwork ?? 'mainnet-beta' });
+    walletClient.onAccountChange((address) => {
+      if (!isWalletSession()) return;
+      if (address && address === accountSession.identity.walletAddress) return;
+      walletAddress.textContent = address
+        ? 'CONNECTED WALLET CHANGED · AUTHENTICATE TO SWITCH ACCOUNT'
+        : 'WALLET DISCONNECTED · SIGNED-IN SESSION REMAINS ACTIVE';
+      walletChange.hidden = false;
+      showStatus('Your wallet connection changed. Your signed-in account has not changed.', true);
+    });
+    const render = () => {
+      const wallets = walletClient.wallets();
+      walletSelect.replaceChildren(...(wallets.length ? wallets.map((wallet) => roomOption(wallet.name, wallet.name))
+        : [roomOption('', 'NO COMPATIBLE WALLET FOUND', true)]));
+      walletConnect.disabled = wallets.length === 0;
+    };
+    render();
+    setTimeout(render, 500);
+  } catch {
+    walletSelect.replaceChildren(roomOption('', 'WALLET SUPPORT UNAVAILABLE', true));
+    walletConnect.disabled = true;
+  }
+}
 
 const roomOption = (value, label, disabled = false) => {
   const option = document.createElement('option');
@@ -122,16 +158,15 @@ async function refreshRooms(announce = true) {
 
 async function boot() {
   confirmButton.disabled = true;
-  confirmButton.textContent = 'ENTER AS GUEST';
+  confirmButton.textContent = 'PLAY AS GUEST';
   delete confirmButton.dataset.retry;
   showStatus('Loading avatar choices…');
   try {
     const avatars = await loadAvatarRegistry();
+    avatarRegistry = avatars;
     staticRooms = window.ARCADE_ROOM_REGISTRY?.rooms;
     if (!(staticRooms instanceof Map) || staticRooms.size === 0) throw new Error('Arcade instances could not be loaded.');
     const saved = readPreferences();
-    if (typeof saved.displayName === 'string') nameInput.value = saved.displayName.slice(0, 18);
-    if (avatars.has(saved.avatarId)) selectedAvatarId = saved.avatarId;
     showStaticRooms(typeof saved.roomId === 'string' ? saved.roomId : '');
     if (typeof saved.roomId === 'string' && saved.roomId && !staticRooms.has(saved.roomId)) roomIdInput.value = saved.roomId.slice(0, 96);
     cards.replaceChildren(...[...avatars.values()].map((avatar) => {
@@ -145,12 +180,13 @@ async function boot() {
     }));
     try {
       const session = await requestJson('/api/auth/session', { method: 'GET' });
-      showSignedIn(session);
-      if (avatars.has(session.identity.avatarId)) selectedAvatarId = session.identity.avatarId;
-    } catch { showSignedIn(undefined); setAuthMode('guest'); }
-    selectAvatar(selectedAvatarId);
+      accountSession = session?.identity?.type === 'registered' && session.identity.walletAuthenticated !== true
+        ? undefined : session;
+    } catch { accountSession = undefined; }
+    showIdentityMode();
+    await initializeWallets();
     confirmButton.disabled = false;
-    showStatus('Choose your player, then enter the arcade.');
+    showStatus(isWalletSession() ? 'Wallet authenticated. Choose your name and avatar.' : 'Enter instantly as a temporary guest, or connect a wallet to save your profile.');
     void refreshRooms(false);
   } catch (error) {
     confirmButton.disabled = false;
@@ -160,26 +196,58 @@ async function boot() {
   }
 }
 
+walletConnect.addEventListener('click', async () => {
+  if (!walletClient || !walletSelect.value) return;
+  walletConnect.disabled = true;
+  showStatus('Connect your wallet, then approve the free sign-in message. No transaction will be sent.');
+  try {
+    const connected = await walletClient.connect(walletSelect.value);
+    const challenge = await requestJson('/api/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ walletAddress: connected.address }) });
+    showStatus('SIGNATURE PENDING // This is free and does not spend SOL.');
+    const output = await walletClient.signIn(challenge.input);
+    accountSession = await requestJson('/api/auth/wallet/verify', { method: 'POST',
+      body: JSON.stringify({ challengeId: challenge.challengeId, output }) });
+    showIdentityMode();
+    showStatus(accountSession.created ? 'Wallet verified. Finish your persistent arcade profile.' : 'Wallet verified. Your persistent profile is restored.');
+  } catch (error) {
+    showStatus(error instanceof Error ? error.message : 'Wallet authentication was canceled or rejected.', true);
+  } finally { walletConnect.disabled = false; }
+});
+
+walletSignout.addEventListener('click', async () => {
+  walletSignout.disabled = true;
+  try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* Sign-out remains local if the server is unavailable. */ }
+  await walletClient?.disconnect();
+  accountSession = undefined;
+  showIdentityMode();
+  walletSignout.disabled = false;
+  showStatus('Signed out. You may enter as a temporary guest.');
+});
+
+walletCopy.addEventListener('click', async () => {
+  const address = accountSession?.identity?.walletAddress;
+  if (!address) return;
+  try { await navigator.clipboard.writeText(address); showStatus('Wallet address copied.'); }
+  catch { showStatus('Could not copy the wallet address.', true); }
+});
+
+walletChange.addEventListener('click', () => {
+  walletSelect.hidden = false;
+  walletConnect.hidden = false;
+  walletConnect.textContent = 'AUTHENTICATE NEW WALLET';
+  showStatus('Choose a wallet and sign a new challenge. Your current account remains active until verification succeeds.');
+});
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (confirmButton.dataset.retry === 'true') {
     void boot();
     return;
   }
-  let displayName = nameInput.value.normalize('NFKC').trim().replace(/\s+/g, ' ');
-  if (!accountSession && !namePattern.test(displayName)) {
-    showStatus('Use 2–18 letters, numbers, dots, dashes, or underscores.', true);
+  let displayName = isWalletSession() ? nameInput.value.normalize('NFKC').trim().replace(/\s+/g, ' ') : '';
+  if (isWalletSession() && !namePattern.test(displayName)) {
+    showStatus('Use 2–18 letters, numbers, spaces, dots, dashes, or underscores.', true);
     nameInput.focus();
-    return;
-  }
-  if (!accountSession && authMode === 'register' && passwordInput.value.length < 8) {
-    showStatus('Choose a password with at least 8 characters.', true);
-    passwordInput.focus();
-    return;
-  }
-  if (!accountSession && authMode === 'login' && !passwordInput.value) {
-    showStatus('Enter your password.', true);
-    passwordInput.focus();
     return;
   }
   const customRoomId = roomIdInput.value.trim();
@@ -190,24 +258,24 @@ form.addEventListener('submit', async (event) => {
   }
   confirmButton.disabled = true;
   try {
-    if (accountSession?.identity?.type === 'registered') {
+    if (isWalletSession()) {
       const profile = await requestJson('/api/account/profile', { method: 'PUT', body: JSON.stringify({ displayName, avatarId: selectedAvatarId }) });
-      showSignedIn({ ...accountSession, identity: profile.identity });
-    } else if (!accountSession) {
-      const endpoint = authMode === 'register' ? '/api/auth/register' : authMode === 'login' ? '/api/auth/login' : '/api/auth/guest';
-      const body = authMode === 'login' ? { username: displayName, password: passwordInput.value }
-        : authMode === 'register' ? { username: displayName, password: passwordInput.value, avatarId: selectedAvatarId }
-          : { displayName, avatarId: selectedAvatarId };
-      try {
-        const session = await requestJson(endpoint, { method: 'POST', body: JSON.stringify(body) });
-        showSignedIn(session); displayName = session.identity.displayName; selectedAvatarId = session.identity.avatarId;
-        passwordInput.value = '';
-      } catch (error) {
-        // Guest-only deployments remain usable until PostgreSQL is provisioned.
-        if (!(authMode === 'guest' && (error.status === 404 || error.status === 503))) throw error;
-      }
+      accountSession = { ...accountSession, identity: profile.identity };
     } else {
+      if (accountSession?.identity?.type !== 'guest') {
+        if (accountSession?.identity?.type === 'registered') {
+          try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* A fresh guest request remains authoritative. */ }
+          accountSession = undefined;
+        }
+        try { accountSession = await requestJson('/api/auth/guest', { method: 'POST', body: '{}' }); }
+        catch (error) { if (!(error.status === 404 || error.status === 503)) throw error; }
+      }
+    }
+    if (accountSession) {
       displayName = accountSession.identity.displayName; selectedAvatarId = accountSession.identity.avatarId;
+    } else {
+      displayName = `GUEST_${crypto.getRandomValues(new Uint32Array(1))[0].toString(16).toUpperCase().slice(-6).padStart(6, '0')}`;
+      selectedAvatarId = 'neon-capsule';
     }
   } catch (error) {
     confirmButton.disabled = false;
@@ -226,21 +294,13 @@ form.addEventListener('submit', async (event) => {
     }
   }
   const selection = { displayName, avatarId: selectedAvatarId, roomId: customRoomId || roomSelect.value, realtimeTicket };
-  savePreferences(selection);
+  savePreferences(selection, isWalletSession());
   window.arcadeAvatarIdentity = selection;
   window.dispatchEvent(new CustomEvent('arcade:identity-selected', { detail: selection }));
   screen.hidden = true;
   document.querySelector('#enter').click();
 });
 
-authModePanel.addEventListener('click', (event) => {
-  const mode = event.target.closest('[data-auth-mode]')?.dataset.authMode;
-  if (mode) { event.preventDefault(); setAuthMode(mode); }
-});
-signOutButton.addEventListener('click', async () => {
-  try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* Local state is cleared either way. */ }
-  showSignedIn(undefined); setAuthMode('guest'); showStatus('Signed out. Continue as a guest or sign in again.');
-});
 window.addEventListener('arcade:connection-error', ({ detail }) => {
   screen.hidden = false;
   cancelButton.hidden = true;

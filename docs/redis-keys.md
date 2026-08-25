@@ -16,5 +16,8 @@ All keys begin with `REDIS_KEY_PREFIX`, normally `arcade:v1:production`. Use a d
 | `:reconnect:{sha256(token)}` | Player-to-owner reconnect route | 20 seconds |
 | `:socket-stream` | Socket.IO cross-process packet stream | approximately 10,000 entries |
 | `:socket-session:*` | Optional Socket.IO recovery state | adapter-managed |
+| `:wallet-challenges:{challengeId}` | Protected SIWS challenge, expected hash, origin, attempts | `WALLET_CHALLENGE_TTL_SECONDS` |
+| `:wallet-auth-rate-limit:{sha256(identifier)}` | Distributed wallet/guest authentication counter | request-limit window |
+| `:wallet-account-lock:{network}:{sha256(address)}` | Reserved wallet account-creation coordination key | short transaction window |
 
-Redis credentials, raw reconnect tokens, ROM data, local file paths, and chat history are not part of these keys. Reconnect tokens are one-way hashed before key construction. Redis must not be exposed to browsers or public networks.
+Redis credentials, raw reconnect tokens, signatures, signed messages, private keys, seed phrases, ROM data, local file paths, and chat history are not part of these keys. Reconnect tokens and rate-limit identifiers are one-way hashed before key construction. Redis must not be exposed to browsers or public networks.

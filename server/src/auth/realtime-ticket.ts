@@ -1,11 +1,13 @@
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import type { SafeIdentity } from './auth-repository.js';
+import { DEFAULT_GUEST_AVATAR_ID, entitlementsFor } from './authorization-policy.js';
 
 export interface RealtimeTicketPayload {
-  v: 1;
+  v: 2;
   pid: string;
   n: string;
   a: string;
+  mode: 'guest' | 'wallet';
   exp: number;
   nonce: string;
 }
@@ -17,11 +19,13 @@ export class RealtimeTicketService {
 
   issue(identity: SafeIdentity, now = Date.now()): { ticket: string; expiresAt: Date } {
     const expiresAt = new Date(now + this.ttlMs);
+    const walletAuthenticated = entitlementsFor(identity).walletAuthenticated;
     const payload: RealtimeTicketPayload = {
-      v: 1,
+      v: 2,
       pid: stablePublicPlayerId(identity),
       n: identity.displayName,
-      a: identity.avatarId,
+      a: walletAuthenticated ? identity.avatarId : DEFAULT_GUEST_AVATAR_ID,
+      mode: walletAuthenticated ? 'wallet' : 'guest',
       exp: expiresAt.getTime(),
       nonce: randomUUID()
     };
@@ -32,5 +36,6 @@ export class RealtimeTicketService {
 }
 
 export function stablePublicPlayerId(identity: SafeIdentity): string {
+  if (identity.publicPlayerId) return `player-${identity.publicPlayerId.replaceAll('-', '').slice(0, 32)}`;
   return `player-${createHash('sha256').update(`${identity.type}:${identity.id}`).digest('hex').slice(0, 32)}`;
 }

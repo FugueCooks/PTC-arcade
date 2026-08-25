@@ -1,4 +1,6 @@
-# Phase 8 authentication architecture
+# Phase 8 authentication architecture (legacy foundation)
+
+> Phase 9 disables public username/password registration and login by default. The database, opaque-session, preference, guest, and audit foundations remain in use; persistent player access now requires verified Solana wallet control. See `phase-9-wallet-authentication.md`.
 
 Phase 8 keeps durable identity separate from live arcade simulation. PostgreSQL stores username/password accounts, guest identities, opaque sessions, profile preferences, and bounded security audit events. Redis continues to coordinate temporary presence, room routing, reconnects, rate limits, and active-connection locks. Movement, cabinets, room state, world state, and animation remain outside PostgreSQL.
 

@@ -28,8 +28,12 @@ export class AccountService {
 
   async deleteAccount(userId: string, password: string): Promise<boolean> {
     const user = await this.repository.loginById(userId);
-    if (!user || !await this.passwords.verify(user.passwordHash, password)) return false;
+    if (!user?.passwordHash || !await this.passwords.verify(user.passwordHash, password)) return false;
     await this.safeAudit('account-deletion-requested', userId); await this.repository.deleteAccount(userId); return true;
+  }
+  async deleteWalletAccount(userId: string): Promise<void> {
+    await this.safeAudit('account-deletion-requested', userId);
+    await this.repository.deleteAccount(userId);
   }
   private async safeAudit(eventType: string, userId?: string): Promise<void> {
     try { await this.repository.recordAudit(eventType, userId); } catch { /* Audit storage must not expose or block account operations. */ }

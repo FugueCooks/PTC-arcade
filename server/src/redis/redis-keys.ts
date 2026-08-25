@@ -14,4 +14,7 @@ export class RedisKeys {
   socketSessions(): string { return `${this.prefix}:socket-session:`; }
   activeIdentity(playerId: string): string { return `${this.prefix}:active-identity:${playerId}`; }
   identityPresence(playerId: string): string { return `${this.prefix}:identity-presence:${playerId}`; }
+  walletChallenge(challengeId: string): string { return `${this.prefix}:wallet-challenges:${challengeId}`; }
+  walletAuthRateLimit(identifierHash: string): string { return `${this.prefix}:wallet-auth-rate-limit:${identifierHash}`; }
+  walletAccountLock(network: string, addressHash: string): string { return `${this.prefix}:wallet-account-lock:${network}:${addressHash}`; }
 }

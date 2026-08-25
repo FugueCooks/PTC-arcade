@@ -37,19 +37,24 @@
     <section id="avatar-screen" aria-labelledby="avatar-title">
       <form id="avatar-form" class="avatar-panel">
         <p class="eyebrow">PLAYER SELECT // ONLINE ARCADE</p>
-        <h2 id="avatar-title">CHOOSE YOUR PLAYER</h2>
-        <div id="auth-mode" class="auth-mode" aria-label="Account mode">
-          <button type="button" data-auth-mode="guest" class="selected">CONTINUE AS GUEST</button>
-          <button type="button" data-auth-mode="login">SIGN IN</button>
-          <button type="button" data-auth-mode="register">CREATE ACCOUNT</button>
+        <h2 id="avatar-title">ENTER PTC ARCADE</h2>
+        <div id="wallet-panel" class="wallet-panel">
+          <p id="identity-mode">GUEST MODE</p>
+          <p class="wallet-explainer">Play immediately as a guest, or sign a free message with a Solana wallet to save your name, avatar, and preferences. We never request seed phrases or private keys.</p>
+          <div class="wallet-picker-row">
+            <select id="wallet-select" aria-label="Solana wallet"><option value="">FINDING WALLETS…</option></select>
+            <button id="wallet-connect" type="button">CONNECT WALLET</button>
+            <button id="wallet-signout" type="button" hidden>SIGN OUT</button>
+            <button id="wallet-change" type="button" hidden>CHANGE WALLET</button>
+            <button id="wallet-copy" type="button" hidden>COPY ADDRESS</button>
+          </div>
+          <p id="wallet-address" hidden></p>
         </div>
-        <div id="auth-fields" class="auth-fields" hidden>
-          <label class="avatar-name-label" for="account-password">PASSWORD <span>(8+ CHARACTERS)</span></label>
-          <input id="account-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" />
+        <div id="wallet-profile-fields" hidden>
+          <label class="avatar-name-label" for="display-name">PERSISTENT DISPLAY NAME</label>
+          <input id="display-name" name="display-name" maxlength="18" autocomplete="nickname" />
+          <div id="avatar-cards" class="avatar-cards" aria-label="Available avatars" aria-live="polite"></div>
         </div>
-        <div id="signed-in-panel" class="signed-in-panel" hidden><span id="signed-in-label"></span><button id="sign-out" type="button">SIGN OUT</button></div>
-        <label class="avatar-name-label" for="display-name">USERNAME</label>
-        <input id="display-name" name="display-name" maxlength="18" autocomplete="username" placeholder="PLAYER_ONE" required />
         <label class="avatar-name-label avatar-room-label" for="room-select">ARCADE INSTANCE</label>
         <div class="room-picker-row">
           <select id="room-select" name="room-select" aria-describedby="room-help"></select>
@@ -58,9 +63,8 @@
         <label class="avatar-name-label room-id-label" for="room-id">JOIN BY ROOM ID <span>(OPTIONAL)</span></label>
         <input id="room-id" name="room-id" maxlength="96" autocomplete="off" placeholder="LEAVE BLANK FOR QUICK JOIN" />
         <p id="room-help">Quick Join chooses a healthy room automatically. Each instance supports up to 25 players.</p>
-        <div id="avatar-cards" class="avatar-cards" aria-label="Available avatars" aria-live="polite"></div>
         <p id="avatar-status" role="status">Loading avatar choices…</p>
-        <button id="avatar-confirm" type="submit" disabled>ENTER ARCADE</button>
+        <button id="avatar-confirm" type="submit" disabled>PLAY AS GUEST</button>
         <button id="placement-cancel" type="button" hidden>CANCEL SEARCH</button>
       </form>
     </section>
@@ -98,6 +102,6 @@
     </script>
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
-    <script type="module" src="app-bootstrap.js?v=couch-walkway-1"></script>
+    <script type="module" src="app-bootstrap.js?v=wallet-auth-1"></script>
   </body>
 </html>

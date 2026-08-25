@@ -8,7 +8,7 @@ const rootFiles = [
   'index.html', 'player.html', 'style.css', 'app-bootstrap.js', 'arcade.js',
   'avatar-selection.js', 'multiplayer-client.js'
 ];
-const sourceDirectories = ['avatars', 'cabinets', 'emulators', 'games', 'rooms', 'social', 'world', 'realtime'];
+const sourceDirectories = ['avatars', 'cabinets', 'emulators', 'games', 'rooms', 'social', 'world', 'realtime', 'wallet'];
 const requiredPrizeModels = new Set([
   'enterprise.optimized.glb',
   'furthermore.optimized.glb',
@@ -47,7 +47,8 @@ const runtimeConfig = {
   biosAssetUrl: process.env.BIOS_ASSET_URL || 'https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN',
   gameCubeDspAssetUrl: process.env.GAMECUBE_DSP_ASSET_URL || 'https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/dsp_rom.bin',
   realtimeUrl: process.env.REALTIME_URL || 'https://retro-arcade-realtime.roms-retro-arcade.workers.dev',
-  matchmakingUrl: process.env.MATCHMAKING_URL || ''
+  matchmakingUrl: process.env.MATCHMAKING_URL || '',
+  solanaNetwork: process.env.SOLANA_NETWORK || 'mainnet-beta'
 };
 await writeFile(path.join(output, 'runtime-config.js'), `window.ARCADE_RUNTIME = Object.freeze(${JSON.stringify(runtimeConfig)});\n`);
 await writeFile(path.join(output, '_headers'), headersFile());

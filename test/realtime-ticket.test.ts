@@ -6,7 +6,7 @@ import type { SafeIdentity } from '../server/src/auth/auth-repository.js';
 
 const identity: SafeIdentity = {
   id: '5fcd8b4d-335f-48b0-9515-a7383515d9be', type: 'registered', displayName: 'Player One',
-  avatarId: 'neon-capsule', status: 'active'
+  avatarId: 'neon-capsule', status: 'active', walletAuthenticated: true
 };
 
 void test('realtime tickets carry only signed public identity and expire quickly', () => {
@@ -18,6 +18,8 @@ void test('realtime tickets carry only signed public identity and expire quickly
   assert.equal(payload.pid, stablePublicPlayerId(identity));
   assert.equal(payload.n, 'Player One');
   assert.equal(payload.a, 'neon-capsule');
+  assert.equal(payload.v, 2);
+  assert.equal(payload.mode, 'wallet');
   assert.equal(payload.exp, 31_000);
   assert.equal(payload.id, undefined);
   assert.equal(payload.email, undefined);
@@ -25,4 +27,14 @@ void test('realtime tickets carry only signed public identity and expire quickly
 
 void test('realtime ticket secrets must have sufficient entropy length', () => {
   assert.throws(() => new RealtimeTicketService('short'), /at least 32 characters/);
+});
+
+void test('guest and legacy identities cannot smuggle a custom avatar into realtime', () => {
+  const issued = new RealtimeTicketService('test-secret-that-is-long-enough-for-hmac-signing').issue({
+    id: 'd0e8acdc-dbd8-40f6-99ab-c872dc5bf580', type: 'guest', displayName: 'GUEST_123456',
+    avatarId: 'omni-man', status: 'active'
+  });
+  const payload = JSON.parse(Buffer.from(issued.ticket.split('.')[0], 'base64url').toString('utf8')) as Record<string, unknown>;
+  assert.equal(payload.mode, 'guest');
+  assert.equal(payload.a, 'neon-capsule');
 });

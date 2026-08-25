@@ -11,11 +11,12 @@ export const chatVisibility = pgEnum('chat_visibility', ['visible', 'hidden']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  username: varchar('username', { length: 18 }).notNull(),
-  normalizedUsername: varchar('normalized_username', { length: 18 }).notNull(),
-  email: varchar('email', { length: 320 }).notNull(),
-  normalizedEmail: varchar('normalized_email', { length: 320 }).notNull(),
-  passwordHash: text('password_hash').notNull(),
+  publicPlayerId: uuid('public_player_id').notNull().defaultRandom(),
+  username: varchar('username', { length: 18 }),
+  normalizedUsername: varchar('normalized_username', { length: 18 }),
+  email: varchar('email', { length: 320 }),
+  normalizedEmail: varchar('normalized_email', { length: 320 }),
+  passwordHash: text('password_hash'),
   displayName: varchar('display_name', { length: 18 }).notNull(),
   normalizedDisplayName: varchar('normalized_display_name', { length: 18 }).notNull(),
   selectedAvatarId: varchar('selected_avatar_id', { length: 64 }).notNull().default('neon-capsule'),
@@ -26,9 +27,26 @@ export const users = pgTable('users', {
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   deletedAt: timestamp('deleted_at', { withTimezone: true })
 }, (table) => [
+  uniqueIndex('users_public_player_id_unique').on(table.publicPlayerId),
   uniqueIndex('users_normalized_username_unique').on(table.normalizedUsername),
   uniqueIndex('users_normalized_email_unique').on(table.normalizedEmail),
   index('users_status_idx').on(table.status)
+]);
+
+export const walletIdentities = pgTable('wallet_identities', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  chain: varchar('chain', { length: 32 }).notNull().default('solana'),
+  network: varchar('network', { length: 32 }).notNull(),
+  walletAddress: varchar('wallet_address', { length: 64 }).notNull(),
+  normalizedWalletAddress: varchar('normalized_wallet_address', { length: 64 }).notNull(),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  uniqueIndex('wallet_identities_chain_network_address_unique')
+    .on(table.chain, table.network, table.normalizedWalletAddress),
+  index('wallet_identities_user_id_idx').on(table.userId)
 ]);
 
 export const guestIdentities = pgTable('guest_identities', {
@@ -112,6 +130,7 @@ export const securityAuditEvents = pgTable('security_audit_events', {
 ]);
 
 export type UserRecord = typeof users.$inferSelect;
+export type WalletIdentityRecord = typeof walletIdentities.$inferSelect;
 export type SessionRecord = typeof sessions.$inferSelect;
 export type GuestIdentityRecord = typeof guestIdentities.$inferSelect;
 export type UserPreferenceRecord = typeof userPreferences.$inferSelect;

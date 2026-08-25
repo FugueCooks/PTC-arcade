@@ -3,7 +3,7 @@ import test from 'node:test';
 import { publicRuntimeConfig, runtimeConfigScript } from '../server/src/http/static-hosting.js';
 
 void test('runtime config preserves local game URLs when no CDN is configured', () => {
-  assert.deepEqual(publicRuntimeConfig({}), { gameAssetBaseUrl: '', biosAssetUrl: '', gameCubeDspAssetUrl: '', realtimeUrl: '', matchmakingUrl: '' });
+  assert.deepEqual(publicRuntimeConfig({}), { gameAssetBaseUrl: '', biosAssetUrl: '', gameCubeDspAssetUrl: '', realtimeUrl: '', matchmakingUrl: '', solanaNetwork: 'mainnet-beta' });
 });
 
 void test('runtime config normalizes a CDN base URL', () => {
@@ -11,7 +11,7 @@ void test('runtime config normalizes a CDN base URL', () => {
     gameAssetBaseUrl: 'https://cdn.example.com/roms',
     biosAssetUrl: '',
     gameCubeDspAssetUrl: '',
-    realtimeUrl: '', matchmakingUrl: ''
+    realtimeUrl: '', matchmakingUrl: '', solanaNetwork: 'mainnet-beta'
   });
 });
 
@@ -20,7 +20,7 @@ void test('runtime config supports an independently hosted BIOS', () => {
     gameAssetBaseUrl: '',
     biosAssetUrl: 'https://cdn.example.com/system/SCPH1001.BIN',
     gameCubeDspAssetUrl: '',
-    realtimeUrl: '', matchmakingUrl: ''
+    realtimeUrl: '', matchmakingUrl: '', solanaNetwork: 'mainnet-beta'
   });
 });
 
@@ -35,7 +35,7 @@ void test('runtime config supports a hosted GameCube DSP ROM', () => {
 });
 
 void test('runtime config serialization cannot inject a script tag', () => {
-  const script = runtimeConfigScript({ gameAssetBaseUrl: 'https://cdn.example.com/<script>', biosAssetUrl: '', gameCubeDspAssetUrl: '', realtimeUrl: '', matchmakingUrl: '' });
+  const script = runtimeConfigScript({ gameAssetBaseUrl: 'https://cdn.example.com/<script>', biosAssetUrl: '', gameCubeDspAssetUrl: '', realtimeUrl: '', matchmakingUrl: '', solanaNetwork: 'mainnet-beta' });
   assert.doesNotMatch(script, /<script>/);
   assert.match(script, /\\u003cscript>/);
 });

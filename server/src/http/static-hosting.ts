@@ -8,6 +8,7 @@ export interface PublicRuntimeConfig {
   gameCubeDspAssetUrl: string;
   realtimeUrl: string;
   matchmakingUrl: string;
+  solanaNetwork: string;
 }
 
 const ROOT_FILES = [
@@ -20,7 +21,7 @@ const ROOT_FILES = [
   'multiplayer-client.js'
 ] as const;
 
-const PUBLIC_DIRECTORIES = ['assets', 'avatars', 'cabinets', 'emulators', 'games', 'rooms', 'social', 'world', 'realtime'] as const;
+const PUBLIC_DIRECTORIES = ['assets', 'avatars', 'cabinets', 'emulators', 'games', 'rooms', 'social', 'world', 'realtime', 'wallet'] as const;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1_000;
 
 /** Build the small public configuration object injected before arcade.js. */
@@ -30,7 +31,8 @@ export function publicRuntimeConfig(environment: NodeJS.ProcessEnv = process.env
     biosAssetUrl: normalizeAssetUrl(environment.BIOS_ASSET_URL),
     gameCubeDspAssetUrl: normalizeAssetUrl(environment.GAMECUBE_DSP_ASSET_URL),
     realtimeUrl: normalizeAssetUrl(environment.REALTIME_URL),
-    matchmakingUrl: normalizeAssetUrl(environment.MATCHMAKING_URL)
+    matchmakingUrl: normalizeAssetUrl(environment.MATCHMAKING_URL),
+    solanaNetwork: normalizeSolanaNetwork(environment.SOLANA_NETWORK)
   };
 }
 
@@ -84,6 +86,10 @@ function normalizeBaseUrl(value: string | undefined): string {
 
 function normalizeAssetUrl(value: string | undefined): string {
   return value?.trim() ?? '';
+}
+
+function normalizeSolanaNetwork(value: string | undefined): string {
+  return ['mainnet-beta', 'devnet', 'testnet', 'localnet'].includes(value ?? '') ? value! : 'mainnet-beta';
 }
 
 function sendRootFile(response: Response, projectRoot: string, file: typeof ROOT_FILES[number]): void {

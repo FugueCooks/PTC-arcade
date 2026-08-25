@@ -6,6 +6,7 @@ import type { SafeIdentity } from '../auth/auth-repository.js';
 import { readSessionCookie } from '../auth/session-cookie.js';
 import { accountDeletionSchema, preferencesUpdateSchema, profileUpdateSchema } from '../auth/validation.js';
 import { RequestRateLimiter } from '../auth/request-rate-limiter.js';
+import { entitlementsFor } from '../auth/authorization-policy.js';
 
 interface Dependencies {
   auth?: AuthService; accounts?: AccountService; databaseReady: () => boolean;
@@ -42,17 +43,19 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
     if (!session) return unauthorized(response);
     const parsed = profileUpdateSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
     try {
-      const identity = await dependencies.accounts!.updateProfile(session.identity.id, parsed.data);
-      if (!identity) return unauthorized(response);
+      if (!entitlementsFor(session.identity).canClaimPersistentDisplayName) return unauthorized(response);
+      const updated = await dependencies.accounts!.updateProfile(session.identity.id, parsed.data);
+      if (!updated) return unauthorized(response);
+      const identity = { ...updated, walletAuthenticated: true, walletAddress: session.identity.walletAddress };
       dependencies.identityChanged?.(identity); response.json({ ok: true, identity });
     } catch { unavailable(response); }
   });
   app.get('/api/account/preferences', async (request, response) => {
-    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session || !entitlementsFor(session.identity).canPersistPreferences) return unauthorized(response);
     try { response.json({ ok: true, preferences: await dependencies.accounts!.preferences(session.identity.id) }); } catch { unavailable(response); }
   });
   app.put('/api/account/preferences', async (request, response) => {
-    const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
+    const session = await registeredSession(request, config, dependencies.auth!); if (!session || !entitlementsFor(session.identity).canPersistPreferences) return unauthorized(response);
     const parsed = preferencesUpdateSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
     try { response.json({ ok: true, preferences: await dependencies.accounts!.updatePreferences(session.identity.id, parsed.data) }); } catch { unavailable(response); }
   });
@@ -77,8 +80,10 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
     const session = await registeredSession(request, config, dependencies.auth!); if (!session) return unauthorized(response);
     const parsed = accountDeletionSchema.safeParse(request.body); if (!parsed.success) return invalid(response);
     try {
-      if (!await dependencies.accounts!.deleteAccount(session.identity.id, parsed.data.password)) {
-        response.status(403).json(error('authentication-failed', 'The password was not accepted.')); return;
+      if ('confirmation' in parsed.data) {
+        await dependencies.accounts!.deleteWalletAccount(session.identity.id);
+      } else if (!config.legacyPasswordAuthEnabled || !await dependencies.accounts!.deleteAccount(session.identity.id, parsed.data.password)) {
+        response.status(403).json(error('authentication-failed', 'Account deletion was not accepted.')); return;
       }
       dependencies.accountDeleted?.(session.identity); clearCookie(response, config); response.status(204).end();
     } catch { unavailable(response); }
@@ -88,7 +93,7 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
 async function registeredSession(request: Request, config: ServerConfig, auth: AuthService) {
   try {
     const session = await auth.session(readSessionCookie(request.get('Cookie'), config.authCookieName));
-    return session?.identity.type === 'registered' ? session : undefined;
+    return session?.identity.type === 'registered' && session.identity.walletAuthenticated === true ? session : undefined;
   } catch { return undefined; }
 }
 function clearCookie(response: Response, config: ServerConfig) {

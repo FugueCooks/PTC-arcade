@@ -69,3 +69,12 @@ void test('username migration safely backfills existing accounts and enforces un
   assert.match(migration, /ALTER COLUMN "username" SET NOT NULL/);
   assert.match(migration, /users_normalized_username_unique/);
 });
+
+void test('wallet migration adds stable public identity and one verified wallet per network', async () => {
+  const migration = await readFile(path.resolve(process.cwd(), 'drizzle', '0002_cute_black_queen.sql'), 'utf8');
+  assert.match(migration, /public_player_id/);
+  assert.match(migration, /CREATE TABLE "wallet_identities"/);
+  assert.match(migration, /wallet_identities_chain_network_address_unique/);
+  assert.match(migration, /ON DELETE cascade/i);
+  assert.doesNotMatch(migration, /private_key|seed_phrase|plaintext_signature/);
+});

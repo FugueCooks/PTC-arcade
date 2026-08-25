@@ -2,21 +2,23 @@ import type { Express, NextFunction, Request, Response } from 'express';
 import type { ServerConfig } from '../config.js';
 import type { AuthService } from '../auth/auth-service.js';
 import { guestIdentitySchema, loginSchema, registrationSchema } from '../auth/validation.js';
-import { RequestRateLimiter } from '../auth/request-rate-limiter.js';
 import { readSessionCookie } from '../auth/session-cookie.js';
 import type { RealtimeTicketService } from '../auth/realtime-ticket.js';
+import { InMemoryAsyncRateLimiter, type AsyncRateLimiter } from '../auth/distributed-rate-limiter.js';
 
-interface RouteDependencies { service?: AuthService; tickets?: RealtimeTicketService; databaseReady: () => boolean }
+interface RouteDependencies { service?: AuthService; tickets?: RealtimeTicketService; limiter?: AsyncRateLimiter; databaseReady: () => boolean }
 
 export function installAuthRoutes(app: Express, config: ServerConfig, dependencies: RouteDependencies): void {
-  const limiter = new RequestRateLimiter(config.authRequestLimit, 10 * 60_000);
-  app.use('/api/auth', noStore, (request, response, next) => rejectCrossSiteMutation(request, response, next, config.authAllowedOrigin), (request, response, next) => {
+  const limiter = dependencies.limiter ?? new InMemoryAsyncRateLimiter(config.authRequestLimit, 10 * 60_000);
+  app.use('/api/auth', noStore, (request, response, next) => rejectCrossSiteMutation(request, response, next, config.authAllowedOrigin), async (request, response, next) => {
     if (!dependencies.service || !dependencies.databaseReady()) {
       response.status(503).json({ ok: false, error: { code: 'auth-unavailable', message: 'Account services are temporarily unavailable.' } });
       return;
     }
     if (request.method !== 'GET') {
-      const result = limiter.consume(`${request.ip || 'unknown'}:${request.path}`);
+      let result;
+      try { result = await limiter.consume(`${request.ip || 'unknown'}:${request.path}`); }
+      catch { unavailable(response); return; }
       if (!result.allowed) {
         response.setHeader('Retry-After', String(Math.ceil(result.retryAfterMs / 1_000)));
         response.status(429).json({ ok: false, error: { code: 'rate-limited', message: 'Too many requests. Please wait and try again.' } });
@@ -27,6 +29,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
   });
 
   app.post('/api/auth/register', async (request, response) => {
+    if (!config.legacyPasswordAuthEnabled) { response.status(410).json({ ok: false, error: { code: 'wallet-auth-required', message: 'Persistent accounts now use Solana wallet sign-in.' } }); return; }
     const parsed = registrationSchema.safeParse(request.body);
     if (!parsed.success) return validationError(response);
     try {
@@ -41,6 +44,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
   });
 
   app.post('/api/auth/login', async (request, response) => {
+    if (!config.legacyPasswordAuthEnabled) { response.status(410).json({ ok: false, error: { code: 'wallet-auth-required', message: 'Persistent accounts now use Solana wallet sign-in.' } }); return; }
     const parsed = loginSchema.safeParse(request.body);
     if (!parsed.success) return validationError(response);
     try {
@@ -58,7 +62,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
     const parsed = guestIdentitySchema.safeParse(request.body);
     if (!parsed.success) return validationError(response);
     try {
-      const result = await dependencies.service!.createGuest({ ...parsed.data, deviceType: deviceType(request) });
+      const result = await dependencies.service!.createGuest({ deviceType: deviceType(request) });
       if (!result.ok) return unavailable(response);
       setSessionCookie(response, request, config, result.token, result.expiresAt);
       response.status(201).json({ ok: true, identity: result.identity, expiresAt: result.expiresAt.toISOString() });

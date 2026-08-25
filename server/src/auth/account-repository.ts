@@ -75,5 +75,6 @@ export class AccountRepository {
 }
 
 function identity(user: schema.UserRecord): SafeIdentity {
-  return { id: user.id, type: 'registered', displayName: user.displayName, avatarId: user.selectedAvatarId, status: user.status };
+  return { id: user.id, type: 'registered', publicPlayerId: user.publicPlayerId, walletAuthenticated: false,
+    displayName: user.displayName, avatarId: user.selectedAvatarId, status: user.status };
 }

@@ -2,7 +2,7 @@
 
 A Three.js/WebGL arcade floor with a lightweight Socket.IO multiplayer foundation. An internet connection is needed the first time to load Three.js, fonts, and EmulatorJS.
 
-Phase 8 durable identity work begins with an optional PostgreSQL/Drizzle foundation, Argon2id password primitives, opaque hashed session tokens, guest identities, bounded preferences, repeatable migrations, and database-aware readiness. This first milestone does not alter existing guest joins or multiplayer behavior. See `docs/phase-8-authentication.md` before enabling `DATABASE_REQUIRED`.
+Phase 9 replaces public username/password player accounts with Solana signed-message authentication. Guests remain frictionless but temporary and server-restricted to the capsule avatar; verified wallets receive durable PostgreSQL identity and approved profile persistence. Login never sends a transaction or costs SOL. See `docs/phase-9-wallet-authentication.md`; Phase 8 documentation remains as legacy migration context.
 
 ## Production hosting
 

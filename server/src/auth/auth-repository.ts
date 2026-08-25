@@ -1,16 +1,20 @@
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema.js';
+import { DEFAULT_GUEST_AVATAR_ID } from './authorization-policy.js';
 
 export interface SafeIdentity {
   id: string;
   type: 'registered' | 'guest';
+  publicPlayerId?: string;
+  walletAuthenticated?: boolean;
+  walletAddress?: string;
   displayName: string;
   avatarId: string;
   status: string;
 }
 
-export interface LoginRecord extends SafeIdentity { passwordHash: string }
+export interface LoginRecord extends SafeIdentity { passwordHash: string | null }
 export interface AuthSessionRecord { sessionId: string; identity: SafeIdentity; expiresAt: Date }
 export interface NewRegisteredIdentity {
   username: string; normalizedUsername: string; passwordHash: string;
@@ -82,16 +86,17 @@ export class DrizzleAuthRepository implements AuthRepository {
   }
 
   async findSession(tokenHash: string, now = new Date()): Promise<AuthSessionRecord | undefined> {
-    const [row] = await this.db.select({ session: schema.sessions, user: schema.users, guest: schema.guestIdentities })
+    const [row] = await this.db.select({ session: schema.sessions, user: schema.users, guest: schema.guestIdentities, wallet: schema.walletIdentities })
       .from(schema.sessions)
       .leftJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
       .leftJoin(schema.guestIdentities, eq(schema.sessions.guestId, schema.guestIdentities.id))
+      .leftJoin(schema.walletIdentities, eq(schema.users.id, schema.walletIdentities.userId))
       .where(and(eq(schema.sessions.tokenHash, tokenHash), isNull(schema.sessions.revokedAt), gt(schema.sessions.expiresAt, now),
         or(isNull(schema.users.deletedAt), isNull(schema.sessions.userId)),
         or(isNull(schema.sessions.guestId), gt(schema.guestIdentities.expiresAt, now))))
       .limit(1);
     if (!row) return undefined;
-    const identity = row.user ? registeredIdentity(row.user) : row.guest ? guestIdentity(row.guest) : undefined;
+    const identity = row.user ? registeredIdentity(row.user, row.wallet?.walletAddress) : row.guest ? guestIdentity(row.guest) : undefined;
     return identity ? { sessionId: row.session.id, identity, expiresAt: row.session.expiresAt } : undefined;
   }
 
@@ -108,11 +113,14 @@ export class DrizzleAuthRepository implements AuthRepository {
   }
 }
 
-function registeredIdentity(user: schema.UserRecord): SafeIdentity {
-  return { id: user.id, type: 'registered', displayName: user.displayName, avatarId: user.selectedAvatarId, status: user.status };
+function registeredIdentity(user: schema.UserRecord, walletAddress?: string): SafeIdentity {
+  return { id: user.id, type: 'registered', publicPlayerId: user.publicPlayerId,
+    walletAuthenticated: typeof walletAddress === 'string', walletAddress,
+    displayName: user.displayName, avatarId: user.selectedAvatarId, status: user.status };
 }
 function guestIdentity(guest: schema.GuestIdentityRecord): SafeIdentity {
-  return { id: guest.id, type: 'guest', displayName: guest.displayName, avatarId: guest.selectedAvatarId, status: 'active' };
+  return { id: guest.id, type: 'guest', displayName: guest.displayName,
+    avatarId: DEFAULT_GUEST_AVATAR_ID, status: 'active', walletAuthenticated: false };
 }
 function isUniqueViolation(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: unknown }).code === '23505';

@@ -25,7 +25,8 @@
     "cloudflare:smoke": "node cloudflare/test/local-smoke.mjs",
     "load:test": "node tools/load-test.mjs",
     "smoke:multi-process": "npm run build && node tools/multi-process-smoke.mjs",
-    "pages:build": "node tools/build-pages.mjs",
+    "pages:build": "npm run wallet:build && node tools/build-pages.mjs",
+    "wallet:build": "node tools/build-wallet-client.mjs",
     "pages:deploy": "npm run pages:build && wrangler pages deploy .pages-dist --project-name retro-arcade"
   },
   "dependencies": {
@@ -33,6 +34,11 @@
     "@aws-sdk/lib-storage": "^3.1116.0",
     "@node-rs/argon2": "^2.1.0",
     "@socket.io/redis-streams-adapter": "^0.3.1",
+    "@solana/addresses": "^8.0.0",
+    "@solana/wallet-standard-features": "^1.4.0",
+    "@solana/wallet-standard-util": "^1.1.3",
+    "@wallet-standard/app": "^1.1.1",
+    "@wallet-standard/base": "^1.1.1",
     "drizzle-orm": "^0.45.2",
     "express": "^4.21.2",
     "pg": "^8.23.0",
@@ -41,12 +47,14 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@solana-mobile/wallet-standard-mobile": "^0.6.0",
     "@types/express": "^5.0.1",
     "@types/node": "^22.10.5",
     "@types/pg": "^8.23.1",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
     "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.28.2",
     "eslint": "^9.17.0",
     "socket.io-client": "^4.8.1",
     "tsx": "^4.19.2",

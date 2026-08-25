@@ -13,6 +13,24 @@ services:
         value: production
       - key: TRUST_PROXY
         value: "1"
+      - key: LEGACY_PASSWORD_AUTH_ENABLED
+        value: "0"
+      - key: WALLET_AUTH_ENABLED
+        value: "1"
+      - key: GUEST_SESSION_TTL_SECONDS
+        value: "3600"
+      - key: WALLET_CHALLENGE_TTL_SECONDS
+        value: "300"
+      - key: WALLET_CHALLENGE_MAX_ATTEMPTS
+        value: "5"
+      - key: SOLANA_NETWORK
+        value: mainnet-beta
+      - key: SOLANA_APP_DOMAIN
+        value: retro-arcade-multiplayer.onrender.com
+      - key: SOLANA_APP_URI
+        value: https://retro-arcade-multiplayer.onrender.com
+      - key: PUBLIC_APP_ORIGIN
+        value: https://retro-arcade-multiplayer.onrender.com
       - key: GAME_ASSET_BASE_URL
         value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games
       - key: BIOS_ASSET_URL

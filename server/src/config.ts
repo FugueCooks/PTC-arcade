@@ -42,6 +42,14 @@ export interface ServerConfig {
   authCookieSecure: boolean;
   authRequestLimit: number;
   authAllowedOrigin?: string;
+  legacyPasswordAuthEnabled: boolean;
+  walletAuthEnabled: boolean;
+  walletChallengeTtlMs: number;
+  walletChallengeMaxAttempts: number;
+  solanaNetwork: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet';
+  solanaAppDomain: string;
+  solanaAppUri: string;
+  solanaRpcUrl?: string;
   multiplayerTicketSecret?: string;
   multiplayerTicketTtlMs: number;
 }
@@ -92,7 +100,7 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     databaseStartupTimeoutMs: seconds(environment.DATABASE_STARTUP_TIMEOUT_SECONDS, 5, 1, 60),
     databasePoolMax: integer(environment.DATABASE_POOL_MAX, 10, 1, 100),
     sessionTtlMs: days(environment.SESSION_TTL_DAYS, 30, 1, 365),
-    guestSessionTtlMs: days(environment.GUEST_SESSION_TTL_DAYS, 30, 1, 90),
+    guestSessionTtlMs: seconds(environment.GUEST_SESSION_TTL_SECONDS, 3_600, 300, 86_400),
     passwordArgon2MemoryKib: integer(environment.PASSWORD_ARGON2_MEMORY_KIB, 19_456, 7_168, 1_048_576),
     passwordArgon2Iterations: integer(environment.PASSWORD_ARGON2_ITERATIONS, 2, 1, 20),
     passwordArgon2Parallelism: integer(environment.PASSWORD_ARGON2_PARALLELISM, 1, 1, 8),
@@ -100,6 +108,14 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     authCookieSecure: environment.NODE_ENV === 'production' || environment.AUTH_COOKIE_SECURE === '1',
     authRequestLimit: integer(environment.AUTH_REQUEST_LIMIT_PER_10_MINUTES, 30, 5, 1_000),
     authAllowedOrigin: publicUrl(environment.PUBLIC_APP_ORIGIN),
+    legacyPasswordAuthEnabled: environment.LEGACY_PASSWORD_AUTH_ENABLED === '1',
+    walletAuthEnabled: environment.WALLET_AUTH_ENABLED !== '0',
+    walletChallengeTtlMs: seconds(environment.WALLET_CHALLENGE_TTL_SECONDS, 300, 60, 900),
+    walletChallengeMaxAttempts: integer(environment.WALLET_CHALLENGE_MAX_ATTEMPTS, 5, 1, 20),
+    solanaNetwork: solanaNetwork(environment.SOLANA_NETWORK),
+    solanaAppDomain: appDomain(environment.SOLANA_APP_DOMAIN, environment.PUBLIC_APP_ORIGIN),
+    solanaAppUri: publicUrl(environment.SOLANA_APP_URI ?? environment.PUBLIC_APP_ORIGIN) ?? 'http://localhost:8080',
+    solanaRpcUrl: publicUrl(environment.SOLANA_RPC_URL),
     multiplayerTicketSecret: secret(environment.MULTIPLAYER_TICKET_SECRET),
     multiplayerTicketTtlMs: seconds(environment.MULTIPLAYER_TICKET_TTL_SECONDS, 30, 10, 120)
   };
@@ -175,4 +191,22 @@ function secret(value: string | undefined): string | undefined {
   if (!cleaned) return undefined;
   if (cleaned.length < 32) throw new Error('MULTIPLAYER_TICKET_SECRET must contain at least 32 characters.');
   return cleaned;
+}
+
+function solanaNetwork(value: string | undefined): ServerConfig['solanaNetwork'] {
+  const cleaned = value?.trim() || 'mainnet-beta';
+  if (!['mainnet-beta', 'devnet', 'testnet', 'localnet'].includes(cleaned)) {
+    throw new Error('SOLANA_NETWORK must be mainnet-beta, devnet, testnet, or localnet.');
+  }
+  return cleaned as ServerConfig['solanaNetwork'];
+}
+
+function appDomain(value: string | undefined, origin: string | undefined): string {
+  const cleaned = value?.trim();
+  if (cleaned) {
+    if (!/^[A-Za-z0-9.-]+(?::\d{1,5})?$/.test(cleaned)) throw new Error('SOLANA_APP_DOMAIN is invalid.');
+    return cleaned.toLocaleLowerCase('en-US');
+  }
+  if (origin) return new URL(origin).host.toLocaleLowerCase('en-US');
+  return 'localhost:8080';
 }

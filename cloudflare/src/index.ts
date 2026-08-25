@@ -13,7 +13,7 @@ interface PlayerState {
   activeCabinetId: string | null; interactionState: 'none' | 'reserved' | 'interact'; movementLocked: boolean;
   cabinetSessionStartedAt: number | null;
 }
-interface TicketIdentity { playerId: string; displayName: string; avatarId: string }
+interface TicketIdentity { playerId: string; displayName: string; avatarId: string; mode: 'guest' | 'wallet' }
 interface SocketAttachment { socketId: string; player?: PlayerState; resumeToken?: string; authenticatedIdentity?: TicketIdentity; lastAcceptedAt: number; lastActivityAt: number }
 interface ResumeRecord { player: PlayerState; resumeToken: string; disconnectedAt: number; expiresAt: number }
 interface CabinetState { cabinetId: string; occupiedByPlayerId: string | null; occupiedByDisplayName: string | null; status: CabinetStatus; reservedAt: number | null; sessionStartedAt: number | null }
@@ -400,10 +400,17 @@ async function verifyRealtimeTicket(value: string | null, secret: string): Promi
     const valid = await crypto.subtle.verify('HMAC', key, decodeBase64Url(parts[1]), new TextEncoder().encode(parts[0]));
     if (!valid) return undefined;
     const payload = asObject(JSON.parse(new TextDecoder().decode(decodeBase64Url(parts[0]))));
-    if (!payload || payload.v !== 1 || typeof payload.pid !== 'string' || !/^player-[0-9a-f]{32}$/.test(payload.pid)) return undefined;
+    if (!payload || (payload.v !== 1 && payload.v !== 2) || typeof payload.pid !== 'string' || !/^player-[0-9a-f]{32}$/.test(payload.pid)) return undefined;
+    if (payload.v === 2 && payload.mode !== 'guest' && payload.mode !== 'wallet') return undefined;
     if (typeof payload.exp !== 'number' || payload.exp <= Date.now() || payload.exp > Date.now() + 120_000) return undefined;
     const identity = validateIdentity({ displayName: payload.n, avatarId: payload.a });
-    return identity ? { playerId: payload.pid, ...identity } : undefined;
+    if (!identity) return undefined;
+    return {
+      playerId: payload.pid,
+      displayName: identity.displayName,
+      avatarId: payload.v === 2 && payload.mode === 'wallet' ? identity.avatarId : 'neon-capsule',
+      mode: payload.v === 2 && payload.mode === 'wallet' ? 'wallet' : 'guest'
+    };
   } catch { return undefined; }
 }
 function decodeBase64Url(value: string): Uint8Array {
