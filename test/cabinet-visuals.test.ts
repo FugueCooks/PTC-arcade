@@ -83,10 +83,14 @@ void test('the main room is a collision-safe social lounge beside square console
   assert.match(edge, /SOCIAL_COUCH_GAP_HALF_ANGLE = 0\.34/);
 });
 
-void test('the MegaMan Room displays its framed wall mural away from cabinet rows', async () => {
+void test('the MegaMan Room displays both framed murals together on its solid front wall', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
   assert.match(arcade, /megaman-room-mural\.png\?v=megaman-mural-1/);
-  assert.match(arcade, /new THREE\.PlaneGeometry\(8\.7,4\.785\)/);
-  assert.match(arcade, /megaManMural\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,4\.75\)/);
+  assert.match(arcade, /megaManMural\.position\.set\(-48\.1,2\.5,4\.75\)/);
+  assert.match(arcade, /megaManMural\.rotation\.y=Math\.PI/);
+  assert.match(arcade, /megaman-room-mural-2\.png\?v=megaman-mural-2/);
+  assert.match(arcade, /megaManMuralTwo\.position\.set\(-37\.7,2\.5,4\.75\)/);
+  assert.match(arcade, /megaManMuralTwo\.rotation\.y=Math\.PI/);
+  assert.doesNotMatch(arcade, /megaManMuralTwo\.rotation\.y=-Math\.PI\/2/);
 });
