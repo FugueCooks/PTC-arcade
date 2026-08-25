@@ -146,10 +146,11 @@ for(const z of [-10,-3.5,3.5,10]){
   const tube=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.46,10),pendantMaterial);tube.position.set(0,4.02,z);scene.add(tube);
   const bloom=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),new THREE.MeshBasicMaterial({color:0xffa860,transparent:true,opacity:.11,depthWrite:false,blending:THREE.AdditiveBlending}));bloom.position.set(0,4.02,z);scene.add(bloom);
 }
-const MEGAMAN_ROOM_WALL_X=-31,MEGAMAN_ROOM_CENTER_X=-43,MEGAMAN_ROOM_CENTER_Z=-7,MEGAMAN_ROOM_SIZE=24,MEGAMAN_ROOM_DOOR_Z=-17.2,MEGAMAN_REAR_DOOR_X=-28.5,MEGAMAN_CORRIDOR_EAST_X=-26.9;
-// The PlayStation gallery keeps a solid exterior wall except for the short
-// enclosed turn from its rear doorway into the unsigned MegaMan Room.
-box(.3,5,32.6,0x180d31,MEGAMAN_ROOM_WALL_X,2.5,.5);
+const MEGAMAN_ROOM_WALL_X=-31,MEGAMAN_ROOM_CENTER_X=-43,MEGAMAN_ROOM_CENTER_Z=-7,MEGAMAN_ROOM_SIZE=24,MEGAMAN_ROOM_DOOR_Z=-7;
+// The doorway is cut into the exact outer PlayStation wall shown by the
+// cabinet row: Gex and Tony Hawk flank the opening into the unsigned room.
+box(.3,5,8.2,0x180d31,MEGAMAN_ROOM_WALL_X,2.5,-12.7);
+box(.3,5,22.2,0x180d31,MEGAMAN_ROOM_WALL_X,2.5,5.7);
 box(.3,5,34,0x180d31,31,2.5,0);
 // The main room now reaches the true rear wall. Keeping this wall aligned with
 // the two expansion-room back walls leaves open passages around both partition
@@ -266,8 +267,7 @@ lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_SIZE,MEGAMAN_
 for(const roomX of [-22.5,22.5]){
   const expansionFloor=new THREE.Mesh(new THREE.PlaneGeometry(17,34),expansionFloorMaterial);expansionFloor.rotation.x=-Math.PI/2;expansionFloor.position.set(roomX,.002,0);expansionFloor.receiveShadow=true;scene.add(expansionFloor);
   if(roomX===PS2_ROOM_CENTER_X){
-    box(.9,5,.3,0x11182c,-30.55,2.5,PS2_ROOM_DOOR_Z,.05);
-    box(2.8,5,.3,0x11182c,-25.5,2.5,PS2_ROOM_DOOR_Z,.05);
+    box(6.9,5,.3,0x11182c,-27.55,2.5,PS2_ROOM_DOOR_Z,.05);
     box(6.9,5,.3,0x11182c,-17.45,2.5,PS2_ROOM_DOOR_Z,.05);
   }else box(17,5,.3,0x11182c,roomX,2.5,-16.8,.05);
   box(17,5,.3,0x11182c,roomX,2.5,16.8,.05);
@@ -279,13 +279,7 @@ for(const roomX of [-22.5,22.5]){
 // from the hub, N64 room, or the reserved front-left expansion bay.
 const ps2Floor=new THREE.Mesh(new THREE.PlaneGeometry(17,16.8),expansionFloorMaterial);ps2Floor.rotation.x=-Math.PI/2;ps2Floor.position.set(PS2_ROOM_CENTER_X,.002,PS2_ROOM_CENTER_Z);ps2Floor.receiveShadow=true;scene.add(ps2Floor);
 const ps2Ceiling=box(17,.12,16.8,0x090b18,PS2_ROOM_CENTER_X,5.08,PS2_ROOM_CENTER_Z,.08);ps2Ceiling.receiveShadow=true;
-box(.3,5,14.6,0x11182c,-31,2.5,-26.3,.06);box(.3,5,16.8,0x11182c,PLAYSTATION_WALL_X,2.5,PS2_ROOM_CENTER_Z,.06);box(17,5,.3,0x11182c,PS2_ROOM_CENTER_X,2.5,PS2_ROOM_BACK_Z,.06);
-// This compact vestibule makes the requested rear-wall doorway visually and
-// physically real while keeping it isolated from the sealed PS2 construction
-// zone. Players enter south, turn west, and emerge inside the MegaMan Room.
-const megaManCorridorFloor=new THREE.Mesh(new THREE.PlaneGeometry(4.1,2.2),expansionFloorMaterial);megaManCorridorFloor.rotation.x=-Math.PI/2;megaManCorridorFloor.position.set(-28.95,.004,-17.9);megaManCorridorFloor.receiveShadow=true;scene.add(megaManCorridorFloor);
-box(4.1,5,.3,0x11182c,-28.95,2.5,-19,.06);box(.3,5,2.2,0x11182c,MEGAMAN_CORRIDOR_EAST_X,2.5,-17.9,.06);
-box(4.1,.12,2.2,0x090b18,-28.95,5.08,-17.9,.08);
+box(.3,5,16.8,0x11182c,-31,2.5,PS2_ROOM_CENTER_Z,.06);box(.3,5,16.8,0x11182c,PLAYSTATION_WALL_X,2.5,PS2_ROOM_CENTER_Z,.06);box(17,5,.3,0x11182c,PS2_ROOM_CENTER_X,2.5,PS2_ROOM_BACK_Z,.06);
 for(let z=-31.2;z<=-19.2;z+=4)box(16.5,.035,.055,0xd18a52,PS2_ROOM_CENTER_X,4.65,z,.8);
 const ps2ConstructionBarrier=new THREE.Group();ps2ConstructionBarrier.position.set(PS2_ROOM_CENTER_X,0,PS2_ROOM_DOOR_Z-.25);ps2ConstructionBarrier.userData.roomName='PS2';
 const ps2ConstructionPanel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,2.65),new THREE.MeshBasicMaterial({map:constructionTexture,side:THREE.DoubleSide}));ps2ConstructionPanel.position.set(0,1.48,.205);ps2ConstructionBarrier.add(ps2ConstructionPanel);
@@ -522,8 +516,8 @@ function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTR
 // The playable galleries wrap their seven cabinets around the exterior and
 // rear walls. The open interior and unused wall spans are reserved for growth.
 makeCabinet('silent-hill','SILENT HILL',-29.2,-13,0xc94c4c,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('silent-hill');
-makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-29.2,-9,0x36f9f6,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
-makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-29.2,-5,0x8de548,false,true,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
+makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-29.2,-10,0x36f9f6,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
+makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-29.2,-4,0x8de548,false,true,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
 makeCabinet('crash-bandicoot','CRASH BANDICOOT',-29.2,-1,0xffa62e,true,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('crash-bandicoot');
 makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-24.5,-15.2,0x934dff,false,false,'psx');configureHostedCabinet('dungeon-88');
 makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-20.5,-15.2,0xff3cac,false,false,'psx');configureHostedCabinet('turbo-grid');
@@ -951,12 +945,6 @@ function resolveMegaManRoomCollisions(previousX,previousZ){
     if(previousX<wallX&&playerPosition.x>leftFace)playerPosition.x=leftFace;
     else if(previousX>=wallX&&playerPosition.x<rightFace)playerPosition.x=rightFace;
   }
-  if(playerPosition.x>MEGAMAN_CORRIDOR_EAST_X-PLAYER_COLLISION_RADIUS&&playerPosition.z<PS2_ROOM_DOOR_Z-PLAYER_COLLISION_RADIUS){
-    playerPosition.x=MEGAMAN_CORRIDOR_EAST_X-PLAYER_COLLISION_RADIUS;
-  }
-  if(playerPosition.x>MEGAMAN_ROOM_WALL_X&&playerPosition.x<MEGAMAN_CORRIDOR_EAST_X&&playerPosition.z<-18.5){
-    playerPosition.z=-18.5;
-  }
 }
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)>Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS&&playerPosition.x>-30.5){
@@ -979,8 +967,6 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
 }
 function resolveRearGalleryCollision(previousZ){
   if(playerPosition.x<-30.5||playerPosition.x>-14.5)return;
-  const insideMegaManDoor=Math.abs(playerPosition.x-MEGAMAN_REAR_DOOR_X)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS;
-  if(insideMegaManDoor)return;
   const northFace=PS2_ROOM_DOOR_Z+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
   const southFace=PS2_ROOM_DOOR_Z-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
   if(previousZ>PS2_ROOM_DOOR_Z&&playerPosition.z<northFace)playerPosition.z=northFace;

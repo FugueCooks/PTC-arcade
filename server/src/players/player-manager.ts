@@ -24,9 +24,7 @@ const SOCIAL_COUCH_GAP_HALF_ANGLE = 0.34;
 const SOCIAL_DISPLAY_RADIUS = 2.07;
 const LEGACY_WORLD_MIN_X = -30.5;
 const MEGAMAN_ROOM_WALL_X = -31;
-const MEGAMAN_ROOM_DOOR_Z = -17.2;
-const MEGAMAN_REAR_DOOR_X = -28.5;
-const MEGAMAN_CORRIDOR_EAST_X = -26.9;
+const MEGAMAN_ROOM_DOOR_Z = -7;
 const MEGAMAN_ROOM_MIN_Z = -18.5;
 const MEGAMAN_ROOM_MAX_Z = 4.5;
 
@@ -49,29 +47,8 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
   const inPlayStationRearGallery = Math.max(fromX, toX) <= -PARTITION_WALL_X - PARTITION_COLLISION_HALF_WIDTH
     && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
-  const targetInMegaManRearDoor = Math.abs(toX - MEGAMAN_REAR_DOOR_X) < ROOM_DOOR_CLEARANCE;
-  if (inPlayStationRearGallery && !targetInMegaManRearDoor && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
-  if (inPlayStationRearGallery && (fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) {
-    const crossing = (PS2_ROOM_DOOR_Z - fromZ) / (toZ - fromZ);
-    const crossingX = fromX + (toX - fromX) * crossing;
-    if (crossing >= 0 && crossing <= 1 && Math.abs(crossingX - MEGAMAN_REAR_DOOR_X) >= ROOM_DOOR_CLEARANCE) return true;
-  }
-
-  // The rear doorway opens into a short, sealed vestibule. Its east and south
-  // walls keep players out of the PS2 construction zone while the west opening
-  // leads through the PlayStation exterior wall into the MegaMan Room.
-  const corridorMinZ = -19;
-  const inCorridorDepth = Math.max(fromZ, toZ) >= corridorMinZ
-    && Math.min(fromZ, toZ) <= PS2_ROOM_DOOR_Z;
-  if (inCorridorDepth && Math.abs(toX - MEGAMAN_CORRIDOR_EAST_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
-  if (inCorridorDepth && (fromX - MEGAMAN_CORRIDOR_EAST_X) * (toX - MEGAMAN_CORRIDOR_EAST_X) <= 0 && fromX !== toX) {
-    const crossing = (MEGAMAN_CORRIDOR_EAST_X - fromX) / (toX - fromX);
-    const crossingZ = fromZ + (toZ - fromZ) * crossing;
-    if (crossing >= 0 && crossing <= 1 && crossingZ >= corridorMinZ && crossingZ <= PS2_ROOM_DOOR_Z) return true;
-  }
-  const targetInsideCorridorWidth = toX > MEGAMAN_ROOM_WALL_X && toX < MEGAMAN_CORRIDOR_EAST_X;
-  if (targetInsideCorridorWidth && toZ < MEGAMAN_ROOM_MIN_Z) return true;
-  if (targetInsideCorridorWidth && fromZ >= MEGAMAN_ROOM_MIN_Z && toZ < MEGAMAN_ROOM_MIN_Z) return true;
+  if (inPlayStationRearGallery && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if (inPlayStationRearGallery && (fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) return true;
 
   const targetInMegaManDoor = Math.abs(toZ - MEGAMAN_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
   if (!targetInMegaManDoor && Math.abs(toX - MEGAMAN_ROOM_WALL_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
