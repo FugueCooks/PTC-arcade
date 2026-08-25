@@ -15,7 +15,7 @@
     {
       "id": "origin-gundam",
       "name": "Origin Gundam",
-      "modelUrl": "assets/avatars/models/origin-gundam.glb",
+      "modelUrl": "assets/avatars/models/origin-gundam.glb?v=avatar-slim-1",
       "thumbnailUrl": "assets/avatars/origin-gundam.svg",
       "scale": 0.037,
       "heightOffset": 0,
@@ -61,7 +61,7 @@
     {
       "id": "sora-final",
       "name": "Sora (Final)",
-      "modelUrl": "assets/avatars/models/sora-final.optimized.glb?v=sora-final-3",
+      "modelUrl": "assets/avatars/models/sora-final.optimized.glb?v=avatar-slim-1",
       "thumbnailUrl": "assets/avatars/sora-final.svg",
       "scale": 0.78,
       "heightOffset": 0.72,
@@ -76,7 +76,7 @@
     {
       "id": "tung-sahur",
       "name": "Triple T",
-      "modelUrl": "assets/avatars/models/tung-sahur.optimized.glb?v=tung-sahur-1",
+      "modelUrl": "assets/avatars/models/tung-sahur.optimized.glb?v=avatar-slim-1",
       "thumbnailUrl": "assets/avatars/tung-sahur.svg",
       "scale": 1,
       "heightOffset": 0.04,

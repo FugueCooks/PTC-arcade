@@ -29,3 +29,14 @@ assets/bios
 # Superseded by the WebP art the arcade actually loads. The PNG originals stay
 # in the repo as the re-encode source but never need to ship.
 assets/art/*.png
+
+# Only the avatar models the registry actually serves. The directory also holds
+# 28 iteration files, about 115 MB, which no avatar references. Guarded by
+# test/art-shipping.test.ts so a newly added avatar cannot be dropped silently.
+assets/avatars/models/*
+!assets/avatars/models/origin-gundam.glb
+!assets/avatars/models/extreme-gundam-balanced-walk.optimized.glb
+!assets/avatars/models/omni-man-rest-arms-sides.optimized.glb
+!assets/avatars/models/omni-man-flight-compact.optimized.glb
+!assets/avatars/models/sora-final.optimized.glb
+!assets/avatars/models/tung-sahur.optimized.glb
