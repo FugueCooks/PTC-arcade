@@ -1,4 +1,4 @@
-import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=avatar-loader-1';
+import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=guest-avatar-1';
 import { RoomPlacementClient } from './rooms/room-placement-client.js?v=phase7-room-browser-1';
 
 const PREFERENCE_KEY = 'roms-arcade-avatar-preferences';
@@ -38,7 +38,7 @@ const readPreferences = () => {
 };
 
 const savePreferences = (selection, persistent) => {
-  const value = persistent ? selection : { roomId: selection.roomId };
+  const value = persistent ? selection : { roomId: selection.roomId, avatarId: selection.avatarId };
   try { localStorage.setItem(PREFERENCE_KEY, JSON.stringify(value)); } catch { /* Private browsing may disable storage. */ }
 };
 
@@ -83,7 +83,8 @@ const showIdentityMode = () => {
   } else {
     walletAddress.hidden = true;
     nameInput.value = '';
-    selectedAvatarId = 'neon-capsule';
+    if (!avatarRegistry?.has(selectedAvatarId)) selectedAvatarId = 'neon-capsule';
+    selectAvatar(selectedAvatarId);
   }
 };
 
@@ -167,6 +168,7 @@ async function boot() {
     staticRooms = window.ARCADE_ROOM_REGISTRY?.rooms;
     if (!(staticRooms instanceof Map) || staticRooms.size === 0) throw new Error('Arcade instances could not be loaded.');
     const saved = readPreferences();
+    selectedAvatarId = typeof saved.avatarId === 'string' && avatars.has(saved.avatarId) ? saved.avatarId : 'neon-capsule';
     showStaticRooms(typeof saved.roomId === 'string' ? saved.roomId : '');
     if (typeof saved.roomId === 'string' && saved.roomId && !staticRooms.has(saved.roomId)) roomIdInput.value = saved.roomId.slice(0, 96);
     cards.replaceChildren(...[...avatars.values()].map((avatar) => {
@@ -186,7 +188,7 @@ async function boot() {
     showIdentityMode();
     await initializeWallets();
     confirmButton.disabled = false;
-    showStatus(isWalletSession() ? 'Wallet authenticated. Choose your name and avatar.' : 'Enter instantly as a temporary guest, or connect a wallet to save your profile.');
+    showStatus(isWalletSession() ? 'Wallet authenticated. Choose your name and avatar.' : 'Choose an avatar and enter instantly as a temporary guest.');
     void refreshRooms(false);
   } catch (error) {
     confirmButton.disabled = false;
@@ -262,20 +264,17 @@ form.addEventListener('submit', async (event) => {
       const profile = await requestJson('/api/account/profile', { method: 'PUT', body: JSON.stringify({ displayName, avatarId: selectedAvatarId }) });
       accountSession = { ...accountSession, identity: profile.identity };
     } else {
-      if (accountSession?.identity?.type !== 'guest') {
-        if (accountSession?.identity?.type === 'registered') {
-          try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* A fresh guest request remains authoritative. */ }
-          accountSession = undefined;
-        }
-        try { accountSession = await requestJson('/api/auth/guest', { method: 'POST', body: '{}' }); }
-        catch (error) { if (!(error.status === 404 || error.status === 503)) throw error; }
+      if (accountSession) {
+        try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* A fresh guest request remains authoritative. */ }
+        accountSession = undefined;
       }
+      try { accountSession = await requestJson('/api/auth/guest', { method: 'POST', body: JSON.stringify({ avatarId: selectedAvatarId }) }); }
+      catch (error) { if (!(error.status === 404 || error.status === 503)) throw error; }
     }
     if (accountSession) {
       displayName = accountSession.identity.displayName; selectedAvatarId = accountSession.identity.avatarId;
     } else {
       displayName = `GUEST_${crypto.getRandomValues(new Uint32Array(1))[0].toString(16).toUpperCase().slice(-6).padStart(6, '0')}`;
-      selectedAvatarId = 'neon-capsule';
     }
   } catch (error) {
     confirmButton.disabled = false;

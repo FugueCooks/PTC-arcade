@@ -28,7 +28,8 @@ export const registrationSchema = z.object({
 export const loginSchema = z.object({ username: usernameSchema, password: z.string().min(1).max(128) }).strict()
   .transform((input) => ({ ...input, normalizedUsername: normalizeUsername(input.username) }));
 
-export const guestIdentitySchema = z.object({}).strict();
+export const guestIdentitySchema = z.object({ avatarId: z.unknown() }).strict()
+  .transform((input) => ({ avatarId: resolveAvatarId(input.avatarId) }));
 
 export const profileUpdateSchema = z.object({ displayName: z.unknown(), avatarId: z.unknown() }).strict()
   .transform((input, context) => {

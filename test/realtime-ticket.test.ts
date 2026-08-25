@@ -29,12 +29,12 @@ void test('realtime ticket secrets must have sufficient entropy length', () => {
   assert.throws(() => new RealtimeTicketService('short'), /at least 32 characters/);
 });
 
-void test('guest and legacy identities cannot smuggle a custom avatar into realtime', () => {
+void test('guest tickets preserve server-approved avatar selection', () => {
   const issued = new RealtimeTicketService('test-secret-that-is-long-enough-for-hmac-signing').issue({
     id: 'd0e8acdc-dbd8-40f6-99ab-c872dc5bf580', type: 'guest', displayName: 'GUEST_123456',
     avatarId: 'omni-man', status: 'active'
   });
   const payload = JSON.parse(Buffer.from(issued.ticket.split('.')[0], 'base64url').toString('utf8')) as Record<string, unknown>;
   assert.equal(payload.mode, 'guest');
-  assert.equal(payload.a, 'neon-capsule');
+  assert.equal(payload.a, 'omni-man');
 });

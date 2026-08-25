@@ -40,7 +40,7 @@
         <h2 id="avatar-title">ENTER PTC ARCADE</h2>
         <div id="wallet-panel" class="wallet-panel">
           <p id="identity-mode">GUEST MODE</p>
-          <p class="wallet-explainer">Play immediately as a guest, or sign a free message with a Solana wallet to save your name, avatar, and preferences. We never request seed phrases or private keys.</p>
+          <p class="wallet-explainer">Choose any avatar and play immediately as a guest. Connect a Solana wallet only when you want to save your name, preferences, and future unlocks. We never request seed phrases or private keys.</p>
           <div class="wallet-picker-row">
             <select id="wallet-select" aria-label="Solana wallet"><option value="">FINDING WALLETS…</option></select>
             <button id="wallet-connect" type="button">CONNECT WALLET</button>
@@ -53,8 +53,8 @@
         <div id="wallet-profile-fields" hidden>
           <label class="avatar-name-label" for="display-name">PERSISTENT DISPLAY NAME</label>
           <input id="display-name" name="display-name" maxlength="18" autocomplete="nickname" />
-          <div id="avatar-cards" class="avatar-cards" aria-label="Available avatars" aria-live="polite"></div>
         </div>
+        <div id="avatar-cards" class="avatar-cards" aria-label="Available avatars" aria-live="polite"></div>
         <label class="avatar-name-label avatar-room-label" for="room-select">ARCADE INSTANCE</label>
         <div class="room-picker-row">
           <select id="room-select" name="room-select" aria-describedby="room-help"></select>
@@ -102,6 +102,6 @@
     </script>
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
-    <script type="module" src="app-bootstrap.js?v=wallet-auth-1"></script>
+    <script type="module" src="app-bootstrap.js?v=guest-avatar-1"></script>
   </body>
 </html>

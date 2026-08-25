@@ -4,7 +4,7 @@
 
 PTC Arcade has two identity modes:
 
-- **Guest:** a server-generated name, approved capsule avatar, short opaque session, and no durable profile writes.
+- **Guest:** a server-generated name, any approved avatar for the temporary session, a short opaque session, and no durable profile writes.
 - **Wallet account:** a verified Solana wallet maps to one persistent PostgreSQL user and may save an approved name, avatar, and preferences.
 
 Wallet connection is not authentication. The browser discovers Wallet Standard providers and requests a server challenge. The wallet signs the exact Sign-In With Solana message. The server verifies the Ed25519 signature, domain, origin, network, expiry, address, message bytes, and one-time challenge before issuing the existing opaque HttpOnly session.
@@ -36,7 +36,7 @@ Challenges use `arcade:...:wallet-challenges:{challengeId}` with a configurable 
 
 ## Guest and entitlement policy
 
-The server decides entitlements. Guests cannot choose custom avatars, persistent names, preferences, or progress. Realtime tickets label identity mode, and both Node and Cloudflare force guests to the default capsule even when a client is modified. No durable progress model exists yet, so Phase 9 does not invent one.
+The server decides entitlements. Guests may choose any avatar from the same approved registry as wallet accounts, but they cannot claim persistent names or write durable preferences or progress. Node validates the guest selection before signing it into the realtime ticket, and Cloudflare validates the signed avatar ID against its bundled approved registry. Invalid or modified IDs fall back to the default capsule. No durable progress model exists yet, so Phase 9 does not invent one.
 
 ## Wallet and session behavior
 

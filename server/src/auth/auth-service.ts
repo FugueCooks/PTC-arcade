@@ -1,6 +1,6 @@
 import type { AuthRepository, SafeIdentity } from './auth-repository.js';
 import { randomBytes } from 'node:crypto';
-import { DEFAULT_GUEST_AVATAR_ID } from './authorization-policy.js';
+import { authoritativeAvatarId } from './authorization-policy.js';
 
 interface PasswordService { hash(password: string): Promise<string>; verify(encodedHash: string, password: string): Promise<boolean> }
 interface TokenService { issue(now?: number): { token: string; hash: string; expiresAt: Date }; hash(token: string): string }
@@ -48,7 +48,7 @@ export class AuthService {
     const issued = this.guestSessions.issue();
     const displayName = `GUEST_${randomBytes(3).toString('hex').toUpperCase()}`;
     const identity = await this.repository.createGuest({ displayName, normalizedDisplayName: displayName.toLocaleLowerCase('en-US'),
-      avatarId: DEFAULT_GUEST_AVATAR_ID, expiresAt: issued.expiresAt });
+      avatarId: authoritativeAvatarId({ type: 'guest', walletAuthenticated: false }, input.avatarId), expiresAt: issued.expiresAt });
     await this.repository.createSession(identity, issued.hash, issued.expiresAt, input.deviceType);
     return { ok: true, identity, token: issued.token, expiresAt: issued.expiresAt };
   }

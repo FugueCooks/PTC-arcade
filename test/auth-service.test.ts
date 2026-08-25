@@ -81,9 +81,10 @@ void test('failed login performs dummy password verification and does not reveal
 
 void test('guest sessions resolve and logout revokes them idempotently', async () => {
   const { service } = fixture();
-  const created = await service.createGuest({ displayName: 'Guest', normalizedDisplayName: 'guest', avatarId: 'neon-capsule' });
+  const created = await service.createGuest({ displayName: 'Guest', normalizedDisplayName: 'guest', avatarId: 'omni-man' });
   assert.equal(created.ok, true); if (!created.ok) return;
   assert.equal((await service.session(created.token))?.identity.type, 'guest');
+  assert.equal((await service.session(created.token))?.identity.avatarId, 'omni-man');
   await service.logout(created.token); await service.logout(created.token);
   assert.equal(await service.session(created.token), undefined);
 });

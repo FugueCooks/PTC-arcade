@@ -69,13 +69,14 @@ void test('expired, altered, and wrong-wallet authentication attempts are reject
   assert.equal(await service.verify(wrong.challengeId, other.signInput(wrong.input), origin, 2_000), undefined);
 });
 
-void test('guest entitlements force the default avatar and deny durable writes', () => {
+void test('guest entitlements allow approved avatars while denying durable writes', () => {
   const guest = { type: 'guest' as const, walletAuthenticated: false };
   assert.deepEqual(entitlementsFor(guest), {
-    walletAuthenticated: false, canChooseCustomAvatar: false, canClaimPersistentDisplayName: false,
+    walletAuthenticated: false, canChooseCustomAvatar: true, canClaimPersistentDisplayName: false,
     canPersistPreferences: false, canPersistProgress: false
   });
-  assert.equal(authoritativeAvatarId(guest, 'omni-man'), DEFAULT_GUEST_AVATAR_ID);
+  assert.equal(authoritativeAvatarId(guest, 'omni-man'), 'omni-man');
+  assert.equal(authoritativeAvatarId(guest, '../../untrusted.glb'), DEFAULT_GUEST_AVATAR_ID);
   assert.equal(authoritativeAvatarId({ type: 'registered', walletAuthenticated: true }, 'omni-man'), 'omni-man');
 });
 

@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import type { SafeIdentity } from './auth-repository.js';
-import { DEFAULT_GUEST_AVATAR_ID, entitlementsFor } from './authorization-policy.js';
+import { authoritativeAvatarId, entitlementsFor } from './authorization-policy.js';
 
 export interface RealtimeTicketPayload {
   v: 2;
@@ -24,7 +24,7 @@ export class RealtimeTicketService {
       v: 2,
       pid: stablePublicPlayerId(identity),
       n: identity.displayName,
-      a: walletAuthenticated ? identity.avatarId : DEFAULT_GUEST_AVATAR_ID,
+      a: authoritativeAvatarId(identity, identity.avatarId),
       mode: walletAuthenticated ? 'wallet' : 'guest',
       exp: expiresAt.getTime(),
       nonce: randomUUID()

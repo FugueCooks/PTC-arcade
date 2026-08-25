@@ -1,7 +1,7 @@
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema.js';
-import { DEFAULT_GUEST_AVATAR_ID } from './authorization-policy.js';
+import { resolveAvatarId } from '../avatars/avatar-registry.js';
 
 export interface SafeIdentity {
   id: string;
@@ -120,7 +120,7 @@ function registeredIdentity(user: schema.UserRecord, walletAddress?: string): Sa
 }
 function guestIdentity(guest: schema.GuestIdentityRecord): SafeIdentity {
   return { id: guest.id, type: 'guest', displayName: guest.displayName,
-    avatarId: DEFAULT_GUEST_AVATAR_ID, status: 'active', walletAuthenticated: false };
+    avatarId: resolveAvatarId(guest.selectedAvatarId), status: 'active', walletAuthenticated: false };
 }
 function isUniqueViolation(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: unknown }).code === '23505';

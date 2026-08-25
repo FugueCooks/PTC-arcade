@@ -1,4 +1,4 @@
-const REGISTRY_URL = 'assets/avatars/registry.json?v=avatar-motion-61';
+const REGISTRY_URL = 'assets/avatars/registry.json?v=guest-avatar-1';
 const REGISTRY_TIMEOUT_MS = 5_000;
 const validId = /^[a-z0-9-]{2,40}$/;
 let registryPromise;

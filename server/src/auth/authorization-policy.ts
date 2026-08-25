@@ -13,7 +13,7 @@ export interface IdentityEntitlements {
 
 export function entitlementsFor(identity: Pick<SafeIdentity, 'type' | 'walletAuthenticated'>): IdentityEntitlements {
   const walletAuthenticated = identity.type === 'registered' && identity.walletAuthenticated === true;
-  return { walletAuthenticated, canChooseCustomAvatar: walletAuthenticated,
+  return { walletAuthenticated, canChooseCustomAvatar: true,
     canClaimPersistentDisplayName: walletAuthenticated, canPersistPreferences: walletAuthenticated,
     canPersistProgress: walletAuthenticated };
 }

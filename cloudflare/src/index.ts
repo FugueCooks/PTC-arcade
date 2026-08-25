@@ -408,7 +408,7 @@ async function verifyRealtimeTicket(value: string | null, secret: string): Promi
     return {
       playerId: payload.pid,
       displayName: identity.displayName,
-      avatarId: payload.v === 2 && payload.mode === 'wallet' ? identity.avatarId : 'neon-capsule',
+      avatarId: payload.v === 2 ? identity.avatarId : 'neon-capsule',
       mode: payload.v === 2 && payload.mode === 'wallet' ? 'wallet' : 'guest'
     };
   } catch { return undefined; }

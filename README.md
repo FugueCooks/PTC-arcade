@@ -2,7 +2,7 @@
 
 A Three.js/WebGL arcade floor with a lightweight Socket.IO multiplayer foundation. An internet connection is needed the first time to load Three.js, fonts, and EmulatorJS.
 
-Phase 9 replaces public username/password player accounts with Solana signed-message authentication. Guests remain frictionless but temporary and server-restricted to the capsule avatar; verified wallets receive durable PostgreSQL identity and approved profile persistence. Login never sends a transaction or costs SOL. See `docs/phase-9-wallet-authentication.md`; Phase 8 documentation remains as legacy migration context.
+Phase 9 replaces public username/password player accounts with Solana signed-message authentication. Guests remain frictionless and temporary, may choose any server-approved avatar, and retain that choice locally; verified wallets receive durable PostgreSQL identity and approved profile persistence. Login never sends a transaction or costs SOL. See `docs/phase-9-wallet-authentication.md`; Phase 8 documentation remains as legacy migration context.
 
 ## Production hosting
 
@@ -182,6 +182,8 @@ The approved registry lives in `assets/avatars/registry.json`. Each entry contai
 The neon capsule is the reliable fallback avatar. Extreme Gundam is the current animated example: it uses its built-in `Idle` clip and an in-place walk cycle generated from its intact arm and leg bones. New production avatars should ideally include separate looping idle and walk clips. The renderer uses `SkeletonUtils.clone` for each remote player, so skinned character rigs do not share mutable skeleton state.
 
 Avatar GLBs should be reasonably small, use compressed textures where possible, avoid unnecessary high-resolution maps, and avoid dynamic shadows by default. The supplied animated Pepe asset is roughly 34 MB, so it is cached and loaded lazily; a neon capsule remains visible while it loads or if it fails. Avatar models, nameplates, and animation mixers are removed when a player leaves, while successfully fetched source assets remain cached for later players.
+
+`Sora (Final)` uses the user-supplied **Sora - Kingdom Hearts II - Ultimate** model by [Catholomew](https://sketchfab.com/Catholomew), licensed [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The production GLB retains only the authored `Idle 3` and `Glide` clips, preserves their exact rig transforms, deduplicates repeated animation timing data, and compresses embedded textures, reducing the download from 51.3 MB to about 7.1 MB. Because that license is non-commercial, replace or relicense the model before any commercial launch.
 
 ## Controls
 

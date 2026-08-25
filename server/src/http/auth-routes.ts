@@ -62,7 +62,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
     const parsed = guestIdentitySchema.safeParse(request.body);
     if (!parsed.success) return validationError(response);
     try {
-      const result = await dependencies.service!.createGuest({ deviceType: deviceType(request) });
+      const result = await dependencies.service!.createGuest({ deviceType: deviceType(request), avatarId: parsed.data.avatarId });
       if (!result.ok) return unavailable(response);
       setSessionCookie(response, request, config, result.token, result.expiresAt);
       response.status(201).json({ ok: true, identity: result.identity, expiresAt: result.expiresAt.toISOString() });

@@ -12,6 +12,8 @@ void test('player selection supports temporary guests and signed Solana wallet a
   assert.match(markup, /CONNECT WALLET/);
   assert.match(markup, /PERSISTENT DISPLAY NAME/);
   assert.match(markup, /never request seed phrases or private keys/i);
+  assert.match(markup, /Choose any avatar and play immediately as a guest/i);
+  assert.match(client, /api\/auth\/guest[^\n]+avatarId: selectedAvatarId/);
   assert.doesNotMatch(markup, /CREATE ACCOUNT|PASSWORD|>USERNAME<\/label>/);
   assert.match(client, /wallet\/challenge/);
   assert.match(client, /wallet\/verify/);
