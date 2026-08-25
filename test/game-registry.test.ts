@@ -92,10 +92,10 @@ void test('unique N64 games are consolidated in the main room and the rear room 
     'mega-man-x',
     'mega-man-x2',
     'mega-man-x3',
-    'mega-man-8',
     'mega-man-x4',
     'mega-man-x5',
     'mega-man-x6',
+    'mega-man-8',
     undefined,
     undefined,
     undefined
@@ -109,10 +109,10 @@ void test('every supplied Mega Man game has its own cabinet and supported image'
     'Mega Man X',
     'Mega Man X2',
     'Mega Man X3',
-    'Mega Man 8',
     'Mega Man X4',
     'Mega Man X5',
-    'Mega Man X6'
+    'Mega Man X6',
+    'Mega Man 8'
   ]);
   assert.equal(new Set(megaManGames.map((game) => game.cabinetId)).size, megaManGames.length);
   assert.ok(megaManGames.filter((game) => game.system === 'snes').every((game) => game.file.endsWith('.sfc')));

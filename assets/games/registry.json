@@ -264,18 +264,8 @@
       "enabled": true
     },
     {
-      "id": "mega-man-8",
-      "cabinetId": "megaman-cabinet-04",
-      "name": "Mega Man 8",
-      "system": "psx",
-      "file": "mega-man-8.chd",
-      "emulatorId": 96004,
-      "sizeBytes": 254503808,
-      "enabled": true
-    },
-    {
       "id": "mega-man-x4",
-      "cabinetId": "megaman-cabinet-05",
+      "cabinetId": "megaman-cabinet-04",
       "name": "Mega Man X4",
       "system": "psx",
       "file": "mega-man-x4.chd",
@@ -285,7 +275,7 @@
     },
     {
       "id": "mega-man-x5",
-      "cabinetId": "megaman-cabinet-06",
+      "cabinetId": "megaman-cabinet-05",
       "name": "Mega Man X5",
       "system": "psx",
       "file": "mega-man-x5.chd",
@@ -295,12 +285,22 @@
     },
     {
       "id": "mega-man-x6",
-      "cabinetId": "megaman-cabinet-07",
+      "cabinetId": "megaman-cabinet-06",
       "name": "Mega Man X6",
       "system": "psx",
       "file": "mega-man-x6.chd",
       "emulatorId": 96007,
       "sizeBytes": 368695214,
+      "enabled": true
+    },
+    {
+      "id": "mega-man-8",
+      "cabinetId": "megaman-cabinet-07",
+      "name": "Mega Man 8",
+      "system": "psx",
+      "file": "mega-man-8.chd",
+      "emulatorId": 96004,
+      "sizeBytes": 254503808,
       "enabled": true
     }
   ]

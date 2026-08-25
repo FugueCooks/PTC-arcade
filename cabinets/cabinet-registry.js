@@ -1,7 +1,7 @@
 let registryPromise;
 
 export function loadCabinetRegistry() {
-  if (!registryPromise) registryPromise = fetch('./assets/cabinets/registry.json')
+  if (!registryPromise) registryPromise = fetch('./assets/cabinets/registry.json?v=megaman-cabinet-order-1', { cache: 'no-cache' })
     .then((response) => {
       if (!response.ok) throw new Error(`Cabinet registry returned ${response.status}`);
       return response.json();
@@ -24,4 +24,3 @@ function validateRegistry(entries) {
 }
 
 function point(value) { return value && [value.x, value.y, value.z].every(Number.isFinite); }
-
