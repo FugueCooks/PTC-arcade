@@ -40,7 +40,7 @@ void test('the temporary construction barrier rejects entry into the Xbox room',
   assert.equal(players.stateFor('socket-a')?.p[0], 12);
 });
 
-void test('the temporary construction barrier rejects entry into the PS2 room', () => {
+void test('the temporary construction barrier keeps the old front-left room reserved for a future console', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
   assert.deepEqual(players.move('socket-a', { p: [-3, 11], r: 0 }, 1_500)?.p, [-3, 1.65, 11]);
@@ -50,6 +50,18 @@ void test('the temporary construction barrier rejects entry into the PS2 room', 
   assert.deepEqual(players.move('socket-a', { p: [-12, 8], r: 0 }, 3_500)?.p, [-12, 1.65, 8]);
   assert.equal(players.move('socket-a', { p: [-14.2, 8], r: -Math.PI / 2 }, 4_000), undefined);
   assert.equal(players.stateFor('socket-a')?.p[0], -12);
+});
+
+void test('the new PS2 room can only be approached through PlayStation and remains under construction', () => {
+  const players = createPlayers();
+  players.join('socket-a', 'main', undefined, identity, 1_000);
+  const steps: Array<[number, number]> = [
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
+    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-22.5, -8], [-22.5, -11], [-22.5, -14]
+  ];
+  steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: Math.PI }, 1_500 + index * 500)));
+  assert.equal(players.move('socket-a', { p: [-22.5, -17], r: Math.PI }, 9_500), undefined);
+  assert.equal(players.stateFor('socket-a')?.p[2], -14);
 });
 
 void test('the social couch, room walls, rear doorway, and annex divider are authoritative', () => {

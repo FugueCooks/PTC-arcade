@@ -27,8 +27,8 @@ void test('the N64 wall loads the window-free environment module without a stale
   const world = await readFile(path.resolve(process.cwd(), 'world/world-manager.js'), 'utf8');
   const environment = await readFile(path.resolve(process.cwd(), 'world/environment-manager.js'), 'utf8');
 
-  assert.match(index, /app-bootstrap\.js\?v=square-console-rooms-2/);
-  assert.match(bootstrap, /arcade\.js\?v=square-console-rooms-2/);
+  assert.match(index, /app-bootstrap\.js\?v=ps2-connected-room-1/);
+  assert.match(bootstrap, /arcade\.js\?v=ps2-connected-room-1/);
   assert.match(bootstrap, /multiplayer-client\.js\?v=n64-wall-panels-removed-3/);
   assert.match(multiplayer, /world-manager\.js\?v=n64-wall-panels-removed-3/);
   assert.match(world, /environment-manager\.js\?v=n64-wall-panels-removed-3/);
@@ -50,6 +50,9 @@ void test('the main room is a collision-safe social lounge beside square console
   assert.match(arcade, /addRoomSign\('NINTENDO 64 ROOM'/);
   assert.match(arcade, /playstationWall\.position\.set\(-22\.5,2\.5,-\.16\)/);
   assert.match(arcade, /n64WallGraphic\.position\.set\(22\.5,2\.5,-\.16\)/);
+  assert.match(arcade, /new THREE\.PlaneGeometry\(17,16\.8\)/);
+  assert.match(arcade, /PS2_ROOM_CENTER_Z=-25\.2/);
+  assert.match(arcade, /PS2_ROOM_BACK_Z=-33\.6/);
   assert.match(arcade, /const socialCouch=new THREE\.Group/);
   assert.match(arcade, /new THREE\.ExtrudeGeometry\(couchShape/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(17,34\)/);

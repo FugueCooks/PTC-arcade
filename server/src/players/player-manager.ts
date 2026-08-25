@@ -6,6 +6,7 @@ import type { PlayerIdentity } from './player-identity.js';
 
 const MIN_WORLD_X = -30.5;
 const MAX_WORLD_X = 30.5;
+const MIN_WORLD_Z = -33.2;
 const MAX_WORLD_Z = 16;
 const PLAYER_HEIGHT = 1.65;
 const MAX_SPEED_PER_SECOND = 7;
@@ -15,6 +16,7 @@ const MOVEMENT_TOLERANCE = 0.3;
 const PARTITION_WALL_X = 14;
 const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 const PLAYABLE_ROOM_DOOR_Z = -8;
+const PS2_ROOM_DOOR_Z = -16.8;
 const ROOM_DOOR_CLEARANCE = 1.26;
 const SOCIAL_FURNITURE_RADIUS = 3.65;
 
@@ -31,6 +33,8 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH;
   if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
+  if (Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) return true;
   return false;
 }
 
@@ -280,7 +284,7 @@ export class PlayerManager {
   private isValidMove(player: ManagedPlayer, input: PlayerMoveInput, now: number): boolean {
     const [x, z] = input.p;
     if (![x, z, input.r].every(Number.isFinite)) return false;
-    if (x < MIN_WORLD_X || x > MAX_WORLD_X || Math.abs(z) > MAX_WORLD_Z) return false;
+    if (x < MIN_WORLD_X || x > MAX_WORLD_X || z < MIN_WORLD_Z || z > MAX_WORLD_Z) return false;
     if (violatesSocialLayout(player.position[0], player.position[2], x, z)) return false;
     const elapsed = now - player.lastAcceptedAt;
     if (elapsed < MAX_PACKET_RATE_MS) return false;
