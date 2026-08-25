@@ -80,6 +80,12 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(byId.get('psx-back-cabinet-02')?.defaultGameId, 'kingdom-hearts');
   assert.equal(byId.get('psx-back-cabinet-03')?.defaultGameId, 'gta-san-andreas');
   assert.equal(byId.get('psx-back-cabinet-04')?.defaultGameId, 'dbz-tenkaichi-3');
+  const megaManCabinets = [...byId]
+    .filter(([id]) => id.startsWith('megaman-cabinet-'))
+    .map(([, cabinet]) => cabinet);
+  assert.equal(megaManCabinets.length, 10);
+  assert.ok(megaManCabinets.every((cabinet) => cabinet.enabled && cabinet.system === 'psx'));
+  assert.ok(megaManCabinets.every((cabinet) => cabinet.defaultGameId === undefined));
 });
 
 void test('GameCube RVZ images are registered for the validated Gecko runtime', async () => {

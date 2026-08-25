@@ -4,7 +4,7 @@ import type { Room } from '../rooms/room.js';
 import type { RoomManager } from '../rooms/room-manager.js';
 import type { PlayerIdentity } from './player-identity.js';
 
-const MIN_WORLD_X = -30.5;
+const MIN_WORLD_X = -54.5;
 const MAX_WORLD_X = 30.5;
 const MIN_WORLD_Z = -33.2;
 const MAX_WORLD_Z = 16;
@@ -22,6 +22,11 @@ const SOCIAL_COUCH_OUTER_RADIUS = 6.75;
 const SOCIAL_COUCH_INNER_RADIUS = 4.2;
 const SOCIAL_COUCH_GAP_HALF_ANGLE = 0.34;
 const SOCIAL_DISPLAY_RADIUS = 2.07;
+const LEGACY_WORLD_MIN_X = -30.5;
+const MEGAMAN_ROOM_WALL_X = -31;
+const MEGAMAN_ROOM_DOOR_Z = -7;
+const MEGAMAN_ROOM_MIN_Z = -18.5;
+const MEGAMAN_ROOM_MAX_Z = 4.5;
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
   const socialDistance = Math.hypot(toX, toZ);
@@ -36,11 +41,22 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     const crossingZ = fromZ + (toZ - fromZ) * crossing;
     if (crossing >= 0 && crossing <= 1 && Math.abs(crossingZ - PLAYABLE_ROOM_DOOR_Z) >= ROOM_DOOR_CLEARANCE) return true;
   }
-  const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH;
+  const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
+    && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
   if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
-  if (Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
-  if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) return true;
+  const inPlayStationRearGallery = Math.max(fromX, toX) <= -PARTITION_WALL_X - PARTITION_COLLISION_HALF_WIDTH
+    && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
+  if (inPlayStationRearGallery && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if (inPlayStationRearGallery && (fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) return true;
+
+  const targetInMegaManDoor = Math.abs(toZ - MEGAMAN_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
+  if (!targetInMegaManDoor && Math.abs(toX - MEGAMAN_ROOM_WALL_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromX - MEGAMAN_ROOM_WALL_X) * (toX - MEGAMAN_ROOM_WALL_X) <= 0 && fromX !== toX) {
+    const crossing = (MEGAMAN_ROOM_WALL_X - fromX) / (toX - fromX);
+    const crossingZ = fromZ + (toZ - fromZ) * crossing;
+    if (crossing >= 0 && crossing <= 1 && Math.abs(crossingZ - MEGAMAN_ROOM_DOOR_Z) >= ROOM_DOOR_CLEARANCE) return true;
+  }
   return false;
 }
 
@@ -291,6 +307,7 @@ export class PlayerManager {
     const [x, z] = input.p;
     if (![x, z, input.r].every(Number.isFinite)) return false;
     if (x < MIN_WORLD_X || x > MAX_WORLD_X || z < MIN_WORLD_Z || z > MAX_WORLD_Z) return false;
+    if (x < LEGACY_WORLD_MIN_X && (z < MEGAMAN_ROOM_MIN_Z || z > MEGAMAN_ROOM_MAX_Z)) return false;
     if (violatesSocialLayout(player.position[0], player.position[2], x, z)) return false;
     const elapsed = now - player.lastAcceptedAt;
     if (elapsed < MAX_PACKET_RATE_MS) return false;

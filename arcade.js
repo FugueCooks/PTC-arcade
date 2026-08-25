@@ -146,7 +146,12 @@ for(const z of [-10,-3.5,3.5,10]){
   const tube=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.46,10),pendantMaterial);tube.position.set(0,4.02,z);scene.add(tube);
   const bloom=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),new THREE.MeshBasicMaterial({color:0xffa860,transparent:true,opacity:.11,depthWrite:false,blending:THREE.AdditiveBlending}));bloom.position.set(0,4.02,z);scene.add(bloom);
 }
-box(.3,5,34,0x180d31,-31,2.5,0);
+const MEGAMAN_ROOM_WALL_X=-31,MEGAMAN_ROOM_CENTER_X=-43,MEGAMAN_ROOM_CENTER_Z=-7,MEGAMAN_ROOM_SIZE=24,MEGAMAN_ROOM_DOOR_Z=-7;
+// A centered opening in the PlayStation gallery's outer wall leads into the
+// unsigned MegaMan Room. The two wall slabs preserve the existing gallery
+// shell while leaving a real, collision-matched doorway between them.
+box(.3,5,8.2,0x180d31,MEGAMAN_ROOM_WALL_X,2.5,-12.7);
+box(.3,5,22.2,0x180d31,MEGAMAN_ROOM_WALL_X,2.5,5.7);
 box(.3,5,34,0x180d31,31,2.5,0);
 // The main room now reaches the true rear wall. Keeping this wall aligned with
 // the two expansion-room back walls leaves open passages around both partition
@@ -246,6 +251,16 @@ const expansionFloorMaterial=(()=>{
   map.repeat.set(3.5,8.5);roughnessMap.repeat.set(3.5,8.5);
   return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12});
 })();
+// The MegaMan Room sits directly behind the PlayStation cabinet wall. It is a
+// full square with an intentionally blank shell so future wall graphics can be
+// installed without removing placeholder signage or decorative panels.
+const megaManFloor=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_ROOM_SIZE,MEGAMAN_ROOM_SIZE),expansionFloorMaterial);megaManFloor.rotation.x=-Math.PI/2;megaManFloor.position.set(MEGAMAN_ROOM_CENTER_X,.002,MEGAMAN_ROOM_CENTER_Z);megaManFloor.receiveShadow=true;scene.add(megaManFloor);
+const megaManCeiling=box(MEGAMAN_ROOM_SIZE,.12,MEGAMAN_ROOM_SIZE,0x090b18,MEGAMAN_ROOM_CENTER_X,5.08,MEGAMAN_ROOM_CENTER_Z,.08);megaManCeiling.receiveShadow=true;
+box(.3,5,MEGAMAN_ROOM_SIZE,0x11182c,-55,2.5,MEGAMAN_ROOM_CENTER_Z,.06);
+box(MEGAMAN_ROOM_SIZE,5,.3,0x11182c,MEGAMAN_ROOM_CENTER_X,2.5,-19,.06);
+box(MEGAMAN_ROOM_SIZE,5,.3,0x11182c,MEGAMAN_ROOM_CENTER_X,2.5,5,.06);
+for(let x=-53;x<=-33;x+=4)box(3.82,.055,.06,0xd18a52,x,4.66,-18.81,.75);
+lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_SIZE,MEGAMAN_ROOM_SIZE,0x4aa8ff);
 // Each side annex is split into two near-square rooms. The rear pair contains
 // the playable PlayStation and N64 galleries; the front pair remains available
 // for future systems. PlayStation's rear wall has a centered doorway leading
@@ -502,12 +517,21 @@ function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTR
 // The playable galleries wrap their seven cabinets around the exterior and
 // rear walls. The open interior and unused wall spans are reserved for growth.
 makeCabinet('silent-hill','SILENT HILL',-29.2,-13,0xc94c4c,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('silent-hill');
-makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-29.2,-9,0x36f9f6,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
-makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-29.2,-5,0x8de548,false,true,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
+makeCabinet('pixel-rally',"TONY HAWK'S PRO SKATER 2",-29.2,-10,0x36f9f6,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('pixel-rally');
+makeCabinet('gex-enter-the-gecko','GEX: ENTER THE GECKO',-29.2,-4,0x8de548,false,true,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('gex-enter-the-gecko');
 makeCabinet('crash-bandicoot','CRASH BANDICOOT',-29.2,-1,0xffa62e,true,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('crash-bandicoot');
 makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-24.5,-15.2,0x934dff,false,false,'psx');configureHostedCabinet('dungeon-88');
 makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-20.5,-15.2,0xff3cac,false,false,'psx');configureHostedCabinet('turbo-grid');
 makeCabinet('metal-gear-solid','METAL GEAR SOLID',-16.5,-15.2,0x5d75d9,false,false,'psx');configureHostedCabinet('metal-gear-solid');
+const megaManCabinetLayout=[
+  [1,-53.2,-16,Math.PI/2,0x42a5ff],[2,-53.2,-11,Math.PI/2,0xff3cac],[3,-53.2,-6,Math.PI/2,0x36f9f6],[4,-53.2,-1,Math.PI/2,0xffb42e],[5,-53.2,4,Math.PI/2,0x7dff67],
+  [6,-49,-17.2,0,0x934dff],[7,-45,-17.2,0,0x36f9f6],[8,-41,-17.2,0,0xff4da6],[9,-37,-17.2,0,0xffb42e],[10,-33,-17.2,0,0x5d75d9]
+];
+for(const [index,x,z,rotation,hue] of megaManCabinetLayout){
+  const cabinetId=`megaman-cabinet-${String(index).padStart(2,'0')}`;
+  makeCabinet(cabinetId,`PLAYSTATION // READY ${String(index).padStart(2,'0')}`,x,z,hue,false,false,'psx');
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'psx',gameName:`PlayStation Cabinet ${index}`,enabled:true,status:'available'});
+}
 const n64CabinetLayout=[[1,29.2,-13,-Math.PI/2,0x8b5cf6],[2,29.2,-9,-Math.PI/2,0xff4da6],[3,29.2,-5,-Math.PI/2,0x36f9f6],[4,29.2,-1,-Math.PI/2,0xffb42e],[5,16.5,-15.2,0,0x7dff67],[6,20.5,-15.2,0,0xff3cac],[7,24.5,-15.2,0,0x42a5ff]];
 for(const [index,x,z,rotation,hue] of n64CabinetLayout){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
 // Five experimental GameCube cabinets sit inside their dedicated construction
@@ -911,8 +935,20 @@ function resolvePartitionWallCollisions(previousX,previousZ){
     else if(previousX>=wallX&&playerPosition.x<rightFace)playerPosition.x=rightFace;
   }
 }
+function resolveMegaManRoomCollisions(previousX,previousZ){
+  const wallX=MEGAMAN_ROOM_WALL_X;
+  const crossedWall=(previousX-wallX)*(playerPosition.x-wallX)<=0&&previousX!==playerPosition.x;
+  const crossing=(wallX-previousX)/(playerPosition.x-previousX);
+  const crossingZ=crossedWall?previousZ+(playerPosition.z-previousZ)*crossing:playerPosition.z;
+  const insideDoor=Math.abs(crossingZ-MEGAMAN_ROOM_DOOR_Z)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS;
+  if(!insideDoor){
+    const leftFace=wallX-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS,rightFace=wallX+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
+    if(previousX<wallX&&playerPosition.x>leftFace)playerPosition.x=leftFace;
+    else if(previousX>=wallX&&playerPosition.x<rightFace)playerPosition.x=rightFace;
+  }
+}
 function resolveSocialLayoutCollisions(previousX,previousZ){
-  if(Math.abs(playerPosition.x)>Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS){
+  if(Math.abs(playerPosition.x)>Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS&&playerPosition.x>-30.5){
     const rearFace=-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS,frontFace=PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
     if(previousZ<0&&playerPosition.z>rearFace)playerPosition.z=rearFace;
     else if(previousZ>=0&&playerPosition.z<frontFace)playerPosition.z=frontFace;
@@ -931,6 +967,7 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
   playerPosition.x*=boundary/distance;playerPosition.z*=boundary/distance;
 }
 function resolveRearGalleryCollision(previousZ){
+  if(playerPosition.x<-30.5||playerPosition.x>-14.5)return;
   const northFace=PS2_ROOM_DOOR_Z+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
   const southFace=PS2_ROOM_DOOR_Z-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
   if(previousZ>PS2_ROOM_DOOR_Z&&playerPosition.z<northFace)playerPosition.z=northFace;
@@ -945,6 +982,6 @@ function updatePerformanceStats(now){performanceFrames++;const elapsed=now-perfo
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);if(locked){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0),0,(keys.KeyS?1:0)-(keys.KeyW?1:0));localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);playerPosition.x=Math.max(-30.5,Math.min(30.5,playerPosition.x));playerPosition.z=Math.max(-33.2,Math.min(16,playerPosition.z))}near=null;let md=2.25;cabinets.forEach(c=>{const dist=c.g.position.distanceTo(playerPosition);if(dist<md){near=c;md=dist}});warmEmulatorCore(near?.system);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);if(locked){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0),0,(keys.KeyS?1:0)-(keys.KeyW?1:0));localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveMegaManRoomCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);playerPosition.x=Math.max(-54.5,Math.min(30.5,playerPosition.x));if(playerPosition.x<-30.5)playerPosition.z=Math.max(-18.5,Math.min(4.5,playerPosition.z));else playerPosition.z=Math.max(-33.2,Math.min(16,playerPosition.z))}near=null;let md=2.25;cabinets.forEach(c=>{const dist=c.g.position.distanceTo(playerPosition);if(dist<md){near=c;md=dist}});warmEmulatorCore(near?.system);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,devicePixelRatio,pixelRatioCap);renderer.setPixelRatio(currentPixelRatio)});

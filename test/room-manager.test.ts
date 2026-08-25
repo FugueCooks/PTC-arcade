@@ -64,6 +64,35 @@ void test('the new PS2 room can only be approached through PlayStation and remai
   assert.equal(players.stateFor('socket-a')?.p[2], -14);
 });
 
+void test('the MegaMan Room is reachable only through its PlayStation-wall doorway', () => {
+  const players = createPlayers();
+  players.join('socket-a', 'main', undefined, identity, 1_000);
+  const doorwayRoute: Array<[number, number]> = [
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
+    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-26.5, -8], [-29, -7], [-31.5, -7], [-34, -7]
+  ];
+  doorwayRoute.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
+  assert.deepEqual(players.stateFor('socket-a')?.p, [-34, 1.65, -7]);
+
+  assert.ok(players.move('socket-a', { p: [-34, -4], r: 0 }, 10_500));
+  assert.ok(players.move('socket-a', { p: [-34, -1], r: 0 }, 11_000));
+  assert.ok(players.move('socket-a', { p: [-34, 2], r: 0 }, 11_500));
+  assert.ok(players.move('socket-a', { p: [-34, 4], r: 0 }, 12_000));
+  assert.equal(players.move('socket-a', { p: [-34, 5], r: 0 }, 12_500), undefined);
+});
+
+void test('the solid section of the PlayStation outer wall remains authoritative', () => {
+  const players = createPlayers();
+  players.join('socket-a', 'main', undefined, identity, 1_000);
+  const route: Array<[number, number]> = [
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
+    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-26.5, -8], [-29, -10]
+  ];
+  route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
+  assert.equal(players.move('socket-a', { p: [-31.5, -10], r: -Math.PI / 2 }, 9_500), undefined);
+  assert.deepEqual(players.stateFor('socket-a')?.p, [-29, 1.65, -10]);
+});
+
 void test('the social couch, room walls, rear doorway, and annex divider are authoritative', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
