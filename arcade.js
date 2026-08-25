@@ -15,6 +15,9 @@ const gameCubeDspAssetUrl=window.ARCADE_RUNTIME?.gameCubeDspAssetUrl||gameAssetB
 let yaw=0,pitch=0, locked=false, activeCabinet=null, localAnimationState='idle', cameraMode='third-person', socialFollowProvider=null, emulatorRuntimeActive=false;
 scene.add(new THREE.HemisphereLight(0x2b2440,0x0a0810,1.2));
 const managedSceneLights=[];
+// Callbacks run after movement resolves and before the draw call. Declared up
+// here so scenery built anywhere in the file can register an animation.
+const beforeRenderCallbacks=[];
 const point = (color,x,y,z,intensity=6) => { const l=new THREE.PointLight(color,intensity,10,2);l.position.set(x,y,z);scene.add(l);managedSceneLights.push(l);return l };
 // Muted teal instead of pure cyan, and a warm sodium pool at the back, so the
 // room lights read as a side street at night rather than a neon grid.
@@ -109,6 +112,25 @@ for(const [row,z] of [-12.5,-7.5,-2.5,2.5,7.5,12.5].entries()){
     const halo=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.6),cool?coolHaloMaterial:warmHaloMaterial);halo.rotation.x=Math.PI/2;halo.position.set(x,4.84,z);scene.add(halo);
   }
 }
+// The galleries added beyond the original hall inherited a ceiling but no
+// fixtures, so they read as unlit black boxes. Lay the same troffer grid into
+// any room, and give each one its own pair of managed point lights: the cull
+// keeps only the two nearest, so whichever room the player stands in is the one
+// that is actually lit and the budget stays flat.
+function lightRoom(centerX,centerZ,width,depth,accent=0xff9a4d){
+  const columns=Math.max(1,Math.round(width/9)),rows=Math.max(1,Math.round(depth/5));
+  for(let row=0;row<rows;row++){
+    const z=centerZ-depth/2+depth*(row+.5)/rows,cool=row%3===1;
+    for(let column=0;column<columns;column++){
+      const x=centerX-width/2+width*(column+.5)/columns;
+      const housing=new THREE.Mesh(new THREE.BoxGeometry(3.6,.17,.52),ceilingHousingMaterial);housing.position.set(x,4.95,z);scene.add(housing);
+      const panel=new THREE.Mesh(new THREE.PlaneGeometry(3.3,.34),cool?coolPanelMaterial:warmPanelMaterial);panel.rotation.x=Math.PI/2;panel.position.set(x,4.862,z);scene.add(panel);
+      const halo=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.6),cool?coolHaloMaterial:warmHaloMaterial);halo.rotation.x=Math.PI/2;halo.position.set(x,4.84,z);scene.add(halo);
+    }
+  }
+  point(accent,centerX,3.1,centerZ-depth/4,5.2);
+  point(accent,centerX,3.1,centerZ+depth/4,5.2);
+}
 // Exposed service duct and conduit down the main aisle. The broken silhouette
 // is what stops the ceiling from reading as a flat lid.
 const ductMaterial=new THREE.MeshStandardMaterial({color:0x191527,roughness:.5,metalness:.72});
@@ -156,7 +178,33 @@ n64WallGraphic.position.set(22.5,2.5,-.16);n64WallGraphic.rotation.y=Math.PI;sce
 // The old front-left PS2 bay is now a clean future expansion. Xbox remains
 // behind its original barrier while PS2 gets a dedicated room beyond the
 // PlayStation gallery below.
-function constructionTapeTexture(){const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;const context=canvas.getContext('2d');context.fillStyle='#f6c515';context.fillRect(0,0,768,512);context.save();context.strokeStyle='#17120a';context.lineWidth=70;for(let x=-520;x<1100;x+=150){context.beginPath();context.moveTo(x,512);context.lineTo(x+360,0);context.stroke()}context.restore();context.fillStyle='#f6c515';context.fillRect(0,196,768,120);context.strokeStyle='#17120a';context.lineWidth=12;context.strokeRect(0,196,768,120);context.fillStyle='#17120a';context.font='bold 64px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText('CAUTION',384,258);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture}
+// Hazard signage, but lit rather than painted. The yellow and black tape read
+// as builder's plastic against everything else in the room; this keeps the same
+// warning language in the arcade's own palette.
+function constructionTapeTexture(){
+  const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;
+  const c=canvas.getContext('2d');
+  const backdrop=c.createLinearGradient(0,0,0,512);
+  backdrop.addColorStop(0,'#0a0d16');backdrop.addColorStop(.5,'#111a2b');backdrop.addColorStop(1,'#080a12');
+  c.fillStyle=backdrop;c.fillRect(0,0,768,512);
+  // Thin glowing chevrons instead of solid painted stripes.
+  c.save();c.strokeStyle='#2fd8ff';c.globalAlpha=.5;c.lineWidth=12;
+  for(let x=-560;x<1200;x+=88){c.beginPath();c.moveTo(x,512);c.lineTo(x+300,0);c.stroke()}
+  c.restore();
+  // Scanlines give it the flatness of a projected panel.
+  c.globalAlpha=.16;c.fillStyle='#000000';
+  for(let y=0;y<512;y+=4)c.fillRect(0,y,768,2);
+  c.globalAlpha=1;
+  c.fillStyle='rgba(6,10,18,.82)';c.fillRect(0,186,768,140);
+  c.strokeStyle='#2fd8ff';c.lineWidth=3;c.strokeRect(18,192,732,128);
+  c.strokeStyle='#ffb877';c.lineWidth=1.5;c.strokeRect(26,200,716,112);
+  c.fillStyle='#eaf7ff';c.font='700 62px Impact, "Arial Black", sans-serif';
+  c.textAlign='center';c.textBaseline='middle';
+  c.shadowColor='#2fd8ff';c.shadowBlur=22;c.fillText('SECTOR SEALED',384,244);
+  c.shadowBlur=0;c.fillStyle='#ffb877';c.font='700 24px monospace';
+  c.fillText('U N D E R   C O N S T R U C T I O N',384,296);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
 const constructionTexture=constructionTapeTexture(),constructionBarriers=[];
 const futureConstructionBarrier=new THREE.Group();futureConstructionBarrier.position.set(PLAYSTATION_WALL_X,0,CONSTRUCTION_ROOM_DOOR_Z);futureConstructionBarrier.userData.roomName='Future Console';
 const futureConstructionPanel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,2.65),new THREE.MeshBasicMaterial({map:constructionTexture,side:THREE.DoubleSide}));futureConstructionPanel.position.set(.205,1.48,0);futureConstructionPanel.rotation.y=Math.PI/2;futureConstructionBarrier.add(futureConstructionPanel);
@@ -230,6 +278,8 @@ const gamecubeCeiling=box(24,.12,24,0x090b18,0,5.08,28.8,.08);gamecubeCeiling.re
 box(.3,5,24,0x11182c,-12,2.5,28.8,.06);box(.3,5,24,0x11182c,12,2.5,28.8,.06);box(24,5,.3,0x11182c,0,2.5,40.8,.06);
 box(10.3,5,.3,0x11182c,-6.85,2.5,16.8,.06);box(10.3,5,.3,0x11182c,6.85,2.5,16.8,.06);
 for(let x=-10;x<=10;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,40.61,.75);
+lightRoom(0,28.8,24,24,0xffb066);
+lightRoom(PS2_ROOM_CENTER_X,PS2_ROOM_CENTER_Z,17,16.8,0xff5fae);
 function addRoomSign(text,x,color,z=-16.62,rotationY=0){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,z);sign.rotation.y=rotationY;scene.add(sign)}
 addRoomSign('PLAYSTATION ROOM',-22.5,'#d18a52');
 addRoomSign('NINTENDO 64 ROOM',22.5,'#36f9f6');
@@ -476,8 +526,8 @@ const counterDisplayLight=new THREE.PointLight(0xe8f9ff,5.4,4.2,2);counterDispla
 // preserving a clear view into Trench Pepe's glass display. Its outer radius
 // is mirrored by authoritative collision below and on both multiplayer paths.
 const socialCouch=new THREE.Group();socialCouch.position.set(0,0,0);scene.add(socialCouch);
-const couchMaterial=new THREE.MeshStandardMaterial({color:0x3b174f,emissive:0x160923,emissiveIntensity:.48,roughness:.5,metalness:.12});
-const couchBackMaterial=new THREE.MeshStandardMaterial({color:0x55206b,emissive:0x240b35,emissiveIntensity:.55,roughness:.46,metalness:.1});
+const couchMaterial=new THREE.MeshStandardMaterial({color:0x33143f,emissive:0x2a0f45,emissiveIntensity:.5,roughness:.22,metalness:.62});
+const couchBackMaterial=new THREE.MeshStandardMaterial({color:0x4a1c63,emissive:0x3a1156,emissiveIntensity:.6,roughness:.18,metalness:.58});
 const couchToeMaterial=new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:1.35,roughness:.3,metalness:.55});
 function couchSectionShape(start,end){const shape=new THREE.Shape();shape.absarc(0,0,4.25,start,end,false);shape.lineTo(2.35*Math.cos(end),2.35*Math.sin(end));shape.absarc(0,0,2.35,end,start,true);shape.closePath();return shape}
 for(const [start,end] of [[SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI-SOCIAL_COUCH_GAP_HALF_ANGLE],[Math.PI+SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI*2-SOCIAL_COUCH_GAP_HALF_ANGLE]]){
@@ -486,6 +536,70 @@ for(const [start,end] of [[SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI-SOCIAL_COUCH_GAP_
   const backGeometry=new THREE.TorusGeometry(3.85,.34,12,48,end-start);backGeometry.rotateZ(start);const back=new THREE.Mesh(backGeometry,couchBackMaterial);back.rotation.x=Math.PI/2;back.position.y=.96;socialCouch.add(back);
   const toeGeometry=new THREE.TorusGeometry(3.55,.12,10,48,end-start);toeGeometry.rotateZ(start);const toeGlow=new THREE.Mesh(toeGeometry,couchToeMaterial);toeGlow.rotation.x=Math.PI/2;toeGlow.position.y=.16;socialCouch.add(toeGlow);
 }
+// The hub floor is a very large unbroken sheet. Lit inlays give it a centre and
+// draw the eye toward each gallery doorway, which also makes the room easier to
+// read as a space rather than an empty plane.
+const inlayMaterial=new THREE.MeshBasicMaterial({color:0x4bd8ff,transparent:true,opacity:.42,depthWrite:false,blending:THREE.AdditiveBlending});
+const inlayWarmMaterial=new THREE.MeshBasicMaterial({color:0x9fd8ff,transparent:true,opacity:.17,depthWrite:false,blending:THREE.AdditiveBlending});
+for(const radius of [6.4,6.62]){
+  const ring=new THREE.Mesh(new THREE.RingGeometry(radius,radius+.05,96),inlayMaterial);
+  ring.rotation.x=-Math.PI/2;ring.position.y=.028;scene.add(ring);
+}
+// Runway strips from the hub toward each gallery mouth.
+for(const [angle,length] of [[0,9.5],[Math.PI,9.5],[Math.PI/2,10.5],[-Math.PI/2,10.5]]){
+  for(const offset of [-.55,.55]){
+    const strip=new THREE.Mesh(new THREE.PlaneGeometry(.07,length),inlayWarmMaterial);
+    strip.rotation.x=-Math.PI/2;strip.rotation.z=-angle;
+    strip.position.set(Math.sin(angle)*(7.2+length/2)+Math.cos(angle)*offset,.026,Math.cos(angle)*(7.2+length/2)-Math.sin(angle)*offset);
+    scene.add(strip);
+  }
+}
+// Long unbroken wall slabs are what make the hall read as a box. Slim vertical
+// fins with a lit inner edge give the walls a rhythm and catch the room colour
+// without adding a single light.
+const wallFinBody=new THREE.MeshStandardMaterial({color:0x141020,roughness:.34,metalness:.72});
+const wallFinGeometry=roundedSlab(.16,4.5,.42,.07);
+const finGlowGeometry=new THREE.BoxGeometry(.05,4.1,.03);
+for(const [finX,direction,glowColor] of [[-13.72,1,0xd18a52],[13.72,-1,0x36f9f6]]){
+  const glowMaterial=new THREE.MeshStandardMaterial({color:glowColor,emissive:glowColor,emissiveIntensity:1.15,roughness:.3,metalness:.4});
+  for(let z=-15;z<=15;z+=3.75){
+    const fin=new THREE.Mesh(wallFinGeometry,wallFinBody);
+    fin.position.set(finX+direction*.2,2.32,z);fin.rotation.y=Math.PI/2;scene.add(fin);
+    const glow=new THREE.Mesh(finGlowGeometry,glowMaterial);
+    glow.position.set(finX+direction*.42,2.32,z);scene.add(glow);
+  }
+}
+// The hub reads as a very large dark floor with nothing above eye level, so the
+// lounge gets a centrepiece: counter-rotating light rings inside a soft beam
+// dropping onto the display. All of it is emissive or additive geometry, so it
+// adds nothing to the light budget.
+const centrepiece=new THREE.Group();centrepiece.position.set(0,0,0);scene.add(centrepiece);
+const beamTexture=(()=>{
+  const canvas=document.createElement('canvas');canvas.width=8;canvas.height=128;
+  const c=canvas.getContext('2d'),gradient=c.createLinearGradient(0,0,0,128);
+  gradient.addColorStop(0,'rgba(255,255,255,0)');gradient.addColorStop(.35,'rgba(255,255,255,.5)');
+  gradient.addColorStop(.78,'rgba(255,255,255,.16)');gradient.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=gradient;c.fillRect(0,0,8,128);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+})();
+const beam=new THREE.Mesh(new THREE.CylinderGeometry(2.15,1.35,3.3,40,1,true),new THREE.MeshBasicMaterial({map:beamTexture,color:0x7fe4ff,transparent:true,opacity:.13,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));
+beam.position.y=3.25;centrepiece.add(beam);
+// Faint ground ring so the beam lands on something.
+const beamRing=new THREE.Mesh(new THREE.TorusGeometry(2.02,.035,8,64),new THREE.MeshBasicMaterial({color:0x7fe4ff,transparent:true,opacity:.55,depthWrite:false,blending:THREE.AdditiveBlending}));
+beamRing.rotation.x=Math.PI/2;beamRing.position.y=.05;centrepiece.add(beamRing);
+// A bright disc on the floor anchors the beam instead of letting it fade out.
+const beamPool=new THREE.Mesh(new THREE.CircleGeometry(1.9,40),new THREE.MeshBasicMaterial({color:0x7fe4ff,transparent:true,opacity:.1,depthWrite:false,blending:THREE.AdditiveBlending}));
+beamPool.rotation.x=-Math.PI/2;beamPool.position.y=.03;centrepiece.add(beamPool);
+const haloRings=[];
+for(const [radius,y,tube,color,speed,tilt] of [[2.35,3.05,.045,0x36f9f6,.16,.05],[3.05,3.7,.038,0xff4fa8,-.11,-.07],[3.75,4.32,.03,0xffb877,.075,.04]]){
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(radius,tube,8,72),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));
+  ring.rotation.x=Math.PI/2+tilt;ring.position.y=y;centrepiece.add(ring);
+  haloRings.push({ring,speed});
+}
+beforeRenderCallbacks.push((now,delta)=>{
+  if(playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z>900)return;
+  for(const {ring,speed} of haloRings)ring.rotation.z+=speed*delta;
+});
 // Low, oversized glass prize display set flush against the true back wall.
 const prizeDisplay=new THREE.Group();prizeDisplay.position.set(0,0,-15.65);scene.add(prizeDisplay);
 const rearCaseGlass=new THREE.Mesh(new THREE.BoxGeometry(14.2,1.225,1.8),new THREE.MeshStandardMaterial({color:0x8deeff,emissive:0x173d5d,emissiveIntensity:.26,transparent:true,opacity:.16,metalness:.65,roughness:.06,side:THREE.DoubleSide,depthWrite:false}));rearCaseGlass.position.y=.6125;prizeDisplay.add(rearCaseGlass);
@@ -806,7 +920,6 @@ function updatePerformanceStats(now){performanceFrames++;const elapsed=now-perfo
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-const beforeRenderCallbacks=[];
 function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);if(locked){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0),0,(keys.KeyS?1:0)-(keys.KeyW?1:0));localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);playerPosition.x=Math.max(-30.5,Math.min(30.5,playerPosition.x));playerPosition.z=Math.max(-33.2,Math.min(16,playerPosition.z))}near=null;let md=2.25;cabinets.forEach(c=>{const dist=c.g.position.distanceTo(playerPosition);if(dist<md){near=c;md=dist}});warmEmulatorCore(near?.system);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,devicePixelRatio,pixelRatioCap);renderer.setPixelRatio(currentPixelRatio)});

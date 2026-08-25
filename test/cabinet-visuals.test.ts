@@ -27,11 +27,25 @@ void test('the N64 wall loads the window-free environment module without a stale
   const world = await readFile(path.resolve(process.cwd(), 'world/world-manager.js'), 'utf8');
   const environment = await readFile(path.resolve(process.cwd(), 'world/environment-manager.js'), 'utf8');
 
-  assert.match(index, /app-bootstrap\.js\?v=gamecube-sign-removed-1/);
-  assert.match(bootstrap, /arcade\.js\?v=gamecube-sign-removed-1/);
-  assert.match(bootstrap, /multiplayer-client\.js\?v=n64-wall-panels-removed-3/);
-  assert.match(multiplayer, /world-manager\.js\?v=n64-wall-panels-removed-3/);
-  assert.match(world, /environment-manager\.js\?v=n64-wall-panels-removed-3/);
+  // Cache keys are meant to change whenever assets change, so pinning literal
+  // values here fails on every legitimate bump. Assert the invariant that
+  // actually matters instead: the import chain moves together. Bumping only a
+  // nested key leaves the browser running a cached parent that still imports
+  // the previous URL, which silently ships stale code.
+  const versionOf = (source: string, asset: string): string => {
+    const marker = `${asset}?v=`;
+    const at = source.indexOf(marker);
+    assert.ok(at !== -1, `${asset} is not version pinned`);
+    const key = /^[A-Za-z0-9-]+/.exec(source.slice(at + marker.length));
+    assert.ok(key, `${asset} has an empty version key`);
+    return key ? key[0] : "";
+  };
+  assert.equal(versionOf(index, "app-bootstrap.js"), versionOf(bootstrap, "arcade.js"),
+    "index.html and app-bootstrap.js must agree on one cache key");
+  assert.equal(versionOf(bootstrap, "multiplayer-client.js"), versionOf(multiplayer, "world-manager.js"),
+    "the multiplayer import chain must agree on one cache key");
+  assert.equal(versionOf(multiplayer, "world-manager.js"), versionOf(world, "environment-manager.js"),
+    "the world import chain must agree on one cache key");
   assert.doesNotMatch(environment, /createWindows/);
 });
 
