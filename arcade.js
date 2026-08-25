@@ -284,22 +284,22 @@ box(8.3,4.72,.08,0x050711,-48.1,2.5,4.81,.12);
 const megaManMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural.webp?v=megaman-mural-1');
 megaManMuralTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManMural=new THREE.Mesh(new THREE.PlaneGeometry(8,4.42),new THREE.MeshBasicMaterial({map:megaManMuralTexture}));
-megaManMural.position.set(-48.1,2.5,4.75);megaManMural.rotation.y=Math.PI;scene.add(megaManMural);
+const megaManMural=new THREE.Mesh(new THREE.PlaneGeometry(8,4.42),new THREE.MeshBasicMaterial({map:megaManMuralTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+megaManMural.position.set(-48.1,2.5,4.68);megaManMural.rotation.y=Math.PI;megaManMural.renderOrder=4;scene.add(megaManMural);
 box(9.4,4.72,.08,0x050711,-37.7,2.5,4.81,.12);
 const megaManMuralTwoTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-2.webp?v=megaman-mural-2');
 megaManMuralTwoTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTwoTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManMuralTwo=new THREE.Mesh(new THREE.PlaneGeometry(9.1,4.43),new THREE.MeshBasicMaterial({map:megaManMuralTwoTexture}));
-megaManMuralTwo.position.set(-37.7,2.5,4.75);megaManMuralTwo.rotation.y=Math.PI;scene.add(megaManMuralTwo);
+const megaManMuralTwo=new THREE.Mesh(new THREE.PlaneGeometry(9.1,4.43),new THREE.MeshBasicMaterial({map:megaManMuralTwoTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+megaManMuralTwo.position.set(-37.7,2.5,4.68);megaManMuralTwo.rotation.y=Math.PI;megaManMuralTwo.renderOrder=4;scene.add(megaManMuralTwo);
 // The third supplied mural goes on the rear wall, which is solid across its
 // whole width and faces anyone walking in through the east doorway.
 box(7.7,4.5,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.4,-18.81,.12);
 const megaManMuralThreeTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-3.webp?v=megaman-mural-3');
 megaManMuralThreeTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralThreeTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManMuralThree=new THREE.Mesh(new THREE.PlaneGeometry(7.41,4.3),new THREE.MeshBasicMaterial({map:megaManMuralThreeTexture}));
-megaManMuralThree.position.set(MEGAMAN_ROOM_CENTER_X,2.4,-18.75);scene.add(megaManMuralThree);
+const megaManMuralThree=new THREE.Mesh(new THREE.PlaneGeometry(7.41,4.3),new THREE.MeshBasicMaterial({map:megaManMuralThreeTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+megaManMuralThree.position.set(MEGAMAN_ROOM_CENTER_X,2.4,-18.68);megaManMuralThree.renderOrder=4;scene.add(megaManMuralThree);
 for(let x=-53;x<=-33;x+=4)box(3.82,.055,.06,0xd18a52,x,4.66,-18.81,.75);
 lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_SIZE,MEGAMAN_ROOM_SIZE,0x4aa8ff);
 // Each side annex is split into two near-square rooms. The rear pair contains
