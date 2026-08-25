@@ -71,6 +71,7 @@ void test('the main room is a collision-safe social lounge beside square console
   assert.match(arcade, /function couchSectionShape/);
   assert.match(arcade, /new THREE\.ExtrudeGeometry\(couchSectionShape/);
   assert.match(arcade, /SOCIAL_COUCH_OUTER_RADIUS=6\.75/);
+  assert.match(arcade, /SOCIAL_COUCH_INNER_RADIUS=4\.2/);
   assert.match(arcade, /SOCIAL_COUCH_GAP_HALF_ANGLE=\.34/);
   assert.match(arcade, /SOCIAL_DISPLAY_RADIUS=2\.07/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(17,34\)/);

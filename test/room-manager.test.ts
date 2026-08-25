@@ -89,7 +89,7 @@ void test('the social couch, room walls, rear doorway, and annex divider are aut
 void test('the wider social couch has usable side openings while its glass display stays solid', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  const steps: Array<[number, number]> = [[3, 11], [6, 11], [6, 8], [6, 5], [6, 2], [5, 0], [4.3, 0], [3, 0], [2.2, 0]];
+  const steps: Array<[number, number]> = [[3, 11], [6, 11], [6, 8], [6, 5], [6, 2], [5, 0], [4.3, 0], [3.8, 1.4], [3, 1], [2.2, 0]];
   steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
   assert.equal(players.move('socket-a', { p: [1.8, 0], r: -Math.PI / 2 }, 6_000), undefined);
   assert.deepEqual(players.stateFor('socket-a')?.p, [2.2, 1.65, 0]);
