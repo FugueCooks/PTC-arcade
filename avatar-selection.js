@@ -1,4 +1,4 @@
-import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=barrier-facing-1';
+import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=triple-t-label-2';
 import { RoomPlacementClient } from './rooms/room-placement-client.js?v=phase7-room-browser-1';
 
 const PREFERENCE_KEY = 'roms-arcade-avatar-preferences';
@@ -41,6 +41,10 @@ const savePreferences = (selection, persistent) => {
   const value = persistent ? selection : { roomId: selection.roomId, avatarId: selection.avatarId };
   try { localStorage.setItem(PREFERENCE_KEY, JSON.stringify(value)); } catch { /* Private browsing may disable storage. */ }
 };
+
+// Keep the stable avatar ID and asset filenames for reconnect compatibility,
+// but never expose the model's former display name in the player picker.
+const avatarDisplayName = (avatar) => avatar.id === 'tung-sahur' ? 'Triple T' : avatar.name;
 
 const selectAvatar = (id) => {
   selectedAvatarId = id;
@@ -176,7 +180,7 @@ async function boot() {
       card.type = 'button';
       card.className = 'avatar-card';
       card.dataset.avatarId = avatar.id;
-      card.textContent = avatar.name;
+      card.textContent = avatarDisplayName(avatar);
       card.addEventListener('click', () => selectAvatar(avatar.id));
       return card;
     }));

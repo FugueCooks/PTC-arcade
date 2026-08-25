@@ -164,16 +164,16 @@
       if (placement?.roomId) currentRoomId = placement.roomId;
       await window.prepareArcadeRealtime?.();
       const [{ AvatarRenderer }, { loadAvatarRegistry }, { CabinetNetworkClient }, { CabinetVisualState }, { CabinetSessionController }, { loadCabinetRegistry }, { ChatClient }, { PresenceClient }, { ReactionClient }, { InspectionClient }, { WorldManager }] = await Promise.all([
-        import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=barrier-facing-1'),
+        import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=triple-t-label-2'),
         import('./cabinets/cabinet-network-client.js?v=phase4-1'), import('./cabinets/cabinet-visual-state.js?v=phase4-1'),
         import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=phase4-1'),
         import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=network-meter-1'),
         import('./social/reaction-client.js?v=phase5-2'), import('./social/inspection-client.js?v=phase5-1'),
-        import('./world/world-manager.js?v=barrier-facing-1')
+        import('./world/world-manager.js?v=triple-t-label-2')
       ]);
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
-      const { installAvatarStressTest } = await import('./avatars/avatar-stress-test.js?v=barrier-facing-1');
+      const { installAvatarStressTest } = await import('./avatars/avatar-stress-test.js?v=triple-t-label-2');
       installAvatarStressTest(avatarRenderer, avatarRegistry, arcade.performanceProfile);
       // Render a local fallback immediately. The server snapshot will replace
       // its identity with the validated state once the room connection opens.

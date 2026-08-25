@@ -59,6 +59,10 @@ void test('Triple T uses its authored walk clip in a compact skinned GLB', async
   assert.deepEqual(payload.animations?.map((animation) => animation.name), ['Armature|Walk']);
   assert.ok((payload.skins?.length ?? 0) > 0, 'the avatar must retain its skinned rig');
   assert.ok(payload.extensionsRequired?.includes('EXT_texture_webp'), 'the avatar should retain web-optimized textures');
+
+  const selectionUi = await readFile('avatar-selection.js', 'utf8');
+  assert.match(selectionUi, /avatar\.id === 'tung-sahur' \? 'Triple T' : avatar\.name/);
+  assert.match(selectionUi, /card\.textContent = avatarDisplayName\(avatar\)/);
 });
 
 void test('display names are normalized and malformed identities are rejected', () => {
