@@ -54,6 +54,7 @@ void test('closing a PS2 session releases the selected disc image reference', as
 void test('hosted GameCube loading reports progress and is not canceled by the outer timeout', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const gecko = await readFile(path.resolve(process.cwd(), 'emulators/gecko/main.js'), 'utf8');
+  const geckoStyles = await readFile(path.resolve(process.cwd(), 'emulators/gecko/main.css'), 'utf8');
 
   assert.match(arcade, /type==='arcade:gamecube-source-loading'\)clearTimeout\(emulatorLoadTimer\)/);
   assert.match(arcade, /type==='arcade:gamecube-load-progress'/);
@@ -62,6 +63,9 @@ void test('hosted GameCube loading reports progress and is not canceled by the o
   assert.match(gecko, /type: 'arcade:gamecube-load-progress'/);
   assert.match(gecko, /Number\(response\.headers\.get\('content-length'\)\) \|\| Number\(expectedBytes\)/);
   assert.match(gecko, /Downloading \$\{name\} · \$\{percent\}%/);
+  assert.match(gecko, /querySelectorAll\('\.picker, output, #start'\)/);
+  assert.match(geckoStyles, /\[hidden\]\{display:none!important\}/);
+  assert.match(arcade, /emulators\/gecko\/index\.html\?v=gecko-hosted-clean-1/);
 });
 
 void test('hosted GameCube images are cached persistently while the first download feeds Gecko', async () => {
