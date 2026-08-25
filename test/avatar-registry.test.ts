@@ -37,13 +37,13 @@ void test('Sora Final uses only the approved authored idle and movement clips', 
   assert.equal(payload.skins?.length, 1);
 });
 
-void test('Tung Sahur uses its authored walk clip in a compact skinned GLB', async () => {
+void test('Triple T uses its authored walk clip in a compact skinned GLB', async () => {
   const { readFile } = await import('node:fs/promises');
   const registry = JSON.parse(await readFile('assets/avatars/registry.json', 'utf8')) as {
     avatars: Array<{ id: string; name: string; modelUrl: string | null; animations: Record<string, string> }>;
   };
   const avatar = registry.avatars.find((entry) => entry.id === 'tung-sahur');
-  assert.equal(avatar?.name, 'Tung Sahur');
+  assert.equal(avatar?.name, 'Triple T');
   assert.match(avatar?.modelUrl ?? '', /tung-sahur\.optimized\.glb/);
   assert.deepEqual(avatar?.animations, { walk: 'Armature|Walk', run: 'Armature|Walk' });
 

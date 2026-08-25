@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-labelledby="title description">
-  <title id="title">Tung Sahur</title>
+  <title id="title">Triple T</title>
   <desc id="description">A warm wooden arcade avatar emblem.</desc>
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#09071b"/><stop offset="1" stop-color="#25102d"/></linearGradient>
@@ -13,5 +13,5 @@
   <path d="M145 93 Q160 103 175 93" fill="none" stroke="#2b1010" stroke-width="5" stroke-linecap="round"/>
   <path d="M126 105 101 132M194 105l25 27" stroke="#d38a45" stroke-width="11" stroke-linecap="round"/>
   <path d="M145 135v24M175 135v24" stroke="#9a542d" stroke-width="12" stroke-linecap="round"/>
-  <text x="160" y="170" fill="#45ffff" font-family="monospace" font-size="18" font-weight="700" text-anchor="middle">TUNG SAHUR</text>
+  <text x="160" y="170" fill="#45ffff" font-family="monospace" font-size="18" font-weight="700" text-anchor="middle">TRIPLE T</text>
 </svg>

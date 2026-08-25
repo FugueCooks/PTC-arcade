@@ -185,7 +185,7 @@ Avatar GLBs should be reasonably small, use compressed textures where possible, 
 
 `Sora (Final)` uses the user-supplied **Sora - Kingdom Hearts II - Ultimate** model by [Catholomew](https://sketchfab.com/Catholomew), licensed [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The production GLB retains only the authored `Idle 3` and `Glide` clips, preserves their exact rig transforms, deduplicates repeated animation timing data, and compresses embedded textures, reducing the download from 51.3 MB to about 7.1 MB. Because that license is non-commercial, replace or relicense the model before any commercial launch.
 
-`Tung Sahur` uses **Tung Sahur Game 3D model (Roblox)** by [Alex CGW](https://sketchfab.com/alex.cgwarrior), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The avatar uses the model's authored `Armature|Walk` clip for movement and its neutral bind pose while idle. WebP texture compression reduces the lazy-loaded GLB from 21.8 MB to about 687 KB without changing its rig or walk animation.
+`Triple T` uses **Tung Sahur Game 3D model (Roblox)** by [Alex CGW](https://sketchfab.com/alex.cgwarrior), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The avatar uses the model's authored `Armature|Walk` clip for movement and its neutral bind pose while idle. WebP texture compression reduces the lazy-loaded GLB from 21.8 MB to about 687 KB without changing its rig or walk animation.
 
 ## Controls
 
