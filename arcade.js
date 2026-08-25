@@ -229,10 +229,16 @@ const hallwayWallMaterial=new THREE.MeshStandardMaterial({color:0x17233a,emissiv
 const hallwaySeamMaterial=new THREE.MeshStandardMaterial({color:0x29466d,emissive:0x12345b,emissiveIntensity:.9,roughness:.38,metalness:.55});
 for(const wallX of [-30.81,30.81]){
   for(let z=-11.9;z<=11.9;z+=3.4){
+    // Keep the decorative hallway lining out of the real MegaMan doorway.
+    // The structural wall already has the correct opening at z=-7; without
+    // this exclusion, two inset panels visually seal that otherwise walkable
+    // opening.
+    if(wallX<0&&Math.abs(z-MEGAMAN_ROOM_DOOR_Z)<3.3)continue;
     const panel=new THREE.Mesh(new THREE.BoxGeometry(.08,4.68,3.24),hallwayWallMaterial);
     panel.position.set(wallX,2.42,z);panel.receiveShadow=true;scene.add(panel);
   }
   for(let z=-13.6;z<=13.6;z+=3.4){
+    if(wallX<0&&Math.abs(z-MEGAMAN_ROOM_DOOR_Z)<ROOM_DOOR_HALF_WIDTH)continue;
     const seam=new THREE.Mesh(new THREE.BoxGeometry(.095,4.68,.035),hallwaySeamMaterial);
     seam.position.set(wallX,2.42,z);scene.add(seam);
   }
