@@ -1,4 +1,4 @@
-import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=sora-ground-1';
+import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=sora-ground-2';
 import { RoomPlacementClient } from './rooms/room-placement-client.js?v=phase7-room-browser-1';
 
 const PREFERENCE_KEY = 'roms-arcade-avatar-preferences';

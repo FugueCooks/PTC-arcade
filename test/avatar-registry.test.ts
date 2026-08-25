@@ -21,7 +21,7 @@ void test('Sora Final uses only the approved authored idle and movement clips', 
   const sora = registry.avatars.find((avatar) => avatar.id === 'sora-final');
   assert.equal(sora?.name, 'Sora (Final)');
   assert.match(sora?.modelUrl ?? '', /sora-final\.optimized\.glb/);
-  assert.ok((sora?.heightOffset ?? 0) >= 0.2, 'Sora must remain raised above the floor during authored poses');
+  assert.ok((sora?.heightOffset ?? 0) >= 0.7, 'Sora must remain raised above the floor during authored poses');
   assert.deepEqual(sora?.animations, { idle: 'Idle 3', walk: 'Glide', run: 'Glide' });
 
   const glb = await readFile('assets/avatars/models/sora-final.optimized.glb');
