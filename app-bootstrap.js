@@ -11,6 +11,6 @@ window.ARCADE_GAME_REGISTRY = await loadGameRegistry();
 window.ARCADE_ROOM_REGISTRY = await loadRoomRegistry();
 window.ARCADE_PS2_CACHE = new Ps2GameCache();
 
-await import('./arcade.js?v=megaman-door-2');
-await import('./avatar-selection.js?v=megaman-door-2');
-await import('./multiplayer-client.js?v=megaman-door-2');
+await import('./arcade.js?v=barrier-facing-1');
+await import('./avatar-selection.js?v=barrier-facing-1');
+await import('./multiplayer-client.js?v=barrier-facing-1');

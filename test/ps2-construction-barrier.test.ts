@@ -12,6 +12,10 @@ void test('the future, PS2, Xbox, and GameCube rooms have visible barriers, coll
   assert.match(arcade, /xboxConstructionBarrier\.userData\.roomName='Xbox'/);
   assert.match(arcade, /ps2ConstructionBarrier\.userData\.roomName='PS2'/);
   assert.match(arcade, /gamecubeConstructionBarrier\.userData\.roomName='GameCube'/);
+  assert.match(arcade, /futureConstructionPanel\.rotation\.y=Math\.PI\/2/);
+  assert.match(arcade, /xboxConstructionPanel\.rotation\.y=-Math\.PI\/2/);
+  assert.match(arcade, /gamecubeConstructionPanel\.rotation\.y=Math\.PI/);
+  assert.doesNotMatch(arcade, /ConstructionPanel=new THREE\.Mesh\([^\n]+side:THREE\.DoubleSide/);
   assert.match(arcade, /const ps2CabinetLayout=\[\[1,-29\.2,-30/);
   // Room signage was removed on purpose: the wall logos identify each room,
   // so asserting the old text plates would pin behaviour that is now gone.

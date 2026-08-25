@@ -1,5 +1,5 @@
 import { AudioManager } from './audio-manager.js';
-import { EnvironmentManager } from './environment-manager.js?v=megaman-door-2';
+import { EnvironmentManager } from './environment-manager.js?v=barrier-facing-1';
 import { LightingManager } from './lighting-manager.js';
 import { ObjectInteractionManager } from './object-interaction-manager.js';
 import { ParticleManager } from './particle-manager.js';

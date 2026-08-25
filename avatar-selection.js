@@ -1,4 +1,4 @@
-import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=megaman-door-2';
+import { loadAvatarRegistry } from './avatars/avatar-registry.js?v=barrier-facing-1';
 import { RoomPlacementClient } from './rooms/room-placement-client.js?v=phase7-room-browser-1';
 
 const PREFERENCE_KEY = 'roms-arcade-avatar-preferences';
