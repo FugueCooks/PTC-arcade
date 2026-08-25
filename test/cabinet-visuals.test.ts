@@ -83,14 +83,19 @@ void test('the main room is a collision-safe social lounge beside square console
   assert.match(edge, /SOCIAL_COUCH_GAP_HALF_ANGLE = 0\.34/);
 });
 
-void test('the MegaMan Room displays both framed murals together on its solid front wall', async () => {
+void test('the MegaMan Room hangs all three murals on its solid walls', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
-  assert.match(arcade, /megaman-room-mural\.png\?v=megaman-mural-1/);
+  // Two on the front wall, facing back into the room.
+  assert.match(arcade, /megaman-room-mural\.webp/);
   assert.match(arcade, /megaManMural\.position\.set\(-48\.1,2\.5,4\.75\)/);
   assert.match(arcade, /megaManMural\.rotation\.y=Math\.PI/);
-  assert.match(arcade, /megaman-room-mural-2\.png\?v=megaman-mural-2/);
+  assert.match(arcade, /megaman-room-mural-2\.webp/);
   assert.match(arcade, /megaManMuralTwo\.position\.set\(-37\.7,2\.5,4\.75\)/);
   assert.match(arcade, /megaManMuralTwo\.rotation\.y=Math\.PI/);
   assert.doesNotMatch(arcade, /megaManMuralTwo\.rotation\.y=-Math\.PI\/2/);
+
+  // The third hangs on the rear wall, which needs no rotation to face inward.
+  assert.match(arcade, /megaman-room-mural-3\.webp/);
+  assert.match(arcade, /megaManMuralThree\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.4,-18\.75\)/);
 });
