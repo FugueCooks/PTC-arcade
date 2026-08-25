@@ -473,7 +473,32 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false,system=''){
   const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(.48,2.48,.43);statusLight.rotation.x=-.1;g.add(statusLight);
   scene.add(g);cabinets.push({id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot,controllerSystem:system,renderLights:[floorGlow,glow],status:'syncing',occupiedByDisplayName:null,enabled:true});
 }
-function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
+// Cabinet art keyed off the registry id. Crash and Gex keep their hand-made
+// panels; every other hosted game gets a generated front and side panel, loaded
+// lazily so none of it lands on first paint. A missing file simply leaves the
+// cabinet in its plain finish.
+const cabinetArtLoader=new THREE.TextureLoader();
+const CABINET_ART_VERSION='?v=cabinet-art-1';
+const CABINET_ART_SLUGS=new Set(["doom-64","glover","mega-man-64","metal-gear-solid","pikmin","pokemon-snap","silent-hill","spyro-year-of-the-dragon","star-fox-64","super-mario-64","super-mario-sunshine","super-smash-bros-melee","tony-hawks-pro-skater-2","twisted-metal-world-tour","wind-waker","zelda-ocarina-of-time","zelda-twilight-princess"]);
+function applyCabinetArt(cabinet,slug){
+  if(!cabinet||!slug||cabinet.artApplied)return;
+  // Crash and Gex ship hand-made panels, so they are not in this set.
+  if(!CABINET_ART_SLUGS.has(slug)){cabinet.artApplied=true;return;}
+  cabinet.artApplied=true;
+  const group=cabinet.g;
+  const panel=(file,geometry,position,rotationY)=>{
+    cabinetArtLoader.load('assets/art/cabinets/'+file+CABINET_ART_VERSION,texture=>{
+      texture.colorSpace=THREE.SRGBColorSpace;
+      texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+      const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
+      mesh.position.set(...position);if(rotationY)mesh.rotation.y=rotationY;
+      group.add(mesh);
+    },undefined,()=>{});
+  };
+  panel(slug+'-front.webp',new THREE.PlaneGeometry(1.12,1.22),[0,.79,.558],0);
+  for(const side of [-1,1])panel(slug+'-side.webp',new THREE.PlaneGeometry(.78,1.62),[side*.847,1.06,-.05],side*Math.PI/2);
+}
+function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{artSlug:game.id,system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
 // The playable galleries wrap their seven cabinets around the exterior and
 // rear walls. The open interior and unused wall spans are reserved for growth.
 makeCabinet('silent-hill','SILENT HILL',-29.2,-13,0xc94c4c,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('silent-hill');
@@ -686,6 +711,10 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(!cabinet.controllerSystem||controllerLoadStarted.has(cabinet.controllerSystem))continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)installControllerModel(cabinet.controllerSystem);
+  }
+  for(const cabinet of cabinets){
+    if(cabinet.artApplied||!cabinet.artSlug)continue;
+    if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
   }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();}if(!centerModelStarted&&playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z<16){centerModelStarted=true;installGangsterPepe();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
