@@ -897,7 +897,7 @@ const warmedEmulatorSystems=new Set();
 // Local caching is worth offering for anything with a download long enough to
 // notice. The store itself is system agnostic; only the offer was PS2 only, so
 // the main room's PlayStation and GameCube cabinets re-downloaded every launch.
-const CACHEABLE_SYSTEMS=new Set(['psx','gamecube','ps2']);
+const CACHEABLE_SYSTEMS=new Set(['psx','n64','gamecube','ps2']);
 const ps2GameDescriptor=cabinet=>({id:cabinet.gameRegistryId,file:cabinet.gameFileName,sizeBytes:cabinet.gameSizeBytes});
 async function refreshPs2CacheButton(cabinet=activeCabinet){
   const available=CACHEABLE_SYSTEMS.has(cabinet?.system)&&cabinet.hostedGame&&ps2Cache?.supported;
@@ -939,7 +939,68 @@ function launchEmulator(gameFile,options={}){
   clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT. CHECK YOUR CONNECTION.')}},estimatedTimeout);
 }
 document.querySelector('#bios-file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;psxBios=file;document.querySelector('#bios-name').textContent=`BIOS READY: ${file.name.toUpperCase()}`;});
-document.querySelector('#play-hosted-game').addEventListener('click',async()=>{if(!activeCabinet?.hostedGame)return;const cabinet=activeCabinet;const cached=CACHEABLE_SYSTEMS.has(cabinet.system)?await ps2Cache?.get(ps2GameDescriptor(cabinet)):null;if(activeCabinet===cabinet)launchEmulator(cached||cabinet.hostedGame);});
+function formatRate(bytesPerSecond){
+  if(!Number.isFinite(bytesPerSecond)||bytesPerSecond<=0)return '';
+  const mb=bytesPerSecond/1048576;
+  return mb>=1?`${mb.toFixed(1)} MB/S`:`${Math.round(bytesPerSecond/1024)} KB/S`;
+}
+function formatEta(seconds){
+  if(!Number.isFinite(seconds)||seconds<=0||seconds>36000)return '';
+  if(seconds<60)return `${Math.ceil(seconds)}S LEFT`;
+  const minutes=Math.floor(seconds/60);
+  return `${minutes}M ${String(Math.floor(seconds%60)).padStart(2,'0')}S LEFT`;
+}
+// Route the first launch through the local cache instead of letting the
+// emulator stream the file. It is the same single download, but it reports
+// progress while it runs and every later launch of that game starts from disk
+// rather than the network. A GameCube image averages a gigabyte, so the second
+// play going from minutes to instant is the difference testers actually feel.
+// Anything the cache cannot take falls straight back to the hosted URL.
+async function prepareHostedGame(cabinet){
+  if(!CACHEABLE_SYSTEMS.has(cabinet.system)||!ps2Cache?.supported||!cabinet.gameSizeBytes)return null;
+  const descriptor=ps2GameDescriptor(cabinet);
+  const romName=document.querySelector('#rom-name');
+  try{
+    const cached=await ps2Cache.get(descriptor);
+    if(cached)return cached;
+  }catch{return null}
+  if(ps2CacheController)return null;
+  const playButton=document.querySelector('#play-hosted-game');
+  ps2CacheController=new AbortController();
+  playButton.disabled=true;ps2CacheButton.disabled=true;
+  const startedAt=performance.now();
+  try{
+    const file=await ps2Cache.download(descriptor,cabinet.hostedGame,{
+      signal:ps2CacheController.signal,
+      onProgress:(progress,received,total)=>{
+        if(activeCabinet!==cabinet)return;
+        const elapsed=(performance.now()-startedAt)/1000;
+        const rate=elapsed>0.5?received/elapsed:0;
+        const eta=rate>0?(total-received)/rate:0;
+        const parts=[`DOWNLOADING ${Math.floor(progress*100)}%`,formatRate(rate),formatEta(eta)].filter(Boolean);
+        romName.textContent=parts.join(' · ');
+      }
+    });
+    return file;
+  }catch(error){
+    if(error?.name==='AbortError')return null;
+    // Out of storage, or the cache write failed. Streaming still works.
+    console.warn('Falling back to streaming this game.',error);
+    if(activeCabinet===cabinet)romName.textContent='STREAMING FROM CDN — NOT CACHED';
+    return null;
+  }finally{
+    ps2CacheController=null;
+    playButton.disabled=false;
+    refreshPs2CacheButton(cabinet);
+  }
+}
+document.querySelector('#play-hosted-game').addEventListener('click',async()=>{
+  if(!activeCabinet?.hostedGame)return;
+  const cabinet=activeCabinet;
+  const prepared=await prepareHostedGame(cabinet);
+  if(activeCabinet!==cabinet)return;
+  launchEmulator(prepared||cabinet.hostedGame);
+});
 ps2CacheButton.addEventListener('click',async()=>{const cabinet=activeCabinet;if(!CACHEABLE_SYSTEMS.has(cabinet?.system)||!cabinet.hostedGame||!ps2Cache?.supported||ps2CacheController)return;ps2CacheController=new AbortController();ps2CacheButton.disabled=true;try{await ps2Cache.download(ps2GameDescriptor(cabinet),cabinet.hostedGame,{signal:ps2CacheController.signal,onProgress:progress=>{if(activeCabinet===cabinet){const percent=Math.floor(progress*100);ps2CacheButton.textContent=`CACHING ${percent}%`;document.querySelector('#rom-name').textContent=`DOWNLOADING LOCAL COPY · ${percent}%`}}});if(activeCabinet===cabinet){ps2CacheButton.dataset.cached='true';ps2CacheButton.textContent='CACHED LOCALLY';document.querySelector('#rom-name').textContent='LOCAL COPY READY — FUTURE LAUNCHES WILL START FASTER'}}catch(error){if(error?.name!=='AbortError'&&activeCabinet===cabinet){ps2CacheButton.textContent='CACHE FAILED — RETRY';ps2CacheButton.disabled=false;document.querySelector('#rom-name').textContent=error.message.toUpperCase()}}finally{ps2CacheController=null}});
 document.querySelector('#rom-file').addEventListener('change',e=>{const file=e.target.files[0];if(['psx','n64','snes','ps2','gamecube'].includes(activeCabinet?.system)&&file)launchEmulator(file);});
 addEventListener('message',event=>{if(event.origin!==location.origin||event.source!==activeEmulatorFrame?.contentWindow)return;if(event.data?.type==='arcade:emulator-ready'){if(event.data?.core==='ps2-play'&&pendingPs2Source){const message=pendingPs2Source.file?{type:'arcade:ps2-load-file',file:pendingPs2Source.file}:{type:'arcade:ps2-load-remote',url:pendingPs2Source.url,name:pendingPs2Source.name,size:pendingPs2Source.size};activeEmulatorFrame.contentWindow?.postMessage(message,location.origin)}else if(event.data?.core==='gamecube-gecko'&&pendingGameCubeSource){const message=pendingGameCubeSource.file?{type:'arcade:gamecube-load-file',file:pendingGameCubeSource.file,name:pendingGameCubeSource.file.name,dspUrl:gameCubeDspAssetUrl}:{type:'arcade:gamecube-load-remote',url:pendingGameCubeSource.url,name:pendingGameCubeSource.name,size:pendingGameCubeSource.size,dspUrl:gameCubeDspAssetUrl};activeEmulatorFrame.contentWindow?.postMessage(message,location.origin)}else clearTimeout(emulatorLoadTimer)}if(event.data?.type==='arcade:gamecube-source-loading')clearTimeout(emulatorLoadTimer);if(event.data?.type==='arcade:gamecube-load-progress'&&activeCabinet?.system==='gamecube'&&Number.isFinite(event.data.percent))document.querySelector('#rom-name').textContent=`DOWNLOADING GAME DATA · ${event.data.percent}%`;if(event.data?.type==='arcade:ps2-source-accepted'){pendingPs2Source=null;clearTimeout(emulatorLoadTimer)}if(event.data?.type==='arcade:gamecube-source-accepted'){pendingGameCubeSource=null;clearTimeout(emulatorLoadTimer)}if(event.data?.type==='arcade:ps2-disc-error'&&activeCabinet){clearTimeout(emulatorLoadTimer);closeMachine();showCabinetMessage('GAME STREAM INTERRUPTED. RETRY OR CACHE IT LOCALLY.');return}if(['arcade:emulator-error','arcade:emulator-closed'].includes(event.data?.type)&&activeCabinet){clearTimeout(emulatorLoadTimer);closeMachine();showCabinetMessage(event.data.type.endsWith('error')?'EMULATOR COULD NOT LOAD.':'EMULATOR SESSION CLOSED.')}});

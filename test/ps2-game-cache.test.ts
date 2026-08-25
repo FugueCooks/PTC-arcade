@@ -14,16 +14,25 @@ void test('the PS2 local cache is explicit, quota-aware, and removes partial dow
   assert.match(cache, /await directory\.removeEntry\(name\)/);
 });
 
-void test('the arcade prefers a cached file and prefetches only the emulator runtime', async () => {
+void test('the arcade loads hosted games cache first and prefetches only the runtime', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
-  assert.match(arcade, /launchEmulator\(cached\|\|cabinet\.hostedGame\)/);
-  assert.match(arcade, /CACHING \$\{percent\}%/);
-  // Warming is driven by cabinet proximity and now covers every hosted system,
-  // not just PS2.
+
+  // The first launch downloads through the cache so the bytes are kept, and
+  // the launch prefers whatever that returned over the hosted URL.
+  assert.match(arcade, /prepareHostedGame\(cabinet\)/);
+  assert.match(arcade, /launchEmulator\(prepared\|\|cabinet\.hostedGame\)/);
+  // A failed or oversized cache write must still leave the game playable.
+  assert.match(arcade, /STREAMING FROM CDN/);
+  // Progress is surfaced while the download runs, not just a static size.
+  assert.match(arcade, /DOWNLOADING \$\{Math\.floor\(progress\*100\)}%/);
+  assert.match(arcade, /formatRate/);
+  assert.match(arcade, /formatEta/);
+
+  // Warming is driven by cabinet proximity and covers every hosted system.
   assert.match(arcade, /warmEmulatorCore\(near\?\.system\)/);
   assert.match(arcade, /\['emulators\/play\/Play\.wasm','fetch'\]/);
   assert.match(arcade, /cdn\.emulatorjs\.org\/stable\/data\/loader\.js/);
   assert.match(arcade, /emulators\/gecko\/pkg\/web_bg\.wasm/);
-  // The runtime is prefetched; the multi hundred megabyte game image never is.
+  // The runtime is prefetched; the multi hundred megabyte image never is.
   assert.doesNotMatch(arcade, /link\.href=cabinet\.hostedGame/);
 });
