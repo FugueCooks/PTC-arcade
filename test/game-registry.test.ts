@@ -44,7 +44,7 @@ void test('every hosted game points at an approved, enabled cabinet', async () =
 });
 
 void test('unique N64 games are consolidated in the main room and the rear room is Xbox-ready', async () => {
-  const cabinets = await loadJson<Array<{ id: string; name: string; enabled: boolean; defaultGameId?: string; system?: string; emulatorId?: string }>>('assets/cabinets/registry.json');
+  const cabinets = await loadJson<Array<{ id: string; name: string; enabled: boolean; defaultGameId?: string; system?: string; emulatorId?: string; interactionPosition?: { x: number; y: number; z: number }; playerPosition?: { x: number; y: number; z: number } }>>('assets/cabinets/registry.json');
   const byId = new Map(cabinets.map((cabinet) => [cabinet.id, cabinet]));
   assert.equal(byId.get('n64-cabinet-06')?.defaultGameId, 'star-fox-64');
   assert.equal(byId.get('n64-cabinet-07')?.defaultGameId, 'mega-man-64');
@@ -56,6 +56,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(gamecubeCabinets.length, 5);
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.enabled));
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.system === 'gamecube' && cabinet.emulatorId === 'gecko'));
+  assert.ok(gamecubeCabinets.every((cabinet) => cabinet.interactionPosition?.z === 27.2 && cabinet.playerPosition?.z === 26.85));
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [
     'wind-waker',
     'zelda-twilight-princess',

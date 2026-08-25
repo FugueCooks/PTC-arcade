@@ -153,6 +153,12 @@ n64WallGraphic.position.set(13.805,2.5,0);n64WallGraphic.rotation.y=-Math.PI/2;s
 function constructionTapeTexture(){const canvas=document.createElement('canvas');canvas.width=768;canvas.height=512;const context=canvas.getContext('2d');context.fillStyle='#f6c515';context.fillRect(0,0,768,512);context.save();context.strokeStyle='#17120a';context.lineWidth=70;for(let x=-520;x<1100;x+=150){context.beginPath();context.moveTo(x,512);context.lineTo(x+360,0);context.stroke()}context.restore();context.fillStyle='#f6c515';context.fillRect(0,196,768,120);context.strokeStyle='#17120a';context.lineWidth=12;context.strokeRect(0,196,768,120);context.fillStyle='#17120a';context.font='bold 64px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText('CAUTION',384,258);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture}
 const constructionTexture=constructionTapeTexture(),constructionBarriers=[];
 for(const wallX of [PLAYSTATION_WALL_X,N64_WALL_X])for(const z of [-15.25,15.25]){const barrier=new THREE.Group();const mainRoomDirection=wallX<0?1:-1;barrier.position.set(wallX,0,z);barrier.userData.roomName=wallX<0?'PS2':'Xbox';const panel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,2.65),new THREE.MeshBasicMaterial({map:constructionTexture,side:THREE.DoubleSide}));panel.position.set(mainRoomDirection*.205,1.48,0);panel.rotation.y=Math.PI/2;barrier.add(panel);for(const edgeZ of [-1.56,1.56]){const post=new THREE.Mesh(new THREE.BoxGeometry(.22,3.05,.18),new THREE.MeshStandardMaterial({color:0x161616,emissive:0x4b3600,emissiveIntensity:.35,metalness:.78,roughness:.28}));post.position.set(mainRoomDirection*.18,1.52,edgeZ);barrier.add(post);const beacon=new THREE.PointLight(0xffb000,1.7,2.8,2);beacon.position.set(mainRoomDirection*.38,2.9,edgeZ);beacon.userData.accentLight=true;barrier.add(beacon);managedSceneLights.push(beacon)}scene.add(barrier);constructionBarriers.push(barrier)}
+// The experimental GameCube runtime is isolated behind a matching barrier.
+// Its room remains visible for atmosphere, while the existing z=16 movement
+// boundary prevents local and multiplayer players from entering it.
+const gamecubeConstructionBarrier=new THREE.Group();gamecubeConstructionBarrier.position.set(0,0,16.55);gamecubeConstructionBarrier.userData.roomName='GameCube';
+const gamecubeConstructionPanel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,2.65),new THREE.MeshBasicMaterial({map:constructionTexture,side:THREE.DoubleSide}));gamecubeConstructionPanel.position.set(0,1.48,-.205);gamecubeConstructionBarrier.add(gamecubeConstructionPanel);
+for(const edgeX of [-1.56,1.56]){const post=new THREE.Mesh(new THREE.BoxGeometry(.22,3.05,.18),new THREE.MeshStandardMaterial({color:0x161616,emissive:0x4b3600,emissiveIntensity:.35,metalness:.78,roughness:.28}));post.position.set(edgeX,1.52,-.18);gamecubeConstructionBarrier.add(post);const beacon=new THREE.PointLight(0xffb000,1.7,2.8,2);beacon.position.set(edgeX,2.9,-.38);beacon.userData.accentLight=true;gamecubeConstructionBarrier.add(beacon);managedSceneLights.push(beacon)}scene.add(gamecubeConstructionBarrier);constructionBarriers.push(gamecubeConstructionBarrier);
 // Opaque wall lining for the expansion hallway. The original structural walls
 // were so dark that they read as empty space; these inset panels make both
 // sides visibly solid while keeping the openings around the partition ends.
@@ -188,8 +194,17 @@ for(const roomX of [-21,21]){
   box(14,5,.3,0x11182c,roomX,2.5,-16.8,.05);box(14,5,.3,0x11182c,roomX,2.5,16.8,.05);
   for(let z=-12;z<=12;z+=4)box(13.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
 }
-function addRoomSign(text,x,color){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,-16.62);scene.add(sign)}
+// Dedicated GameCube room beyond the front wall. Two wall sections leave a
+// centered doorway so the relocated cabinets remain visible behind the tape.
+const gamecubeFloorMaterial=(()=>{const map=floorTextures.map.clone(),roughnessMap=floorTextures.roughnessMap.clone();map.needsUpdate=roughnessMap.needsUpdate=true;map.repeat.set(7,3.5);roughnessMap.repeat.set(7,3.5);return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12})})();
+const gamecubeFloor=new THREE.Mesh(new THREE.PlaneGeometry(28,14),gamecubeFloorMaterial);gamecubeFloor.rotation.x=-Math.PI/2;gamecubeFloor.position.set(0,.002,23.8);gamecubeFloor.receiveShadow=true;scene.add(gamecubeFloor);
+const gamecubeCeiling=box(28,.12,14,0x090b18,0,5.08,23.8,.08);gamecubeCeiling.receiveShadow=true;
+box(.3,5,14,0x11182c,-14,2.5,23.8,.06);box(.3,5,14,0x11182c,14,2.5,23.8,.06);box(28,5,.3,0x11182c,0,2.5,30.8,.06);
+box(12.3,5,.3,0x11182c,-7.85,2.5,16.8,.06);box(12.3,5,.3,0x11182c,7.85,2.5,16.8,.06);
+for(let x=-12;x<=12;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,30.61,.75);
+function addRoomSign(text,x,color,z=-16.62,rotationY=0){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=192;const context=canvas.getContext('2d');context.fillStyle='#070914';context.fillRect(0,0,1024,192);context.strokeStyle=color;context.lineWidth=10;context.strokeRect(6,6,1012,180);context.fillStyle='#fff4cc';context.font='bold 72px monospace';context.textAlign='center';context.textBaseline='middle';context.fillText(text,512,100);const texture=new THREE.CanvasTexture(canvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.3),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(x,3.55,z);sign.rotation.y=rotationY;scene.add(sign)}
 addRoomSign('XBOX ROOM',21,'#7dff67');
+addRoomSign('GAMECUBE ROOM',0,'#7dff67',16.62,Math.PI);
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
 function crashArt(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d');
@@ -392,14 +407,13 @@ makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-10.2,4,0x934dff,false,fal
 makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-10.2,8,0xff3cac,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('turbo-grid');
 makeCabinet('metal-gear-solid','METAL GEAR SOLID',-10.2,12,0x5d75d9,false,false,'psx');cabinets[cabinets.length-1].g.rotation.y=Math.PI/2;configureHostedCabinet('metal-gear-solid');
 for(const [index,z,hue] of [[1,-12,0x8b5cf6],[2,-8,0xff4da6],[3,-4,0x36f9f6],[4,0,0xffb42e],[5,4,0x7dff67],[6,8,0xff3cac],[7,12,0x42a5ff]]){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,10.2,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;configureHostedCabinet(cabinetId)}
-// Five GameCube-ready cabinets line the front wall opposite the rear prize
-// counter. Dolphin is assigned in the shared registry, but the official native
-// emulator has no browser build, so these remain disabled until a vetted web
-// GameCube cabinets use the pinned Gecko WebGPU runtime and approved RVZ images.
+// Five experimental GameCube cabinets sit inside their dedicated construction
+// room, facing its doorway. Gecko remains available for later runtime work, but
+// the cabinets cannot be reached while the room is blocked.
 const gamecubeTitles=['THE LEGEND OF ZELDA: THE WIND WAKER','THE LEGEND OF ZELDA: TWILIGHT PRINCESS','PIKMIN','SUPER SMASH BROS. MELEE','SUPER MARIO SUNSHINE'];
 for(const [index,x,hue] of [[1,-8,0x8b5cf6],[2,-4,0x36f9f6],[3,0,0xff4da6],[4,4,0x7dff67],[5,8,0xffb42e]]){
   const cabinetId=`gamecube-cabinet-0${index}`;
-  makeCabinet(cabinetId,gamecubeTitles[index-1],x,14.8,hue,false,false,'gamecube');
+  makeCabinet(cabinetId,gamecubeTitles[index-1],x,29.2,hue,false,false,'gamecube');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI;Object.assign(cabinet,{system:'gamecube',emulator:'gecko',gameName:gamecubeTitles[index-1],enabled:true,status:'available'});configureHostedCabinet(cabinetId);
 }
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
@@ -686,7 +700,7 @@ function updateFollowCamera(){
 }
 let cabinetSnapshotReady=false,cabinetMessageUntil=0;
 function showCabinetMessage(message){prompt.querySelector('b').textContent='CABINET';prompt.querySelector('span').textContent=message;prompt.classList.add('active');cabinetMessageUntil=performance.now()+2600}
-function nearbyConstructionRoom(){if(Math.abs(playerPosition.z)<=12.35)return null;if(Math.abs(playerPosition.x-PLAYSTATION_WALL_X)<3.2)return 'PS2';if(Math.abs(playerPosition.x-N64_WALL_X)<3.2)return 'Xbox';return null}
+function nearbyConstructionRoom(){if(playerPosition.z>13.2&&Math.abs(playerPosition.x)<2.5)return 'GameCube';if(Math.abs(playerPosition.z)<=12.35)return null;if(Math.abs(playerPosition.x-PLAYSTATION_WALL_X)<3.2)return 'PS2';if(Math.abs(playerPosition.x-N64_WALL_X)<3.2)return 'Xbox';return null}
 function updateConstructionPrompt(roomName){prompt.classList.add('active');prompt.querySelector('b').textContent='CAUTION';prompt.querySelector('span').textContent=`${roomName} Room Under Construction.`}
 function setCabinetState(state){const cabinet=cabinets.find(candidate=>candidate.id===state.cabinetId);if(!cabinet)return;if(!cabinet.enabled){cabinet.status='disabled';cabinet.occupiedByDisplayName=null;cabinet.statusLight.material.color.setHex(0x6c7896);cabinet.statusLight.material.emissive.setHex(0x26304a);return}cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
 function setCabinetStates(states,ready){cabinetSnapshotReady=ready;states.forEach(state=>setCabinetState(state));if(!ready)cabinets.forEach(c=>{c.status=c.enabled?'syncing':'disabled';c.occupiedByDisplayName=null;c.statusLight.material.color.setHex(0x6c7896);c.statusLight.material.emissive.setHex(c.enabled?0x6c7896:0x26304a)})}
