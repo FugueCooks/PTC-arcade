@@ -52,6 +52,32 @@ fly status                       # confirm one machine, started
 curl -s https://retro-arcade-fugue.fly.dev/health
 ```
 
+## The scripted cutover
+
+`.github/workflows/link-domain.yml` does the whole of "One-time setup" below in
+one run: deploy, allocate dedicated addresses, repoint Cloudflare DNS, issue the
+certificates, verify the live domain. Manual trigger only — it changes live DNS,
+so it never fires from a push.
+
+It needs two repository secrets:
+
+| Secret | How to get it |
+|---|---|
+| `FLY_API_TOKEN` | `fly tokens create deploy -x 8760h` |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token → **Edit zone DNS**, scoped to this zone |
+
+Then **Actions → Link ptcarcade.fun to Fly → Run workflow**. Leave *dry run*
+checked the first time: it prints exactly which records it would add, change,
+and remove, and touches nothing. Run it again with *dry run* unchecked to apply.
+
+The DNS step is deliberately narrow. It replaces the address records for the
+apex and `www` and nothing else — MX, TXT, and any other subdomain are left
+alone, because deleting a mail record while repointing a website is not a
+recoverable mistake. `test/link-domain.test.ts` covers that, along with
+re-running against an already-settled zone, which plans no changes.
+
+The steps below are the same work done by hand.
+
 ## One-time setup
 
 ### 1. Set secrets (never in fly.toml)
