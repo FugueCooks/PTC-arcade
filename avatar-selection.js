@@ -296,7 +296,8 @@ form.addEventListener('submit', async (event) => {
       return;
     }
   }
-  const selection = { displayName, avatarId: selectedAvatarId, roomId: customRoomId || roomSelect.value, realtimeTicket };
+  const selection = { displayName, avatarId: selectedAvatarId, roomId: customRoomId || roomSelect.value,
+    walletAuthenticated: isWalletSession(), realtimeTicket };
   savePreferences(selection, isWalletSession());
   window.arcadeAvatarIdentity = selection;
   window.dispatchEvent(new CustomEvent('arcade:identity-selected', { detail: selection }));

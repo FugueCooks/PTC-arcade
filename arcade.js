@@ -859,6 +859,10 @@ function openMachine(c){
   const romInput=document.querySelector('#rom-file');romInput.value='';romLoaded=false;
   document.querySelector('#machine-type').textContent=c.system==='psx'?'PLAYSTATION // CABINET':(c.system==='n64'?'NINTENDO 64 // CABINET':(c.system==='snes'?'SUPER NINTENDO // CABINET':(c.system==='ps2'?'PLAYSTATION 2 // EXPERIMENTAL CABINET':(c.system==='gamecube'?'GAMECUBE // EXPERIMENTAL GECKO':c.type))));
   document.querySelector('#machine-name').textContent=c.name;
+  const controls=document.querySelector('#emulator-controls');
+  if(controls)controls.textContent=window.arcadeAvatarIdentity?.walletAuthenticated
+    ?'CONTROLLER READY · WALLET SAVE / LOAD ENABLED · ESC EXIT'
+    :'CONTROLLER READY · SAVE / LOAD REQUIRES SOLANA WALLET SIGN-IN · ESC EXIT';
   document.querySelector('#bios-control').style.display=c.system==='psx'?'flex':'none';
   const playButton=document.querySelector('#play-hosted-game');
   const discSelector=document.querySelector('#hosted-disc-selector'),hasMultipleDiscs=Array.isArray(c.hostedDiscs)&&c.hostedDiscs.length>1;
@@ -1001,6 +1005,13 @@ document.querySelector('#rom-file').addEventListener('change',e=>{const file=e.t
 // adapter, so adding a core never means editing this listener again.
 addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==activeEmulatorFrame?.contentWindow)return;
+  if(event.data?.type==='arcade:save-entitlement'){
+    const controls=document.querySelector('#emulator-controls');
+    if(controls)controls.textContent=event.data.allowed===true
+      ?'CONTROLLER READY · WALLET SAVE / LOAD ENABLED · ESC EXIT'
+      :'CONTROLLER READY · GUEST SESSION · SAVE / LOAD LOCKED · ESC EXIT';
+    return;
+  }
   const adapter=activeEmulatorAdapter;if(!adapter)return;
   const signal=adapter.interpretMessage(event.data);
   if(signal.kind==='ready'){

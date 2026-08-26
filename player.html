@@ -18,23 +18,47 @@
       window.EJS_gameUrl = requestedGame;
       window.EJS_biosUrl = parameters.get('bios');
       window.EJS_gameName = parameters.get('name') || 'Arcade Game';
-      window.EJS_gameID = Number(parameters.get('id')) || 1;
+      const persistentGameId = Number(parameters.get('id')) || 1;
+      let saveEntitled = false;
       window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
       window.EJS_startOnLoaded = true;
       window.EJS_askBeforeExit = false;
-      // Browser saves persist between cabinet visits on this device and browser.
-      window.EJS_fixedSaveInterval = 7000;
-      window.EJS_defaultOptions = { 'save-state-location': 'browser' };
-      window.EJS_Buttons = {
-        saveState: true,
-        loadState: true,
-        quickSave: true,
-        quickLoad: true,
-        saveSavFiles: true,
-        loadSavFiles: true,
-        gamepad: true,
-        settings: true
-      };
+      function configureSavePolicy(enabled) {
+        saveEntitled = enabled === true;
+        // A wallet session receives the game's stable ID, so its browser save
+        // survives later cabinet visits. Guests receive a fresh ID every boot,
+        // which prevents previously persisted data from being restored even if
+        // the upstream runtime performs an unexpected background write.
+        const ephemeral = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
+        window.EJS_gameID = saveEntitled ? persistentGameId : ephemeral;
+        if (saveEntitled) window.EJS_fixedSaveInterval = 7000;
+        else delete window.EJS_fixedSaveInterval;
+        window.EJS_defaultOptions = saveEntitled
+          ? { 'save-state-location': 'browser', 'save-save-interval': 0 }
+          : { 'save-state-location': 'download', 'save-save-interval': 0 };
+        // Guests retain ordinary graphics/input settings, but cannot reopen
+        // persistence through the advanced settings menu.
+        window.EJS_hideSettings = saveEntitled ? [] : ['save-state-location', 'save-save-interval'];
+        window.EJS_Buttons = {
+          saveState: saveEntitled,
+          loadState: saveEntitled,
+          quickSave: saveEntitled,
+          quickLoad: saveEntitled,
+          saveSavFiles: saveEntitled,
+          loadSavFiles: saveEntitled,
+          gamepad: true,
+          settings: true
+        };
+        parent.postMessage({ type: 'arcade:save-entitlement', allowed: saveEntitled }, location.origin);
+      }
+      async function resolveSaveEntitlement() {
+        try {
+          const response = await fetch('/api/auth/session', { credentials: 'same-origin', cache: 'no-store' });
+          if (!response.ok) return false;
+          const payload = await response.json();
+          return payload?.entitlements?.canPersistGameSaves === true;
+        } catch { return false; }
+      }
       // EmulatorJS currently has two settings stores. Some stable builds
       // repopulate `allSettings` after applying EJS_defaultOptions, which makes
       // the menu look correct while Save State still downloads a file instead
@@ -45,10 +69,12 @@
         if (!emulator) return false;
         emulator.settings = {
           ...(emulator.settings || {}),
-          'save-state-location': 'browser'
+          'save-state-location': saveEntitled ? 'browser' : 'download',
+          'save-save-interval': saveEntitled ? '7' : '0'
         };
         if (emulator.allSettings && typeof emulator.allSettings === 'object') {
-          emulator.allSettings['save-state-location'] = 'browser';
+          emulator.allSettings['save-state-location'] = saveEntitled ? 'browser' : 'download';
+          emulator.allSettings['save-save-interval'] = saveEntitled ? '7' : '0';
         }
         return true;
       }
@@ -71,6 +97,12 @@
         stopRequested = true;
         const emulator = window.EJS_emulator;
         enforceBrowserSavePersistence();
+        // Removing the guest iframe without invoking the emulator's exit path
+        // intentionally avoids its final save-file flush.
+        if (!saveEntitled) {
+          parent.postMessage({ type: 'arcade:emulator-stopped' }, location.origin);
+          return;
+        }
         try {
           const saveOwner = typeof emulator?.gameManager?.saveSaveFiles === 'function'
             ? emulator.gameManager
@@ -134,7 +166,12 @@
       } else if (!requestedGame) {
         reportError('no game URL was supplied, so the core would boot into its own menu');
       }
-      if (startable) loadEmulatorRuntime(true);
+      if (startable) {
+        void resolveSaveEntitlement().then((allowed) => {
+          configureSavePolicy(allowed);
+          loadEmulatorRuntime(true);
+        });
+      }
     </script>
   </body>
 </html>

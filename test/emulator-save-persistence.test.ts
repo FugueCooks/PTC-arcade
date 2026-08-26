@@ -5,11 +5,16 @@ import path from 'node:path';
 
 const root = process.cwd();
 
-void test('EmulatorJS forces browser-backed save states after runtime initialization', async () => {
+void test('EmulatorJS grants persistent saves only from server-issued wallet entitlements', async () => {
   const player = await readFile(path.join(root, 'player.html'), 'utf8');
-  assert.match(player, /EJS_defaultOptions\s*=\s*\{\s*'save-state-location':\s*'browser'\s*\}/);
-  assert.match(player, /emulator\.settings\s*=\s*\{[\s\S]*'save-state-location':\s*'browser'/);
-  assert.match(player, /emulator\.allSettings\['save-state-location'\]\s*=\s*'browser'/);
+  assert.match(player, /fetch\('\/api\/auth\/session',\s*\{\s*credentials:\s*'same-origin',\s*cache:\s*'no-store'\s*\}\)/);
+  assert.match(player, /payload\?\.entitlements\?\.canPersistGameSaves\s*===\s*true/);
+  assert.match(player, /window\.EJS_gameID\s*=\s*saveEntitled\s*\?\s*persistentGameId\s*:\s*ephemeral/);
+  assert.match(player, /saveState:\s*saveEntitled/);
+  assert.match(player, /loadState:\s*saveEntitled/);
+  assert.match(player, /EJS_hideSettings\s*=\s*saveEntitled\s*\?\s*\[\]\s*:\s*\['save-state-location',\s*'save-save-interval'\]/);
+  assert.match(player, /'save-state-location':\s*saveEntitled\s*\?\s*'browser'\s*:\s*'download'/);
+  assert.match(player, /if\s*\(!saveEntitled\)\s*\{[\s\S]*arcade:emulator-stopped/);
   assert.match(player, /window\.EJS_ready\s*=\s*enforceBrowserSavePersistenceWithRetries/);
   assert.match(player, /window\.EJS_onGameStart\s*=\s*enforceBrowserSavePersistenceWithRetries/);
   assert.doesNotMatch(player, /window\.EJS_onSaveState\s*=/, 'registering this callback suppresses EmulatorJS default save-state handling');
