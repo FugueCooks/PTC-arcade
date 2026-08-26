@@ -1,4 +1,4 @@
-import { assertValidAdapter } from './emulator-adapter.js';
+import { assertValidAdapter, platformOf } from './emulator-adapter.js';
 import { createEmulatorJsAdapter } from './adapters/emulatorjs-adapter.js';
 import { createPlayPs2Adapter } from './adapters/play-ps2-adapter.js';
 import { createGeckoGameCubeAdapter } from './adapters/gecko-gamecube-adapter.js';
@@ -45,12 +45,12 @@ export class EmulatorAdapterRegistry {
     if (game.emulatorAdapterId) {
       const adapter = this.#byId.get(game.emulatorAdapterId);
       if (!adapter) return { ok: false, reason: 'unknown-adapter', adapterId: game.emulatorAdapterId };
-      if (!adapter.supportedPlatforms.includes(game.platformId)) {
+      if (!adapter.supportedPlatforms.includes(platformOf(game))) {
         return { ok: false, reason: 'platform-unsupported', adapterId: adapter.id };
       }
       return { ok: true, adapter };
     }
-    const [fallback] = this.forPlatform(game.platformId);
+    const [fallback] = this.forPlatform(platformOf(game));
     return fallback ? { ok: true, adapter: fallback } : { ok: false, reason: 'unknown-adapter' };
   }
 }

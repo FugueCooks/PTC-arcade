@@ -13,8 +13,9 @@
       const parameters = new URLSearchParams(location.search);
       window.EJS_player = '#game';
       const requestedCore = parameters.get('core');
-      window.EJS_core = ['psx', 'n64', 'snes9x'].includes(requestedCore) ? requestedCore : 'psx';
-      window.EJS_gameUrl = parameters.get('game');
+      const requestedGame = parameters.get('game');
+      window.EJS_core = requestedCore;
+      window.EJS_gameUrl = requestedGame;
       window.EJS_biosUrl = parameters.get('bios');
       window.EJS_gameName = parameters.get('name') || 'Arcade Game';
       window.EJS_gameID = Number(parameters.get('id')) || 1;
@@ -42,6 +43,13 @@
       addEventListener('error', (event) => reportError(event?.message || 'script error'));
       addEventListener('unhandledrejection', (event) => reportError(event?.reason?.message || event?.reason || 'promise rejection'));
       addEventListener('pagehide', () => parent.postMessage({ type: 'arcade:emulator-closed' }, location.origin));
+
+      // Both of these used to fail quietly, and quietly is the whole problem:
+      // an unrecognized core fell back to 'psx', and a missing ROM started the
+      // core with no content, so the player got a working-looking emulator
+      // sitting in its own menu with nothing to say what went wrong.
+      const supportedCores = ['psx', 'n64', 'snes9x'];
+      const startable = supportedCores.includes(requestedCore) && Boolean(requestedGame);
     </script>
     <script>
       /**
@@ -66,7 +74,12 @@
         };
         document.body.append(script);
       }
-      loadEmulatorRuntime(true);
+      if (!supportedCores.includes(requestedCore)) {
+        reportError(`unsupported core "${requestedCore ?? 'none'}" — the cabinet asked for a core this player does not have`);
+      } else if (!requestedGame) {
+        reportError('no game URL was supplied, so the core would boot into its own menu');
+      }
+      if (startable) loadEmulatorRuntime(true);
     </script>
   </body>
 </html>

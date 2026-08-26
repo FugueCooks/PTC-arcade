@@ -1,4 +1,4 @@
-import { FRAME_SIGNALS, createCapabilities, estimateLoadTimeoutMs, preflightAssets } from '../emulator-adapter.js';
+import { FRAME_SIGNALS, createCapabilities, estimateLoadTimeoutMs, platformOf, preflightAssets } from '../emulator-adapter.js';
 
 /** Platform to EmulatorJS core name. The only place this mapping exists. */
 const CORES = Object.freeze({ psx: 'psx', n64: 'n64', snes: 'snes9x' });
@@ -24,8 +24,14 @@ export function createEmulatorJsAdapter({ runtime } = {}) {
     /** The ROM travels in the frame URL, so there is nothing to hand over. */
     usesSourceHandshake: false,
 
+    /**
+     * Null for a platform this adapter does not cover. It used to answer 'psx'
+     * for anything unrecognized, which meant a resolution bug could not fail
+     * visibly: a SNES game launched on the PlayStation core and dropped the
+     * player into the core's own menu with no error anywhere.
+     */
     coreFor(platformId) {
-      return CORES[platformId] ?? 'psx';
+      return CORES[platformId] ?? null;
     },
 
     /**
@@ -34,7 +40,7 @@ export function createEmulatorJsAdapter({ runtime } = {}) {
      */
     warmupAssets(context = {}) {
       const targets = [['https://cdn.emulatorjs.org/stable/data/loader.js', 'script']];
-      if (context.platformId === 'psx' && context.biosUrl) targets.push([context.biosUrl, 'fetch']);
+      if ((context.platformId ?? context.system) === 'psx' && context.biosUrl) targets.push([context.biosUrl, 'fetch']);
       return targets;
     },
 
@@ -43,7 +49,11 @@ export function createEmulatorJsAdapter({ runtime } = {}) {
     },
 
     describeFrame(context) {
-      const core = this.coreFor(context.game?.platformId);
+      // A hosted game names its own platform; an unassigned cabinet running a
+      // local file has no game, so the cabinet's platform stands in.
+      const platformId = platformOf(context.game) ?? context.platformId ?? null;
+      const core = this.coreFor(platformId);
+      if (!core) throw new Error(`No EmulatorJS core covers platform ${platformId ?? 'unknown'}.`);
       // The BIOS parameter is PlayStation-only, and stays empty when no BIOS is
       // configured — matching the previous behaviour of proceeding without one
       // rather than failing the launch.

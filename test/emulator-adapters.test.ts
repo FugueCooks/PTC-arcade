@@ -77,7 +77,9 @@ void test('the EmulatorJS frame URL preserves the pre-Phase-11 contract', () => 
   assert.equal(adapter.coreFor('psx'), 'psx');
   assert.equal(adapter.coreFor('n64'), 'n64');
   assert.equal(adapter.coreFor('snes'), 'snes9x');
-  assert.equal(adapter.coreFor('unknown'), 'psx');
+  // Null, not 'psx'. Answering 'psx' for an unrecognized platform is what let a
+  // SNES cabinet boot on the PlayStation core with no error anywhere.
+  assert.equal(adapter.coreFor('unknown'), null);
 
   const frame = adapter.describeFrame({ game: psxGame, gameUrl: 'https://cdn.example/crash.chd', biosUrl: 'https://cdn.example/bios.bin', displayName: 'Crash Bandicoot', emulatorContentId: 94154 });
   const parameters = new URLSearchParams(frame.src.split('?')[1]);

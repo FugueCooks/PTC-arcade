@@ -94,3 +94,18 @@ export function preflightAssets(context) {
 export function estimateLoadTimeoutMs(downloadBytes) {
   return Math.max(20_000, Math.min(180_000, 20_000 + (Number(downloadBytes) || 0) / 524_288 * 1_000));
 }
+
+/**
+ * The platform a game runs on, read from either shape a game legitimately
+ * reaches an adapter in: the server's GameDefinition, which names it
+ * `platformId`, and the browser registry entry parsed from
+ * `assets/games/registry.json`, which names it `system`.
+ *
+ * Reading only `platformId` is what put every SNES and N64 cabinet on the
+ * PlayStation core: the browser shape has no such field, so the lookup missed
+ * and the core fell back. Both names resolve here, in one place, rather than at
+ * each call site.
+ */
+export function platformOf(game) {
+  return game?.platformId ?? game?.system ?? null;
+}

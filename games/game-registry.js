@@ -10,6 +10,11 @@ export async function loadGameRegistry() {
     if (!game.enabled) continue;
     const frozen = Object.freeze({
       ...game,
+      // `system` is this file's name for the platform; `platformId` is the
+      // server's, and what every adapter reads. Publishing both keeps one
+      // registry entry usable on either side of the adapter boundary instead
+      // of leaving each consumer to guess which field exists.
+      platformId: game.system,
       discs: game.discs?.map((disc) => Object.freeze({ ...disc })),
       assetRequirements: game.assetRequirements?.map((asset) => Object.freeze({ ...asset }))
     });

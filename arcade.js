@@ -955,8 +955,13 @@ function launchEmulator(gameFile,options={}){
   const gameUrl=typeof gameFile==='string'?gameFile:(usesSourceHandshake?'':URL.createObjectURL(gameFile));
   const biosUrl=activeCabinet?.system==='psx'?(psxBios?URL.createObjectURL(psxBios):hostedPsxBios):'';
   const gameName=activeCabinet?.gameName||'Arcade Game';
-  const context={game:emulatorGameFor(activeCabinet),gameUrl,biosUrl,displayName:gameName,emulatorContentId:activeCabinet?.gameId||1,downloadBytes,localFile,dspUrl:gameCubeDspAssetUrl,baseUrl:location.href};
-  const descriptor=adapter.describeFrame(context);
+  const context={game:emulatorGameFor(activeCabinet),platformId:activeCabinet?.system,gameUrl,biosUrl,displayName:gameName,emulatorContentId:activeCabinet?.gameId||1,downloadBytes,localFile,dspUrl:gameCubeDspAssetUrl,baseUrl:location.href};
+  // An adapter refuses rather than guesses when it cannot cover the platform,
+  // so a resolution bug stops here with a message instead of booting a core
+  // that cannot read the game.
+  let descriptor;
+  try{descriptor=adapter.describeFrame(context)}
+  catch(error){for(const url of [gameUrl,biosUrl])if(typeof url==='string'&&url.startsWith('blob:'))URL.revokeObjectURL(url);setEmulatorRuntimeActive(false);showCabinetMessage(String(error?.message||'THIS GAME CANNOT BE STARTED.').toUpperCase());closeMachine();return}
   emulatorObjectUrls=[...descriptor.objectUrls];
   const player=document.createElement('iframe');player.title=descriptor.title;player.allow=descriptor.allow;player.src=descriptor.src;
   player.style.cssText='border:0;width:100%;height:100%;background:#02030a';player.onerror=()=>{showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()};

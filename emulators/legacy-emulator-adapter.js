@@ -1,3 +1,5 @@
+import { platformOf } from './emulator-adapter.js';
+
 /** Thin compatibility layer around the proven EmulatorJS, Play!, and Gecko launch path. */
 export class LegacyEmulatorAdapter {
   id='legacy-browser-emulator';
@@ -7,7 +9,7 @@ export class LegacyEmulatorAdapter {
     screenshotCapture:false,scoreExtraction:false,pause:false,controllerRemapping:true,audioControl:true});
   constructor(hooks){this.hooks=hooks}
   async preflight(context){
-    if(!this.supportedPlatforms.includes(context.game.platformId))return{ok:false,reason:'unsupported-platform'};
+    if(!this.supportedPlatforms.includes(platformOf(context.game)))return{ok:false,reason:'unsupported-platform'};
     if(!context.source)return{ok:false,reason:'missing-game-asset'};
     return{ok:true};
   }
