@@ -46,6 +46,14 @@ export interface ServerConfig {
   walletAuthEnabled: boolean;
   walletChallengeTtlMs: number;
   walletChallengeMaxAttempts: number;
+  /** Plugin IDs the operator has approved. Empty means no plugin starts. */
+  enabledPluginIds: readonly string[];
+  pluginStorageDirectory: string;
+  pluginStorageMaxKeys: number;
+  pluginStorageMaxTotalBytes: number;
+  /** Raw operator credential list; parsed by the operations auth service. */
+  operationsOperators: string | undefined;
+  operationsSessionTtlMs: number;
   solanaNetwork: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet';
   solanaAppDomain: string;
   solanaAppUri: string;
@@ -54,7 +62,6 @@ export interface ServerConfig {
   multiplayerTicketTtlMs: number;
   operationsBootstrapSecret?: string;
   operationsCookieName: string;
-  operationsSessionTtlMs: number;
 }
 
 export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -115,6 +122,13 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     walletAuthEnabled: environment.WALLET_AUTH_ENABLED !== '0',
     walletChallengeTtlMs: seconds(environment.WALLET_CHALLENGE_TTL_SECONDS, 300, 60, 900),
     walletChallengeMaxAttempts: integer(environment.WALLET_CHALLENGE_MAX_ATTEMPTS, 5, 1, 20),
+    // Milestone 11.7: nothing loads unless an operator names it here.
+    enabledPluginIds: pluginIdList(environment.ENABLED_PLUGINS),
+    pluginStorageDirectory: environment.PLUGIN_STORAGE_DIR ?? '.plugin-storage',
+    pluginStorageMaxKeys: integer(environment.PLUGIN_STORAGE_MAX_KEYS, 500, 1, 100_000),
+    pluginStorageMaxTotalBytes: integer(environment.PLUGIN_STORAGE_MAX_TOTAL_BYTES, 1_048_576, 1_024, 268_435_456),
+    operationsOperators: environment.OPERATIONS_OPERATORS,
+    operationsSessionTtlMs: seconds(environment.OPERATIONS_SESSION_TTL_SECONDS, 28_800, 300, 86_400),
     solanaNetwork: solanaNetwork(environment.SOLANA_NETWORK),
     solanaAppDomain: appDomain(environment.SOLANA_APP_DOMAIN, environment.PUBLIC_APP_ORIGIN),
     solanaAppUri: publicUrl(environment.SOLANA_APP_URI ?? environment.PUBLIC_APP_ORIGIN) ?? 'http://localhost:8080',
@@ -123,7 +137,6 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     multiplayerTicketTtlMs: seconds(environment.MULTIPLAYER_TICKET_TTL_SECONDS, 30, 10, 120),
     operationsBootstrapSecret: secret(environment.OPERATIONS_BOOTSTRAP_SECRET),
     operationsCookieName: cleanCookieName(environment.OPERATIONS_COOKIE_NAME) ?? 'arcade_operator',
-    operationsSessionTtlMs: seconds(environment.OPERATIONS_SESSION_TTL_SECONDS, 3_600, 300, 86_400)
   };
 }
 
@@ -215,4 +228,17 @@ function appDomain(value: string | undefined, origin: string | undefined): strin
   }
   if (origin) return new URL(origin).host.toLocaleLowerCase('en-US');
   return 'localhost:8080';
+}
+
+/**
+ * Parses the operator's plugin allowlist. Unrecognized shapes yield an empty
+ * list rather than a permissive default: failing closed is the right direction
+ * for a setting that decides which code runs.
+ */
+function pluginIdList(value: string | undefined): readonly string[] {
+  if (typeof value !== 'string' || value.trim() === '') return Object.freeze([]);
+  const ids = value.split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => /^[a-z0-9][a-z0-9-]{1,63}$/.test(entry));
+  return Object.freeze([...new Set(ids)]);
 }

@@ -5,6 +5,11 @@ services:
     plan: free
     region: oregon
     branch: main
+    # On: this is the host actually serving ptcarcade.fun today, so a merge to
+    # main has to reach it. The free plan below is what causes the idle
+    # spin-down; changing it to `starter` in the Render dashboard stops that
+    # without touching anything else here.
+    autoDeploy: true
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /ready

@@ -1,0 +1,30 @@
+{
+  "id": "example-info-kiosk",
+  "name": "Information Kiosk",
+  "version": "1.0.0",
+  "apiVersion": "1.0.0",
+  "description": "First-party reference plugin. Adds a read-only kiosk that reports how many players are in the room and counts its own views.",
+  "entrypoints": {
+    "server": "server.js",
+    "client": "client.js"
+  },
+  "permissions": [
+    "register:world-interaction",
+    "register:dashboard-widget",
+    "read:room-state",
+    "write:plugin-storage"
+  ],
+  "capabilities": [
+    "world-interaction",
+    "dashboard-module"
+  ],
+  "configurationSchema": {
+    "type": "object",
+    "properties": {
+      "greeting": { "type": "string", "maxLength": 120, "default": "WELCOME TO THE PTC ARCADE" },
+      "showPopulation": { "type": "boolean", "default": true },
+      "refreshSeconds": { "type": "number", "minimum": 5, "maximum": 600, "default": 30 }
+    },
+    "required": []
+  }
+}

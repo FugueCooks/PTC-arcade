@@ -6,6 +6,11 @@ services:
     github:
       repo: FugueCooks/retro-arcade-multiplayer
       branch: main
+      # On, deliberately: this is the only host that deploys from a push, and
+      # its instance is paid, so unlike Render's free plan it does not spin down
+      # when idle. Note that this file only governs the live app if the spec is
+      # applied to it (`doctl apps update --spec .do/app.yaml`); otherwise the
+      # setting in the DigitalOcean dashboard is what actually decides.
       deploy_on_push: true
     dockerfile_path: Dockerfile
     http_port: 8080
@@ -13,6 +18,13 @@ services:
     instance_size_slug: apps-s-1vcpu-0.5gb
     routes:
       - path: /
+    domains:
+      - domain: ptcarcade.fun
+        type: PRIMARY
+        zone: ptcarcade.fun
+      - domain: www.ptcarcade.fun
+        type: ALIAS
+        zone: ptcarcade.fun
     envs:
       - key: NODE_ENV
         value: production
@@ -32,6 +44,26 @@ services:
         type: GENERAL
       - key: BIOS_ASSET_URL
         value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN
+        scope: RUN_TIME
+        type: GENERAL
+      - key: GAMECUBE_DSP_ASSET_URL
+        value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/dsp_rom.bin
+        scope: RUN_TIME
+        type: GENERAL
+      # Domain-dependent. SOLANA_APP_DOMAIN is what a wallet shows the player
+      # when they sign in, so it must match the address bar exactly. Until
+      # ptcarcade.fun is attached to this app, wallet login will warn or fail
+      # here while guest play works normally.
+      - key: PUBLIC_APP_ORIGIN
+        value: https://ptcarcade.fun
+        scope: RUN_TIME
+        type: GENERAL
+      - key: SOLANA_APP_DOMAIN
+        value: ptcarcade.fun
+        scope: RUN_TIME
+        type: GENERAL
+      - key: SOLANA_APP_URI
+        value: https://ptcarcade.fun
         scope: RUN_TIME
         type: GENERAL
     health_check:

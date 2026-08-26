@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "games": [
     {
       "id": "tony-hawks-pro-skater-2",
@@ -9,7 +9,27 @@
       "file": "tony-hawks-pro-skater-2.chd",
       "emulatorId": 94154,
       "sizeBytes": 463239919,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "tony-hawks-pro-skater-2.chd",
+          "sizeBytes": 463239919,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "gex-enter-the-gecko",
@@ -19,7 +39,27 @@
       "file": "gex-enter-the-gecko.chd",
       "emulatorId": 95001,
       "sizeBytes": 162183970,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "gex-enter-the-gecko.chd",
+          "sizeBytes": 162183970,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "crash-bandicoot",
@@ -29,7 +69,27 @@
       "file": "crash-bandicoot.pbp",
       "emulatorId": 94900,
       "sizeBytes": 549791897,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "crash-bandicoot.pbp",
+          "sizeBytes": 549791897,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "spyro-year-of-the-dragon",
@@ -39,7 +99,27 @@
       "file": "spyro-year-of-the-dragon.chd",
       "emulatorId": 2835,
       "sizeBytes": 479947745,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "spyro-year-of-the-dragon.chd",
+          "sizeBytes": 479947745,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "twisted-metal-world-tour",
@@ -49,7 +129,27 @@
       "file": "twisted-metal-world-tour.chd",
       "emulatorId": 567,
       "sizeBytes": 477142162,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "twisted-metal-world-tour.chd",
+          "sizeBytes": 477142162,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "silent-hill",
@@ -59,7 +159,27 @@
       "file": "silent-hill.chd",
       "emulatorId": 95002,
       "sizeBytes": 307388422,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "silent-hill.chd",
+          "sizeBytes": 307388422,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "metal-gear-solid",
@@ -81,6 +201,33 @@
           "file": "metal-gear-solid-disc-2.chd",
           "sizeBytes": 373290629
         }
+      ],
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "metal-gear-solid-disc-1.chd",
+          "sizeBytes": 406013391,
+          "required": true,
+          "label": "Disc 1"
+        },
+        {
+          "kind": "game-image",
+          "assetId": "metal-gear-solid-disc-2.chd",
+          "sizeBytes": 373290629,
+          "required": false,
+          "label": "Disc 2"
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
       ]
     },
     {
@@ -91,7 +238,20 @@
       "file": "pokemon-snap.n64",
       "emulatorId": 6401,
       "sizeBytes": 16777216,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-snap.n64",
+          "sizeBytes": 16777216,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "super-mario-64",
@@ -101,7 +261,20 @@
       "file": "super-mario-64.z64",
       "emulatorId": 6402,
       "sizeBytes": 8388608,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-mario-64.z64",
+          "sizeBytes": 8388608,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "glover",
@@ -111,7 +284,20 @@
       "file": "glover.z64",
       "emulatorId": 6403,
       "sizeBytes": 8388608,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "glover.z64",
+          "sizeBytes": 8388608,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "doom-64",
@@ -121,7 +307,20 @@
       "file": "doom-64.z64",
       "emulatorId": 6404,
       "sizeBytes": 8388608,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "doom-64.z64",
+          "sizeBytes": 8388608,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "zelda-ocarina-of-time",
@@ -131,7 +330,20 @@
       "file": "zelda-ocarina-of-time.z64",
       "emulatorId": 6405,
       "sizeBytes": 33554432,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-ocarina-of-time.z64",
+          "sizeBytes": 33554432,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "star-fox-64",
@@ -141,7 +353,20 @@
       "file": "star-fox-64.z64",
       "emulatorId": 6411,
       "sizeBytes": 12582912,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "star-fox-64.z64",
+          "sizeBytes": 12582912,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-64",
@@ -151,7 +376,20 @@
       "file": "mega-man-64.z64",
       "emulatorId": 6412,
       "sizeBytes": 33554432,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-64.z64",
+          "sizeBytes": 33554432,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "kingdom-hearts",
@@ -161,7 +399,20 @@
       "file": "kingdom-hearts.iso",
       "emulatorId": 26002,
       "sizeBytes": 3041132544,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "kingdom-hearts.iso",
+          "sizeBytes": 3041132544,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "gta-san-andreas",
@@ -171,7 +422,20 @@
       "file": "gta-san-andreas-v3.iso",
       "emulatorId": 26003,
       "sizeBytes": 4517036032,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "gta-san-andreas-v3.iso",
+          "sizeBytes": 4517036032,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "dbz-tenkaichi-3",
@@ -181,7 +445,20 @@
       "file": "dbz-tenkaichi-3.iso",
       "emulatorId": 26004,
       "sizeBytes": 3020816384,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "dbz-tenkaichi-3.iso",
+          "sizeBytes": 3020816384,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "wind-waker",
@@ -191,7 +468,27 @@
       "file": "wind-waker.rvz",
       "emulatorId": 32001,
       "sizeBytes": 1084862396,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "gecko-gamecube",
+      "inputProfileId": "gamecube-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "wind-waker.rvz",
+          "sizeBytes": 1084862396,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "firmware",
+          "assetId": "dsp_rom.bin",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "zelda-twilight-princess",
@@ -201,7 +498,27 @@
       "file": "zelda-twilight-princess.rvz",
       "emulatorId": 32002,
       "sizeBytes": 1027348044,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "gecko-gamecube",
+      "inputProfileId": "gamecube-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-twilight-princess.rvz",
+          "sizeBytes": 1027348044,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "firmware",
+          "assetId": "dsp_rom.bin",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "pikmin",
@@ -211,7 +528,27 @@
       "file": "pikmin.rvz",
       "emulatorId": 32003,
       "sizeBytes": 660192112,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "gecko-gamecube",
+      "inputProfileId": "gamecube-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pikmin.rvz",
+          "sizeBytes": 660192112,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "firmware",
+          "assetId": "dsp_rom.bin",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "super-smash-bros-melee",
@@ -221,7 +558,27 @@
       "file": "super-smash-bros-melee.rvz",
       "emulatorId": 32004,
       "sizeBytes": 1426853848,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "gecko-gamecube",
+      "inputProfileId": "gamecube-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-smash-bros-melee.rvz",
+          "sizeBytes": 1426853848,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "firmware",
+          "assetId": "dsp_rom.bin",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "super-mario-sunshine",
@@ -231,7 +588,27 @@
       "file": "super-mario-sunshine.rvz",
       "emulatorId": 32005,
       "sizeBytes": 1176265108,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "gecko-gamecube",
+      "inputProfileId": "gamecube-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-mario-sunshine.rvz",
+          "sizeBytes": 1176265108,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "firmware",
+          "assetId": "dsp_rom.bin",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-x",
@@ -241,7 +618,20 @@
       "file": "mega-man-x.sfc",
       "emulatorId": 96001,
       "sizeBytes": 1572864,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "snes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-x.sfc",
+          "sizeBytes": 1572864,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-x2",
@@ -251,7 +641,20 @@
       "file": "mega-man-x2.sfc",
       "emulatorId": 96002,
       "sizeBytes": 1572864,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "snes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-x2.sfc",
+          "sizeBytes": 1572864,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-x3",
@@ -261,7 +664,20 @@
       "file": "mega-man-x3.sfc",
       "emulatorId": 96003,
       "sizeBytes": 2097152,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "snes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-x3.sfc",
+          "sizeBytes": 2097152,
+          "required": true,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-x4",
@@ -271,7 +687,27 @@
       "file": "mega-man-x4.chd",
       "emulatorId": 96005,
       "sizeBytes": 380930158,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-x4.chd",
+          "sizeBytes": 380930158,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-x5",
@@ -281,7 +717,27 @@
       "file": "mega-man-x5.chd",
       "emulatorId": 96006,
       "sizeBytes": 343977236,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-x5.chd",
+          "sizeBytes": 343977236,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-x6",
@@ -291,7 +747,27 @@
       "file": "mega-man-x6.chd",
       "emulatorId": 96007,
       "sizeBytes": 368695214,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-x6.chd",
+          "sizeBytes": 368695214,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     },
     {
       "id": "mega-man-8",
@@ -301,7 +777,27 @@
       "file": "mega-man-8.chd",
       "emulatorId": 96004,
       "sizeBytes": 254503808,
-      "enabled": true
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-8.chd",
+          "sizeBytes": 254503808,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     }
   ]
 }

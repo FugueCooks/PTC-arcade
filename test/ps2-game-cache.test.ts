@@ -28,11 +28,17 @@ void test('the arcade loads hosted games cache first and prefetches only the run
   assert.match(arcade, /formatRate/);
   assert.match(arcade, /formatEta/);
 
-  // Warming is driven by cabinet proximity and covers every hosted system.
-  assert.match(arcade, /warmEmulatorCore\(near\?\.system\)/);
-  assert.match(arcade, /\['emulators\/play\/Play\.wasm','fetch'\]/);
-  assert.match(arcade, /cdn\.emulatorjs\.org\/stable\/data\/loader\.js/);
-  assert.match(arcade, /emulators\/gecko\/pkg\/web_bg\.wasm/);
+  // Warming is still driven by cabinet proximity, but each adapter now owns the
+  // list of runtime assets to prefetch for its own core.
+  assert.match(arcade, /warmEmulatorCore\(near\)/);
+  const [emulatorJs, play, gecko] = await Promise.all([
+    readFile(path.resolve(process.cwd(), 'emulators/adapters/emulatorjs-adapter.js'), 'utf8'),
+    readFile(path.resolve(process.cwd(), 'emulators/adapters/play-ps2-adapter.js'), 'utf8'),
+    readFile(path.resolve(process.cwd(), 'emulators/adapters/gecko-gamecube-adapter.js'), 'utf8')
+  ]);
+  assert.match(play, /'emulators\/play\/Play\.wasm', 'fetch'/);
+  assert.match(emulatorJs, /cdn\.emulatorjs\.org\/stable\/data\/loader\.js/);
+  assert.match(gecko, /emulators\/gecko\/pkg\/web_bg\.wasm/);
   // The runtime is prefetched; the multi hundred megabyte image never is.
   assert.doesNotMatch(arcade, /link\.href=cabinet\.hostedGame/);
 });

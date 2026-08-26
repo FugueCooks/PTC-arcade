@@ -1,36 +1,127 @@
-import type { SafeJson } from '../../../shared/platform-contracts.js';
-import type { CabinetManager } from '../cabinets/cabinet-manager.js';
-import type { HealthService } from '../health/health-service.js';
-import type { RuntimeMetrics } from '../metrics/metrics.js';
-import type { PluginManager } from '../plugins/plugin-manager.js';
-import type { RoomManager } from '../rooms/room-manager.js';
-import type { GameLauncherService } from '../games/game-launcher-service.js';
-import type { BackgroundJobQueue } from '../jobs/job-queue.js';
-import type { OperationsAuditRepository } from './operations-audit-repository.js';
+import type { SafeJsonValue } from '../domain/json-value.js';
 
-export interface OperationsAction { action:'cabinet.enable'|'cabinet.disable'|'room.maintenance'|'room.close-empty'|'plugin.disable';targetId:string;reason?:string;dryRun?:boolean }
+/**
+ * Milestone 11.25 — operator-safe platform status.
+ *
+ * This is operational control, not moderation: there is no chat, no message
+ * history, and no social data anywhere in these shapes. Player identity appears
+ * only as a public ID on a cabinet an operator may need to free, and never as
+ * an email, wallet address, display name, or token.
+ */
+export interface ServerStatus {
+  serverId: string;
+  region: string;
+  version: string;
+  uptimeSeconds: number;
+  roomCount: number;
+  playerCount: number;
+  capacity: { maxPlayers: number; maxRooms: number };
+  draining: boolean;
+  ready: boolean;
+  readinessReasons: readonly string[];
+  eventLoopDelayMs: number;
+  memoryRssBytes: number;
+}
+
+export interface RoomStatus {
+  roomId: string;
+  population: number;
+  owningServerId: string;
+  status: 'active' | 'draining';
+  activeCabinetCount: number;
+  createdAt: number | null;
+}
+
+export interface CabinetStatus {
+  cabinetId: string;
+  zoneId: string;
+  gameId: string | null;
+  state: string;
+  /** Present only while a cabinet is held, so an operator can free it. */
+  occupantPublicId: string | null;
+  enabled: boolean;
+  maintenance: boolean;
+  failureCount: number;
+  lastSuccessfulSessionAt: number | null;
+}
+
+export interface DependencyHealth {
+  name: string;
+  required: boolean;
+  ready: boolean;
+  detail: string | null;
+}
+
+export interface OperationsOverview {
+  at: number;
+  deploymentVersion: string;
+  server: ServerStatus;
+  totals: {
+    onlinePlayers: number;
+    activeRooms: number;
+    activeCabinets: number;
+    activeGameSessions: number;
+    pendingCompetitiveVerifications: number;
+  };
+  dependencies: readonly DependencyHealth[];
+  plugins: { total: number; started: number; failed: number; disabled: number; failures: readonly { pluginId: string; error: string }[] };
+  emulatorAdapters: readonly { adapterId: string; platforms: readonly string[] }[];
+  registry: { cabinetDefinitions: number; zones: number; gameDefinitions: number };
+  featureFlags: Readonly<Record<string, boolean>>;
+  replay: { supported: false; note: string };
+  queues: readonly { name: string; depth: number; failed: number }[];
+}
+
+export interface OperationsSources {
+  server(): ServerStatus;
+  rooms(): readonly RoomStatus[];
+  cabinets(roomId?: string): readonly CabinetStatus[];
+  dependencies(): readonly DependencyHealth[];
+  plugins(): OperationsOverview['plugins'];
+  emulatorAdapters(): OperationsOverview['emulatorAdapters'];
+  registry(): OperationsOverview['registry'];
+  featureFlags(): Readonly<Record<string, boolean>>;
+  activeGameSessions(): number;
+  queues(): readonly { name: string; depth: number; failed: number }[];
+}
+
 export class OperationsService {
-  constructor(private readonly dependencies:{rooms:RoomManager;cabinets:CabinetManager;plugins:PluginManager;games:GameLauncherService;jobs:BackgroundJobQueue;
-    health:HealthService;metrics:RuntimeMetrics;audit:OperationsAuditRepository;deploymentVersion:string;serverId:string}){}
-  async overview(){return{serverId:this.dependencies.serverId,deploymentVersion:this.dependencies.deploymentVersion,ready:this.dependencies.health.readiness(),
-    rooms:this.dependencies.rooms.records,roomCount:this.dependencies.rooms.roomCount,activeGameSessions:this.dependencies.games.activeCount,
-    cabinetDefinitions:this.dependencies.cabinets.index.size,plugins:this.dependencies.plugins.list(),backgroundQueueDepth:await this.dependencies.jobs.depth()}}
-  async act(operatorId:string,requestId:string,input:OperationsAction){
-    const previous=this.state(input);let success=false,resulting:Record<string,SafeJson>|undefined;
-    if(!input.dryRun){
-      if(input.action==='cabinet.enable')success=this.dependencies.cabinets.setEnabled(input.targetId,true);
-      if(input.action==='cabinet.disable')success=this.dependencies.cabinets.setEnabled(input.targetId,false);
-      if(input.action==='room.maintenance'){const room=this.dependencies.rooms.get(input.targetId);if(room){room.setStatus('draining');success=true}}
-      if(input.action==='room.close-empty')success=this.dependencies.rooms.close(input.targetId);
-      if(input.action==='plugin.disable')success=Boolean(await this.dependencies.plugins.stop(input.targetId,'disabled'));
-      resulting=this.state(input);
-    }else success=this.targetExists(input);
-    await this.dependencies.audit.append({operatorId,action:input.action,targetType:input.action.split('.')[0],targetId:input.targetId,reason:input.reason,
-      previousState:previous,resultingState:resulting,requestId,success,deploymentVersion:this.dependencies.deploymentVersion});
-    if(success)this.dependencies.metrics.increment('operations_actions_total');return{ok:success,dryRun:Boolean(input.dryRun),previousState:previous,resultingState:resulting};
+  constructor(private readonly sources: OperationsSources, private readonly deploymentVersion: string) {}
+
+  overview(now = Date.now()): OperationsOverview {
+    const server = this.sources.server();
+    const rooms = this.sources.rooms();
+    const cabinets = this.sources.cabinets();
+    return {
+      at: now,
+      deploymentVersion: this.deploymentVersion,
+      server,
+      totals: {
+        onlinePlayers: server.playerCount,
+        activeRooms: rooms.length,
+        activeCabinets: cabinets.filter(({ state }) => state !== 'available').length,
+        activeGameSessions: this.sources.activeGameSessions(),
+        // Declared for the dashboard's shape; the competitive layer this would
+        // count does not exist, and reporting a fabricated number would be worse
+        // than reporting zero with an explanation.
+        pendingCompetitiveVerifications: 0
+      },
+      dependencies: this.sources.dependencies(),
+      plugins: this.sources.plugins(),
+      emulatorAdapters: this.sources.emulatorAdapters(),
+      registry: this.sources.registry(),
+      featureFlags: this.sources.featureFlags(),
+      replay: { supported: false, note: 'Replay and ghost systems are deferred to Phase 12.' },
+      queues: this.sources.queues()
+    };
   }
-  private targetExists(input:OperationsAction):boolean{if(input.action.startsWith('cabinet.'))return Boolean(this.dependencies.cabinets.index.get(input.targetId));if(input.action.startsWith('room.'))return Boolean(this.dependencies.rooms.get(input.targetId));return this.dependencies.plugins.list().some(plugin=>plugin.id===input.targetId)}
-  private state(input:OperationsAction):Record<string,SafeJson>|undefined{if(input.action.startsWith('cabinet.')){const cabinet=this.dependencies.cabinets.index.get(input.targetId);return cabinet?{id:cabinet.id,enabled:this.dependencies.cabinets.isEnabled(cabinet.id)}:undefined}
-    if(input.action.startsWith('room.')){const room=this.dependencies.rooms.get(input.targetId);return room?{id:room.id,status:room.status,population:room.memberCount}:undefined}
-    const plugin=this.dependencies.plugins.list().find(value=>value.id===input.targetId);return plugin?{id:plugin.id,status:plugin.status}:undefined}
+
+  servers(): readonly ServerStatus[] { return [this.sources.server()]; }
+  rooms(): readonly RoomStatus[] { return this.sources.rooms(); }
+  cabinets(roomId?: string): readonly CabinetStatus[] { return this.sources.cabinets(roomId); }
+}
+
+/** Serializes any structure the operations API returns, JSON-safe. */
+export function toSafeJson(value: unknown): SafeJsonValue {
+  return JSON.parse(JSON.stringify(value ?? null)) as SafeJsonValue;
 }

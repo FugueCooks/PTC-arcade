@@ -3,7 +3,7 @@ import path from 'node:path';
 import express from 'express';
 import { Server } from 'socket.io';
 import { DEFAULT_ROOM_ID } from './protocol.js';
-import type { ClientToServerEvents, ServerToClientEvents } from './protocol.js';
+import type { CabinetState, ClientToServerEvents, ServerToClientEvents } from './protocol.js';
 import { PlayerManager } from './players/player-manager.js';
 import { validateIdentity } from './players/player-identity.js';
 import { RoomManager } from './rooms/room-manager.js';
@@ -51,8 +51,26 @@ import { DrizzleWalletAccountRepository } from './auth/wallet-account-repository
 import { WalletAuthService } from './auth/wallet-auth-service.js';
 import { installWalletAuthRoutes } from './http/wallet-auth-routes.js';
 import { InMemoryAsyncRateLimiter, RedisAsyncRateLimiter } from './auth/distributed-rate-limiter.js';
+import { bootstrapPlugins } from './plugins/plugin-bootstrap.js';
+import { createOperationsRuntime } from './operations/operations-bootstrap.js';
+import { installOperationsRoutes } from './http/operations-routes.js';
+import { loadGameRegistry } from './games/game-registry-service.js';
+import { CabinetCatalogService, GameCatalogService } from './services/catalog-service.js';
+import { installCatalogRoutes } from './http/api/v1/catalog-routes.js';
+import { installApiNotFound } from './http/api/middleware/api-context.js';
+import { EventBus } from './events/event-bus.js';
+import { JobQueue } from './jobs/job-queue.js';
+import type { PluginHost } from './plugins/plugin-host.js';
+
+/** Bounds a resync request so one client cannot ask for unbounded work. */
+const MAX_RESYNC_ZONES = 16;
+
+function toZoneSnapshotPayload(snapshot: { roomId: string; revision: number; zoneIds: readonly string[]; cabinets: CabinetState[] }) {
+  return { roomId: snapshot.roomId, revision: snapshot.revision, zoneIds: [...snapshot.zoneIds], cabinets: snapshot.cabinets };
+}
 
 const projectRoot = path.resolve(process.cwd());
+let gameRegistry = loadGameRegistry(projectRoot).registry;
 const startedAt = Date.now();
 const config = loadServerConfig();
 const logger = createLogger({ service: 'roms-retro-arcade', serverId: config.serverId, region: config.region, version: config.softwareVersion });
@@ -84,12 +102,23 @@ const reactions = new ReactionManager(players, Number(process.env.REACTION_COOLD
 const world = new WorldManager(players, Number(process.env.WORLD_REQUEST_COOLDOWN_MS ?? 500));
 
 let health: HealthService;
-const metrics = new RuntimeMetrics({
+const metrics: RuntimeMetrics = new RuntimeMetrics({
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
   activeRooms: () => rooms.roomCount,
   averageRoomPopulation: () => rooms.averagePopulation,
-  draining: () => health?.isDraining ?? false
+  draining: () => health?.isDraining ?? false,
+  // Milestone 11.37 gauges.
+  cabinetRegistrySize: () => cabinets.index.size,
+  activeCabinetStates: () => rooms.records.reduce((total, record) => total + cabinets.activeStateCount(record.id), 0),
+  cabinetZones: () => cabinets.zones.size,
+  gameRegistrySize: () => gameCatalog.size,
+  pluginsStarted: () => plugins.health().started,
+  pluginsFailed: () => plugins.health().failed,
+  jobQueueDepth: () => jobs.stats().depth,
+  jobsDeadLettered: () => jobs.stats().deadLettered,
+  eventBusHandlerFailures: () => events.stats().handlerFailures,
+  operatorSessions: () => operationsRuntime.auth.activeSessionCount
 });
 io.engine.on('connection', (transportSocket) => {
   transportSocket.on('packet', (packet: { data?: unknown }) => metrics.observeTransportPacket('received', packet.data));
@@ -301,9 +330,22 @@ world.subscribe((event) => {
 cabinets.subscribe((event) => {
   if (event.type === 'CabinetStateChanged') {
     rooms.bumpStateRevision(event.roomId, 'cabinet');
+    // Milestone 11.14: the revision-stamped delta is the scaled channel. The
+    // unstamped event stays alongside it so clients that predate zone streaming
+    // keep working through the migration (Milestone 11.39).
+    // Revisions are keyed per room and zone, and each delta names the revision it
+    // follows so a client can tell a real gap from a duplicate delivery.
+    io.to(event.roomId).emit('cabinet:delta', {
+      roomId: event.roomId, zoneId: event.zoneId,
+      revision: event.revision, previousRevision: event.previousRevision,
+      changes: [event.state]
+    });
     io.to(event.roomId).emit('cabinet:state-changed', event.state);
+    metrics.increment('cabinet_delta_published_total');
+    events.emit('cabinet.state.changed', {
+      roomId: event.roomId, cabinetId: event.state.cabinetId, status: event.state.status, revision: event.revision
+    });
   }
-  if (event.type === 'CabinetStateDelta') io.to(event.roomId).emit('cabinet:delta', event.delta);
   if (event.type === 'CabinetForcedRelease') {
     const socketId = players.socketIdForPlayerId(event.playerId);
     if (socketId) io.to(socketId).emit('cabinet:forced-release', { cabinetId: event.cabinetId, reason: event.reason });
@@ -375,7 +417,12 @@ io.on('connection', (socket) => {
     });
     if (stablePlayerId) await identityDirectory?.presence(stablePlayerId, result.snapshot.roomId, socket.id,
       Math.max(config.reconnectGraceMs + 10_000, 30_000));
-    socket.emit('cabinet:snapshot', cabinets.snapshotPayload(result.snapshot.roomId));
+    // A join receives the zones around its spawn, plus the legacy whole-room
+    // snapshot for clients that have not migrated to zone streaming yet.
+    const spawn = result.snapshot.players.find(({ id }) => id === result.snapshot.selfId);
+    const spawnZones = spawn ? cabinets.activeZoneIds(spawn.p[0], spawn.p[2]) : cabinets.zones.all().map(({ id }) => id);
+    socket.emit('cabinet:zone-snapshot', toZoneSnapshotPayload(cabinets.zoneSnapshot(result.snapshot.roomId, spawnZones)));
+    socket.emit('cabinet:snapshot', { roomId: result.snapshot.roomId, cabinets: cabinets.snapshot(result.snapshot.roomId) });
     socket.emit('chat:snapshot', { roomId: result.snapshot.roomId, messages: chat.snapshot(result.snapshot.roomId) });
     socket.emit('world:snapshot', world.snapshot(result.snapshot.roomId));
     metrics.increment(result.resumed ? 'reconnect_success_total' : 'player_join_success_total');
@@ -421,6 +468,23 @@ io.on('connection', (socket) => {
     const result = cabinets.activate(socket.id, payload?.cabinetId);
     if (typeof acknowledge === 'function') acknowledge(result);
   });
+  socket.on('cabinet:resync', (payload, acknowledge) => {
+    metrics.increment('events_cabinet_resync_received_total');
+    const playerId = players.playerIdForSocket(socket.id);
+    const player = playerId ? players.stateForPlayerId(playerId) : undefined;
+    const requested: unknown = payload?.zoneIds;
+    if (!player || !Array.isArray(requested) || requested.length === 0 || requested.length > MAX_RESYNC_ZONES
+      || !requested.every((zoneId) => typeof zoneId === 'string')) {
+      return acknowledge({ ok: false, reason: 'invalid-request' });
+    }
+    // Only zones that exist are honoured, so a client cannot use resync to
+    // enumerate or allocate arbitrary keys.
+    const known = (requested as string[]).filter((zoneId) => cabinets.zones.get(zoneId) !== undefined);
+    if (known.length === 0) return acknowledge({ ok: false, reason: 'unknown-zone' });
+    metrics.increment('cabinet_resync_served_total');
+    acknowledge({ ok: true, snapshot: toZoneSnapshotPayload(cabinets.zoneSnapshot(player.roomId, known)) });
+  });
+
   socket.on('cabinet:release', (payload, acknowledge) => {
     metrics.increment('events_cabinet_release_received_total');
     const result = cabinets.release(socket.id, payload?.cabinetId);
@@ -470,6 +534,186 @@ const worldEventTimer = setInterval(() => {
 }, Number(process.env.WORLD_EVENT_INTERVAL_MS ?? 90_000));
 worldEventTimer.unref();
 
+/**
+ * Milestone 11.7/11.9. Plugins are given only the narrow services below — never
+ * a database handle, a Redis client, or a socket. A plugin failure is contained
+ * by the host and surfaced through health, so it cannot take the arcade down.
+ */
+const pluginBootstrap = await bootstrapPlugins(config, {
+  safeProfile: (publicPlayerId) => {
+    const player = players.stateForPlayerId(publicPlayerId);
+    return player ? { publicPlayerId, displayName: player.n, avatarId: player.v } : undefined;
+  },
+  roomState: (roomId) => {
+    const population = players.roomPopulation(roomId);
+    if (population === undefined) return undefined;
+    return {
+      roomId,
+      population,
+      activeCabinetIds: cabinets.snapshot(roomId).filter(({ status }) => status !== 'available').map(({ cabinetId }) => cabinetId)
+    };
+  },
+  emitRoomEvent: (pluginId, roomId, event) => {
+    // Namespaced so a plugin event can never impersonate a core one.
+    io.to(roomId).emit('world:announcement', {
+      id: `plugin-${pluginId}-${Date.now()}`,
+      roomId,
+      text: String(event.payload.text ?? ''),
+      kind: 'event',
+      at: Date.now()
+    });
+    metrics.increment('plugin_room_events_total');
+  }
+}, (level, event, details) => logger[level === 'error' ? 'error' : level](event, details));
+
+const plugins: PluginHost = pluginBootstrap.host;
+
+// Milestone 11.35. A throwing subscriber is contained and counted here rather
+// than being allowed to break whatever published the event.
+const events = new EventBus((event, error) => {
+  metrics.increment('event_bus_handler_failure_total');
+  logger.warn('event_bus_handler_failed', { event, error: error instanceof Error ? error.message : String(error) });
+});
+
+// Milestone 11.36. In-memory for Phase 11 and honest about it: `durable` is
+// false, and the operations dashboard shows that.
+const jobs: JobQueue = new JobQueue({
+  metrics,
+  onEvent: (kind, job) => {
+    if (kind === 'completed') events.emit('job.completed', { jobId: job.id, name: job.name, attempts: job.attempts });
+    else events.emit('job.dead-lettered', { jobId: job.id, name: job.name, error: job.lastError ?? 'unknown' });
+  }
+});
+const jobTimer = setInterval(() => void jobs.runDue().catch(() => metrics.increment('jobs_tick_failure_total')), 1_000);
+jobTimer.unref();
+
+// Milestone 11.34: services own the logic; routes and socket handlers delegate.
+const cabinetCatalog = new CabinetCatalogService(cabinets.index, cabinets.zones);
+const gameCatalog = new GameCatalogService(gameRegistry);
+
+const emulatorAdapterCatalog = [
+  { adapterId: 'emulatorjs', platforms: ['psx', 'n64', 'snes'] },
+  { adapterId: 'play-ps2', platforms: ['ps2'] },
+  { adapterId: 'gecko-gamecube', platforms: ['gamecube'] }
+] as const;
+
+// Milestone 11.30: the versioned public catalogue. Existing unversioned routes
+// stay mounted for compatibility until the client migration is verified.
+installCatalogRoutes(app, config, {
+  cabinets: cabinetCatalog,
+  games: gameCatalog,
+  emulatorAdapters: () => emulatorAdapterCatalog,
+  log: (event, details) => logger.warn(event, details),
+  metrics
+});
+
+/**
+ * Milestones 11.25 through 11.29. Operations authenticate against a separate
+ * credential store, so no player session — wallet or otherwise — can reach any
+ * of this.
+ */
+const operationsRuntime = createOperationsRuntime({
+  config,
+  cabinets,
+  games: gameRegistry,
+  plugins,
+  beginDraining: () => void drain.begin('operator-action'),
+  isDraining: () => health.isDraining,
+  closeEmptyRoom: (roomId) => rooms.close(roomId),
+  roomPopulation: (roomId) => players.roomPopulation(roomId),
+  refreshRegistry: () => {
+    gameRegistry = loadGameRegistry(projectRoot).registry;
+    // The catalogue service holds the registry, so it must be swapped too or
+    // the API would keep serving the pre-refresh view.
+    gameCatalog.replaceRegistry(gameRegistry);
+    return { cabinetDefinitions: cabinets.index.size, gameDefinitions: gameRegistry.size };
+  },
+  sources: {
+    server: () => {
+      const readiness = health.readiness();
+      return {
+        serverId: config.serverId,
+        region: config.region,
+        version: config.softwareVersion,
+        uptimeSeconds: Math.floor((Date.now() - startedAt) / 1_000),
+        roomCount: rooms.activeRoomCount,
+        playerCount: players.connectedCount,
+        capacity: { maxPlayers: config.maxPlayersPerServer, maxRooms: config.maxRoomsPerServer },
+        draining: health.isDraining,
+        ready: readiness.ready,
+        readinessReasons: readiness.reasons,
+        eventLoopDelayMs: metrics.eventLoopDelayMs(),
+        memoryRssBytes: process.memoryUsage().rss
+      };
+    },
+    rooms: () => rooms.records.map((record) => ({
+      roomId: record.id,
+      population: players.roomPopulation(record.id) ?? 0,
+      owningServerId: config.serverId,
+      status: health.isDraining ? 'draining' as const : 'active' as const,
+      activeCabinetCount: cabinets.activeStateCount(record.id),
+      createdAt: record.createdAt
+    })),
+    cabinets: (roomId) => {
+      const room = roomId ?? DEFAULT_ROOM_ID;
+      return cabinets.index.definitions.map((definition) => {
+        const state = cabinets.snapshot(room).find(({ cabinetId }) => cabinetId === definition.id);
+        return {
+          cabinetId: definition.id,
+          zoneId: definition.zoneId,
+          gameId: definition.gameId,
+          state: state?.status ?? 'available',
+          // Only the public player ID, and only while the cabinet is held: an
+          // operator may need to free it. No other player data is exposed.
+          occupantPublicId: state?.occupiedByPlayerId ?? null,
+          enabled: definition.enabled && !operationsRuntime.disabledCabinets.has(definition.id),
+          maintenance: operationsRuntime.disabledCabinets.has(definition.id),
+          failureCount: 0,
+          lastSuccessfulSessionAt: state?.sessionStartedAt ?? null
+        };
+      });
+    },
+    dependencies: () => [
+      { name: 'redis', required: Boolean(config.redisUrl), ready: redis?.isReady ?? false, detail: null },
+      { name: 'postgres', required: config.databaseRequired, ready: database?.isReady ?? false, detail: null },
+      { name: 'object-storage', required: false, ready: false, detail: 'read-only asset CDN; no upload path in Phase 11' }
+    ],
+    plugins: () => plugins.health(),
+    emulatorAdapters: () => [
+      { adapterId: 'emulatorjs', platforms: ['psx', 'n64', 'snes'] },
+      { adapterId: 'play-ps2', platforms: ['ps2'] },
+      { adapterId: 'gecko-gamecube', platforms: ['gamecube'] }
+    ],
+    registry: () => ({
+      cabinetDefinitions: cabinets.index.size,
+      zones: cabinets.zones.size,
+      gameDefinitions: gameRegistry.size
+    }),
+    featureFlags: () => Object.fromEntries(operationsRuntime.featureFlags),
+    // Game sessions are client-side in Phase 11; the server counts cabinets in
+    // use rather than reporting a number it cannot observe.
+    activeGameSessions: () => rooms.records.reduce((total, record) => total + cabinets.activeStateCount(record.id), 0),
+    queues: () => {
+      const stats = jobs.stats();
+      return [{ name: 'background', depth: stats.depth, failed: stats.deadLettered }];
+    }
+  },
+  auditSink: (record) => logger.info('operations_audit', record as Record<string, unknown>)
+});
+
+installOperationsRoutes(app, config, {
+  auth: operationsRuntime.auth,
+  operations: operationsRuntime.operations,
+  actions: operationsRuntime.actions,
+  executor: operationsRuntime.executor,
+  audit: operationsRuntime.audit,
+  metrics
+}, projectRoot);
+
+// Installed after every /api/v1 router: a catch-all registered earlier would
+// swallow the namespaces mounted after it.
+installApiNotFound(app, (event, details) => logger.warn(event, details));
+
 const drain = new DrainController(httpServer, io, config, health, metrics, logger, {
   activePlayers: () => players.connectedCount,
   beginDraining: () => roomLifecycle.beginDraining(),
@@ -479,7 +723,12 @@ const drain = new DrainController(httpServer, io, config, health, metrics, logge
     if (identityHeartbeatTimer) clearInterval(identityHeartbeatTimer);
     if (databaseHealthTimer) clearInterval(databaseHealthTimer);
     clearInterval(worldEventTimer);
+    clearInterval(jobTimer);
+    await jobs.stop();
     await roomLifecycle.stop();
+    // Plugins stop before shared infrastructure so their cleanup still has
+    // whatever it needs, and a plugin that throws cannot block the drain.
+    await plugins.stopAll('shutdown');
     await serverRegistry?.stop();
     await redis?.close();
     await database?.close();

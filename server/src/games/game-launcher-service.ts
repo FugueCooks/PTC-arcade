@@ -1,6 +1,6 @@
-import type { GameDefinition } from '../../../shared/platform-contracts.js';
+import type { GameDefinition } from '../domain/game-definition.js';
 import { CABINET_REGISTRY } from '../cabinets/cabinet-registry.js';
-import type { GameRegistryService } from './game-registry-service.js';
+import type { GameRegistry } from './game-registry-service.js';
 import { GameSession, type NewGameSession } from './game-session.js';
 
 export interface GameLaunchGrant { session: GameSession; game: GameDefinition }
@@ -10,12 +10,14 @@ export class GameLauncherService {
   private readonly cabinets = new Map(CABINET_REGISTRY.map((cabinet) => [cabinet.id, cabinet]));
   private readonly sessions = new Map<string, GameSession>();
 
-  constructor(private readonly games: GameRegistryService) {}
+  constructor(private readonly games: GameRegistry) {}
 
   create(input: Omit<NewGameSession, 'gameId' | 'emulatorAdapterId'>): GameLaunchGrant {
     const cabinet = this.cabinets.get(input.cabinetId);
     if (!cabinet || !cabinet.enabled) throw new Error('Cabinet is unavailable.');
-    const game = this.games.get(cabinet.gameId) ?? this.games.forLegacyCabinet(cabinet.id);
+    // gameId is nullable: 10 of the 39 shipped cabinets are unassigned
+    // placeholders, so the cabinet lookup is the fallback, not the primary path.
+    const game = (cabinet.gameId === null ? undefined : this.games.get(cabinet.gameId)) ?? this.games.forCabinet(cabinet.id);
     if (!game?.enabled || !game.emulatorAdapterId) throw new Error('Game is unavailable.');
     const session = new GameSession({ ...input, gameId: game.id, emulatorAdapterId: game.emulatorAdapterId });
     this.sessions.set(session.record.sessionId, session);

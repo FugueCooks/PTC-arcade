@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { GameRegistryService } from '../server/src/games/game-registry-service.js';
+import { loadGameRegistry } from '../server/src/games/game-registry-service.js';
 import { GameLauncherService } from '../server/src/games/game-launcher-service.js';
 import { GameSession } from '../server/src/games/game-session.js';
 
@@ -22,9 +22,12 @@ void test('invalid game session transition is rejected', () => {
 });
 
 void test('launcher resolves cabinet to game to compatibility adapter without ROM data', () => {
-  const launcher = new GameLauncherService(new GameRegistryService());
+  const launcher = new GameLauncherService(loadGameRegistry().registry);
   const grant = launcher.create({ subjectId: 'subject', playerId: 'player', roomId: 'main', cabinetId: 'crash-bandicoot' });
   assert.equal(grant.game.id, 'crash-bandicoot');
-  assert.equal(grant.session.record.emulatorAdapterId, 'legacy-browser-emulator');
+  // This branch resolves the real adapter per platform rather than a single
+  // catch-all: Crash Bandicoot is PlayStation, so it runs on EmulatorJS.
+  assert.equal(grant.session.record.emulatorAdapterId, 'emulatorjs');
+  // The session record must never carry ROM data or a disc file name.
   assert.equal(JSON.stringify(grant.session.record).includes('.pbp'), false);
 });

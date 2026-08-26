@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { InMemoryBackgroundJobQueue } from '../server/src/jobs/job-queue.js';
+
+/** A queue with the replay verification processor registered. */
+function replayQueue(): JobQueue {
+  const queue = new JobQueue();
+  queue.register({ name: 'replay.verify', process: () => undefined });
+  return queue;
+}
+import { JobQueue, asReplayJobQueue } from '../server/src/jobs/job-queue.js';
 import { replayChecksum, serializeReplay, validateReplay } from '../server/src/replays/replay-format.js';
 import { ReplayService, type ReplayMetadata, type ReplayObjectStorage, type ReplayRepository } from '../server/src/replays/replay-service.js';
 
@@ -30,12 +37,29 @@ void test('checksum corruption and local paths are rejected', () => {
 });
 
 void test('replay storage round trip preserves metadata and payload', async () => {
-  const repository=new MemoryRepository(),storage=new MemoryStorage(),jobs=new InMemoryBackgroundJobQueue();
-  const service=new ReplayService(repository,storage,jobs);const metadata=await service.record(serializeReplay(replayInput),'user');
-  const playback=await service.playback(metadata.publicReplayId);assert.equal(playback.replay.gameId,'crash-bandicoot');assert.equal(await jobs.depth(),0);
+  const repository=new MemoryRepository(),storage=new MemoryStorage(),queue=replayQueue();
+  const service=new ReplayService(repository,storage,asReplayJobQueue(queue));
+  const metadata=await service.record(serializeReplay(replayInput),'user');
+  const playback=await service.playback(metadata.publicReplayId);
+  assert.equal(playback.replay.gameId,'crash-bandicoot');
+  // Playback is a read: it must not schedule verification work.
+  assert.equal(queue.stats().depth,0);
 });
 
-void test('background queue is idempotent, bounded, and retryable', async () => {
-  const queue=new InMemoryBackgroundJobQueue();await queue.enqueue('replay.verify',{id:'one'},'same');await queue.enqueue('replay.verify',{id:'one'},'same');
-  assert.equal(await queue.depth(),1);const job=await queue.claim();assert.ok(job);await queue.fail(job.id,0);assert.ok(await queue.claim());await queue.complete(job.id);assert.equal(await queue.depth(),0);
+void test('replay work enqueues idempotently onto the shared job queue', async () => {
+  // The replay service arrived with its own simpler queue; it now runs on the
+  // one queue, so it inherits retries, backoff, and dead-lettering. Those are
+  // covered in api-platform.test.ts; this asserts the adapter's own contract.
+  let processed = 0;
+  const queue = new JobQueue();
+  queue.register({ name: 'replay.verify', process: () => { processed += 1; } });
+  const adapter = asReplayJobQueue(queue);
+
+  await adapter.enqueue('replay.verify', { id: 'one' }, 'same');
+  await adapter.enqueue('replay.verify', { id: 'one' }, 'same');
+  assert.equal(queue.stats().depth, 1, 'a repeated idempotency key must not queue twice');
+
+  await queue.runDue();
+  assert.equal(processed, 1);
+  assert.equal(queue.stats().depth, 0);
 });

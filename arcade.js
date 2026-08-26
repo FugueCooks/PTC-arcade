@@ -1,7 +1,3 @@
-import { EmulatorAdapterRegistry } from './emulators/emulator-adapter-registry.js';
-import { LegacyEmulatorAdapter } from './emulators/legacy-emulator-adapter.js';
-import { GameLauncher } from './games/game-launcher.js';
-
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -17,7 +13,10 @@ const pixelRatioCap=lowPowerDevice ? .75 : 1;
 const pixelRatioFloor=lowPowerDevice ? .5 : .6;
 let currentPixelRatio=Math.min(devicePixelRatio,pixelRatioCap);
 const renderer = new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'}); renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(currentPixelRatio); renderer.shadowMap.enabled=false; document.body.appendChild(renderer.domElement);
-const clock = new THREE.Clock(), keys = {}, cabinets = [], raycaster = new THREE.Raycaster(), animatedMixers = [];
+// Matches the pre-Phase-11 prompt radius, measured from the player's eye
+// height to the cabinet group origin.
+const CABINET_PROMPT_RANGE = 2.25;
+const clock = new THREE.Clock(), keys = {}, cabinets = [], cabinetsById = new Map(), raycaster = new THREE.Raycaster(), animatedMixers = [];
 const mobileMove={x:0,y:0};
 const mobileViewportQuery=matchMedia('(max-width: 720px)'),coarsePointerQuery=matchMedia('(hover: none) and (pointer: coarse)');
 const mobileInputAvailable=()=>mobileViewportQuery.matches||coarsePointerQuery.matches||navigator.maxTouchPoints>0;
@@ -531,7 +530,7 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false,system=''){
   const marqueeWash=new THREE.Mesh(cabinetGeometry.marqueeWash,trimMat);marqueeWash.position.set(0,2.44,.45);marqueeWash.rotation.x=-.1;g.add(marqueeWash);
   const statusMaterial=new THREE.MeshStandardMaterial({color:0x50ff9a,emissive:0x50ff9a,emissiveIntensity:2.4});
   const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(.48,2.48,.43);statusLight.rotation.x=-.1;g.add(statusLight);
-  scene.add(g);cabinets.push({id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot,controllerSystem:system,renderLights:[floorGlow,glow],status:'syncing',occupiedByDisplayName:null,enabled:true});
+  scene.add(g);const cabinet={id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot,controllerSystem:system,renderLights:[floorGlow,glow],status:'syncing',occupiedByDisplayName:null,enabled:true};cabinets.push(cabinet);cabinetsById.set(id,cabinet);indexCabinet(cabinet);
 }
 // Cabinet art keyed off the registry id. Crash and Gex keep their hand-made
 // panels; every other hosted game gets a generated front and side panel, loaded
@@ -558,6 +557,9 @@ function applyCabinetArt(cabinet,slug){
   panel(slug+'-front.webp',new THREE.PlaneGeometry(1.12,1.22),[0,.79,.558],0);
   for(const side of [-1,1])panel(slug+'-side.webp',new THREE.PlaneGeometry(.78,1.62),[side*.847,1.06,-.05],side*Math.PI/2);
 }
+// Milestone 11.15: every cabinet the scene creates is registered with the
+// spatial index, which the render loop queries instead of scanning.
+function indexCabinet(cabinet){window.ARCADE_CABINET_SPATIAL_INDEX?.insert(cabinet.id,cabinet.g.position.x,cabinet.g.position.z,cabinet)}
 function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{artSlug:game.id,system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
 // The playable galleries wrap their seven cabinets around the exterior and
 // rear walls. The open interior and unused wall spans are reserved for growth.
@@ -892,24 +894,17 @@ function stopEmulator(){
   document.querySelector('#emulator-stage').style.display='none';
   document.querySelector('.screen-wrap .scanlines').style.display='block';
   cvs.style.display='block';
-  activeEmulatorFrame=null;pendingPs2Source=null;pendingGameCubeSource=null;
+  activeEmulatorFrame=null;pendingEmulatorSource=null;activeEmulatorAdapter=null;
   emulatorObjectUrls.forEach(url=>URL.revokeObjectURL(url));emulatorObjectUrls=[];
   setEmulatorRuntimeActive(false);
 }
-const emulatorAdapters=new EmulatorAdapterRegistry().register(new LegacyEmulatorAdapter({
-  start:session=>launchLegacyEmulator(session.source,session.options),
-  stop:()=>stopEmulator(),
-  dispose:()=>Promise.resolve()
-}));
-const gameLauncher=new GameLauncher({gameRegistry:window.ARCADE_GAME_REGISTRY,adapterRegistry:emulatorAdapters,
-  contextProvider:()=>window.arcadeMultiplayer?.getSessionContext?.()||{}});
-function closeMachine(notifyServer=true){const closing=activeCabinet;ps2CacheController?.abort();ps2CacheController=null;if(closing&&gameLauncher.active(closing.id))void gameLauncher.stop(closing.id,'cabinet-exit');else if(['psx','n64','snes','ps2','gamecube'].includes(closing?.system))stopEmulator();modal.style.display='none';modal.setAttribute('aria-hidden','true');activeCabinet=null;document.body.classList.remove('cabinet-open');if(notifyServer&&closing)window.dispatchEvent(new CustomEvent('arcade:cabinet-session-ended',{detail:{cabinetId:closing.id}}));if(!mobileInputAvailable())renderer.domElement.requestPointerLock()}
+function closeMachine(notifyServer=true){const closing=activeCabinet;ps2CacheController?.abort();ps2CacheController=null;if(resolveEmulatorAdapter(closing))stopEmulator();modal.style.display='none';modal.setAttribute('aria-hidden','true');activeCabinet=null;document.body.classList.remove('cabinet-open');if(notifyServer&&closing)window.dispatchEvent(new CustomEvent('arcade:cabinet-session-ended',{detail:{cabinetId:closing.id}}));if(!mobileInputAvailable())renderer.domElement.requestPointerLock()}
 document.querySelector('.close').onclick=closeMachine;
 const cvs=document.querySelector('#game-screen'),ctx=cvs.getContext('2d'); let romLoaded=false,ship={x:320,bullets:[]},stars=Array.from({length:80},()=>({x:Math.random()*640,y:Math.random()*440,s:1+Math.random()*2})),psxBios=null;
 const hostedPsxBios=biosAssetUrl;
 function drawAttract(c){ctx.fillStyle='#03050c';ctx.fillRect(0,0,640,440);ctx.fillStyle='#36f9f6';ctx.font='30px monospace';ctx.textAlign='center';ctx.fillText(c.name,320,100);ctx.fillStyle='#ff3cac';ctx.font='15px monospace';ctx.fillText('INSERT ROM TO INITIALIZE',320,150);ctx.fillStyle='#a99abe';ctx.font='12px monospace';ctx.fillText('Your game appears here',320,330)}
 document.querySelector('#rom-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f||!activeCabinet)return;document.querySelector('#rom-name').textContent=`LOADED: ${f.name.toUpperCase()} · ${Math.ceil(f.size/1024)} KB`;romLoaded=true;ship={x:320,bullets:[]};});
-let emulatorObjectUrls=[],emulatorLoadTimer,activeEmulatorFrame=null,pendingPs2Source=null,pendingGameCubeSource=null;
+let emulatorObjectUrls=[],emulatorLoadTimer,activeEmulatorFrame=null,pendingEmulatorSource=null,activeEmulatorAdapter=null;
 const ps2Cache=window.ARCADE_PS2_CACHE,ps2CacheButton=document.querySelector('#cache-hosted-game');
 let ps2CacheController=null;
 const warmedEmulatorSystems=new Set();
@@ -929,40 +924,47 @@ async function refreshPs2CacheButton(cabinet=activeCabinet){
 // about to be needed. Opening one otherwise starts a cold serial chain: fetch
 // the loader, then the core, then the game. Prefetching the runtime while the
 // player is still crossing the floor takes that first hop off the clock.
-const emulatorWarmTargets={
-  psx:[['https://cdn.emulatorjs.org/stable/data/loader.js','script'],[biosAssetUrl,'fetch']],
-  n64:[['https://cdn.emulatorjs.org/stable/data/loader.js','script']],
-  snes:[['https://cdn.emulatorjs.org/stable/data/loader.js','script']],
-  gamecube:[['emulators/gecko/pkg/web_bg.wasm','fetch'],['emulators/gecko/pkg/web.js','script'],['emulators/gecko/main.js','script']],
-  ps2:[['emulators/play/Play.wasm','fetch'],['emulators/play/Play.js','script'],['emulators/play/main.js','script']]
-};
-function warmEmulatorCore(system){
-  if(!system||warmedEmulatorSystems.has(system))return;
-  const targets=emulatorWarmTargets[system];if(!targets)return;
-  warmedEmulatorSystems.add(system);
-  for(const [href,as] of targets){const link=document.createElement('link');link.rel='prefetch';link.href=href;link.as=as;if(as==='fetch')link.crossOrigin='anonymous';document.head.appendChild(link)}
+function warmEmulatorCore(cabinet){
+  const adapter=resolveEmulatorAdapter(cabinet);if(!adapter||warmedEmulatorSystems.has(adapter.id))return;
+  warmedEmulatorSystems.add(adapter.id);
+  for(const [href,as] of adapter.warmupAssets({platformId:cabinet?.system,biosUrl:biosAssetUrl})){
+    if(!href)continue;
+    const link=document.createElement('link');link.rel='prefetch';link.href=href;link.as=as;if(as==='fetch')link.crossOrigin='anonymous';document.head.appendChild(link)}
 }
 function formatDownloadSize(bytes){if(!Number.isFinite(bytes)||bytes<=0)return'HOSTED';const mb=bytes/1048576;return mb>=100?`${Math.round(mb)} MB`:`${mb.toFixed(1)} MB`}
-function launchLegacyEmulator(gameFile,options={}){
+function emulatorGameFor(cabinet){return cabinet?.gameRegistryId?window.ARCADE_GAME_REGISTRY?.byId?.get(cabinet.gameRegistryId)??null:null}
+// Milestone 11.3/11.5: the cabinet no longer picks a core. A hosted game names
+// its adapter; an unassigned cabinet running a local file falls back to platform
+// coverage. Either way the decision lives in the registry, not here.
+function resolveEmulatorAdapter(cabinet){
+  const adapters=window.ARCADE_EMULATOR_ADAPTERS;if(!adapters)return null;
+  const game=emulatorGameFor(cabinet);
+  if(game){const resolution=adapters.resolveForGame(game);if(resolution.ok)return resolution.adapter}
+  return adapters.forPlatform(cabinet?.system)[0]??null;
+}
+function launchEmulator(gameFile,options={}){
   const host=document.querySelector('#emulator-host'),stage=document.querySelector('#emulator-stage');
   const downloadBytes=options.sizeBytes??(typeof gameFile==='string'?activeCabinet?.gameSizeBytes:gameFile?.size),loadingLabel=options.label||activeCabinet?.gameName||'ARCADE GAME';
+  const adapter=resolveEmulatorAdapter(activeCabinet);
+  if(!adapter){showCabinetMessage('NO EMULATOR IS AVAILABLE FOR THIS GAME.');closeMachine();return}
   setEmulatorRuntimeActive(true);cvs.style.display='none';document.querySelector('.screen-wrap .scanlines').style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${loadingLabel.toUpperCase()} · ${formatDownloadSize(downloadBytes)}...`;
-  const isPs2=activeCabinet?.system==='ps2',isGameCube=activeCabinet?.system==='gamecube';
-  const gameUrl=typeof gameFile==='string'?gameFile:(isPs2||isGameCube?'':URL.createObjectURL(gameFile));
-  const core=isPs2?'ps2':(activeCabinet?.system==='n64'?'n64':(activeCabinet?.system==='snes'?'snes9x':'psx'));
-  const biosUrl=core==='psx'?(psxBios?URL.createObjectURL(psxBios):hostedPsxBios):'';
-  emulatorObjectUrls=[gameUrl,biosUrl].filter(url=>url.startsWith('blob:'));
-  const gameName=activeCabinet?.gameName||'Arcade Game',gameId=activeCabinet?.gameId||1;
-  const player=document.createElement('iframe');player.title=`${gameName} player`;player.allow='autoplay; fullscreen';player.src=isPs2?'emulators/play/index.html?v=ps2-visual-1':(isGameCube?'emulators/gecko/index.html?v=gecko-hosted-clean-1':`player.html?core=${encodeURIComponent(core)}&game=${encodeURIComponent(gameUrl)}&bios=${encodeURIComponent(biosUrl)}&name=${encodeURIComponent(gameName)}&id=${gameId}`);player.style.cssText='border:0;width:100%;height:100%;background:#02030a';player.onerror=()=>{showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()};activeEmulatorFrame=player;pendingPs2Source=isPs2?(gameFile instanceof File?{file:gameFile}:{url:gameUrl,name:decodeURIComponent(new URL(gameUrl,location.href).pathname.split('/').pop()||`${gameName}.iso`),size:downloadBytes}):null;pendingGameCubeSource=isGameCube?(gameFile instanceof File?{file:gameFile}:{url:gameUrl,name:decodeURIComponent(new URL(gameUrl,location.href).pathname.split('/').pop()||`${gameName}.rvz`),size:downloadBytes}):null;host.replaceChildren(player);
+  // Backends that take their source over postMessage boot with an empty frame,
+  // so no object URL is minted for them: the File itself is handed across.
+  const usesSourceHandshake=adapter.usesSourceHandshake===true;
+  const localFile=typeof gameFile==='string'?null:gameFile;
+  const gameUrl=typeof gameFile==='string'?gameFile:(usesSourceHandshake?'':URL.createObjectURL(gameFile));
+  const biosUrl=activeCabinet?.system==='psx'?(psxBios?URL.createObjectURL(psxBios):hostedPsxBios):'';
+  const gameName=activeCabinet?.gameName||'Arcade Game';
+  const context={game:emulatorGameFor(activeCabinet),gameUrl,biosUrl,displayName:gameName,emulatorContentId:activeCabinet?.gameId||1,downloadBytes,localFile,dspUrl:gameCubeDspAssetUrl,baseUrl:location.href};
+  const descriptor=adapter.describeFrame(context);
+  emulatorObjectUrls=[...descriptor.objectUrls];
+  const player=document.createElement('iframe');player.title=descriptor.title;player.allow=descriptor.allow;player.src=descriptor.src;
+  player.style.cssText='border:0;width:100%;height:100%;background:#02030a';player.onerror=()=>{showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()};
+  activeEmulatorFrame=player;activeEmulatorAdapter=adapter;
+  pendingEmulatorSource=usesSourceHandshake?adapter.initialHandshake(context):null;
+  host.replaceChildren(player);
   const estimatedTimeout=Math.max(20000,Math.min(180000,20000+(Number(downloadBytes)||0)/524288*1000));
   clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT. CHECK YOUR CONNECTION.')}},estimatedTimeout);
-}
-async function launchEmulator(gameFile,options={}){
-  const cabinet=activeCabinet;if(!cabinet)return;
-  try{return await gameLauncher.launch(cabinet,gameFile,options)}catch(error){
-    console.warn('GameLauncher could not start the local session.',error);
-    if(activeCabinet===cabinet){showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()}
-  }
 }
 document.querySelector('#bios-file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;psxBios=file;document.querySelector('#bios-name').textContent=`BIOS READY: ${file.name.toUpperCase()}`;});
 function formatRate(bytesPerSecond){
@@ -1028,8 +1030,24 @@ document.querySelector('#play-hosted-game').addEventListener('click',async()=>{
   launchEmulator(prepared||cabinet.hostedGame);
 });
 ps2CacheButton.addEventListener('click',async()=>{const cabinet=activeCabinet;if(!CACHEABLE_SYSTEMS.has(cabinet?.system)||!cabinet.hostedGame||!ps2Cache?.supported||ps2CacheController)return;ps2CacheController=new AbortController();ps2CacheButton.disabled=true;try{await ps2Cache.download(ps2GameDescriptor(cabinet),cabinet.hostedGame,{signal:ps2CacheController.signal,onProgress:progress=>{if(activeCabinet===cabinet){const percent=Math.floor(progress*100);ps2CacheButton.textContent=`CACHING ${percent}%`;document.querySelector('#rom-name').textContent=`DOWNLOADING LOCAL COPY · ${percent}%`}}});if(activeCabinet===cabinet){ps2CacheButton.dataset.cached='true';ps2CacheButton.textContent='CACHED LOCALLY';document.querySelector('#rom-name').textContent='LOCAL COPY READY — FUTURE LAUNCHES WILL START FASTER'}}catch(error){if(error?.name!=='AbortError'&&activeCabinet===cabinet){ps2CacheButton.textContent='CACHE FAILED — RETRY';ps2CacheButton.disabled=false;document.querySelector('#rom-name').textContent=error.message.toUpperCase()}}finally{ps2CacheController=null}});
-document.querySelector('#rom-file').addEventListener('change',e=>{const file=e.target.files[0];if(['psx','n64','snes','ps2','gamecube'].includes(activeCabinet?.system)&&file)launchEmulator(file);});
-addEventListener('message',event=>{if(event.origin!==location.origin||event.source!==activeEmulatorFrame?.contentWindow)return;if(event.data?.type==='arcade:emulator-ready'){if(event.data?.core==='ps2-play'&&pendingPs2Source){const message=pendingPs2Source.file?{type:'arcade:ps2-load-file',file:pendingPs2Source.file}:{type:'arcade:ps2-load-remote',url:pendingPs2Source.url,name:pendingPs2Source.name,size:pendingPs2Source.size};activeEmulatorFrame.contentWindow?.postMessage(message,location.origin)}else if(event.data?.core==='gamecube-gecko'&&pendingGameCubeSource){const message=pendingGameCubeSource.file?{type:'arcade:gamecube-load-file',file:pendingGameCubeSource.file,name:pendingGameCubeSource.file.name,dspUrl:gameCubeDspAssetUrl}:{type:'arcade:gamecube-load-remote',url:pendingGameCubeSource.url,name:pendingGameCubeSource.name,size:pendingGameCubeSource.size,dspUrl:gameCubeDspAssetUrl};activeEmulatorFrame.contentWindow?.postMessage(message,location.origin)}else clearTimeout(emulatorLoadTimer)}if(event.data?.type==='arcade:gamecube-source-loading')clearTimeout(emulatorLoadTimer);if(event.data?.type==='arcade:gamecube-load-progress'&&activeCabinet?.system==='gamecube'&&Number.isFinite(event.data.percent))document.querySelector('#rom-name').textContent=`DOWNLOADING GAME DATA · ${event.data.percent}%`;if(event.data?.type==='arcade:ps2-source-accepted'){pendingPs2Source=null;clearTimeout(emulatorLoadTimer)}if(event.data?.type==='arcade:gamecube-source-accepted'){pendingGameCubeSource=null;clearTimeout(emulatorLoadTimer)}if(event.data?.type==='arcade:ps2-disc-error'&&activeCabinet){clearTimeout(emulatorLoadTimer);closeMachine();showCabinetMessage('GAME STREAM INTERRUPTED. RETRY OR CACHE IT LOCALLY.');return}if(['arcade:emulator-error','arcade:emulator-closed'].includes(event.data?.type)&&activeCabinet){clearTimeout(emulatorLoadTimer);closeMachine();showCabinetMessage(event.data.type.endsWith('error')?'EMULATOR COULD NOT LOAD.':'EMULATOR SESSION CLOSED.')}});
+document.querySelector('#rom-file').addEventListener('change',e=>{const file=e.target.files[0];if(file&&resolveEmulatorAdapter(activeCabinet))launchEmulator(file);});
+// Milestone 11.3: one message pump. Each backend's protocol lives in its own
+// adapter, so adding a core never means editing this listener again.
+addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.source!==activeEmulatorFrame?.contentWindow)return;
+  const adapter=activeEmulatorAdapter;if(!adapter)return;
+  const signal=adapter.interpretMessage(event.data);
+  if(signal.kind==='ready'){
+    if(signal.needsSource&&pendingEmulatorSource)activeEmulatorFrame.contentWindow?.postMessage(pendingEmulatorSource,location.origin);
+    else clearTimeout(emulatorLoadTimer);
+    return}
+  // The frame has taken ownership of the download, so the load deadline that
+  // guards a stalled boot no longer applies.
+  if(signal.kind==='source-loading'){clearTimeout(emulatorLoadTimer);return}
+  if(signal.kind==='source-accepted'){pendingEmulatorSource=null;clearTimeout(emulatorLoadTimer);return}
+  if(signal.kind==='progress'){if(activeCabinet)document.querySelector('#rom-name').textContent=`DOWNLOADING GAME DATA · ${signal.percent}%`;return}
+  if((signal.kind==='error'||signal.kind==='closed')&&activeCabinet){clearTimeout(emulatorLoadTimer);closeMachine();showCabinetMessage(signal.message)}
+});
 function game(){if(!activeCabinet||!romLoaded)return;ctx.fillStyle='#02030a';ctx.fillRect(0,0,640,440);ctx.fillStyle='#85f9ff';stars.forEach(s=>{s.y+=s.s;if(s.y>440)s.y=0;ctx.fillRect(s.x,s.y,s.s,s.s)});if(keys.ArrowLeft)ship.x-=6;if(keys.ArrowRight)ship.x+=6;ship.x=Math.max(20,Math.min(620,ship.x));if(keys.Space&&ship.bullets.length<6)ship.bullets.push({x:ship.x,y:370});ship.bullets.forEach(b=>b.y-=10);ship.bullets=ship.bullets.filter(b=>b.y>0);ctx.fillStyle='#ff3cac';ctx.beginPath();ctx.moveTo(ship.x,350);ctx.lineTo(ship.x-18,392);ctx.lineTo(ship.x+18,392);ctx.fill();ctx.fillStyle='#fff6c7';ship.bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,12));ctx.fillStyle='#36f9f6';ctx.font='13px monospace';ctx.textAlign='left';ctx.fillText('ROM SESSION // '+activeCabinet.name,20,28);ctx.fillText('SCORE '+String(Math.floor(performance.now()/30)%99999).padStart(5,'0'),20,48)}
 function updateFollowCamera(){
   const followed=socialFollowProvider?.();
@@ -1058,11 +1076,11 @@ let cabinetSnapshotReady=false,cabinetMessageUntil=0;
 function showCabinetMessage(message){prompt.querySelector('b').textContent='CABINET';prompt.querySelector('span').textContent=message;prompt.classList.add('active');cabinetMessageUntil=performance.now()+2600}
 function nearbyConstructionRoom(){if(playerPosition.z>13.2&&Math.abs(playerPosition.x)<2.5)return 'GameCube';if(Math.abs(playerPosition.z-PS2_ROOM_DOOR_Z)<2.35&&Math.abs(playerPosition.x-PS2_ROOM_CENTER_X)<3.2)return 'PS2';if(Math.abs(playerPosition.z-CONSTRUCTION_ROOM_DOOR_Z)>2.35)return null;if(Math.abs(playerPosition.x-PLAYSTATION_WALL_X)<3.2)return 'Future Console';if(Math.abs(playerPosition.x-N64_WALL_X)<3.2)return 'Xbox';return null}
 function updateConstructionPrompt(roomName){prompt.classList.add('active');prompt.querySelector('b').textContent='CAUTION';prompt.querySelector('span').textContent=`${roomName} Room Under Construction.`}
-function setCabinetState(state){const cabinet=cabinets.find(candidate=>candidate.id===state.cabinetId);if(!cabinet)return;if(!cabinet.enabled){cabinet.status='disabled';cabinet.occupiedByDisplayName=null;cabinet.statusLight.material.color.setHex(0x6c7896);cabinet.statusLight.material.emissive.setHex(0x26304a);return}cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
+function setCabinetState(state){const cabinet=cabinetsById.get(state.cabinetId);if(!cabinet)return;if(!cabinet.enabled){cabinet.status='disabled';cabinet.occupiedByDisplayName=null;cabinet.statusLight.material.color.setHex(0x6c7896);cabinet.statusLight.material.emissive.setHex(0x26304a);return}cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
 function setCabinetStates(states,ready){cabinetSnapshotReady=ready;states.forEach(state=>setCabinetState(state));if(!ready)cabinets.forEach(c=>{c.status=c.enabled?'syncing':'disabled';c.occupiedByDisplayName=null;c.statusLight.material.color.setHex(0x6c7896);c.statusLight.material.emissive.setHex(c.enabled?0x6c7896:0x26304a)})}
 function updateCabinetPrompt(){if(performance.now()<cabinetMessageUntil)return;if(!near){prompt.classList.remove('active');return}prompt.classList.add('active');const title=prompt.querySelector('b'),detail=prompt.querySelector('span');if(!near.enabled||near.status==='disabled'){if(near.disabledReason==='desktop-only'){title.textContent='GAMECUBE // DESKTOP ONLY';detail.textContent='ABOUT 1 GB PER GAME — OPEN ON A COMPUTER';return}
     if(near.system==='gamecube'){title.textContent='GAMECUBE // GECKO';detail.textContent='BOOT VALIDATION IN PROGRESS'}else if(near.system==='xbox'){title.textContent='XBOX DISPLAY';detail.textContent='AWAITING GAME SETUP'}else{title.textContent='PS2 DISPLAY';detail.textContent='BROWSER CORE REQUIRED'}return}if(!cabinetSnapshotReady){title.textContent='SYNCING';detail.textContent='CABINET STATUS';return}if(near.status==='available'){title.textContent=mobileInputAvailable()?'TAP USE':'PRESS E';detail.textContent='TO ENTER CABINET';return}title.textContent=near.status==='reserved'?'RESERVED':'IN USE';detail.textContent=near.occupiedByDisplayName?`BY ${near.occupiedByDisplayName}`:'PLEASE WAIT'}
-function beginCabinetSession(cabinetId,alignment){const cabinet=cabinets.find(candidate=>candidate.id===cabinetId);if(!cabinet||activeCabinet)return false;if(alignment?.position){playerPosition.set(...alignment.position);yaw=alignment.rotationY}openMachine(cabinet);return true}
+function beginCabinetSession(cabinetId,alignment){const cabinet=cabinetsById.get(cabinetId);if(!cabinet||activeCabinet)return false;if(alignment?.position){playerPosition.set(...alignment.position);yaw=alignment.rotationY}openMachine(cabinet);return true}
 function forceCloseCabinetSession(cabinetId){if(activeCabinet?.id===cabinetId)closeMachine(false)}
 function resolvePartitionWallCollisions(previousX,previousZ){
   for(const wallX of [PLAYSTATION_WALL_X,N64_WALL_X]){
@@ -1126,6 +1144,6 @@ function updatePerformanceStats(now){performanceFrames++;const elapsed=now-perfo
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveMegaManRoomCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);playerPosition.x=Math.max(-54.5,Math.min(30.5,playerPosition.x));if(playerPosition.x<-30.5)playerPosition.z=Math.max(-18.5,Math.min(4.5,playerPosition.z));else playerPosition.z=Math.max(-33.2,Math.min(16,playerPosition.z))}near=null;let md=2.25;cabinets.forEach(c=>{const dist=c.g.position.distanceTo(playerPosition);if(dist<md){near=c;md=dist}});warmEmulatorCore(near?.system);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveMegaManRoomCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);playerPosition.x=Math.max(-54.5,Math.min(30.5,playerPosition.x));if(playerPosition.x<-30.5)playerPosition.z=Math.max(-18.5,Math.min(4.5,playerPosition.z));else playerPosition.z=Math.max(-33.2,Math.min(16,playerPosition.z))}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,devicePixelRatio,pixelRatioCap);renderer.setPixelRatio(currentPixelRatio)});
