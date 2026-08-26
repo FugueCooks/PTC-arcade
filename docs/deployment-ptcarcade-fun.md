@@ -1,21 +1,38 @@
 # Deploying ptcarcade.fun
 
-Canonical host: **Fly.io**, app `retro-arcade-fugue`, region `lax`.
-
-## Why Fly and not the others
+Current host: **Render**, free plan, service `retro-arcade-multiplayer`,
+auto-deploying from `main`. Fly is configured and ready but not in use — its
+billing check could not be completed, and Render is the only target that costs
+nothing and needed no new account.
 
 | Target | Serves | Idles? | Role |
 |---|---|---|---|
-| **Fly** | static + Socket.IO + auth + matchmaking + Phase 11 APIs | **No** — `min_machines_running = 1`, `auto_stop_machines = "off"` | canonical |
+| **Render** | static + Socket.IO + auth + matchmaking + Phase 11 APIs | Yes, at 15 min — **worked around**, see below | current, auto-deploys from `main` |
+| Fly | same image | No — `min_machines_running = 1` | ready, blocked on billing |
 | DigitalOcean | same image | No, but paid | spare, no domain, deploy-on-push off |
 | Cloudflare Pages + Worker | static + WebSocket realtime only | No | **cannot serve the whole app** |
 
-Render has been removed. `render.yaml` is deleted, so a merge to `main` no
-longer triggers a Render build, and the free plan's idle spin-down — the reason
-the site took a minute to wake — is gone with it. If a Render service still
-exists in the dashboard from an earlier deploy, delete or suspend it there;
-removing the blueprint from the repository stops future deploys but does not
-tear down a service that is already running.
+## The idle spin-down, and what is done about it
+
+A free Render service stops after roughly fifteen minutes without traffic, and
+the next request then waits about a minute while it starts. The realtime Worker
+is always on and costs nothing, so it carries a cron trigger — every ten
+minutes it fetches the origin's `/healthz` and the service never goes quiet
+long enough to stop. `cloudflare/src/index.ts` holds the handler,
+`cloudflare/wrangler.jsonc` the schedule, and `test/keepalive.test.ts` pins
+both so it cannot quietly disappear.
+
+The ping aims at `retro-arcade-multiplayer.onrender.com`, not at
+`ptcarcade.fun`. A request to the public domain re-enters Cloudflare and can be
+answered there without ever reaching the origin, which would keep nothing warm.
+
+**This spends the free plan's instance-hour budget.** Render includes 750
+instance hours a month across all free services; a service kept awake all month
+uses about 730 of them. It fits, with roughly 20 hours of headroom, and only if
+this is the only free service on the account. A second one will exhaust the
+allowance and Render suspends rather than charging. If that happens, either
+drop the cron to a daily window covering the hours people actually play, or
+move to the Starter plan, where the whole problem disappears.
 
 The Cloudflare split is not a substitute. `cloudflare/src/index.ts` handles
 WebSocket upgrades into Durable Objects and nothing else — it serves no
@@ -51,6 +68,23 @@ fly deploy
 fly status                       # confirm one machine, started
 curl -s https://retro-arcade-fugue.fly.dev/health
 ```
+
+## Deploying to Render today
+
+Render deploys `main` on every push, and `render.yaml` sets everything except
+the two secrets. `DATABASE_URL` and `MULTIPLAYER_TICKET_SECRET` are declared
+with `sync: false`, which means the dashboard holds the values and a Blueprint
+sync will not clear them. Both are required: without `DATABASE_URL` every
+`/api/auth` route answers 503, and since `REALTIME_URL` is set, that includes
+the realtime ticket a client must hold before entering — so entry fails
+outright rather than falling back to a local guest.
+
+To ship a commit that is already on `main`, use **Manual Deploy → Deploy latest
+commit** in the Render dashboard.
+
+## Moving to Fly later
+
+Everything below is ready and needs only a working Fly account.
 
 ## The scripted cutover
 

@@ -3,7 +3,7 @@ import avatarRegistry from '../../assets/avatars/registry.json';
 import worldConfig from '../../assets/world/config.json';
 import roomRegistry from '../../assets/rooms/registry.json';
 
-interface Env { ARCADE_ROOMS: DurableObjectNamespace; MULTIPLAYER_TICKET_SECRET?: string }
+interface Env { ARCADE_ROOMS: DurableObjectNamespace; MULTIPLAYER_TICKET_SECRET?: string; ORIGIN_HEALTH_URL?: string }
 type AnimationState = 'idle' | 'walk' | 'run' | 'interact';
 type PlayerStatus = 'idle' | 'walking' | 'playing' | 'loading' | 'away' | 'disconnected';
 type Position = [number, number, number];
@@ -66,6 +66,36 @@ export default {
     if (!isAllowedOrigin(request.headers.get('Origin'))) return json({ ok: false, message: 'Origin is not allowed.' }, 403);
     const roomId = normalizeRoomId(url.searchParams.get('room'));
     return env.ARCADE_ROOMS.getByName(roomId).fetch(request);
+  },
+
+  /**
+   * Keep-warm for a free-plan origin, which spins down after about fifteen
+   * minutes without traffic and then takes roughly a minute to answer the next
+   * request. The Worker is already always-on, so the cheapest fix is one
+   * request from here on a schedule.
+   *
+   * It aims at the origin's own hostname rather than the public domain: a
+   * request to the proxied domain would come straight back through Cloudflare
+   * and might never reach the origin at all, which would keep nothing warm.
+   *
+   * A failure is logged and swallowed — the origin being down is not a reason
+   * for the realtime Worker to start throwing.
+   */
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    const target = env.ORIGIN_HEALTH_URL;
+    if (!target) return;
+    ctx.waitUntil((async () => {
+      try {
+        const response = await fetch(target, {
+          method: 'GET',
+          headers: { 'user-agent': 'retro-arcade-keepalive' },
+          signal: AbortSignal.timeout(20_000)
+        });
+        console.log(`keepalive ${target} -> ${response.status}`);
+      } catch (error) {
+        console.log(`keepalive ${target} failed: ${error instanceof Error ? error.message : 'unknown'}`);
+      }
+    })());
   }
 } satisfies ExportedHandler<Env>;
 
