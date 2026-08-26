@@ -23,14 +23,25 @@
       window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
       window.EJS_startOnLoaded = true;
       window.EJS_askBeforeExit = false;
-      function configureSavePolicy(enabled) {
-        saveEntitled = enabled === true;
+      function walletSaveGameId(subject) {
+        // EmulatorJS requires a numeric ID. FNV-1a gives a stable unsigned ID
+        // without exposing the public player ID to its storage schema.
+        const input = `${subject}:${persistentGameId}`;
+        let hash = 0x811c9dc5;
+        for (let index = 0; index < input.length; index += 1) {
+          hash ^= input.charCodeAt(index);
+          hash = Math.imul(hash, 0x01000193);
+        }
+        return (hash >>> 0) || 1;
+      }
+      function configureSavePolicy(policy) {
+        saveEntitled = policy?.allowed === true && typeof policy.subject === 'string';
         // A wallet session receives the game's stable ID, so its browser save
         // survives later cabinet visits. Guests receive a fresh ID every boot,
         // which prevents previously persisted data from being restored even if
         // the upstream runtime performs an unexpected background write.
         const ephemeral = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
-        window.EJS_gameID = saveEntitled ? persistentGameId : ephemeral;
+        window.EJS_gameID = saveEntitled ? walletSaveGameId(policy.subject) : ephemeral;
         if (saveEntitled) window.EJS_fixedSaveInterval = 7000;
         else delete window.EJS_fixedSaveInterval;
         window.EJS_defaultOptions = saveEntitled
@@ -54,10 +65,12 @@
       async function resolveSaveEntitlement() {
         try {
           const response = await fetch('/api/auth/session', { credentials: 'same-origin', cache: 'no-store' });
-          if (!response.ok) return false;
+          if (!response.ok) return { allowed: false, subject: null };
           const payload = await response.json();
-          return payload?.entitlements?.canPersistGameSaves === true;
-        } catch { return false; }
+          const allowed = payload?.entitlements?.canPersistGameSaves === true;
+          const subject = payload?.identity?.publicPlayerId;
+          return { allowed, subject: typeof subject === 'string' ? subject : null };
+        } catch { return { allowed: false, subject: null }; }
       }
       // EmulatorJS currently has two settings stores. Some stable builds
       // repopulate `allSettings` after applying EJS_defaultOptions, which makes
@@ -167,8 +180,8 @@
         reportError('no game URL was supplied, so the core would boot into its own menu');
       }
       if (startable) {
-        void resolveSaveEntitlement().then((allowed) => {
-          configureSavePolicy(allowed);
+        void resolveSaveEntitlement().then((policy) => {
+          configureSavePolicy(policy);
           loadEmulatorRuntime(true);
         });
       }

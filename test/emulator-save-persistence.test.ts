@@ -9,7 +9,9 @@ void test('EmulatorJS grants persistent saves only from server-issued wallet ent
   const player = await readFile(path.join(root, 'player.html'), 'utf8');
   assert.match(player, /fetch\('\/api\/auth\/session',\s*\{\s*credentials:\s*'same-origin',\s*cache:\s*'no-store'\s*\}\)/);
   assert.match(player, /payload\?\.entitlements\?\.canPersistGameSaves\s*===\s*true/);
-  assert.match(player, /window\.EJS_gameID\s*=\s*saveEntitled\s*\?\s*persistentGameId\s*:\s*ephemeral/);
+  assert.match(player, /walletSaveGameId\(policy\.subject\)\s*:\s*ephemeral/);
+  assert.match(player, /payload\?\.identity\?\.publicPlayerId/);
+  assert.match(player, /Math\.imul\(hash,\s*0x01000193\)/);
   assert.match(player, /saveState:\s*saveEntitled/);
   assert.match(player, /loadState:\s*saveEntitled/);
   assert.match(player, /EJS_hideSettings\s*=\s*saveEntitled\s*\?\s*\[\]\s*:\s*\['save-state-location',\s*'save-save-interval'\]/);
