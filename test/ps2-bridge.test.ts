@@ -6,12 +6,17 @@ import test from 'node:test';
 void test('the PS2 cabinet waits for Play! readiness and acknowledges disc handoff', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const player = await readFile(path.resolve(process.cwd(), 'emulators/play/index.html'), 'utf8');
+  // Phase 11 moved the PS2 half of this protocol into its adapter. The contract
+  // with the frame is unchanged, so the same messages are asserted at their new
+  // home; arcade.js keeps only the origin check and the generic pump.
+  const adapter = await readFile(path.resolve(process.cwd(), 'emulators/adapters/play-ps2-adapter.js'), 'utf8');
 
   assert.match(arcade, /event\.source!==activeEmulatorFrame\?\.contentWindow/);
-  assert.match(arcade, /event\.data\?\.core==='ps2-play'&&pendingPs2Source/);
-  assert.match(arcade, /type:'arcade:ps2-load-file',file:pendingPs2Source\.file/);
-  assert.match(arcade, /type:'arcade:ps2-load-remote'/);
-  assert.match(arcade, /event\.data\?\.type==='arcade:ps2-source-accepted'/);
+  assert.match(arcade, /signal\.needsSource&&pendingEmulatorSource/);
+  assert.match(adapter, /message\?\.core === 'ps2-play'/);
+  assert.match(adapter, /type: 'arcade:ps2-load-file', file: context\.localFile/);
+  assert.match(adapter, /type: 'arcade:ps2-load-remote'/);
+  assert.match(adapter, /message\?\.type === 'arcade:ps2-source-accepted'/);
   assert.match(player, /type: 'arcade:ps2-source-accepted', core: 'ps2-play'/);
   assert.match(player, /Range: `bytes=\$\{start\}-\$\{end - 1\}`/);
   assert.match(player, /response\.status !== 206/);
@@ -24,7 +29,7 @@ void test('the PS2 cabinet waits for Play! readiness and acknowledges disc hando
   assert.match(player, /buffer\.byteLength !== end - start/);
   assert.match(player, /type: 'arcade:ps2-disc-error'/);
   assert.match(player, /BLACK INTRO MOVIE\? PRESS ENTER ONCE TO SKIP/);
-  assert.match(arcade, /event\.data\?\.type==='arcade:ps2-disc-error'/);
+  assert.match(adapter, /message\?\.type === 'arcade:ps2-disc-error'/);
   assert.match(player, /document\.body\.classList\.add\('remote-disc'\)/);
 });
 
@@ -45,7 +50,7 @@ void test('PS2 sessions suspend competing arcade render work', async () => {
 
 void test('closing a PS2 session releases the selected disc image reference', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
-  assert.match(arcade, /activeEmulatorFrame=null;pendingPs2Source=null/);
+  assert.match(arcade, /activeEmulatorFrame=null;pendingEmulatorSource=null;activeEmulatorAdapter=null/);
   assert.match(arcade, /romInput\.value='';romLoaded=false/);
   assert.match(arcade, /querySelector\('\.screen-wrap \.scanlines'\)\.style\.display='block'/);
   assert.match(arcade, /querySelector\('\.screen-wrap \.scanlines'\)\.style\.display='none'/);
@@ -56,8 +61,12 @@ void test('hosted GameCube loading reports progress and is not canceled by the o
   const gecko = await readFile(path.resolve(process.cwd(), 'emulators/gecko/main.js'), 'utf8');
   const geckoStyles = await readFile(path.resolve(process.cwd(), 'emulators/gecko/main.css'), 'utf8');
 
-  assert.match(arcade, /type==='arcade:gamecube-source-loading'\)clearTimeout\(emulatorLoadTimer\)/);
-  assert.match(arcade, /type==='arcade:gamecube-load-progress'/);
+  // As with PS2, the GameCube protocol moved into its adapter; arcade.js keeps
+  // the generic signal handling that clears the load deadline.
+  const geckoAdapter = await readFile(path.resolve(process.cwd(), 'emulators/adapters/gecko-gamecube-adapter.js'), 'utf8');
+  assert.match(geckoAdapter, /message\?\.type === 'arcade:gamecube-source-loading'/);
+  assert.match(arcade, /signal\.kind==='source-loading'\)\{clearTimeout\(emulatorLoadTimer\)/);
+  assert.match(geckoAdapter, /message\?\.type === 'arcade:gamecube-load-progress'/);
   assert.match(gecko, /document\.body\.classList\.add\('hosted-game'\)/);
   assert.match(gecko, /type: 'arcade:gamecube-source-loading'/);
   assert.match(gecko, /type: 'arcade:gamecube-load-progress'/);
@@ -65,7 +74,7 @@ void test('hosted GameCube loading reports progress and is not canceled by the o
   assert.match(gecko, /Downloading \$\{name\} · \$\{percent\}%/);
   assert.match(gecko, /querySelectorAll\('\.picker, output, #start'\)/);
   assert.match(geckoStyles, /\[hidden\]\{display:none!important\}/);
-  assert.match(arcade, /emulators\/gecko\/index\.html\?v=gecko-hosted-clean-1/);
+  assert.match(geckoAdapter, /emulators\/gecko\/index\.html\?v=gecko-hosted-clean-1/);
 });
 
 void test('hosted GameCube images are cached persistently while the first download feeds Gecko', async () => {
