@@ -972,65 +972,22 @@ function launchEmulator(gameFile,options={}){
   clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT. CHECK YOUR CONNECTION.')}},estimatedTimeout);
 }
 document.querySelector('#bios-file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;psxBios=file;document.querySelector('#bios-name').textContent=`BIOS READY: ${file.name.toUpperCase()}`;});
-function formatRate(bytesPerSecond){
-  if(!Number.isFinite(bytesPerSecond)||bytesPerSecond<=0)return '';
-  const mb=bytesPerSecond/1048576;
-  return mb>=1?`${mb.toFixed(1)} MB/S`:`${Math.round(bytesPerSecond/1024)} KB/S`;
-}
-function formatEta(seconds){
-  if(!Number.isFinite(seconds)||seconds<=0||seconds>36000)return '';
-  if(seconds<60)return `${Math.ceil(seconds)}S LEFT`;
-  const minutes=Math.floor(seconds/60);
-  return `${minutes}M ${String(Math.floor(seconds%60)).padStart(2,'0')}S LEFT`;
-}
-// Route the first launch through the local cache instead of letting the
-// emulator stream the file. It is the same single download, but it reports
-// progress while it runs and every later launch of that game starts from disk
-// rather than the network. A GameCube image averages a gigabyte, so the second
-// play going from minutes to instant is the difference testers actually feel.
-// Anything the cache cannot take falls straight back to the hosted URL.
-async function prepareHostedGame(cabinet){
+// Prefer an already cached copy, but never make PLAY wait for a complete local
+// download. EmulatorJS and Play! can begin from the hosted URL using byte-range
+// requests, which turns first boot for large PlayStation images from a several
+// minute prerequisite into an immediate emulator launch. Players who want the
+// whole image on disk can still use the explicit CACHE GAME LOCALLY control.
+async function resolveCachedHostedGame(cabinet){
   if(!CACHEABLE_SYSTEMS.has(cabinet.system)||!ps2Cache?.supported||!cabinet.gameSizeBytes)return null;
   const descriptor=ps2GameDescriptor(cabinet);
-  const romName=document.querySelector('#rom-name');
   try{
-    const cached=await ps2Cache.get(descriptor);
-    if(cached)return cached;
+    return await ps2Cache.get(descriptor);
   }catch{return null}
-  if(ps2CacheController)return null;
-  const playButton=document.querySelector('#play-hosted-game');
-  ps2CacheController=new AbortController();
-  playButton.disabled=true;ps2CacheButton.disabled=true;
-  const startedAt=performance.now();
-  try{
-    const file=await ps2Cache.download(descriptor,cabinet.hostedGame,{
-      signal:ps2CacheController.signal,
-      onProgress:(progress,received,total)=>{
-        if(activeCabinet!==cabinet)return;
-        const elapsed=(performance.now()-startedAt)/1000;
-        const rate=elapsed>0.5?received/elapsed:0;
-        const eta=rate>0?(total-received)/rate:0;
-        const parts=[`DOWNLOADING ${Math.floor(progress*100)}%`,formatRate(rate),formatEta(eta)].filter(Boolean);
-        romName.textContent=parts.join(' · ');
-      }
-    });
-    return file;
-  }catch(error){
-    if(error?.name==='AbortError')return null;
-    // Out of storage, or the cache write failed. Streaming still works.
-    console.warn('Falling back to streaming this game.',error);
-    if(activeCabinet===cabinet)romName.textContent='STREAMING FROM CDN — NOT CACHED';
-    return null;
-  }finally{
-    ps2CacheController=null;
-    playButton.disabled=false;
-    refreshPs2CacheButton(cabinet);
-  }
 }
 document.querySelector('#play-hosted-game').addEventListener('click',async()=>{
   if(!activeCabinet?.hostedGame)return;
   const cabinet=activeCabinet;
-  const prepared=await prepareHostedGame(cabinet);
+  const prepared=await resolveCachedHostedGame(cabinet);
   if(activeCabinet!==cabinet)return;
   launchEmulator(prepared||cabinet.hostedGame);
 });

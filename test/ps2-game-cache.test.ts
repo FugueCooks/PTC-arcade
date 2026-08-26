@@ -14,19 +14,19 @@ void test('the PS2 local cache is explicit, quota-aware, and removes partial dow
   assert.match(cache, /await directory\.removeEntry\(name\)/);
 });
 
-void test('the arcade loads hosted games cache first and prefetches only the runtime', async () => {
+void test('the arcade uses a cached game when present and otherwise streams immediately', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
-  // The first launch downloads through the cache so the bytes are kept, and
-  // the launch prefers whatever that returned over the hosted URL.
-  assert.match(arcade, /prepareHostedGame\(cabinet\)/);
+  // PLAY performs only a cache lookup. A cache miss launches the hosted URL so
+  // range-capable emulators can boot without first downloading the whole disc.
+  assert.match(arcade, /resolveCachedHostedGame\(cabinet\)/);
+  assert.match(arcade, /return await ps2Cache\.get\(descriptor\)/);
   assert.match(arcade, /launchEmulator\(prepared\|\|cabinet\.hostedGame\)/);
-  // A failed or oversized cache write must still leave the game playable.
-  assert.match(arcade, /STREAMING FROM CDN/);
-  // Progress is surfaced while the download runs, not just a static size.
-  assert.match(arcade, /DOWNLOADING \$\{Math\.floor\(progress\*100\)}%/);
-  assert.match(arcade, /formatRate/);
-  assert.match(arcade, /formatEta/);
+  const resolver = arcade.slice(arcade.indexOf('async function resolveCachedHostedGame'), arcade.indexOf("document.querySelector('#play-hosted-game')"));
+  assert.doesNotMatch(resolver, /ps2Cache\.download/);
+  // A full local download remains an explicit action with visible progress.
+  assert.match(arcade, /ps2CacheButton\.addEventListener\('click'[\s\S]*?ps2Cache\.download/);
+  assert.match(arcade, /CACHING \$\{percent\}%/);
 
   // Warming is still driven by cabinet proximity, but each adapter now owns the
   // list of runtime assets to prefetch for its own core.
