@@ -28,7 +28,7 @@ const RECONNECT_GRACE_MS = 10_000;
 const MAX_SPEED_PER_SECOND = 7;
 const MOVEMENT_PACKET_MS = 50;
 const MOVEMENT_TOLERANCE = 0.3;
-const MIN_WORLD_X = -54.5;
+const MIN_WORLD_X = -30.5;
 const MAX_WORLD_X = 30.5;
 const MIN_WORLD_Z = -33.2;
 const MAX_WORLD_Z = 16;
@@ -42,10 +42,7 @@ const SOCIAL_COUCH_INNER_RADIUS = 4.2;
 const SOCIAL_COUCH_GAP_HALF_ANGLE = 0.34;
 const SOCIAL_DISPLAY_RADIUS = 2.07;
 const LEGACY_WORLD_MIN_X = -30.5;
-const MEGAMAN_ROOM_WALL_X = -31;
-const MEGAMAN_ROOM_DOOR_Z = -7;
-const MEGAMAN_ROOM_MIN_Z = -18.5;
-const MEGAMAN_ROOM_MAX_Z = 4.5;
+const MEGAMAN_ROOM_DOOR_Z = 8;
 const CABINET_DISTANCE = 2.6;
 const CABINET_TIMEOUT_MS = 5_000;
 const AFK_TIMEOUT_MS = 120_000;
@@ -261,7 +258,6 @@ export class ArcadeRoom implements DurableObject {
     const now = Date.now();
     if (!player || player.movementLocked || ![x, z, rotation].every(Number.isFinite)) return this.correct(socket, player);
     if ((x as number) < MIN_WORLD_X || (x as number) > MAX_WORLD_X || (z as number) < MIN_WORLD_Z || (z as number) > MAX_WORLD_Z) return this.correct(socket, player);
-    if ((x as number) < LEGACY_WORLD_MIN_X && ((z as number) < MEGAMAN_ROOM_MIN_Z || (z as number) > MEGAMAN_ROOM_MAX_Z)) return this.correct(socket, player);
     if (violatesSocialLayout(player.p[0], player.p[2], x as number, z as number)) return this.correct(socket, player);
     const elapsed = now - attachment.lastAcceptedAt;
     const distance = Math.hypot((x as number) - player.p[0], (z as number) - player.p[2]);
@@ -473,11 +469,16 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   if (!inSideGap && socialDistance >= SOCIAL_COUCH_INNER_RADIUS && socialDistance < SOCIAL_COUCH_OUTER_RADIUS) return true;
   for (const wallX of [-PARTITION_WALL_X, PARTITION_WALL_X]) {
     const targetInDoor = Math.abs(toZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
-    if (!targetInDoor && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
+    const targetInMegaManDoor = wallX === -PARTITION_WALL_X
+      && Math.abs(toZ - MEGAMAN_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
+    if (!targetInDoor && !targetInMegaManDoor && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
     const crossingZ = fromZ + (toZ - fromZ) * crossing;
-    if (crossing >= 0 && crossing <= 1 && Math.abs(crossingZ - PLAYABLE_ROOM_DOOR_Z) >= ROOM_DOOR_CLEARANCE) return true;
+    const crossingInPlayableDoor = Math.abs(crossingZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
+    const crossingInMegaManDoor = wallX === -PARTITION_WALL_X
+      && Math.abs(crossingZ - MEGAMAN_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
+    if (crossing >= 0 && crossing <= 1 && !crossingInPlayableDoor && !crossingInMegaManDoor) return true;
   }
   const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
     && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
@@ -487,14 +488,6 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
   if (inPlayStationRearGallery && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if (inPlayStationRearGallery && (fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) return true;
-
-  const targetInMegaManDoor = Math.abs(toZ - MEGAMAN_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
-  if (!targetInMegaManDoor && Math.abs(toX - MEGAMAN_ROOM_WALL_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
-  if ((fromX - MEGAMAN_ROOM_WALL_X) * (toX - MEGAMAN_ROOM_WALL_X) <= 0 && fromX !== toX) {
-    const crossing = (MEGAMAN_ROOM_WALL_X - fromX) / (toX - fromX);
-    const crossingZ = fromZ + (toZ - fromZ) * crossing;
-    if (crossing >= 0 && crossing <= 1 && Math.abs(crossingZ - MEGAMAN_ROOM_DOOR_Z) >= ROOM_DOOR_CLEARANCE) return true;
-  }
   return false;
 }
 function normalizeAngle(value: number): number { return Math.atan2(Math.sin(value), Math.cos(value)); }

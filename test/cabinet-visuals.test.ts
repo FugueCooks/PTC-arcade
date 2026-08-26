@@ -86,21 +86,21 @@ void test('the main room is a collision-safe social lounge beside square console
 void test('the MegaMan Room gives each mural its own full-length solid wall', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
-  assert.match(arcade, /const MEGAMAN_MURAL_SPAN=23\.4,MEGAMAN_MURAL_HEIGHT=4\.55/);
+  assert.match(arcade, /const MEGAMAN_MURAL_SPAN=16\.4,MEGAMAN_MURAL_HEIGHT=4\.55/);
 
   // First mural: full front wall, facing back into the room.
   assert.match(arcade, /megaman-room-mural\.webp/);
-  assert.match(arcade, /megaManMural\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,4\.68\)/);
+  assert.match(arcade, /megaManMural\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,16\.54\)/);
   assert.match(arcade, /megaManMural\.rotation\.y=Math\.PI/);
 
   // Second mural: full left wall, facing into the room.
   assert.match(arcade, /megaman-room-mural-2\.webp/);
-  assert.match(arcade, /megaManMuralTwo\.position\.set\(-54\.68,2\.5,MEGAMAN_ROOM_CENTER_Z\)/);
+  assert.match(arcade, /megaManMuralTwo\.position\.set\(-30\.68,2\.5,MEGAMAN_ROOM_CENTER_Z\)/);
   assert.match(arcade, /megaManMuralTwo\.rotation\.y=Math\.PI\/2/);
 
   // Third mural: full rear wall, which needs no rotation to face inward.
   assert.match(arcade, /megaman-room-mural-3\.webp/);
-  assert.match(arcade, /megaManMuralThree\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,-18\.68\)/);
+  assert.match(arcade, /megaManMuralThree\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,\.32\)/);
   assert.equal((arcade.match(/new THREE\.PlaneGeometry\(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT\)/g) ?? []).length, 3);
   assert.equal((arcade.match(/side:THREE\.DoubleSide/g) ?? []).length >= 3, true);
 });

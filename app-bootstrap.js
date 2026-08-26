@@ -20,6 +20,6 @@ window.ARCADE_EMULATOR_ADAPTERS = createDefaultAdapterRegistry();
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=cores-2');
+await import('./arcade.js?v=megaman-room-relocate-1');
 await import('./avatar-selection.js?v=triple-t-label-2');
-await import('./multiplayer-client.js?v=megaman-cabinet-order-1');
+await import('./multiplayer-client.js?v=megaman-room-relocate-1');

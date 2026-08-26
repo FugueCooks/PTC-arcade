@@ -40,7 +40,7 @@ void test('the temporary construction barrier rejects entry into the Xbox room',
   assert.equal(players.stateFor('socket-a')?.p[0], 12);
 });
 
-void test('the temporary construction barrier keeps the old front-left room reserved for a future console', () => {
+void test('the MegaMan Room replaces the former front-left construction bay', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
   assert.deepEqual(players.move('socket-a', { p: [-3, 11], r: 0 }, 1_500)?.p, [-3, 1.65, 11]);
@@ -48,8 +48,14 @@ void test('the temporary construction barrier keeps the old front-left room rese
   assert.deepEqual(players.move('socket-a', { p: [-9, 11], r: 0 }, 2_500)?.p, [-9, 1.65, 11]);
   assert.deepEqual(players.move('socket-a', { p: [-12, 11], r: 0 }, 3_000)?.p, [-12, 1.65, 11]);
   assert.deepEqual(players.move('socket-a', { p: [-12, 8], r: 0 }, 3_500)?.p, [-12, 1.65, 8]);
-  assert.equal(players.move('socket-a', { p: [-14.2, 8], r: -Math.PI / 2 }, 4_000), undefined);
-  assert.equal(players.stateFor('socket-a')?.p[0], -12);
+  assert.deepEqual(players.move('socket-a', { p: [-14.5, 8], r: -Math.PI / 2 }, 4_000)?.p, [-14.5, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [-17.5, 8], r: -Math.PI / 2 }, 4_500)?.p, [-17.5, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [-20.5, 8], r: -Math.PI / 2 }, 5_000)?.p, [-20.5, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [-23.5, 8], r: -Math.PI / 2 }, 5_500)?.p, [-23.5, 1.65, 8]);
+  assert.deepEqual(players.move('socket-a', { p: [-23.5, 5], r: Math.PI }, 6_000)?.p, [-23.5, 1.65, 5]);
+  assert.deepEqual(players.move('socket-a', { p: [-23.5, 2], r: Math.PI }, 6_500)?.p, [-23.5, 1.65, 2]);
+  assert.equal(players.move('socket-a', { p: [-23.5, -1], r: Math.PI }, 7_000), undefined,
+    'the divider must still separate MegaMan from PlayStation');
 });
 
 void test('the new PS2 room can only be approached through PlayStation and remains under construction', () => {
@@ -62,23 +68,6 @@ void test('the new PS2 room can only be approached through PlayStation and remai
   steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: Math.PI }, 1_500 + index * 500)));
   assert.equal(players.move('socket-a', { p: [-22.5, -17], r: Math.PI }, 9_500), undefined);
   assert.equal(players.stateFor('socket-a')?.p[2], -14);
-});
-
-void test('the MegaMan Room is reachable only through its PlayStation-wall doorway', () => {
-  const players = createPlayers();
-  players.join('socket-a', 'main', undefined, identity, 1_000);
-  const doorwayRoute: Array<[number, number]> = [
-    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
-    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-26.5, -8], [-29, -7], [-31.5, -7], [-34, -7]
-  ];
-  doorwayRoute.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
-  assert.deepEqual(players.stateFor('socket-a')?.p, [-34, 1.65, -7]);
-
-  assert.ok(players.move('socket-a', { p: [-34, -4], r: 0 }, 10_500));
-  assert.ok(players.move('socket-a', { p: [-34, -1], r: 0 }, 11_000));
-  assert.ok(players.move('socket-a', { p: [-34, 2], r: 0 }, 11_500));
-  assert.ok(players.move('socket-a', { p: [-34, 4], r: 0 }, 12_000));
-  assert.equal(players.move('socket-a', { p: [-34, 5], r: 0 }, 12_500), undefined);
 });
 
 void test('the solid section of the PlayStation outer wall remains authoritative', () => {

@@ -3,16 +3,15 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-void test('the future, PS2, Xbox, and GameCube rooms have visible barriers, collision, and approach notifications', async () => {
+void test('the PS2, Xbox, and GameCube rooms retain barriers while MegaMan is open', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const edge = await readFile(path.resolve(process.cwd(), 'cloudflare/src/index.ts'), 'utf8');
 
   assert.match(arcade, /constructionTapeTexture/);
-  assert.match(arcade, /futureConstructionBarrier\.userData\.roomName='Future Console'/);
+  assert.doesNotMatch(arcade, /futureConstructionBarrier|Future Console Room Under Construction/);
   assert.match(arcade, /xboxConstructionBarrier\.userData\.roomName='Xbox'/);
   assert.match(arcade, /ps2ConstructionBarrier\.userData\.roomName='PS2'/);
   assert.match(arcade, /gamecubeConstructionBarrier\.userData\.roomName='GameCube'/);
-  assert.match(arcade, /futureConstructionPanel\.rotation\.y=Math\.PI\/2/);
   assert.match(arcade, /xboxConstructionPanel\.rotation\.y=-Math\.PI\/2/);
   assert.match(arcade, /gamecubeConstructionPanel\.rotation\.y=Math\.PI/);
   assert.doesNotMatch(arcade, /ConstructionPanel=new THREE\.Mesh\([^\n]+side:THREE\.DoubleSide/);

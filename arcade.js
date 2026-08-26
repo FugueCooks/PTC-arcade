@@ -162,11 +162,11 @@ for(const z of [-10,-3.5,3.5,10]){
   const tube=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.46,10),pendantMaterial);tube.position.set(0,4.02,z);scene.add(tube);
   const bloom=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),new THREE.MeshBasicMaterial({color:0xffa860,transparent:true,opacity:.11,depthWrite:false,blending:THREE.AdditiveBlending}));bloom.position.set(0,4.02,z);scene.add(bloom);
 }
-const MEGAMAN_ROOM_WALL_X=-31,MEGAMAN_ROOM_CENTER_X=-43,MEGAMAN_ROOM_CENTER_Z=-7,MEGAMAN_ROOM_SIZE=24,MEGAMAN_ROOM_DOOR_Z=-7;
-// The doorway is cut into the exact outer PlayStation wall shown by the
-// cabinet row: Gex and Tony Hawk flank the opening into the unsigned room.
-box(.3,5,8.2,0x180d31,MEGAMAN_ROOM_WALL_X,2.5,-12.7);
-box(.3,5,22.2,0x180d31,MEGAMAN_ROOM_WALL_X,2.5,5.7);
+const MEGAMAN_ROOM_CENTER_X=-22.5,MEGAMAN_ROOM_CENTER_Z=8.4,MEGAMAN_ROOM_WIDTH=17,MEGAMAN_ROOM_DEPTH=16.8,MEGAMAN_ROOM_DOOR_Z=8;
+// The detached MegaMan annex is retired. Its former doorway is sealed as a
+// continuous outer wall; the complete room now occupies the former Future
+// Console bay directly off the hub.
+box(.3,5,34,0x180d31,-31,2.5,0);
 box(.3,5,34,0x180d31,31,2.5,0);
 // The main room now reaches the true rear wall. Keeping this wall aligned with
 // the two expansion-room back walls leaves open passages around both partition
@@ -195,9 +195,8 @@ n64WallTexture.colorSpace=THREE.SRGBColorSpace;
 n64WallTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const n64WallGraphic=new THREE.Mesh(new THREE.PlaneGeometry(6.34,4.7),new THREE.MeshBasicMaterial({map:n64WallTexture}));
 n64WallGraphic.position.set(22.5,2.5,-.16);n64WallGraphic.rotation.y=Math.PI;scene.add(n64WallGraphic);
-// The old front-left PS2 bay is now a clean future expansion. Xbox remains
-// behind its original barrier while PS2 gets a dedicated room beyond the
-// PlayStation gallery below.
+// The old front-left expansion is now the MegaMan Room. Xbox remains behind
+// its original barrier while PS2 keeps its dedicated rear gallery.
 // Hazard signage, but lit rather than painted. The yellow and black tape read
 // as builder's plastic against everything else in the room; this keeps the same
 // warning language in the arcade's own palette.
@@ -226,9 +225,6 @@ function constructionTapeTexture(){
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
 const constructionTexture=constructionTapeTexture(),constructionBarriers=[];
-const futureConstructionBarrier=new THREE.Group();futureConstructionBarrier.position.set(PLAYSTATION_WALL_X,0,CONSTRUCTION_ROOM_DOOR_Z);futureConstructionBarrier.userData.roomName='Future Console';
-const futureConstructionPanel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,2.65),new THREE.MeshBasicMaterial({map:constructionTexture,side:THREE.FrontSide}));futureConstructionPanel.position.set(.205,1.48,0);futureConstructionPanel.rotation.y=Math.PI/2;futureConstructionBarrier.add(futureConstructionPanel);
-for(const edgeZ of [-1.56,1.56]){const post=new THREE.Mesh(new THREE.BoxGeometry(.22,3.05,.18),new THREE.MeshStandardMaterial({color:0x161616,emissive:0x4b3600,emissiveIntensity:.35,metalness:.78,roughness:.28}));post.position.set(.18,1.52,edgeZ);futureConstructionBarrier.add(post);const beacon=new THREE.PointLight(0xffb000,1.7,2.8,2);beacon.position.set(.38,2.9,edgeZ);beacon.userData.accentLight=true;futureConstructionBarrier.add(beacon);managedSceneLights.push(beacon)}scene.add(futureConstructionBarrier);constructionBarriers.push(futureConstructionBarrier);
 const xboxConstructionBarrier=new THREE.Group();xboxConstructionBarrier.position.set(N64_WALL_X,0,CONSTRUCTION_ROOM_DOOR_Z);xboxConstructionBarrier.userData.roomName='Xbox';
 const xboxConstructionPanel=new THREE.Mesh(new THREE.PlaneGeometry(3.1,2.65),new THREE.MeshBasicMaterial({map:constructionTexture,side:THREE.FrontSide}));xboxConstructionPanel.position.set(-.205,1.48,0);xboxConstructionPanel.rotation.y=-Math.PI/2;xboxConstructionBarrier.add(xboxConstructionPanel);
 for(const edgeZ of [-1.56,1.56]){const post=new THREE.Mesh(new THREE.BoxGeometry(.22,3.05,.18),new THREE.MeshStandardMaterial({color:0x161616,emissive:0x4b3600,emissiveIntensity:.35,metalness:.78,roughness:.28}));post.position.set(-.18,1.52,edgeZ);xboxConstructionBarrier.add(post);const beacon=new THREE.PointLight(0xffb000,1.7,2.8,2);beacon.position.set(-.38,2.9,edgeZ);beacon.userData.accentLight=true;xboxConstructionBarrier.add(beacon);managedSceneLights.push(beacon)}scene.add(xboxConstructionBarrier);constructionBarriers.push(xboxConstructionBarrier);
@@ -245,16 +241,10 @@ const hallwayWallMaterial=new THREE.MeshStandardMaterial({color:0x17233a,emissiv
 const hallwaySeamMaterial=new THREE.MeshStandardMaterial({color:0x29466d,emissive:0x12345b,emissiveIntensity:.9,roughness:.38,metalness:.55});
 for(const wallX of [-30.81,30.81]){
   for(let z=-11.9;z<=11.9;z+=3.4){
-    // Keep the decorative hallway lining out of the real MegaMan doorway.
-    // The structural wall already has the correct opening at z=-7; without
-    // this exclusion, two inset panels visually seal that otherwise walkable
-    // opening.
-    if(wallX<0&&Math.abs(z-MEGAMAN_ROOM_DOOR_Z)<3.3)continue;
     const panel=new THREE.Mesh(new THREE.BoxGeometry(.08,4.68,3.24),hallwayWallMaterial);
     panel.position.set(wallX,2.42,z);panel.receiveShadow=true;scene.add(panel);
   }
   for(let z=-13.6;z<=13.6;z+=3.4){
-    if(wallX<0&&Math.abs(z-MEGAMAN_ROOM_DOOR_Z)<ROOM_DOOR_HALF_WIDTH)continue;
     const seam=new THREE.Mesh(new THREE.BoxGeometry(.095,4.68,.035),hallwaySeamMaterial);
     seam.position.set(wallX,2.42,z);scene.add(seam);
   }
@@ -272,39 +262,30 @@ const expansionFloorMaterial=(()=>{
   map.repeat.set(3.5,8.5);roughnessMap.repeat.set(3.5,8.5);
   return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12});
 })();
-// The MegaMan Room sits directly behind the PlayStation cabinet wall. It is a
-// full square with an intentionally blank shell so future wall graphics can be
-// installed without removing placeholder signage or decorative panels.
-const megaManFloor=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_ROOM_SIZE,MEGAMAN_ROOM_SIZE),expansionFloorMaterial);megaManFloor.rotation.x=-Math.PI/2;megaManFloor.position.set(MEGAMAN_ROOM_CENTER_X,.002,MEGAMAN_ROOM_CENTER_Z);megaManFloor.receiveShadow=true;scene.add(megaManFloor);
-const megaManCeiling=box(MEGAMAN_ROOM_SIZE,.12,MEGAMAN_ROOM_SIZE,0x090b18,MEGAMAN_ROOM_CENTER_X,5.08,MEGAMAN_ROOM_CENTER_Z,.08);megaManCeiling.receiveShadow=true;
-box(.3,5,MEGAMAN_ROOM_SIZE,0x11182c,-55,2.5,MEGAMAN_ROOM_CENTER_Z,.06);
-box(MEGAMAN_ROOM_SIZE,5,.3,0x11182c,MEGAMAN_ROOM_CENTER_X,2.5,-19,.06);
-box(MEGAMAN_ROOM_SIZE,5,.3,0x11182c,MEGAMAN_ROOM_CENTER_X,2.5,5,.06);
-// Give each supplied mural its own full wall. The doorway-side partition stays
-// clear, while cabinets on the left and rear walls sit in front of the art like
-// a themed arcade installation.
-const MEGAMAN_MURAL_SPAN=23.4,MEGAMAN_MURAL_HEIGHT=4.55;
-box(23.7,4.8,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,4.81,.12);
+// The relocated MegaMan Room reuses the existing front-left floor and shell.
+// Each mural fills one of its three solid walls; the east wall stays open at
+// the hub doorway so players can walk straight in.
+const MEGAMAN_MURAL_SPAN=16.4,MEGAMAN_MURAL_HEIGHT=4.55;
+box(MEGAMAN_MURAL_SPAN,4.8,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,16.61,.12);
 const megaManMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural.webp?v=megaman-mural-1');
 megaManMuralTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const megaManMural=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-megaManMural.position.set(MEGAMAN_ROOM_CENTER_X,2.5,4.68);megaManMural.rotation.y=Math.PI;megaManMural.renderOrder=4;scene.add(megaManMural);
-box(.08,4.8,23.7,0x050711,-54.81,2.5,MEGAMAN_ROOM_CENTER_Z,.12);
+megaManMural.position.set(MEGAMAN_ROOM_CENTER_X,2.5,16.54);megaManMural.rotation.y=Math.PI;megaManMural.renderOrder=4;scene.add(megaManMural);
+box(.08,4.8,MEGAMAN_MURAL_SPAN,0x050711,-30.81,2.5,MEGAMAN_ROOM_CENTER_Z,.12);
 const megaManMuralTwoTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-2.webp?v=megaman-mural-2');
 megaManMuralTwoTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTwoTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const megaManMuralTwo=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTwoTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-megaManMuralTwo.position.set(-54.68,2.5,MEGAMAN_ROOM_CENTER_Z);megaManMuralTwo.rotation.y=Math.PI/2;megaManMuralTwo.renderOrder=4;scene.add(megaManMuralTwo);
-// The third mural fills the rear wall and faces the room entrance.
-box(23.7,4.8,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,-18.81,.12);
+megaManMuralTwo.position.set(-30.68,2.5,MEGAMAN_ROOM_CENTER_Z);megaManMuralTwo.rotation.y=Math.PI/2;megaManMuralTwo.renderOrder=4;scene.add(megaManMuralTwo);
+// The third mural fills the divider wall and faces into the room.
+box(MEGAMAN_MURAL_SPAN,4.8,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,.19,.12);
 const megaManMuralThreeTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-3.webp?v=megaman-mural-3');
 megaManMuralThreeTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralThreeTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const megaManMuralThree=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralThreeTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-megaManMuralThree.position.set(MEGAMAN_ROOM_CENTER_X,2.5,-18.68);megaManMuralThree.renderOrder=4;scene.add(megaManMuralThree);
-for(let x=-53;x<=-33;x+=4)box(3.82,.055,.06,0xd18a52,x,4.66,-18.81,.75);
-lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_SIZE,MEGAMAN_ROOM_SIZE,0x4aa8ff);
+megaManMuralThree.position.set(MEGAMAN_ROOM_CENTER_X,2.5,.32);megaManMuralThree.renderOrder=4;scene.add(megaManMuralThree);
+lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_WIDTH,MEGAMAN_ROOM_DEPTH,0x4aa8ff);
 // Each side annex is split into two near-square rooms. The rear pair contains
 // the playable PlayStation and N64 galleries; the front pair remains available
 // for future systems. PlayStation's rear wall has a centered doorway leading
@@ -571,8 +552,9 @@ makeCabinet('dungeon-88','SPYRO - YEAR OF THE DRAGON',-24.5,-15.2,0x934dff,false
 makeCabinet('turbo-grid','TWISTED METAL WORLD TOUR',-20.5,-15.2,0xff3cac,false,false,'psx');configureHostedCabinet('turbo-grid');
 makeCabinet('metal-gear-solid','METAL GEAR SOLID',-16.5,-15.2,0x5d75d9,false,false,'psx');configureHostedCabinet('metal-gear-solid');
 const megaManCabinetLayout=[
-  [1,-53.2,-16,Math.PI/2,0x42a5ff],[2,-53.2,-11,Math.PI/2,0xff3cac],[3,-53.2,-6,Math.PI/2,0x36f9f6],[4,-53.2,-1,Math.PI/2,0xffb42e],[5,-53.2,4,Math.PI/2,0x7dff67],
-  [6,-49,-17.2,0,0x934dff],[7,-45,-17.2,0,0x36f9f6],[8,-41,-17.2,0,0xff4da6],[9,-37,-17.2,0,0xffb42e],[10,-33,-17.2,0,0x5d75d9]
+  [1,-29.2,2.4,Math.PI/2,0x42a5ff],[2,-29.2,6.4,Math.PI/2,0xff3cac],[3,-29.2,10.4,Math.PI/2,0x36f9f6],[4,-29.2,14.4,Math.PI/2,0xffb42e],
+  [5,-25.8,15.2,Math.PI,0x7dff67],[6,-22.5,15.2,Math.PI,0x934dff],[7,-19.2,15.2,Math.PI,0x36f9f6],
+  [8,-25.8,1.6,0,0xff4da6],[9,-22.5,1.6,0,0xffb42e],[10,-19.2,1.6,0,0x5d75d9]
 ];
 for(const [index,x,z,rotation,hue] of megaManCabinetLayout){
   const cabinetId=`megaman-cabinet-${String(index).padStart(2,'0')}`;
@@ -1055,7 +1037,7 @@ function updateFollowCamera(){
 }
 let cabinetSnapshotReady=false,cabinetMessageUntil=0;
 function showCabinetMessage(message){prompt.querySelector('b').textContent='CABINET';prompt.querySelector('span').textContent=message;prompt.classList.add('active');cabinetMessageUntil=performance.now()+2600}
-function nearbyConstructionRoom(){if(playerPosition.z>13.2&&Math.abs(playerPosition.x)<2.5)return 'GameCube';if(Math.abs(playerPosition.z-PS2_ROOM_DOOR_Z)<2.35&&Math.abs(playerPosition.x-PS2_ROOM_CENTER_X)<3.2)return 'PS2';if(Math.abs(playerPosition.z-CONSTRUCTION_ROOM_DOOR_Z)>2.35)return null;if(Math.abs(playerPosition.x-PLAYSTATION_WALL_X)<3.2)return 'Future Console';if(Math.abs(playerPosition.x-N64_WALL_X)<3.2)return 'Xbox';return null}
+function nearbyConstructionRoom(){if(playerPosition.z>13.2&&Math.abs(playerPosition.x)<2.5)return 'GameCube';if(Math.abs(playerPosition.z-PS2_ROOM_DOOR_Z)<2.35&&Math.abs(playerPosition.x-PS2_ROOM_CENTER_X)<3.2)return 'PS2';if(Math.abs(playerPosition.z-CONSTRUCTION_ROOM_DOOR_Z)>2.35)return null;if(Math.abs(playerPosition.x-N64_WALL_X)<3.2)return 'Xbox';return null}
 function updateConstructionPrompt(roomName){prompt.classList.add('active');prompt.querySelector('b').textContent='CAUTION';prompt.querySelector('span').textContent=`${roomName} Room Under Construction.`}
 function setCabinetState(state){const cabinet=cabinetsById.get(state.cabinetId);if(!cabinet)return;if(!cabinet.enabled){cabinet.status='disabled';cabinet.occupiedByDisplayName=null;cabinet.statusLight.material.color.setHex(0x6c7896);cabinet.statusLight.material.emissive.setHex(0x26304a);return}cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
 function setCabinetStates(states,ready){cabinetSnapshotReady=ready;states.forEach(state=>setCabinetState(state));if(!ready)cabinets.forEach(c=>{c.status=c.enabled?'syncing':'disabled';c.occupiedByDisplayName=null;c.statusLight.material.color.setHex(0x6c7896);c.statusLight.material.emissive.setHex(c.enabled?0x6c7896:0x26304a)})}
@@ -1071,21 +1053,10 @@ function resolvePartitionWallCollisions(previousX,previousZ){
     const crossing=(wallX-previousX)/(playerPosition.x-previousX);
     const crossingZ=crossedWall?previousZ+(playerPosition.z-previousZ)*crossing:playerPosition.z;
     const insidePlayableDoor=Math.abs(crossingZ-PLAYABLE_ROOM_DOOR_Z)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS;
-    if(insidePlayableDoor)continue;
+    const insideMegaManDoor=wallX===PLAYSTATION_WALL_X&&Math.abs(crossingZ-MEGAMAN_ROOM_DOOR_Z)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS;
+    if(insidePlayableDoor||insideMegaManDoor)continue;
     const leftFace=wallX-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
     const rightFace=wallX+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
-    if(previousX<wallX&&playerPosition.x>leftFace)playerPosition.x=leftFace;
-    else if(previousX>=wallX&&playerPosition.x<rightFace)playerPosition.x=rightFace;
-  }
-}
-function resolveMegaManRoomCollisions(previousX,previousZ){
-  const wallX=MEGAMAN_ROOM_WALL_X;
-  const crossedWall=(previousX-wallX)*(playerPosition.x-wallX)<=0&&previousX!==playerPosition.x;
-  const crossing=(wallX-previousX)/(playerPosition.x-previousX);
-  const crossingZ=crossedWall?previousZ+(playerPosition.z-previousZ)*crossing:playerPosition.z;
-  const insideDoor=Math.abs(crossingZ-MEGAMAN_ROOM_DOOR_Z)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS;
-  if(!insideDoor){
-    const leftFace=wallX-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS,rightFace=wallX+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
     if(previousX<wallX&&playerPosition.x>leftFace)playerPosition.x=leftFace;
     else if(previousX>=wallX&&playerPosition.x<rightFace)playerPosition.x=rightFace;
   }
@@ -1125,6 +1096,6 @@ function updatePerformanceStats(now){performanceFrames++;const elapsed=now-perfo
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveMegaManRoomCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);playerPosition.x=Math.max(-54.5,Math.min(30.5,playerPosition.x));if(playerPosition.x<-30.5)playerPosition.z=Math.max(-18.5,Math.min(4.5,playerPosition.z));else playerPosition.z=Math.max(-33.2,Math.min(16,playerPosition.z))}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);playerPosition.x=Math.max(-30.5,Math.min(30.5,playerPosition.x));playerPosition.z=Math.max(-33.2,Math.min(16,playerPosition.z))}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,devicePixelRatio,pixelRatioCap);renderer.setPixelRatio(currentPixelRatio)});

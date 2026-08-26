@@ -155,14 +155,14 @@
     "gameId": "mega-man-x",
     "enabled": true,
     "interactionPosition": {
-      "x": -51.2,
+      "x": -27.2,
       "y": 1.65,
-      "z": -16
+      "z": 2.4
     },
     "playerPosition": {
-      "x": -50.85,
+      "x": -26.85,
       "y": 1.65,
-      "z": -16
+      "z": 2.4
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "mega-man-x",
@@ -177,14 +177,14 @@
     "gameId": "mega-man-x2",
     "enabled": true,
     "interactionPosition": {
-      "x": -51.2,
+      "x": -27.2,
       "y": 1.65,
-      "z": -11
+      "z": 6.4
     },
     "playerPosition": {
-      "x": -50.85,
+      "x": -26.85,
       "y": 1.65,
-      "z": -11
+      "z": 6.4
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "mega-man-x2",
@@ -199,14 +199,14 @@
     "gameId": "mega-man-x3",
     "enabled": true,
     "interactionPosition": {
-      "x": -51.2,
+      "x": -27.2,
       "y": 1.65,
-      "z": -6
+      "z": 10.4
     },
     "playerPosition": {
-      "x": -50.85,
+      "x": -26.85,
       "y": 1.65,
-      "z": -6
+      "z": 10.4
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "mega-man-x3",
@@ -221,14 +221,14 @@
     "gameId": "mega-man-x4",
     "enabled": true,
     "interactionPosition": {
-      "x": -51.2,
+      "x": -27.2,
       "y": 1.65,
-      "z": -1
+      "z": 14.4
     },
     "playerPosition": {
-      "x": -50.85,
+      "x": -26.85,
       "y": 1.65,
-      "z": -1
+      "z": 14.4
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "mega-man-x4",
@@ -243,16 +243,16 @@
     "gameId": "mega-man-x5",
     "enabled": true,
     "interactionPosition": {
-      "x": -51.2,
+      "x": -25.8,
       "y": 1.65,
-      "z": 4
+      "z": 13.2
     },
     "playerPosition": {
-      "x": -50.85,
+      "x": -25.8,
       "y": 1.65,
-      "z": 4
+      "z": 12.85
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x5",
     "system": "psx"
   },
@@ -265,16 +265,16 @@
     "gameId": "mega-man-x6",
     "enabled": true,
     "interactionPosition": {
-      "x": -49,
+      "x": -22.5,
       "y": 1.65,
-      "z": -15.2
+      "z": 13.2
     },
     "playerPosition": {
-      "x": -49,
+      "x": -22.5,
       "y": 1.65,
-      "z": -14.85
+      "z": 12.85
     },
-    "playerRotationY": 0,
+    "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x6",
     "system": "psx"
   },
@@ -287,16 +287,16 @@
     "gameId": "mega-man-8",
     "enabled": true,
     "interactionPosition": {
-      "x": -45,
+      "x": -19.2,
       "y": 1.65,
-      "z": -15.2
+      "z": 13.2
     },
     "playerPosition": {
-      "x": -45,
+      "x": -19.2,
       "y": 1.65,
-      "z": -14.85
+      "z": 12.85
     },
-    "playerRotationY": 0,
+    "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-8",
     "system": "psx"
   },
@@ -309,14 +309,14 @@
     "gameId": null,
     "enabled": true,
     "interactionPosition": {
-      "x": -41,
+      "x": -25.8,
       "y": 1.65,
-      "z": -15.2
+      "z": 3.6
     },
     "playerPosition": {
-      "x": -41,
+      "x": -25.8,
       "y": 1.65,
-      "z": -14.85
+      "z": 3.95
     },
     "playerRotationY": 0,
     "system": "psx"
@@ -330,14 +330,14 @@
     "gameId": null,
     "enabled": true,
     "interactionPosition": {
-      "x": -37,
+      "x": -22.5,
       "y": 1.65,
-      "z": -15.2
+      "z": 3.6
     },
     "playerPosition": {
-      "x": -37,
+      "x": -22.5,
       "y": 1.65,
-      "z": -14.85
+      "z": 3.95
     },
     "playerRotationY": 0,
     "system": "psx"
@@ -351,14 +351,14 @@
     "gameId": null,
     "enabled": true,
     "interactionPosition": {
-      "x": -33,
+      "x": -19.2,
       "y": 1.65,
-      "z": -15.2
+      "z": 3.6
     },
     "playerPosition": {
-      "x": -33,
+      "x": -19.2,
       "y": 1.65,
-      "z": -14.85
+      "z": 3.95
     },
     "playerRotationY": 0,
     "system": "psx"

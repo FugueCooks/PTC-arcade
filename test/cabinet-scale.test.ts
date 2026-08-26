@@ -107,22 +107,23 @@ void test('zones derive bounds from their cabinets and know their neighbours', (
   assert.equal(zones.zoneIdForCabinet('megaman-cabinet-01'), 'megaman-room');
   assert.equal(zones.zoneIdForCabinet('nope'), undefined);
 
-  // The Mega Man room sits far to the west; the Xbox gallery is across the map.
+  // The Mega Man room now occupies the front-left console bay; the Xbox
+  // gallery remains across the map and must not be treated as adjacent.
   assert.ok(!megaman.adjacentZoneIds.includes('xbox-gallery'));
 });
 
 void test('zone activation follows the player and never leaves nothing loaded', () => {
   const zones = new ZoneRegistry(new CabinetIndex(CABINET_REGISTRY));
-  const inMegaman = zones.activeZoneIds(-51.2, -16);
+  const inMegaman = zones.activeZoneIds(-22.5, 8.4);
   assert.ok(inMegaman.includes('megaman-room'));
-  assert.ok(!inMegaman.includes('gamecube-room'), 'a distant zone must not be activated');
+  assert.ok(!inMegaman.includes('xbox-gallery'), 'a distant zone must not be activated');
 
   const inGamecube = zones.activeZoneIds(0, 37.2);
   assert.ok(inGamecube.includes('gamecube-room'));
 
   // Standing between zones still resolves to the nearby ones by distance.
   assert.ok(zones.activeZoneIds(-30, -14).length > 0);
-  assert.equal(zones.zoneAt(-51.2, -16)?.id, 'megaman-room');
+  assert.equal(zones.zoneAt(-22.5, 8.4)?.id, 'megaman-room');
 });
 
 void test('zone activation cost does not grow with cabinet count', () => {
