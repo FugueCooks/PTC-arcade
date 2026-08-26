@@ -91,3 +91,46 @@ void test('an uncoverable platform refuses instead of falling back to PlayStatio
   );
   assert.throws(() => adapter.describeFrame({ game: null, gameUrl: 'g' }), /unknown/);
 });
+
+/**
+ * The fields client code reads off a registry game. Kept explicit rather than
+ * scraped from source, because the failure this guards against is a read that
+ * quietly returns undefined — and a scraper that misses the read misses the
+ * bug too.
+ *
+ * Derived from every `game.<field>` access under emulators/, games/,
+ * cabinets/, client/, and arcade.js. Add to this list when client code starts
+ * reading a new field; the test then proves the registry actually ships it.
+ */
+const CLIENT_READS = Object.freeze([
+  'id', 'cabinetId', 'name', 'system', 'platformId', 'file', 'sizeBytes',
+  'emulatorId', 'emulatorAdapterId', 'enabled', 'assetRequirements'
+]);
+
+void test('every field the client reads is present on every shipped game', async () => {
+  // A missing field does not throw. It reads as undefined, flows into a lookup
+  // that misses, and takes whatever fallback is nearest — which is how every
+  // SNES cabinet ended up launching on the PlayStation core with a green suite.
+  const registry = await loadShippedRegistry();
+  for (const game of registry.byId.values()) {
+    for (const field of CLIENT_READS) {
+      assert.notEqual((game as any)[field], undefined, `${game.id} is missing ${field}, which client code reads`);
+    }
+  }
+});
+
+void test('a game names an adapter that exists and covers it', async () => {
+  // The registry declares emulatorAdapterId per game. If the declaration and
+  // the platform disagree, resolveForGame refuses rather than substituting —
+  // so a wrong declaration must fail here, not at a cabinet.
+  const registry = await loadShippedRegistry();
+  const adapters = createDefaultAdapterRegistry();
+  for (const game of registry.byId.values()) {
+    const adapter = adapters.get(game.emulatorAdapterId);
+    assert.ok(adapter, `${game.id} names unknown adapter ${game.emulatorAdapterId}`);
+    assert.ok(
+      adapter.supportedPlatforms.includes(game.system),
+      `${game.id} declares ${game.emulatorAdapterId}, which does not cover ${game.system}`
+    );
+  }
+});
