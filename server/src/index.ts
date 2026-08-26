@@ -3,7 +3,7 @@ import path from 'node:path';
 import express from 'express';
 import { Server } from 'socket.io';
 import { DEFAULT_ROOM_ID } from './protocol.js';
-import type { ClientToServerEvents, ServerToClientEvents } from './protocol.js';
+import type { CabinetState, ClientToServerEvents, ServerToClientEvents } from './protocol.js';
 import { PlayerManager } from './players/player-manager.js';
 import { validateIdentity } from './players/player-identity.js';
 import { RoomManager } from './rooms/room-manager.js';
@@ -51,6 +51,13 @@ import { DrizzleWalletAccountRepository } from './auth/wallet-account-repository
 import { WalletAuthService } from './auth/wallet-auth-service.js';
 import { installWalletAuthRoutes } from './http/wallet-auth-routes.js';
 import { InMemoryAsyncRateLimiter, RedisAsyncRateLimiter } from './auth/distributed-rate-limiter.js';
+
+/** Bounds a resync request so one client cannot ask for unbounded work. */
+const MAX_RESYNC_ZONES = 16;
+
+function toZoneSnapshotPayload(snapshot: { roomId: string; revision: number; zoneIds: readonly string[]; cabinets: CabinetState[] }) {
+  return { roomId: snapshot.roomId, revision: snapshot.revision, zoneIds: [...snapshot.zoneIds], cabinets: snapshot.cabinets };
+}
 
 const projectRoot = path.resolve(process.cwd());
 const startedAt = Date.now();
@@ -301,7 +308,12 @@ world.subscribe((event) => {
 cabinets.subscribe((event) => {
   if (event.type === 'CabinetStateChanged') {
     rooms.bumpStateRevision(event.roomId, 'cabinet');
+    // Milestone 11.14: the revision-stamped delta is the scaled channel. The
+    // unstamped event stays alongside it so clients that predate zone streaming
+    // keep working through the migration (Milestone 11.39).
+    io.to(event.roomId).emit('cabinet:delta', { roomId: event.roomId, revision: event.revision, zoneId: event.zoneId, state: event.state });
     io.to(event.roomId).emit('cabinet:state-changed', event.state);
+    metrics.increment('cabinet_delta_published_total');
   }
   if (event.type === 'CabinetForcedRelease') {
     const socketId = players.socketIdForPlayerId(event.playerId);
@@ -374,6 +386,11 @@ io.on('connection', (socket) => {
     });
     if (stablePlayerId) await identityDirectory?.presence(stablePlayerId, result.snapshot.roomId, socket.id,
       Math.max(config.reconnectGraceMs + 10_000, 30_000));
+    // A join receives the zones around its spawn, plus the legacy whole-room
+    // snapshot for clients that have not migrated to zone streaming yet.
+    const spawn = result.snapshot.players.find(({ id }) => id === result.snapshot.selfId);
+    const spawnZones = spawn ? cabinets.activeZoneIds(spawn.p[0], spawn.p[2]) : cabinets.zones.all().map(({ id }) => id);
+    socket.emit('cabinet:zone-snapshot', toZoneSnapshotPayload(cabinets.zoneSnapshot(result.snapshot.roomId, spawnZones)));
     socket.emit('cabinet:snapshot', { roomId: result.snapshot.roomId, cabinets: cabinets.snapshot(result.snapshot.roomId) });
     socket.emit('chat:snapshot', { roomId: result.snapshot.roomId, messages: chat.snapshot(result.snapshot.roomId) });
     socket.emit('world:snapshot', world.snapshot(result.snapshot.roomId));
@@ -420,6 +437,23 @@ io.on('connection', (socket) => {
     const result = cabinets.activate(socket.id, payload?.cabinetId);
     if (typeof acknowledge === 'function') acknowledge(result);
   });
+  socket.on('cabinet:resync', (payload, acknowledge) => {
+    metrics.increment('events_cabinet_resync_received_total');
+    const playerId = players.playerIdForSocket(socket.id);
+    const player = playerId ? players.stateForPlayerId(playerId) : undefined;
+    const requested: unknown = payload?.zoneIds;
+    if (!player || !Array.isArray(requested) || requested.length === 0 || requested.length > MAX_RESYNC_ZONES
+      || !requested.every((zoneId) => typeof zoneId === 'string')) {
+      return acknowledge({ ok: false, reason: 'invalid-request' });
+    }
+    // Only zones that exist are honoured, so a client cannot use resync to
+    // enumerate or allocate arbitrary keys.
+    const known = (requested as string[]).filter((zoneId) => cabinets.zones.get(zoneId) !== undefined);
+    if (known.length === 0) return acknowledge({ ok: false, reason: 'unknown-zone' });
+    metrics.increment('cabinet_resync_served_total');
+    acknowledge({ ok: true, snapshot: toZoneSnapshotPayload(cabinets.zoneSnapshot(player.roomId, known)) });
+  });
+
   socket.on('cabinet:release', (payload, acknowledge) => {
     metrics.increment('events_cabinet_release_received_total');
     const result = cabinets.release(socket.id, payload?.cabinetId);

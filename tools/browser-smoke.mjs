@@ -129,13 +129,27 @@ try {
     .catch(() => failures.push('the arcade never reported that it started'));
   await page.waitForTimeout(3_000);
 
-  const running = await page.evaluate(() => ({
-    emulatorActive: window.arcadeMultiplayer?.isEmulatorActive?.() ?? null,
-    hasCamera: Boolean(window.arcadeMultiplayer?.getCamera?.()),
-    renderScale: window.arcadeMultiplayer?.performanceProfile?.getRenderScale?.() ?? null
-  }));
+  const running = await page.evaluate(() => {
+    const spatial = window.ARCADE_CABINET_SPATIAL_INDEX;
+    // crash-bandicoot sits at x -29.2, z -1 in the scene; querying its own
+    // position is the same lookup the render loop performs every frame.
+    const nearCrash = spatial?.nearest(-29.2, -1, 2.25) ?? null;
+    return {
+      emulatorActive: window.arcadeMultiplayer?.isEmulatorActive?.() ?? null,
+      hasCamera: Boolean(window.arcadeMultiplayer?.getCamera?.()),
+      renderScale: window.arcadeMultiplayer?.performanceProfile?.getRenderScale?.() ?? null,
+      indexedCabinets: spatial?.size ?? 0,
+      spatialCells: spatial?.cellCount ?? 0,
+      nearestCabinetId: nearCrash?.id ?? null,
+      emptyRegionIsNull: spatial ? spatial.nearest(9_999, 9_999, 2.25) === null : false
+    };
+  });
   expect(running.hasCamera, 'the renderer never produced a camera');
   expect(running.emulatorActive === false, 'an emulator was active without a cabinet being opened');
+  expect(running.indexedCabinets > 0, 'no cabinets were registered with the spatial index');
+  expect(running.spatialCells > 1, 'every cabinet landed in a single spatial cell');
+  expect(running.nearestCabinetId === 'crash-bandicoot', `nearby lookup returned ${running.nearestCabinetId ?? 'nothing'} instead of crash-bandicoot`);
+  expect(running.emptyRegionIsNull, 'a nearby lookup in empty space returned a cabinet');
 
   if (screenshotPath) await page.screenshot({ path: screenshotPath });
   console.log(JSON.stringify({ url, wiring, running }, null, 2));

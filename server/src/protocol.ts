@@ -66,6 +66,20 @@ export interface CabinetState {
   sessionStartedAt: number | null;
 }
 export interface CabinetSnapshot { roomId: string; cabinets: CabinetState[] }
+/**
+ * Milestone 11.14. A snapshot covers only the zones a client needs and carries
+ * the revision it was taken at; each later delta carries the revision it
+ * produces, so a client can detect a gap and request a targeted resync rather
+ * than silently drifting.
+ */
+export interface CabinetZoneSnapshotPayload {
+  roomId: string;
+  revision: number;
+  zoneIds: string[];
+  cabinets: CabinetState[];
+}
+export interface CabinetDeltaPayload { roomId: string; revision: number; zoneId: string; state: CabinetState }
+export interface CabinetResyncResult { ok: boolean; reason?: 'invalid-request' | 'unknown-zone'; snapshot?: CabinetZoneSnapshotPayload }
 export type CabinetDenialReason = 'invalid-request' | 'unknown-cabinet' | 'disabled' | 'too-far' | 'already-using' | 'occupied' | 'rate-limited' | 'not-owner';
 export interface CabinetUseResult {
   ok: boolean;
@@ -95,6 +109,8 @@ export interface ClientToServerEvents {
   'cabinet:request-use': (payload: { cabinetId?: unknown }, acknowledge: (result: CabinetUseResult) => void) => void;
   'cabinet:activate': (payload: { cabinetId?: unknown }, acknowledge: (result: CabinetUseResult) => void) => void;
   'cabinet:release': (payload: { cabinetId?: unknown }, acknowledge: (result: CabinetUseResult) => void) => void;
+  /** Requests a fresh snapshot for the named zones after a detected gap. */
+  'cabinet:resync': (payload: { zoneIds?: unknown }, acknowledge: (result: CabinetResyncResult) => void) => void;
   'chat:send': (payload: { text?: unknown }, acknowledge: (result: ChatSendResult) => void) => void;
   'reaction:send': (payload: { emoji?: unknown }, acknowledge: (result: SocialActionResult) => void) => void;
   'presence:activity': () => void;
@@ -117,6 +133,8 @@ export interface ServerToClientEvents {
   'player:status': (payload: { id: string; status: PlayerStatus; at: number }) => void;
   'cabinet:snapshot': (payload: CabinetSnapshot) => void;
   'cabinet:state-changed': (payload: CabinetState) => void;
+  'cabinet:zone-snapshot': (payload: CabinetZoneSnapshotPayload) => void;
+  'cabinet:delta': (payload: CabinetDeltaPayload) => void;
   'cabinet:forced-release': (payload: { cabinetId: string; reason: string }) => void;
   'chat:snapshot': (payload: { roomId: string; messages: ChatMessage[] }) => void;
   'chat:message': (payload: ChatMessage) => void;
