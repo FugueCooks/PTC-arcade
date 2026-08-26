@@ -19,6 +19,116 @@
       body.remote-disc #root { position:absolute; right:.65rem; bottom:.55rem; width:auto; padding:.28rem .5rem; border:1px solid #36f9f655; border-radius:4px; background:#050510c7; pointer-events:none; }
       body.remote-disc #root input, body.remote-disc #root .version { display:none; }
       body.remote-disc #root .stats { float:none; color:#8ffdfa; letter-spacing:.05em; }
+      #ps2-touch-controls { display:none; }
+      body.touch-controls #ps2-touch-controls {
+        position:fixed;
+        inset:0;
+        z-index:20;
+        display:block;
+        pointer-events:none;
+        touch-action:none;
+        user-select:none;
+        -webkit-user-select:none;
+        -webkit-touch-callout:none;
+      }
+      .ps2-touch-button {
+        width:clamp(2.45rem,8.5vmin,4rem);
+        height:clamp(2.45rem,8.5vmin,4rem);
+        display:grid;
+        place-items:center;
+        padding:0;
+        color:#e9ffff;
+        background:#071321b8;
+        border:1px solid #58fff1aa;
+        border-radius:50%;
+        box-shadow:0 0 .8rem #00e9ff44,inset 0 0 .8rem #00e9ff1f;
+        font:700 clamp(.68rem,2.5vmin,1rem)/1 "Courier New",monospace;
+        pointer-events:auto;
+        touch-action:none;
+      }
+      .ps2-touch-button.is-active {
+        color:#071018;
+        background:#54fff1e8;
+        box-shadow:0 0 1.15rem #37fff4cc;
+        transform:scale(.94);
+      }
+      .ps2-touch-shoulders {
+        position:absolute;
+        top:2.65rem;
+        left:50%;
+        display:flex;
+        gap:.38rem;
+        transform:translateX(-50%);
+      }
+      .ps2-touch-shoulders .ps2-touch-button {
+        width:clamp(2.2rem,8vmin,3.5rem);
+        height:clamp(1.8rem,6vmin,2.35rem);
+        border-radius:.45rem;
+      }
+      .ps2-touch-movement,
+      .ps2-touch-camera,
+      .ps2-touch-face {
+        position:absolute;
+        bottom:max(.75rem,env(safe-area-inset-bottom));
+        display:grid;
+        grid-template-columns:repeat(3,clamp(2.45rem,8.5vmin,4rem));
+        grid-template-rows:repeat(3,clamp(2.45rem,8.5vmin,4rem));
+        gap:.18rem;
+      }
+      .ps2-touch-movement { left:max(.75rem,env(safe-area-inset-left)); }
+      .ps2-touch-face { right:max(.75rem,env(safe-area-inset-right)); }
+      .ps2-touch-camera {
+        left:50%;
+        bottom:max(3.75rem,calc(env(safe-area-inset-bottom) + 3.25rem));
+        grid-template-columns:repeat(3,clamp(1.65rem,5.5vmin,2.35rem));
+        grid-template-rows:repeat(3,clamp(1.65rem,5.5vmin,2.35rem));
+        transform:translateX(-50%);
+        opacity:.82;
+      }
+      .ps2-touch-camera .ps2-touch-button {
+        width:clamp(1.65rem,5.5vmin,2.35rem);
+        height:clamp(1.65rem,5.5vmin,2.35rem);
+        font-size:clamp(.5rem,1.7vmin,.7rem);
+      }
+      .ps2-touch-label {
+        align-self:center;
+        color:#8ffdfa;
+        font-size:clamp(.42rem,1.5vmin,.58rem);
+        text-align:center;
+        text-shadow:0 0 .4rem #00ffff;
+      }
+      .ps2-touch-system {
+        position:absolute;
+        left:50%;
+        bottom:max(.55rem,env(safe-area-inset-bottom));
+        display:flex;
+        gap:.45rem;
+        transform:translateX(-50%);
+      }
+      .ps2-touch-system .ps2-touch-button {
+        width:auto;
+        min-width:3.25rem;
+        height:1.85rem;
+        padding:0 .65rem;
+        border-radius:1rem;
+        font-size:.58rem;
+      }
+      .ps2-grid-up { grid-column:2; grid-row:1; }
+      .ps2-grid-left { grid-column:1; grid-row:2; }
+      .ps2-grid-center { grid-column:2; grid-row:2; }
+      .ps2-grid-right { grid-column:3; grid-row:2; }
+      .ps2-grid-down { grid-column:2; grid-row:3; }
+      .ps2-face-triangle { grid-column:2; grid-row:1; color:#67ff9c; }
+      .ps2-face-square { grid-column:1; grid-row:2; color:#ff82e8; }
+      .ps2-face-circle { grid-column:3; grid-row:2; color:#ff7b87; }
+      .ps2-face-cross { grid-column:2; grid-row:3; color:#70b7ff; }
+      @media (max-width:700px) and (orientation:portrait) {
+        .ps2-touch-camera { display:none; }
+        .ps2-touch-shoulders { top:2.35rem; }
+      }
+      @media (prefers-reduced-motion:reduce) {
+        .ps2-touch-button { transition:none; }
+      }
     </style>
   </head>
   <body>
@@ -26,6 +136,38 @@
       <div id="ps2-status">PLAY! WEBASSEMBLY // INITIALIZING EXPERIMENTAL PS2 CORE…</div>
       <canvas id="outputCanvas" width="640" height="480" tabindex="0"></canvas>
       <div id="root"></div>
+      <section id="ps2-touch-controls" aria-label="PlayStation 2 touch controller">
+        <div class="ps2-touch-shoulders">
+          <button class="ps2-touch-button" data-ps2-keys="Key1" aria-label="L1">L1</button>
+          <button class="ps2-touch-button" data-ps2-keys="Key2" aria-label="L2">L2</button>
+          <button class="ps2-touch-button" data-ps2-keys="Key9" aria-label="R2">R2</button>
+          <button class="ps2-touch-button" data-ps2-keys="Key8" aria-label="R1">R1</button>
+        </div>
+        <div class="ps2-touch-movement" aria-label="Movement and directional pad">
+          <button class="ps2-touch-button ps2-grid-up" data-ps2-keys="KeyT ArrowUp" aria-label="Move up">▲</button>
+          <button class="ps2-touch-button ps2-grid-left" data-ps2-keys="KeyF ArrowLeft" aria-label="Move left">◀</button>
+          <span class="ps2-touch-label ps2-grid-center">MOVE</span>
+          <button class="ps2-touch-button ps2-grid-right" data-ps2-keys="KeyH ArrowRight" aria-label="Move right">▶</button>
+          <button class="ps2-touch-button ps2-grid-down" data-ps2-keys="KeyG ArrowDown" aria-label="Move down">▼</button>
+        </div>
+        <div class="ps2-touch-camera" aria-label="Camera stick">
+          <button class="ps2-touch-button ps2-grid-up" data-ps2-keys="KeyI" aria-label="Camera up">▲</button>
+          <button class="ps2-touch-button ps2-grid-left" data-ps2-keys="KeyJ" aria-label="Camera left">◀</button>
+          <span class="ps2-touch-label ps2-grid-center">CAM</span>
+          <button class="ps2-touch-button ps2-grid-right" data-ps2-keys="KeyL" aria-label="Camera right">▶</button>
+          <button class="ps2-touch-button ps2-grid-down" data-ps2-keys="KeyK" aria-label="Camera down">▼</button>
+        </div>
+        <div class="ps2-touch-face" aria-label="Action buttons">
+          <button class="ps2-touch-button ps2-face-triangle" data-ps2-keys="KeyS" aria-label="Triangle">△</button>
+          <button class="ps2-touch-button ps2-face-square" data-ps2-keys="KeyA" aria-label="Square">□</button>
+          <button class="ps2-touch-button ps2-face-circle" data-ps2-keys="KeyX" aria-label="Circle">○</button>
+          <button class="ps2-touch-button ps2-face-cross" data-ps2-keys="KeyZ" aria-label="Cross">×</button>
+        </div>
+        <div class="ps2-touch-system">
+          <button class="ps2-touch-button" data-ps2-keys="Backspace" aria-label="Select">SELECT</button>
+          <button class="ps2-touch-button" data-ps2-keys="Enter" aria-label="Start">START</button>
+        </div>
+      </section>
     </main>
     <script>
       const statusElement = document.querySelector('#ps2-status');
@@ -35,6 +177,91 @@
       let pendingRemote = null;
       let readySent = false;
       let discFailureReported = false;
+
+      const PS2_KEYS = Object.freeze({
+        ArrowLeft: { key: 'ArrowLeft', keyCode: 37 },
+        ArrowUp: { key: 'ArrowUp', keyCode: 38 },
+        ArrowRight: { key: 'ArrowRight', keyCode: 39 },
+        ArrowDown: { key: 'ArrowDown', keyCode: 40 },
+        Backspace: { key: 'Backspace', keyCode: 8 },
+        Enter: { key: 'Enter', keyCode: 13 },
+        Key1: { key: '1', keyCode: 49 },
+        Key2: { key: '2', keyCode: 50 },
+        Key8: { key: '8', keyCode: 56 },
+        Key9: { key: '9', keyCode: 57 },
+        KeyA: { key: 'a', keyCode: 65 },
+        KeyF: { key: 'f', keyCode: 70 },
+        KeyG: { key: 'g', keyCode: 71 },
+        KeyH: { key: 'h', keyCode: 72 },
+        KeyI: { key: 'i', keyCode: 73 },
+        KeyJ: { key: 'j', keyCode: 74 },
+        KeyK: { key: 'k', keyCode: 75 },
+        KeyL: { key: 'l', keyCode: 76 },
+        KeyS: { key: 's', keyCode: 83 },
+        KeyT: { key: 't', keyCode: 84 },
+        KeyX: { key: 'x', keyCode: 88 },
+        KeyZ: { key: 'z', keyCode: 90 }
+      });
+      const activeTouchKeys = new Map();
+
+      function dispatchPs2Key(code, pressed) {
+        const definition = PS2_KEYS[code];
+        if (!definition) return;
+        const canvas = document.querySelector('#outputCanvas');
+        const event = new KeyboardEvent(pressed ? 'keydown' : 'keyup', {
+          key: definition.key,
+          code,
+          bubbles: true,
+          cancelable: true
+        });
+        // Play!'s Emscripten input bridge reads legacy numeric fields as well
+        // as key/code. Browser-created KeyboardEvents leave those fields at 0.
+        Object.defineProperty(event, 'keyCode', { get: () => definition.keyCode });
+        Object.defineProperty(event, 'which', { get: () => definition.keyCode });
+        canvas.dispatchEvent(event);
+      }
+
+      function releaseTouchPointer(pointerId) {
+        const active = activeTouchKeys.get(pointerId);
+        if (!active) return;
+        activeTouchKeys.delete(pointerId);
+        for (const code of active.codes) dispatchPs2Key(code, false);
+        active.button.classList.remove('is-active');
+      }
+
+      function initializeTouchControls() {
+        const hasTouch = navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches;
+        if (!hasTouch) return;
+        document.body.classList.add('touch-controls');
+        const canvas = document.querySelector('#outputCanvas');
+        for (const button of document.querySelectorAll('[data-ps2-keys]')) {
+          button.addEventListener('pointerdown', event => {
+            if (activeTouchKeys.has(event.pointerId)) return;
+            event.preventDefault();
+            canvas.focus({ preventScroll: true });
+            const codes = button.dataset.ps2Keys.split(/\s+/).filter(Boolean);
+            activeTouchKeys.set(event.pointerId, { button, codes });
+            button.classList.add('is-active');
+            button.setPointerCapture?.(event.pointerId);
+            for (const code of codes) dispatchPs2Key(code, true);
+          });
+          for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+            button.addEventListener(type, event => {
+              event.preventDefault();
+              releaseTouchPointer(event.pointerId);
+            });
+          }
+          button.addEventListener('contextmenu', event => event.preventDefault());
+        }
+        addEventListener('blur', () => {
+          for (const pointerId of [...activeTouchKeys.keys()]) releaseTouchPointer(pointerId);
+        });
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) for (const pointerId of [...activeTouchKeys.keys()]) releaseTouchPointer(pointerId);
+        });
+      }
+
+      initializeTouchControls();
 
       function cacheKey(source) {
         let hash = 2166136261;
