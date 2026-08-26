@@ -73,8 +73,9 @@ void test('guest entitlements allow approved avatars while denying durable write
   const guest = { type: 'guest' as const, walletAuthenticated: false };
   assert.deepEqual(entitlementsFor(guest), {
     walletAuthenticated: false, canChooseCustomAvatar: true, canClaimPersistentDisplayName: false,
-    canPersistPreferences: false, canPersistProgress: false
+    canPersistPreferences: false, canPersistProgress: false, canPersistGameSaves: false
   });
+  assert.equal(entitlementsFor({ type: 'registered', walletAuthenticated: true }).canPersistGameSaves, true);
   assert.equal(authoritativeAvatarId(guest, 'omni-man'), 'omni-man');
   assert.equal(authoritativeAvatarId(guest, '../../untrusted.glb'), DEFAULT_GUEST_AVATAR_ID);
   assert.equal(authoritativeAvatarId({ type: 'registered', walletAuthenticated: true }, 'omni-man'), 'omni-man');

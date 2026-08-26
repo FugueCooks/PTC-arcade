@@ -9,13 +9,14 @@ export interface IdentityEntitlements {
   canClaimPersistentDisplayName: boolean;
   canPersistPreferences: boolean;
   canPersistProgress: boolean;
+  canPersistGameSaves: boolean;
 }
 
 export function entitlementsFor(identity: Pick<SafeIdentity, 'type' | 'walletAuthenticated'>): IdentityEntitlements {
   const walletAuthenticated = identity.type === 'registered' && identity.walletAuthenticated === true;
   return { walletAuthenticated, canChooseCustomAvatar: true,
     canClaimPersistentDisplayName: walletAuthenticated, canPersistPreferences: walletAuthenticated,
-    canPersistProgress: walletAuthenticated };
+    canPersistProgress: walletAuthenticated, canPersistGameSaves: walletAuthenticated };
 }
 
 export function authoritativeAvatarId(identity: Pick<SafeIdentity, 'type' | 'walletAuthenticated'>, requested: unknown): string {

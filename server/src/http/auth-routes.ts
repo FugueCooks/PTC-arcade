@@ -5,6 +5,7 @@ import { guestIdentitySchema, loginSchema, registrationSchema } from '../auth/va
 import { readSessionCookie } from '../auth/session-cookie.js';
 import type { RealtimeTicketService } from '../auth/realtime-ticket.js';
 import { InMemoryAsyncRateLimiter, type AsyncRateLimiter } from '../auth/distributed-rate-limiter.js';
+import { entitlementsFor } from '../auth/authorization-policy.js';
 
 import { checkCrossSite, crossSiteMessage, type CrossSiteVerdict } from './cross-site.js';
 
@@ -81,7 +82,7 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
         response.status(401).json({ ok: false, error: { code: 'session-required', message: 'Sign in or continue as a guest.' } });
         return;
       }
-      response.json({ ok: true, identity: session.identity, expiresAt: session.expiresAt.toISOString() });
+      response.json({ ok: true, identity: session.identity, entitlements: entitlementsFor(session.identity), expiresAt: session.expiresAt.toISOString() });
     } catch { unavailable(response); }
   });
 

@@ -859,6 +859,10 @@ function openMachine(c){
   const romInput=document.querySelector('#rom-file');romInput.value='';romLoaded=false;
   document.querySelector('#machine-type').textContent=c.system==='psx'?'PLAYSTATION // CABINET':(c.system==='n64'?'NINTENDO 64 // CABINET':(c.system==='snes'?'SUPER NINTENDO // CABINET':(c.system==='ps2'?'PLAYSTATION 2 // EXPERIMENTAL CABINET':(c.system==='gamecube'?'GAMECUBE // EXPERIMENTAL GECKO':c.type))));
   document.querySelector('#machine-name').textContent=c.name;
+  const controls=document.querySelector('#emulator-controls');
+  if(controls)controls.textContent=window.arcadeAvatarIdentity?.walletAuthenticated
+    ?'CONTROLLER READY · WALLET SAVE / LOAD ENABLED · ESC EXIT'
+    :'CONTROLLER READY · SAVE / LOAD REQUIRES SOLANA WALLET SIGN-IN · ESC EXIT';
   document.querySelector('#bios-control').style.display=c.system==='psx'?'flex':'none';
   const playButton=document.querySelector('#play-hosted-game');
   const discSelector=document.querySelector('#hosted-disc-selector'),hasMultipleDiscs=Array.isArray(c.hostedDiscs)&&c.hostedDiscs.length>1;
@@ -886,16 +890,20 @@ function setEmulatorRuntimeActive(active){
 }
 function stopEmulator(){
   clearTimeout(emulatorLoadTimer);
-  try {
-    if(typeof window.EJS_terminate==='function') window.EJS_terminate();
-    else if(typeof window.EJS_emulator?.exit==='function') window.EJS_emulator.exit();
-  } catch(error) { console.warn('Could not terminate the emulator cleanly.', error); }
-  document.querySelector('#emulator-host').replaceChildren();
+  const frame=activeEmulatorFrame,objectUrls=emulatorObjectUrls;
+  // EmulatorJS owns its runtime inside the iframe. Calling EJS_terminate on
+  // this parent window never reached it, and removing the frame immediately
+  // skipped the final memory-card/SRAM flush. Give the child a short,
+  // bounded shutdown window; remove only the captured frame so a fast reopen
+  // cannot be erased by the previous session's cleanup.
+  try { frame?.contentWindow?.postMessage({type:'arcade:emulator-stop'},location.origin); }
+  catch(error) { console.warn('Could not request a clean emulator shutdown.',error); }
+  setTimeout(()=>{frame?.remove();objectUrls.forEach(url=>URL.revokeObjectURL(url))},500);
   document.querySelector('#emulator-stage').style.display='none';
   document.querySelector('.screen-wrap .scanlines').style.display='block';
   cvs.style.display='block';
   activeEmulatorFrame=null;pendingEmulatorSource=null;activeEmulatorAdapter=null;
-  emulatorObjectUrls.forEach(url=>URL.revokeObjectURL(url));emulatorObjectUrls=[];
+  emulatorObjectUrls=[];
   setEmulatorRuntimeActive(false);
 }
 function closeMachine(notifyServer=true){const closing=activeCabinet;ps2CacheController?.abort();ps2CacheController=null;if(resolveEmulatorAdapter(closing))stopEmulator();modal.style.display='none';modal.setAttribute('aria-hidden','true');activeCabinet=null;document.body.classList.remove('cabinet-open');if(notifyServer&&closing)window.dispatchEvent(new CustomEvent('arcade:cabinet-session-ended',{detail:{cabinetId:closing.id}}));if(!mobileInputAvailable())renderer.domElement.requestPointerLock()}
@@ -972,65 +980,22 @@ function launchEmulator(gameFile,options={}){
   clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT. CHECK YOUR CONNECTION.')}},estimatedTimeout);
 }
 document.querySelector('#bios-file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;psxBios=file;document.querySelector('#bios-name').textContent=`BIOS READY: ${file.name.toUpperCase()}`;});
-function formatRate(bytesPerSecond){
-  if(!Number.isFinite(bytesPerSecond)||bytesPerSecond<=0)return '';
-  const mb=bytesPerSecond/1048576;
-  return mb>=1?`${mb.toFixed(1)} MB/S`:`${Math.round(bytesPerSecond/1024)} KB/S`;
-}
-function formatEta(seconds){
-  if(!Number.isFinite(seconds)||seconds<=0||seconds>36000)return '';
-  if(seconds<60)return `${Math.ceil(seconds)}S LEFT`;
-  const minutes=Math.floor(seconds/60);
-  return `${minutes}M ${String(Math.floor(seconds%60)).padStart(2,'0')}S LEFT`;
-}
-// Route the first launch through the local cache instead of letting the
-// emulator stream the file. It is the same single download, but it reports
-// progress while it runs and every later launch of that game starts from disk
-// rather than the network. A GameCube image averages a gigabyte, so the second
-// play going from minutes to instant is the difference testers actually feel.
-// Anything the cache cannot take falls straight back to the hosted URL.
-async function prepareHostedGame(cabinet){
+// Prefer an already cached copy, but never make PLAY wait for a complete local
+// download. EmulatorJS and Play! can begin from the hosted URL using byte-range
+// requests, which turns first boot for large PlayStation images from a several
+// minute prerequisite into an immediate emulator launch. Players who want the
+// whole image on disk can still use the explicit CACHE GAME LOCALLY control.
+async function resolveCachedHostedGame(cabinet){
   if(!CACHEABLE_SYSTEMS.has(cabinet.system)||!ps2Cache?.supported||!cabinet.gameSizeBytes)return null;
   const descriptor=ps2GameDescriptor(cabinet);
-  const romName=document.querySelector('#rom-name');
   try{
-    const cached=await ps2Cache.get(descriptor);
-    if(cached)return cached;
+    return await ps2Cache.get(descriptor);
   }catch{return null}
-  if(ps2CacheController)return null;
-  const playButton=document.querySelector('#play-hosted-game');
-  ps2CacheController=new AbortController();
-  playButton.disabled=true;ps2CacheButton.disabled=true;
-  const startedAt=performance.now();
-  try{
-    const file=await ps2Cache.download(descriptor,cabinet.hostedGame,{
-      signal:ps2CacheController.signal,
-      onProgress:(progress,received,total)=>{
-        if(activeCabinet!==cabinet)return;
-        const elapsed=(performance.now()-startedAt)/1000;
-        const rate=elapsed>0.5?received/elapsed:0;
-        const eta=rate>0?(total-received)/rate:0;
-        const parts=[`DOWNLOADING ${Math.floor(progress*100)}%`,formatRate(rate),formatEta(eta)].filter(Boolean);
-        romName.textContent=parts.join(' · ');
-      }
-    });
-    return file;
-  }catch(error){
-    if(error?.name==='AbortError')return null;
-    // Out of storage, or the cache write failed. Streaming still works.
-    console.warn('Falling back to streaming this game.',error);
-    if(activeCabinet===cabinet)romName.textContent='STREAMING FROM CDN — NOT CACHED';
-    return null;
-  }finally{
-    ps2CacheController=null;
-    playButton.disabled=false;
-    refreshPs2CacheButton(cabinet);
-  }
 }
 document.querySelector('#play-hosted-game').addEventListener('click',async()=>{
   if(!activeCabinet?.hostedGame)return;
   const cabinet=activeCabinet;
-  const prepared=await prepareHostedGame(cabinet);
+  const prepared=await resolveCachedHostedGame(cabinet);
   if(activeCabinet!==cabinet)return;
   launchEmulator(prepared||cabinet.hostedGame);
 });
@@ -1040,6 +1005,13 @@ document.querySelector('#rom-file').addEventListener('change',e=>{const file=e.t
 // adapter, so adding a core never means editing this listener again.
 addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==activeEmulatorFrame?.contentWindow)return;
+  if(event.data?.type==='arcade:save-entitlement'){
+    const controls=document.querySelector('#emulator-controls');
+    if(controls)controls.textContent=event.data.allowed===true
+      ?'CONTROLLER READY · WALLET SAVE / LOAD ENABLED · ESC EXIT'
+      :'CONTROLLER READY · GUEST SESSION · SAVE / LOAD LOCKED · ESC EXIT';
+    return;
+  }
   const adapter=activeEmulatorAdapter;if(!adapter)return;
   const signal=adapter.interpretMessage(event.data);
   if(signal.kind==='ready'){
