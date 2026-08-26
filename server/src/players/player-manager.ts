@@ -16,6 +16,7 @@ const MOVEMENT_TOLERANCE = 0.3;
 const PARTITION_WALL_X = 14;
 const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 const PLAYABLE_ROOM_DOOR_Z = -8;
+const PS2_ROOM_CENTER_X = -22.5;
 const PS2_ROOM_DOOR_Z = -16.8;
 const ROOM_DOOR_CLEARANCE = 1.26;
 const SOCIAL_COUCH_OUTER_RADIUS = 6.75;
@@ -49,8 +50,15 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
   const inPlayStationRearGallery = Math.max(fromX, toX) <= -PARTITION_WALL_X - PARTITION_COLLISION_HALF_WIDTH
     && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
-  if (inPlayStationRearGallery && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
-  if (inPlayStationRearGallery && (fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) return true;
+  if (inPlayStationRearGallery) {
+    const targetInPs2Door = Math.abs(toX - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
+    if (!targetInPs2Door && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+    if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) {
+      const crossing = (PS2_ROOM_DOOR_Z - fromZ) / (toZ - fromZ);
+      const crossingX = fromX + (toX - fromX) * crossing;
+      if (crossing >= 0 && crossing <= 1 && Math.abs(crossingX - PS2_ROOM_CENTER_X) >= ROOM_DOOR_CLEARANCE) return true;
+    }
+  }
   return false;
 }
 

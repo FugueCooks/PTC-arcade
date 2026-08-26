@@ -58,7 +58,7 @@ void test('the MegaMan Room replaces the former front-left construction bay', ()
     'the divider must still separate MegaMan from PlayStation');
 });
 
-void test('the new PS2 room can only be approached through PlayStation and remains under construction', () => {
+void test('the new PS2 room is accessible only through its PlayStation doorway', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
   const steps: Array<[number, number]> = [
@@ -66,8 +66,19 @@ void test('the new PS2 room can only be approached through PlayStation and remai
     [-14.5, -8], [-17.5, -8], [-20.5, -8], [-22.5, -8], [-22.5, -11], [-22.5, -14]
   ];
   steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: Math.PI }, 1_500 + index * 500)));
-  assert.equal(players.move('socket-a', { p: [-22.5, -17], r: Math.PI }, 9_500), undefined);
-  assert.equal(players.stateFor('socket-a')?.p[2], -14);
+  assert.ok(players.move('socket-a', { p: [-22.5, -17], r: Math.PI }, 9_500));
+  assert.ok(players.move('socket-a', { p: [-22.5, -20], r: Math.PI }, 10_000));
+  assert.equal(players.stateFor('socket-a')?.p[2], -20);
+
+  const blocked = createPlayers();
+  blocked.join('socket-b', 'main', undefined, identity, 1_000);
+  const blockedRoute: Array<[number, number]> = [
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
+    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-26.5, -8], [-26.5, -11], [-26.5, -14]
+  ];
+  blockedRoute.forEach(([x, z], index) => assert.ok(blocked.move('socket-b', { p: [x, z], r: Math.PI }, 1_500 + index * 500)));
+  assert.equal(blocked.move('socket-b', { p: [-26.5, -17], r: Math.PI }, 10_000), undefined,
+    'the solid rear wall must still reject movement outside the doorway');
 });
 
 void test('the solid section of the PlayStation outer wall remains authoritative', () => {

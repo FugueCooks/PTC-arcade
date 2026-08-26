@@ -3,14 +3,14 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-void test('the PS2, Xbox, and GameCube rooms retain barriers while MegaMan is open', async () => {
+void test('the PS2 doorway is open while Xbox and GameCube retain their barriers', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const edge = await readFile(path.resolve(process.cwd(), 'cloudflare/src/index.ts'), 'utf8');
 
   assert.match(arcade, /constructionTapeTexture/);
   assert.doesNotMatch(arcade, /futureConstructionBarrier|Future Console Room Under Construction/);
   assert.match(arcade, /xboxConstructionBarrier\.userData\.roomName='Xbox'/);
-  assert.match(arcade, /ps2ConstructionBarrier\.userData\.roomName='PS2'/);
+  assert.doesNotMatch(arcade, /ps2ConstructionBarrier|PS2 Room Under Construction/);
   assert.match(arcade, /gamecubeConstructionBarrier\.userData\.roomName='GameCube'/);
   assert.match(arcade, /xboxConstructionPanel\.rotation\.y=-Math\.PI\/2/);
   assert.match(arcade, /gamecubeConstructionPanel\.rotation\.y=Math\.PI/);
@@ -19,6 +19,7 @@ void test('the PS2, Xbox, and GameCube rooms retain barriers while MegaMan is op
   // Room signage was removed on purpose: the wall logos identify each room,
   // so asserting the old text plates would pin behaviour that is now gone.
   assert.match(arcade, /playerPosition\.z>13\.2&&Math\.abs\(playerPosition\.x\)<2\.5/);
+  assert.match(arcade, /Math\.abs\(playerPosition\.x-PS2_ROOM_CENTER_X\)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /nearbyConstructionRoom\(\)/);
   assert.match(arcade, /Room Under Construction\./);
@@ -27,5 +28,5 @@ void test('the PS2, Xbox, and GameCube rooms retain barriers while MegaMan is op
   assert.match(edge, /PLAYABLE_ROOM_DOOR_Z = -8/);
   assert.match(edge, /PS2_ROOM_DOOR_Z = -16\.8/);
   assert.match(edge, /Math\.abs\(crossingZ - PLAYABLE_ROOM_DOOR_Z\)/);
-  assert.match(edge, /fromZ - PS2_ROOM_DOOR_Z/);
+  assert.match(edge, /crossingX - PS2_ROOM_CENTER_X/);
 });
