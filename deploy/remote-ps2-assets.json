@@ -1,5 +1,5 @@
 [
-  {"kind":"game","file":"kingdom-hearts.iso","bytes":3041132544,"sha256":"0c9d9e391e33d01eae1a6b56c7e278af6e24ceeae03487d55b107c0391b85673"},
+  {"kind":"game","file":"kingdom-hearts-v1.chd","bytes":2495930070,"sha256":"84be0ca50587ea4f97f3a602897a819df0205cbc3248e9e0e293d284d0fc2fd8"},
   {"kind":"game","file":"gta-san-andreas-v3.iso","bytes":4517036032,"sha256":"c94e9b16ffab9ab04dbf15109e8716a2bf0a853a246bd3d2641bf354a5068e6d"},
   {"kind":"game","file":"dbz-tenkaichi-3.iso","bytes":3020816384,"sha256":"93f1f911e9a2bbdf92e5794fc3075ddf3f87db3df4b1cb8cfbb0448721c91172"}
 ]

@@ -396,9 +396,9 @@
       "cabinetId": "psx-back-cabinet-02",
       "name": "Kingdom Hearts",
       "system": "ps2",
-      "file": "kingdom-hearts.iso",
+      "file": "kingdom-hearts-v1.chd",
       "emulatorId": 26002,
-      "sizeBytes": 3041132544,
+      "sizeBytes": 2495930070,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "play-ps2",
@@ -407,8 +407,8 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "kingdom-hearts.iso",
-          "sizeBytes": 3041132544,
+          "assetId": "kingdom-hearts-v1.chd",
+          "sizeBytes": 2495930070,
           "required": true,
           "label": null
         }
