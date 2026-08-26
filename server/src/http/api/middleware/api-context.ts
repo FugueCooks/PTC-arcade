@@ -20,7 +20,7 @@ declare module 'express-serve-static-core' {
 
 export type ApiErrorCode =
   | 'bad-request' | 'unauthorized' | 'forbidden' | 'not-found'
-  | 'conflict' | 'unprocessable' | 'rate-limited' | 'internal-error';
+  | 'conflict' | 'unprocessable' | 'payload-too-large' | 'rate-limited' | 'internal-error';
 
 const STATUS_BY_CODE: Readonly<Record<ApiErrorCode, number>> = Object.freeze({
   'bad-request': 400,
@@ -29,6 +29,7 @@ const STATUS_BY_CODE: Readonly<Record<ApiErrorCode, number>> = Object.freeze({
   'not-found': 404,
   conflict: 409,
   unprocessable: 422,
+  'payload-too-large': 413,
   'rate-limited': 429,
   'internal-error': 500
 });
@@ -96,6 +97,14 @@ export function apiErrorHandler(log: (event: string, details: Record<string, unk
       fail(request, response, error.code, error.message, error.details);
       return;
     }
+    // body-parser rejections are client errors, not server faults. Reporting an
+    // oversized or malformed body as 500 would tell a caller to retry something
+    // that can never succeed.
+    const parsed = asBodyParserError(error);
+    if (parsed) {
+      fail(request, response, parsed.code, parsed.message);
+      return;
+    }
     log('api_unhandled_error', {
       requestId: request.apiRequestId ?? null,
       path: request.path,
@@ -119,6 +128,16 @@ export function installApiNotFound(app: Express, log: (event: string, details: R
     fail(request, response, 'not-found', 'No such endpoint.');
   });
   app.use('/api/v1', apiErrorHandler(log));
+}
+
+/** Recognizes body-parser failures so they map to the right status. */
+export function asBodyParserError(error: unknown): { code: ApiErrorCode; message: string } | null {
+  if (!error || typeof error !== 'object') return null;
+  const type = (error as { type?: unknown }).type;
+  if (type === 'entity.too.large') return { code: 'payload-too-large', message: 'Request body is too large.' };
+  if (type === 'entity.parse.failed') return { code: 'bad-request', message: 'Request body is not valid JSON.' };
+  if (type === 'encoding.unsupported') return { code: 'bad-request', message: 'Unsupported content encoding.' };
+  return null;
 }
 
 export interface PageRequest {

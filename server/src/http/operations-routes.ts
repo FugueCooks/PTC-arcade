@@ -6,6 +6,7 @@ import { roleAllows, type OperatorAuthService, type OperatorSession } from '../o
 import type { OperationsService } from '../operations/operations-service.js';
 import type { OperationsActionExecutor, OperationsActionRegistry } from '../operations/operations-actions.js';
 import type { OperationsAuditLog } from '../operations/audit-log.js';
+import { asBodyParserError } from './api/middleware/api-context.js';
 
 /**
  * Milestones 11.25 and 11.27 — the operations HTTP surface.
@@ -186,12 +187,26 @@ export function installOperationsRoutes(
     }).then((result) => {
       metrics?.increment(result.ok ? 'operations_action_success_total' : 'operations_action_failure_total');
       response.status(result.ok ? 200 : statusFor(result.reason)).json({ ok: result.ok, data: result, requestId: request.operationsRequestId });
+    }).catch(() => {
+      // Without this the request would hang and the rejection would surface as
+      // an unhandled rejection, which terminates the process by default.
+      metrics?.increment('operations_action_error_total');
+      if (!response.headersSent) {
+        response.status(500).json({ ok: false, error: 'internal-error', requestId: request.operationsRequestId ?? null });
+      }
     });
   });
 
-  // Milestone 11.31: never return a stack trace. Any error escaping a handler
-  // becomes an opaque failure with only the request ID for correlation.
+  // Milestone 11.31: never return a stack trace. A malformed or oversized body
+  // is the caller's error and is reported as such; anything else becomes an
+  // opaque failure carrying only the request ID for correlation.
   router.use((error: unknown, request: Request, response: Response, _next: NextFunction) => {
+    const parsed = asBodyParserError(error);
+    if (parsed) {
+      response.status(parsed.code === 'payload-too-large' ? 413 : 400)
+        .json({ ok: false, error: parsed.code, requestId: request.operationsRequestId ?? null });
+      return;
+    }
     metrics?.increment('operations_route_error_total');
     response.status(500).json({ ok: false, error: 'internal-error', requestId: request.operationsRequestId ?? null });
   });

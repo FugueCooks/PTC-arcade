@@ -9,7 +9,7 @@ import { ZoneRegistry } from '../server/src/cabinets/zone-registry.js';
 import { loadGameRegistry } from '../server/src/games/game-registry-service.js';
 import { CabinetCatalogService, GameCatalogService } from '../server/src/services/catalog-service.js';
 import { installCatalogRoutes } from '../server/src/http/api/v1/catalog-routes.js';
-import { installApiNotFound, IdempotencyStore, paginate } from '../server/src/http/api/middleware/api-context.js';
+import { asBodyParserError, installApiNotFound, IdempotencyStore, paginate } from '../server/src/http/api/middleware/api-context.js';
 import { toCabinetDetailDto, toGameDetailDto } from '../server/src/http/api/dto/catalog-dto.js';
 import { loadServerConfig } from '../server/src/config.js';
 import { EventBus } from '../server/src/events/event-bus.js';
@@ -259,4 +259,17 @@ void test('operator visibility into dead letters includes clearing a stuck job',
   assert.equal(queue.clearDeadLetter(job.id), true);
   assert.equal(queue.stats().deadLettered, 0);
   assert.equal(queue.clearDeadLetter('nonexistent'), false);
+});
+
+void test('body-parser failures map to client errors, not server faults', () => {
+  // An oversized or malformed body reported as 500 would tell a caller to retry
+  // something that can never succeed. Found by probing the running server.
+  assert.deepEqual(asBodyParserError({ type: 'entity.too.large' }), {
+    code: 'payload-too-large', message: 'Request body is too large.'
+  });
+  assert.equal(asBodyParserError({ type: 'entity.parse.failed' })?.code, 'bad-request');
+  assert.equal(asBodyParserError({ type: 'encoding.unsupported' })?.code, 'bad-request');
+  assert.equal(asBodyParserError(new Error('something else')), null);
+  assert.equal(asBodyParserError(null), null);
+  assert.equal(asBodyParserError('string'), null);
 });

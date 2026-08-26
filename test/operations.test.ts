@@ -289,3 +289,27 @@ void test('the overview exposes operator-safe data only', () => {
     assert.ok(!serialized.includes(forbidden), `overview must not contain "${forbidden}"`);
   }
 });
+
+void test('an audit write failure does not reject the action promise', async () => {
+  // Found in the Phase 11 security review: the audit log throws on a
+  // secret-shaped result, and that throw escaped `execute` with no catch at the
+  // route, hanging the request and raising an unhandled rejection.
+  const audit = new OperationsAuditLog('v');
+  const registry = new OperationsActionRegistry();
+  registry.register('feature-flag.set', {
+    capability: 'operations:act', requiresReason: false, targetType: 'feature-flag',
+    execute: ({ dryRun }): ActionResult => ({ ok: true, dryRun, resultingState: { sessionToken: 'leaked' } })
+  });
+
+  const failures: unknown[] = [];
+  const executor = new OperationsActionExecutor(registry, audit, (error) => failures.push(error));
+  const result = await executor.execute(sessionFor('operator'), { action: 'feature-flag.set', requestId: 'r-1' });
+
+  assert.equal(result.ok, true, 'the action itself still completed');
+  assert.equal(failures.length, 1, 'the audit failure is reported, not swallowed');
+  // The action is still recorded, with the unwritable state stripped.
+  const records = audit.list();
+  assert.equal(records.length, 1);
+  assert.equal(records[0].action, 'feature-flag.set');
+  assert.equal(records[0].resultingState, null);
+});

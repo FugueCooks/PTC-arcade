@@ -91,7 +91,11 @@ export class OperationsActionRegistry {
 const MAX_REASON_LENGTH = 500;
 
 export class OperationsActionExecutor {
-  constructor(private readonly registry: OperationsActionRegistry, private readonly audit: OperationsAuditLog) {}
+  constructor(
+    private readonly registry: OperationsActionRegistry,
+    private readonly audit: OperationsAuditLog,
+    private readonly onAuditFailure: (error: unknown) => void = () => undefined
+  ) {}
 
   async execute(session: OperatorSession, request: ActionRequest, now = Date.now()): Promise<ActionResult> {
     const handler = this.registry.get(request.action);
@@ -139,7 +143,38 @@ export class OperationsActionExecutor {
     return result;
   }
 
+  /**
+   * Writes the audit record. The audit log throws when a result carries a
+   * secret-shaped field, and that must not become a rejected action promise:
+   * the action already ran, and an unhandled rejection here would hang the
+   * request. The failure is surfaced through `onAuditFailure` instead, and a
+   * marker record is attempted without the offending state.
+   */
   private record(
+    session: OperatorSession,
+    request: ActionRequest,
+    targetType: string,
+    targetId: string | null,
+    result: ActionResult,
+    now: number,
+    reason: string | null = null
+  ): void {
+    try {
+      this.writeRecord(session, request, targetType, targetId, result, now, reason);
+    } catch (error) {
+      this.onAuditFailure(error);
+      try {
+        // Never lose the fact that an action ran: re-record it without the
+        // state that could not be written.
+        this.writeRecord(session, request, targetType, targetId,
+          { ...result, previousState: null, resultingState: null }, now, reason);
+      } catch (secondary) {
+        this.onAuditFailure(secondary);
+      }
+    }
+  }
+
+  private writeRecord(
     session: OperatorSession,
     request: ActionRequest,
     targetType: string,

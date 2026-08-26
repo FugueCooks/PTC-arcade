@@ -191,7 +191,11 @@ export function createOperationsRuntime(wiring: OperationsWiring): OperationsRun
     auth,
     audit,
     actions,
-    executor: new OperationsActionExecutor(actions, audit),
+    executor: new OperationsActionExecutor(actions, audit, (error) => {
+      // An audit write that fails is a serious operational signal, so it is
+      // reported rather than swallowed.
+      wiring.auditSink?.({ event: 'operations_audit_write_failed', error: error instanceof Error ? error.message : String(error) });
+    }),
     operations: new OperationsService(wiring.sources, config.softwareVersion),
     featureFlags,
     maintenanceRooms,
