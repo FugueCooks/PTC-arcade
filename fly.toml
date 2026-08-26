@@ -12,6 +12,14 @@ primary_region = "lax"
   BIOS_ASSET_URL = "https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN"
   GAMECUBE_DSP_ASSET_URL = "https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/dsp_rom.bin"
 
+  # Public origin for ptcarcade.fun. PUBLIC_APP_ORIGIN gates cross-site mutation
+  # on the auth and account APIs, and SOLANA_APP_DOMAIN is the domain a wallet
+  # displays when a player signs in — it must match the address bar exactly or
+  # wallets will warn on, or refuse, the signature.
+  PUBLIC_APP_ORIGIN = "https://ptcarcade.fun"
+  SOLANA_APP_DOMAIN = "ptcarcade.fun"
+  SOLANA_APP_URI = "https://ptcarcade.fun"
+
 [http_service]
   internal_port = 8080
   force_https = true

@@ -6,7 +6,10 @@ services:
     github:
       repo: FugueCooks/retro-arcade-multiplayer
       branch: main
-      deploy_on_push: true
+      # Fly is the canonical host for ptcarcade.fun. Auto-deploy is off so a
+      # merge to main does not fan out to a second provider that would then
+      # serve the same domain's traffic from a different build.
+      deploy_on_push: false
     dockerfile_path: Dockerfile
     http_port: 8080
     instance_count: 1

@@ -5,6 +5,10 @@ services:
     plan: free
     region: oregon
     branch: main
+    # Off by design. The free plan spins down when idle, which is unusable for a
+    # persistent multiplayer socket server, so Render is kept as a spare
+    # environment rather than serving ptcarcade.fun.
+    autoDeploy: false
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /ready
