@@ -1,3 +1,7 @@
+import { EmulatorAdapterRegistry } from './emulators/emulator-adapter-registry.js';
+import { LegacyEmulatorAdapter } from './emulators/legacy-emulator-adapter.js';
+import { GameLauncher } from './games/game-launcher.js';
+
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -892,7 +896,14 @@ function stopEmulator(){
   emulatorObjectUrls.forEach(url=>URL.revokeObjectURL(url));emulatorObjectUrls=[];
   setEmulatorRuntimeActive(false);
 }
-function closeMachine(notifyServer=true){const closing=activeCabinet;ps2CacheController?.abort();ps2CacheController=null;if(['psx','n64','snes','ps2','gamecube'].includes(closing?.system))stopEmulator();modal.style.display='none';modal.setAttribute('aria-hidden','true');activeCabinet=null;document.body.classList.remove('cabinet-open');if(notifyServer&&closing)window.dispatchEvent(new CustomEvent('arcade:cabinet-session-ended',{detail:{cabinetId:closing.id}}));if(!mobileInputAvailable())renderer.domElement.requestPointerLock()}
+const emulatorAdapters=new EmulatorAdapterRegistry().register(new LegacyEmulatorAdapter({
+  start:session=>launchLegacyEmulator(session.source,session.options),
+  stop:()=>stopEmulator(),
+  dispose:()=>Promise.resolve()
+}));
+const gameLauncher=new GameLauncher({gameRegistry:window.ARCADE_GAME_REGISTRY,adapterRegistry:emulatorAdapters,
+  contextProvider:()=>window.arcadeMultiplayer?.getSessionContext?.()||{}});
+function closeMachine(notifyServer=true){const closing=activeCabinet;ps2CacheController?.abort();ps2CacheController=null;if(closing&&gameLauncher.active(closing.id))void gameLauncher.stop(closing.id,'cabinet-exit');else if(['psx','n64','snes','ps2','gamecube'].includes(closing?.system))stopEmulator();modal.style.display='none';modal.setAttribute('aria-hidden','true');activeCabinet=null;document.body.classList.remove('cabinet-open');if(notifyServer&&closing)window.dispatchEvent(new CustomEvent('arcade:cabinet-session-ended',{detail:{cabinetId:closing.id}}));if(!mobileInputAvailable())renderer.domElement.requestPointerLock()}
 document.querySelector('.close').onclick=closeMachine;
 const cvs=document.querySelector('#game-screen'),ctx=cvs.getContext('2d'); let romLoaded=false,ship={x:320,bullets:[]},stars=Array.from({length:80},()=>({x:Math.random()*640,y:Math.random()*440,s:1+Math.random()*2})),psxBios=null;
 const hostedPsxBios=biosAssetUrl;
@@ -932,7 +943,7 @@ function warmEmulatorCore(system){
   for(const [href,as] of targets){const link=document.createElement('link');link.rel='prefetch';link.href=href;link.as=as;if(as==='fetch')link.crossOrigin='anonymous';document.head.appendChild(link)}
 }
 function formatDownloadSize(bytes){if(!Number.isFinite(bytes)||bytes<=0)return'HOSTED';const mb=bytes/1048576;return mb>=100?`${Math.round(mb)} MB`:`${mb.toFixed(1)} MB`}
-function launchEmulator(gameFile,options={}){
+function launchLegacyEmulator(gameFile,options={}){
   const host=document.querySelector('#emulator-host'),stage=document.querySelector('#emulator-stage');
   const downloadBytes=options.sizeBytes??(typeof gameFile==='string'?activeCabinet?.gameSizeBytes:gameFile?.size),loadingLabel=options.label||activeCabinet?.gameName||'ARCADE GAME';
   setEmulatorRuntimeActive(true);cvs.style.display='none';document.querySelector('.screen-wrap .scanlines').style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${loadingLabel.toUpperCase()} · ${formatDownloadSize(downloadBytes)}...`;
@@ -945,6 +956,13 @@ function launchEmulator(gameFile,options={}){
   const player=document.createElement('iframe');player.title=`${gameName} player`;player.allow='autoplay; fullscreen';player.src=isPs2?'emulators/play/index.html?v=ps2-visual-1':(isGameCube?'emulators/gecko/index.html?v=gecko-hosted-clean-1':`player.html?core=${encodeURIComponent(core)}&game=${encodeURIComponent(gameUrl)}&bios=${encodeURIComponent(biosUrl)}&name=${encodeURIComponent(gameName)}&id=${gameId}`);player.style.cssText='border:0;width:100%;height:100%;background:#02030a';player.onerror=()=>{showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()};activeEmulatorFrame=player;pendingPs2Source=isPs2?(gameFile instanceof File?{file:gameFile}:{url:gameUrl,name:decodeURIComponent(new URL(gameUrl,location.href).pathname.split('/').pop()||`${gameName}.iso`),size:downloadBytes}):null;pendingGameCubeSource=isGameCube?(gameFile instanceof File?{file:gameFile}:{url:gameUrl,name:decodeURIComponent(new URL(gameUrl,location.href).pathname.split('/').pop()||`${gameName}.rvz`),size:downloadBytes}):null;host.replaceChildren(player);
   const estimatedTimeout=Math.max(20000,Math.min(180000,20000+(Number(downloadBytes)||0)/524288*1000));
   clearTimeout(emulatorLoadTimer);emulatorLoadTimer=setTimeout(()=>{if(activeCabinet){closeMachine();showCabinetMessage('EMULATOR LOAD TIMED OUT. CHECK YOUR CONNECTION.')}},estimatedTimeout);
+}
+async function launchEmulator(gameFile,options={}){
+  const cabinet=activeCabinet;if(!cabinet)return;
+  try{return await gameLauncher.launch(cabinet,gameFile,options)}catch(error){
+    console.warn('GameLauncher could not start the local session.',error);
+    if(activeCabinet===cabinet){showCabinetMessage('EMULATOR COULD NOT LOAD.');closeMachine()}
+  }
 }
 document.querySelector('#bios-file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;psxBios=file;document.querySelector('#bios-name').textContent=`BIOS READY: ${file.name.toUpperCase()}`;});
 function formatRate(bytesPerSecond){

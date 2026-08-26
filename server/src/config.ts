@@ -52,6 +52,9 @@ export interface ServerConfig {
   solanaRpcUrl?: string;
   multiplayerTicketSecret?: string;
   multiplayerTicketTtlMs: number;
+  operationsBootstrapSecret?: string;
+  operationsCookieName: string;
+  operationsSessionTtlMs: number;
 }
 
 export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -117,7 +120,10 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     solanaAppUri: publicUrl(environment.SOLANA_APP_URI ?? environment.PUBLIC_APP_ORIGIN) ?? 'http://localhost:8080',
     solanaRpcUrl: publicUrl(environment.SOLANA_RPC_URL),
     multiplayerTicketSecret: secret(environment.MULTIPLAYER_TICKET_SECRET),
-    multiplayerTicketTtlMs: seconds(environment.MULTIPLAYER_TICKET_TTL_SECONDS, 30, 10, 120)
+    multiplayerTicketTtlMs: seconds(environment.MULTIPLAYER_TICKET_TTL_SECONDS, 30, 10, 120),
+    operationsBootstrapSecret: secret(environment.OPERATIONS_BOOTSTRAP_SECRET),
+    operationsCookieName: cleanCookieName(environment.OPERATIONS_COOKIE_NAME) ?? 'arcade_operator',
+    operationsSessionTtlMs: seconds(environment.OPERATIONS_SESSION_TTL_SECONDS, 3_600, 300, 86_400)
   };
 }
 

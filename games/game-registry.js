@@ -3,15 +3,28 @@ export async function loadGameRegistry() {
   if (!response.ok) throw new Error(`Game registry failed to load (${response.status}).`);
   const payload = await response.json();
   if (payload?.version !== 1 || !Array.isArray(payload.games)) throw new Error('Unsupported game registry.');
-  const byCabinetId = new Map();
+  const byCabinetId = new Map(), byId = new Map(), byPlatformId = new Map();
   for (const game of payload.games) {
-    if (!isValidGame(game) || byCabinetId.has(game.cabinetId)) throw new Error(`Invalid or duplicate game entry: ${game?.id ?? 'unknown'}`);
-    if (game.enabled) byCabinetId.set(game.cabinetId, Object.freeze({
+    if (!isValidGame(game) || byCabinetId.has(game.cabinetId) || byId.has(game.id)) throw new Error(`Invalid or duplicate game entry: ${game?.id ?? 'unknown'}`);
+    const normalized = Object.freeze({
       ...game,
+      displayName: game.name,
+      platformId: game.system,
+      launcherAdapterId: 'browser-local',
+      emulatorAdapterId: 'legacy-browser-emulator',
+      inputProfileId: `standard-${game.system}`,
+      replayCapability: 'INPUT_LOG',
+      assetRequirements: (game.discs || [{ file: game.file, sizeBytes: game.sizeBytes }]).map((asset,index)=>Object.freeze({
+        id:`${game.id}:${game.discs?`disc-${index+1}`:'game'}`,kind:game.discs?'disc':'game',file:asset.file,sizeBytes:asset.sizeBytes,required:index===0
+      })),
       discs: game.discs?.map((disc) => Object.freeze({ ...disc }))
-    }));
+    });
+    if (game.enabled) {
+      byCabinetId.set(game.cabinetId, normalized);byId.set(game.id, normalized);
+      const platformGames=byPlatformId.get(game.system)||[];platformGames.push(normalized);byPlatformId.set(game.system,platformGames);
+    }
   }
-  return Object.freeze({ version: payload.version, byCabinetId });
+  return Object.freeze({ version: payload.version, byCabinetId, byId, byPlatformId });
 }
 
 function isValidGame(game) {

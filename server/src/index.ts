@@ -303,6 +303,7 @@ cabinets.subscribe((event) => {
     rooms.bumpStateRevision(event.roomId, 'cabinet');
     io.to(event.roomId).emit('cabinet:state-changed', event.state);
   }
+  if (event.type === 'CabinetStateDelta') io.to(event.roomId).emit('cabinet:delta', event.delta);
   if (event.type === 'CabinetForcedRelease') {
     const socketId = players.socketIdForPlayerId(event.playerId);
     if (socketId) io.to(socketId).emit('cabinet:forced-release', { cabinetId: event.cabinetId, reason: event.reason });
@@ -374,7 +375,7 @@ io.on('connection', (socket) => {
     });
     if (stablePlayerId) await identityDirectory?.presence(stablePlayerId, result.snapshot.roomId, socket.id,
       Math.max(config.reconnectGraceMs + 10_000, 30_000));
-    socket.emit('cabinet:snapshot', { roomId: result.snapshot.roomId, cabinets: cabinets.snapshot(result.snapshot.roomId) });
+    socket.emit('cabinet:snapshot', cabinets.snapshotPayload(result.snapshot.roomId));
     socket.emit('chat:snapshot', { roomId: result.snapshot.roomId, messages: chat.snapshot(result.snapshot.roomId) });
     socket.emit('world:snapshot', world.snapshot(result.snapshot.roomId));
     metrics.increment(result.resumed ? 'reconnect_success_total' : 'player_join_success_total');

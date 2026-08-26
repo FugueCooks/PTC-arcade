@@ -1,6 +1,9 @@
 import type { CabinetState, CabinetUseResult, Position } from '../protocol.js';
 import type { PlayerEvent, PlayerManager } from '../players/player-manager.js';
 import { CABINET_REGISTRY, type CabinetDefinition } from './cabinet-registry.js';
+import { CabinetIndex } from './cabinet-index.js';
+import { CabinetStateSynchronizer } from './cabinet-state-sync.js';
+import type { CabinetStateDelta } from '../../../shared/platform-contracts.js';
 
 export interface CabinetManagerOptions {
   interactionDistance: number;
@@ -9,6 +12,7 @@ export interface CabinetManagerOptions {
 }
 export type CabinetEvent =
   | { type: 'CabinetStateChanged'; roomId: string; state: CabinetState }
+  | { type: 'CabinetStateDelta'; roomId: string; delta: CabinetStateDelta<CabinetState> }
   | { type: 'CabinetForcedRelease'; roomId: string; playerId: string; cabinetId: string; reason: string };
 type LogLevel = 'info' | 'warn';
 type Logger = (level: LogLevel, event: string, details: Record<string, unknown>) => void;
@@ -18,8 +22,11 @@ const defaults: CabinetManagerOptions = { interactionDistance: 2.6, activationTi
 /** Owns live cabinet state. Static definitions are shared; occupancy is isolated per room. */
 export class CabinetManager {
   private readonly definitions = new Map(CABINET_REGISTRY.map((definition) => [definition.id, definition]));
+  readonly index = new CabinetIndex(CABINET_REGISTRY);
+  readonly synchronizer = new CabinetStateSynchronizer();
   private readonly roomStates = new Map<string, Map<string, CabinetState>>();
   private readonly requestTimes = new Map<string, number>();
+  private readonly enabledOverrides = new Map<string, boolean>();
   private readonly listeners = new Set<(event: CabinetEvent) => void>();
   private readonly options: CabinetManagerOptions;
 
@@ -32,8 +39,12 @@ export class CabinetManager {
     return () => this.listeners.delete(listener);
   }
 
-  snapshot(roomId: string): CabinetState[] {
-    return [...this.statesFor(roomId).values()].map(copyState);
+  snapshot(roomId: string, zoneId = 'all'): CabinetState[] {
+    return this.synchronizer.snapshot(roomId, zoneId, CABINET_REGISTRY, this.statesFor(roomId)).cabinets;
+  }
+
+  snapshotPayload(roomId: string, zoneId = 'all') {
+    return this.synchronizer.snapshot(roomId, zoneId, CABINET_REGISTRY, this.statesFor(roomId));
   }
 
   requestUse(socketId: string, cabinetId: unknown, now = Date.now()): CabinetUseResult {
@@ -43,11 +54,11 @@ export class CabinetManager {
     this.logger('info', 'cabinet_requested', { roomId: player.roomId, cabinetId, playerId });
     const definition = this.definitions.get(cabinetId);
     if (!definition) return this.deny('unknown-cabinet', cabinetId, playerId);
-    if (!definition.enabled) return this.deny('disabled', cabinetId, playerId);
+    if (!this.isEnabled(cabinetId)) return this.deny('disabled', cabinetId, playerId);
     const previousRequest = this.requestTimes.get(playerId) ?? -Infinity;
     if (now - previousRequest < this.options.requestCooldownMs) return this.deny('rate-limited', cabinetId, playerId);
     this.requestTimes.set(playerId, now);
-    const state = this.statesFor(player.roomId).get(cabinetId)!;
+    const state = this.stateFor(player.roomId, cabinetId);
 
     // Same-owner retries are idempotent and allow a reconnected player to reopen local UI.
     if (state.occupiedByPlayerId === playerId) return this.approved(state, definition);
@@ -114,10 +125,17 @@ export class CabinetManager {
   private statesFor(roomId: string): Map<string, CabinetState> {
     let states = this.roomStates.get(roomId);
     if (!states) {
-      states = new Map(CABINET_REGISTRY.map(({ id }) => [id, availableState(id)]));
+      states = new Map();
       this.roomStates.set(roomId, states);
     }
     return states;
+  }
+
+  isEnabled(cabinetId: string): boolean { return this.enabledOverrides.get(cabinetId) ?? this.definitions.get(cabinetId)?.enabled ?? false; }
+  setEnabled(cabinetId: string, enabled: boolean): boolean {
+    if (!this.definitions.has(cabinetId)) return false;
+    this.enabledOverrides.set(cabinetId, enabled);
+    return true;
   }
 
   private ownerContext(socketId: string, cabinetId: unknown) {
@@ -126,7 +144,7 @@ export class CabinetManager {
     const playerId = this.players.playerIdForSocket(socketId);
     const player = playerId ? this.players.stateForPlayerId(playerId) : undefined;
     if (!definition || !player || player.activeCabinetId !== cabinetId) return undefined;
-    const state = this.statesFor(player.roomId).get(cabinetId)!;
+    const state = this.stateFor(player.roomId, cabinetId);
     if (state.occupiedByPlayerId !== playerId) return undefined;
     return { definition, playerId, player, state };
   }
@@ -159,7 +177,16 @@ export class CabinetManager {
     this.logger('warn', 'cabinet_denied', { cabinetId: typeof cabinetId === 'string' ? cabinetId : null, playerId: playerId ?? null, reason });
     return { ok: false, reason };
   }
-  private changed(roomId: string, state: CabinetState): void { this.publish({ type: 'CabinetStateChanged', roomId, state: copyState(state) }); }
+  private stateFor(roomId: string, cabinetId: string): CabinetState {
+    const states = this.statesFor(roomId);let state = states.get(cabinetId);
+    if (!state) { state = availableState(cabinetId); states.set(cabinetId, state); }
+    return state;
+  }
+  private changed(roomId: string, state: CabinetState): void {
+    this.publish({ type: 'CabinetStateChanged', roomId, state: copyState(state) });
+    const zoneId = this.definitions.get(state.cabinetId)?.zoneId ?? 'all';
+    this.publish({ type: 'CabinetStateDelta', roomId, delta: this.synchronizer.changed(roomId, zoneId, state) });
+  }
   private publish(event: CabinetEvent): void { this.listeners.forEach((listener) => listener(event)); }
 }
 

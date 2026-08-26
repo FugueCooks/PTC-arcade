@@ -65,7 +65,8 @@ export interface CabinetState {
   reservedAt: number | null;
   sessionStartedAt: number | null;
 }
-export interface CabinetSnapshot { roomId: string; cabinets: CabinetState[] }
+export interface CabinetSnapshot { roomId: string; cabinets: CabinetState[]; zoneId?: string; revision?: number }
+export interface CabinetDelta { roomId: string; zoneId: string; revision: number; previousRevision: number; changes: CabinetState[] }
 export type CabinetDenialReason = 'invalid-request' | 'unknown-cabinet' | 'disabled' | 'too-far' | 'already-using' | 'occupied' | 'rate-limited' | 'not-owner';
 export interface CabinetUseResult {
   ok: boolean;
@@ -117,6 +118,7 @@ export interface ServerToClientEvents {
   'player:status': (payload: { id: string; status: PlayerStatus; at: number }) => void;
   'cabinet:snapshot': (payload: CabinetSnapshot) => void;
   'cabinet:state-changed': (payload: CabinetState) => void;
+  'cabinet:delta': (payload: CabinetDelta) => void;
   'cabinet:forced-release': (payload: { cabinetId: string; reason: string }) => void;
   'chat:snapshot': (payload: { roomId: string; messages: ChatMessage[] }) => void;
   'chat:message': (payload: ChatMessage) => void;
