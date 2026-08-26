@@ -52,6 +52,9 @@ import { WalletAuthService } from './auth/wallet-auth-service.js';
 import { installWalletAuthRoutes } from './http/wallet-auth-routes.js';
 import { InMemoryAsyncRateLimiter, RedisAsyncRateLimiter } from './auth/distributed-rate-limiter.js';
 import { bootstrapPlugins } from './plugins/plugin-bootstrap.js';
+import { createOperationsRuntime } from './operations/operations-bootstrap.js';
+import { installOperationsRoutes } from './http/operations-routes.js';
+import { loadGameRegistry } from './games/game-registry-service.js';
 import type { PluginHost } from './plugins/plugin-host.js';
 
 /** Bounds a resync request so one client cannot ask for unbounded work. */
@@ -62,6 +65,7 @@ function toZoneSnapshotPayload(snapshot: { roomId: string; revision: number; zon
 }
 
 const projectRoot = path.resolve(process.cwd());
+let gameRegistry = loadGameRegistry(projectRoot).registry;
 const startedAt = Date.now();
 const config = loadServerConfig();
 const logger = createLogger({ service: 'roms-retro-arcade', serverId: config.serverId, region: config.region, version: config.softwareVersion });
@@ -538,6 +542,103 @@ const pluginBootstrap = await bootstrapPlugins(config, {
 }, (level, event, details) => logger[level === 'error' ? 'error' : level](event, details));
 
 const plugins: PluginHost = pluginBootstrap.host;
+
+/**
+ * Milestones 11.25 through 11.29. Operations authenticate against a separate
+ * credential store, so no player session — wallet or otherwise — can reach any
+ * of this.
+ */
+const operationsRuntime = createOperationsRuntime({
+  config,
+  cabinets,
+  games: gameRegistry,
+  plugins,
+  beginDraining: () => void drain.begin('operator-action'),
+  isDraining: () => health.isDraining,
+  closeEmptyRoom: (roomId) => rooms.close(roomId),
+  roomPopulation: (roomId) => players.roomPopulation(roomId),
+  refreshRegistry: () => {
+    gameRegistry = loadGameRegistry(projectRoot).registry;
+    return { cabinetDefinitions: cabinets.index.size, gameDefinitions: gameRegistry.size };
+  },
+  sources: {
+    server: () => {
+      const readiness = health.readiness();
+      return {
+        serverId: config.serverId,
+        region: config.region,
+        version: config.softwareVersion,
+        uptimeSeconds: Math.floor((Date.now() - startedAt) / 1_000),
+        roomCount: rooms.activeRoomCount,
+        playerCount: players.connectedCount,
+        capacity: { maxPlayers: config.maxPlayersPerServer, maxRooms: config.maxRoomsPerServer },
+        draining: health.isDraining,
+        ready: readiness.ready,
+        readinessReasons: readiness.reasons,
+        eventLoopDelayMs: metrics.eventLoopDelayMs(),
+        memoryRssBytes: process.memoryUsage().rss
+      };
+    },
+    rooms: () => rooms.records.map((record) => ({
+      roomId: record.id,
+      population: players.roomPopulation(record.id) ?? 0,
+      owningServerId: config.serverId,
+      status: health.isDraining ? 'draining' as const : 'active' as const,
+      activeCabinetCount: cabinets.activeStateCount(record.id),
+      createdAt: record.createdAt
+    })),
+    cabinets: (roomId) => {
+      const room = roomId ?? DEFAULT_ROOM_ID;
+      return cabinets.index.definitions.map((definition) => {
+        const state = cabinets.snapshot(room).find(({ cabinetId }) => cabinetId === definition.id);
+        return {
+          cabinetId: definition.id,
+          zoneId: definition.zoneId,
+          gameId: definition.gameId,
+          state: state?.status ?? 'available',
+          // Only the public player ID, and only while the cabinet is held: an
+          // operator may need to free it. No other player data is exposed.
+          occupantPublicId: state?.occupiedByPlayerId ?? null,
+          enabled: definition.enabled && !operationsRuntime.disabledCabinets.has(definition.id),
+          maintenance: operationsRuntime.disabledCabinets.has(definition.id),
+          failureCount: 0,
+          lastSuccessfulSessionAt: state?.sessionStartedAt ?? null
+        };
+      });
+    },
+    dependencies: () => [
+      { name: 'redis', required: Boolean(config.redisUrl), ready: redis?.isReady ?? false, detail: null },
+      { name: 'postgres', required: config.databaseRequired, ready: database?.isReady ?? false, detail: null },
+      { name: 'object-storage', required: false, ready: false, detail: 'read-only asset CDN; no upload path in Phase 11' }
+    ],
+    plugins: () => plugins.health(),
+    emulatorAdapters: () => [
+      { adapterId: 'emulatorjs', platforms: ['psx', 'n64', 'snes'] },
+      { adapterId: 'play-ps2', platforms: ['ps2'] },
+      { adapterId: 'gecko-gamecube', platforms: ['gamecube'] }
+    ],
+    registry: () => ({
+      cabinetDefinitions: cabinets.index.size,
+      zones: cabinets.zones.size,
+      gameDefinitions: gameRegistry.size
+    }),
+    featureFlags: () => Object.fromEntries(operationsRuntime.featureFlags),
+    // Game sessions are client-side in Phase 11; the server counts cabinets in
+    // use rather than reporting a number it cannot observe.
+    activeGameSessions: () => rooms.records.reduce((total, record) => total + cabinets.activeStateCount(record.id), 0),
+    queues: () => []
+  },
+  auditSink: (record) => logger.info('operations_audit', record as Record<string, unknown>)
+});
+
+installOperationsRoutes(app, config, {
+  auth: operationsRuntime.auth,
+  operations: operationsRuntime.operations,
+  actions: operationsRuntime.actions,
+  executor: operationsRuntime.executor,
+  audit: operationsRuntime.audit,
+  metrics
+}, projectRoot);
 
 const drain = new DrainController(httpServer, io, config, health, metrics, logger, {
   activePlayers: () => players.connectedCount,

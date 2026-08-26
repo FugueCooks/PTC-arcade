@@ -51,6 +51,9 @@ export interface ServerConfig {
   pluginStorageDirectory: string;
   pluginStorageMaxKeys: number;
   pluginStorageMaxTotalBytes: number;
+  /** Raw operator credential list; parsed by the operations auth service. */
+  operationsOperators: string | undefined;
+  operationsSessionTtlMs: number;
   solanaNetwork: 'mainnet-beta' | 'devnet' | 'testnet' | 'localnet';
   solanaAppDomain: string;
   solanaAppUri: string;
@@ -122,6 +125,8 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     pluginStorageDirectory: environment.PLUGIN_STORAGE_DIR ?? '.plugin-storage',
     pluginStorageMaxKeys: integer(environment.PLUGIN_STORAGE_MAX_KEYS, 500, 1, 100_000),
     pluginStorageMaxTotalBytes: integer(environment.PLUGIN_STORAGE_MAX_TOTAL_BYTES, 1_048_576, 1_024, 268_435_456),
+    operationsOperators: environment.OPERATIONS_OPERATORS,
+    operationsSessionTtlMs: seconds(environment.OPERATIONS_SESSION_TTL_SECONDS, 28_800, 300, 86_400),
     solanaNetwork: solanaNetwork(environment.SOLANA_NETWORK),
     solanaAppDomain: appDomain(environment.SOLANA_APP_DOMAIN, environment.PUBLIC_APP_ORIGIN),
     solanaAppUri: publicUrl(environment.SOLANA_APP_URI ?? environment.PUBLIC_APP_ORIGIN) ?? 'http://localhost:8080',

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Arcade Operations</title>
+  <link rel="stylesheet" href="ops.css" />
+</head>
+<body>
+  <!--
+    Milestone 11.26 — the operations dashboard.
+
+    This page renders whatever the server returns and nothing more. It performs
+    no authorization of its own: hiding a control here would be cosmetic, since
+    every route re-checks the operator's role server-side. The role shown in the
+    header is a label, not a permission.
+
+    Deliberately absent: any chat, message, or social view. This is operational
+    control, not moderation.
+  -->
+  <header class="bar">
+    <h1>ARCADE OPERATIONS</h1>
+    <div class="who" id="who" hidden>
+      <span id="operator-label"></span>
+      <button type="button" id="refresh">REFRESH</button>
+      <button type="button" id="sign-out">SIGN OUT</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="login-panel" class="panel">
+      <h2>OPERATOR SIGN IN</h2>
+      <p class="muted">Operations credentials are separate from player accounts. A connected wallet grants no access here.</p>
+      <form id="login-form" autocomplete="off">
+        <label>OPERATOR ID <input id="operator-id" name="operator-id" required maxlength="64" autocomplete="off" /></label>
+        <label>ACCESS TOKEN <input id="operator-token" name="operator-token" type="password" required maxlength="512" autocomplete="off" /></label>
+        <button type="submit">SIGN IN</button>
+      </form>
+      <p class="error" id="login-error" role="alert" hidden></p>
+    </section>
+
+    <div id="console" hidden>
+      <nav class="tabs" id="tabs">
+        <button type="button" data-view="overview" class="active">OVERVIEW</button>
+        <button type="button" data-view="servers">SERVERS</button>
+        <button type="button" data-view="rooms">ROOMS</button>
+        <button type="button" data-view="cabinets">CABINETS</button>
+        <button type="button" data-view="plugins">PLUGINS</button>
+        <button type="button" data-view="replays">REPLAYS</button>
+        <button type="button" data-view="actions">ACTIONS</button>
+        <button type="button" data-view="audit">AUDIT</button>
+      </nav>
+      <section class="panel" id="view"></section>
+    </div>
+  </main>
+
+  <script type="module" src="ops.js"></script>
+</body>
+</html>
