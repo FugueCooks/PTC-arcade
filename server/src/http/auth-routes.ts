@@ -6,11 +6,16 @@ import { readSessionCookie } from '../auth/session-cookie.js';
 import type { RealtimeTicketService } from '../auth/realtime-ticket.js';
 import { InMemoryAsyncRateLimiter, type AsyncRateLimiter } from '../auth/distributed-rate-limiter.js';
 
-interface RouteDependencies { service?: AuthService; tickets?: RealtimeTicketService; limiter?: AsyncRateLimiter; databaseReady: () => boolean }
+import { checkCrossSite, crossSiteMessage, type CrossSiteVerdict } from './cross-site.js';
+
+/** Reports a refused mutation so a misconfiguration is visible in the log. */
+export type CrossSiteReporter = (request: Request, verdict: CrossSiteVerdict) => void;
+
+interface RouteDependencies { service?: AuthService; tickets?: RealtimeTicketService; limiter?: AsyncRateLimiter; databaseReady: () => boolean; onCrossSiteRejected?: CrossSiteReporter }
 
 export function installAuthRoutes(app: Express, config: ServerConfig, dependencies: RouteDependencies): void {
   const limiter = dependencies.limiter ?? new InMemoryAsyncRateLimiter(config.authRequestLimit, 10 * 60_000);
-  app.use('/api/auth', noStore, (request, response, next) => rejectCrossSiteMutation(request, response, next, config.authAllowedOrigin), async (request, response, next) => {
+  app.use('/api/auth', noStore, (request, response, next) => rejectCrossSiteMutation(request, response, next, config.authAllowedOrigin, dependencies.onCrossSiteRejected), async (request, response, next) => {
     if (!dependencies.service || !dependencies.databaseReady()) {
       response.status(503).json({ ok: false, error: { code: 'auth-unavailable', message: 'Account services are temporarily unavailable.' } });
       return;
@@ -106,24 +111,13 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
 function noStore(_request: Request, response: Response, next: NextFunction): void {
   response.setHeader('Cache-Control', 'no-store'); next();
 }
-function rejectCrossSiteMutation(request: Request, response: Response, next: NextFunction, allowedOrigin?: string): void {
-  if (request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS') return next();
-  if (request.get('Sec-Fetch-Site') === 'cross-site') {
-    response.status(403).json({ ok: false, error: { code: 'origin-rejected', message: 'This request was rejected.' } }); return;
-  }
-  const origin = request.get('Origin');
-  if (origin) {
-    try {
-      const expected = allowedOrigin ?? `${request.protocol}://${request.get('host')}`;
-      if (new URL(origin).origin !== expected) {
-        response.status(403).json({ ok: false, error: { code: 'origin-rejected', message: 'This request was rejected.' } }); return;
-      }
-    } catch {
-      response.status(403).json({ ok: false, error: { code: 'origin-rejected', message: 'This request was rejected.' } }); return;
-    }
-  }
-  next();
+function rejectCrossSiteMutation(request: Request, response: Response, next: NextFunction, allowedOrigin?: string, onRejected?: CrossSiteReporter): void {
+  const verdict = checkCrossSite(request, allowedOrigin);
+  if (!verdict.rejected) { next(); return; }
+  onRejected?.(request, verdict);
+  response.status(403).json({ ok: false, error: { code: 'origin-rejected', message: crossSiteMessage(verdict) } });
 }
+
 function setSessionCookie(response: Response, request: Request, config: ServerConfig, token: string, expiresAt: Date): void {
   response.cookie(config.authCookieName, token, cookieOptions(request, config, expiresAt));
 }

@@ -7,10 +7,13 @@ import { readSessionCookie } from '../auth/session-cookie.js';
 import { accountDeletionSchema, preferencesUpdateSchema, profileUpdateSchema } from '../auth/validation.js';
 import { RequestRateLimiter } from '../auth/request-rate-limiter.js';
 import { entitlementsFor } from '../auth/authorization-policy.js';
+import { checkCrossSite, crossSiteMessage } from './cross-site.js';
+import type { CrossSiteReporter } from './auth-routes.js';
 
 interface Dependencies {
   auth?: AuthService; accounts?: AccountService; databaseReady: () => boolean;
   identityChanged?: (identity: SafeIdentity) => void; accountDeleted?: (identity: SafeIdentity) => void;
+  onCrossSiteRejected?: CrossSiteReporter;
 }
 
 export function installAccountRoutes(app: Express, config: ServerConfig, dependencies: Dependencies): void {
@@ -18,8 +21,10 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
   app.use('/api/account', (request, response, next) => {
     response.setHeader('Cache-Control', 'no-store');
     if (request.method !== 'GET') {
-      if (crossSite(request, config.authAllowedOrigin)) {
-        response.status(403).json(error('origin-rejected', 'This request was rejected.')); return;
+      const verdict = checkCrossSite(request, config.authAllowedOrigin);
+      if (verdict.rejected) {
+        dependencies.onCrossSiteRejected?.(request, verdict);
+        response.status(403).json(error('origin-rejected', crossSiteMessage(verdict))); return;
       }
       const limit = limiter.consume(`${request.ip || 'unknown'}:${request.path}`);
       if (!limit.allowed) {
@@ -98,11 +103,6 @@ async function registeredSession(request: Request, config: ServerConfig, auth: A
 }
 function clearCookie(response: Response, config: ServerConfig) {
   response.clearCookie(config.authCookieName, { httpOnly: true, secure: config.authCookieSecure, sameSite: 'strict', path: '/' });
-}
-function crossSite(request: Request, allowedOrigin?: string): boolean {
-  if (request.get('Sec-Fetch-Site') === 'cross-site') return true;
-  const origin = request.get('Origin'); if (!origin) return false;
-  try { return new URL(origin).origin !== (allowedOrigin ?? `${request.protocol}://${request.get('host')}`); } catch { return true; }
 }
 function error(code: string, message: string) { return { ok: false, error: { code, message } }; }
 function unauthorized(response: Response) { response.status(401).json(error('authentication-required', 'Sign in to manage this account.')); }

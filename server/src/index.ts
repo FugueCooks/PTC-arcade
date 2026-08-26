@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import path from 'node:path';
 import express from 'express';
+import type { Request } from 'express';
 import { Server } from 'socket.io';
 import { DEFAULT_ROOM_ID } from './protocol.js';
 import type { CabinetState, ClientToServerEvents, ServerToClientEvents } from './protocol.js';
@@ -38,6 +39,7 @@ import { SessionTokenService } from './auth/session-token-service.js';
 import { DrizzleAuthRepository } from './auth/auth-repository.js';
 import { AuthService } from './auth/auth-service.js';
 import { installAuthRoutes } from './http/auth-routes.js';
+import type { CrossSiteVerdict } from './http/cross-site.js';
 import { RealtimeTicketService, stablePublicPlayerId } from './auth/realtime-ticket.js';
 import { readSessionCookie } from './auth/session-cookie.js';
 import type { SafeIdentity } from './auth/auth-repository.js';
@@ -214,14 +216,27 @@ const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirect
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
 app.use(express.json({ limit: '16kb' }));
+// A refused mutation is either a real cross-site attempt or a misconfigured
+// PUBLIC_APP_ORIGIN, and the two are indistinguishable from the browser. Logged
+// so the difference is one line in the server log rather than a source read.
+const reportCrossSiteRejection = (request: Request, verdict: CrossSiteVerdict): void => {
+  logger.warn('cross_site_rejected', {
+    method: request.method, path: request.path, reason: verdict.reason,
+    seenOrigin: verdict.seenOrigin ?? null, expectedOrigin: verdict.expectedOrigin ?? null,
+    secFetchSite: request.get('Sec-Fetch-Site') ?? null
+  });
+};
+
 installAuthRoutes(app, config, { service: authService, tickets: realtimeTickets,
   limiter: authenticationLimiter,
+  onCrossSiteRejected: reportCrossSiteRejection,
   databaseReady: () => databaseBootstrapped && (database?.isReady ?? false) });
 installWalletAuthRoutes(app, config, { challenges: walletChallenges, walletAuth: walletAuthService,
   challengeLimiter: walletChallengeLimiter, verificationLimiter: walletVerificationLimiter,
   ready: () => databaseBootstrapped && (database?.isReady ?? false) && (!config.redisRequired || Boolean(redis?.isReady)) });
 installAccountRoutes(app, config, {
   auth: authService, accounts: accountService, databaseReady: () => databaseBootstrapped && (database?.isReady ?? false),
+  onCrossSiteRejected: reportCrossSiteRejection,
   identityChanged: (identity) => { players.updateIdentity(stablePublicPlayerId(identity), { displayName: identity.displayName, avatarId: identity.avatarId }); },
   accountDeleted: (identity) => {
     const socketId = players.socketIdForPlayerId(stablePublicPlayerId(identity));
