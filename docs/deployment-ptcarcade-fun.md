@@ -102,34 +102,56 @@ Note both addresses.
 
 ### 3. Point DNS at Fly
 
-DNS for `ptcarcade.fun` must resolve to the Fly addresses from step 2, not to
-any previous host. Check what it answers with today before editing:
+**The zone is on Cloudflare, not Spaceship.** Measured 2026-08-26:
 
-```sh
-dig +short ptcarcade.fun A
-dig +short ptcarcade.fun AAAA
-dig +short NS ptcarcade.fun
+```
+NS     stan.ns.cloudflare.com, donna.ns.cloudflare.com
+A      104.21.20.102, 172.67.192.84      <- Cloudflare anycast, not an origin
+AAAA   2606:4700:3032::6815:1466, 2606:4700:3035::ac43:c054
+www    no record at all
 ```
 
-If the `NS` answer is Cloudflare rather than Spaceship, the records live in the
-Cloudflare dashboard and editing Spaceship will change nothing — edit whichever
-one the `NS` records name, and delete any A/AAAA/CNAME still pointing at the old
-host. A proxied (orange-cloud) Cloudflare record must be set to DNS-only, or
-Fly's certificate validation cannot see the record.
+Spaceship is the registrar, but the nameservers were delegated to Cloudflare, so
+Spaceship's DNS panel does not control this domain — edits there change nothing.
+Records live in the Cloudflare dashboard.
 
-#### At Spaceship
+Those A records are Cloudflare's own addresses, which means the record is
+**proxied** (orange cloud) and the real origin sits behind it. Re-check before
+editing, since this can change:
 
-In the Spaceship dashboard: **Domains → ptcarcade.fun → Advanced DNS** (or
-"Manage DNS"). Delete any parking / placeholder records first, then add:
+```sh
+dig +short NS ptcarcade.fun
+dig +short A ptcarcade.fun
+```
 
-| Type | Host | Value | TTL |
+In the Cloudflare dashboard, **ptcarcade.fun → DNS → Records**:
+
+| Type | Name | Value | Proxy status |
 |---|---|---|---|
-| A | `@` | the IPv4 from `fly ips list` | Automatic |
-| AAAA | `@` | the IPv6 from `fly ips list` | Automatic |
-| CNAME | `www` | `ptcarcade.fun` | Automatic |
+| A | `@` | the IPv4 from `fly ips list` | **DNS only** (grey cloud) |
+| AAAA | `@` | the IPv6 from `fly ips list` | **DNS only** (grey cloud) |
+| CNAME | `www` | `ptcarcade.fun` | **DNS only** (grey cloud) |
 
-Leave Spaceship's nameservers as they are — you are editing records, not
-delegating the zone elsewhere.
+Delete the existing A and AAAA records first — they point at the previous host.
+
+Grey cloud, not orange, and the reason matters. Proxied, Cloudflare terminates
+TLS with its own certificate and answers the ACME HTTP challenge itself, so
+`fly certs add` cannot validate and Fly never gets a certificate. With
+Cloudflare's SSL mode on "Flexible" that combination also produces a redirect
+loop, and on "Full (strict)" a 526, both of which look like an application
+fault and are not. DNS-only puts Fly directly in front of the browser with its
+own certificate, which is the configuration the rest of this document assumes.
+
+Nothing here needs Cloudflare's proxy: game and BIOS binaries already come from
+R2 rather than the origin, and Socket.IO is a long-lived connection that gains
+nothing from a CDN in front of it. If you want the proxy on later, turn it on
+after the domain works end to end, and set SSL mode to Full (strict).
+
+One more thing to check while in the dashboard: if a **Cloudflare Pages**
+project claims `ptcarcade.fun` as a custom domain, it will keep intercepting the
+hostname no matter what the DNS records say. Remove the custom domain from
+**Workers & Pages → the project → Custom domains**. The Pages deployment at
+`retro-arcade-om7.pages.dev` stays reachable on its own hostname.
 
 ### 4. Issue the certificate
 
@@ -139,17 +161,21 @@ fly certs add www.ptcarcade.fun
 fly certs show ptcarcade.fun
 ```
 
-Fly validates ownership through the records from step 3, so add DNS first.
-`fly certs show` reports both DNS and certificate status; it usually completes
-within a few minutes, but allow up to an hour for propagation.
+Fly validates ownership through the records from step 3, so add DNS first, and
+leave them DNS-only until `fly certs show` reports the certificate issued. If it
+stays pending, the record is almost certainly still proxied.
 
 ### 5. Verify
 
 ```sh
+dig +short A ptcarcade.fun          # must be the Fly IPv4, not 104.21.x / 172.67.x
 curl -s https://ptcarcade.fun/health
 curl -s https://ptcarcade.fun/api/v1/platform
 curl -sI https://ptcarcade.fun | grep -i strict-transport
 ```
+
+A Cloudflare address still in the `dig` answer means the record is proxied or a
+Pages project still claims the hostname — go back to step 3.
 
 Then in a browser: load the site, enter as a guest, walk to a cabinet, and
 **launch one game end to end**. See "Before you announce it" below.
