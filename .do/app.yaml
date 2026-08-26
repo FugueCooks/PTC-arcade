@@ -6,25 +6,21 @@ services:
     github:
       repo: FugueCooks/retro-arcade-multiplayer
       branch: main
-      # On, deliberately: this is the only host that deploys from a push, and
-      # its instance is paid, so unlike Render's free plan it does not spin down
-      # when idle. Note that this file only governs the live app if the spec is
-      # applied to it (`doctl apps update --spec .do/app.yaml`); otherwise the
-      # setting in the DigitalOcean dashboard is what actually decides.
-      deploy_on_push: true
+      # Off: Fly serves ptcarcade.fun and is the only target a merge to main
+      # should reach. Leaving this on would build a second copy of the same
+      # code on a host that no longer fronts the domain. Note that this file
+      # only governs the live app if the spec is applied to it
+      # (`doctl apps update --spec .do/app.yaml`); otherwise the setting in the
+      # DigitalOcean dashboard is what actually decides.
+      deploy_on_push: false
     dockerfile_path: Dockerfile
     http_port: 8080
     instance_count: 1
     instance_size_slug: apps-s-1vcpu-0.5gb
     routes:
       - path: /
-    domains:
-      - domain: ptcarcade.fun
-        type: PRIMARY
-        zone: ptcarcade.fun
-      - domain: www.ptcarcade.fun
-        type: ALIAS
-        zone: ptcarcade.fun
+    # No custom domain: ptcarcade.fun resolves to Fly. Two hosts holding a
+    # certificate for the same apex is how a stale build ends up answering it.
     envs:
       - key: NODE_ENV
         value: production
@@ -50,10 +46,11 @@ services:
         value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/dsp_rom.bin
         scope: RUN_TIME
         type: GENERAL
-      # Domain-dependent. SOLANA_APP_DOMAIN is what a wallet shows the player
-      # when they sign in, so it must match the address bar exactly. Until
-      # ptcarcade.fun is attached to this app, wallet login will warn or fail
-      # here while guest play works normally.
+      # Domain-dependent, and set for the canonical origin. SOLANA_APP_DOMAIN
+      # is what a wallet shows the player when they sign in, so it must match
+      # the address bar exactly. On this spare host the address bar is the
+      # ondigitalocean.app hostname, so wallet login will warn or fail here
+      # while guest play works normally — that is expected for a spare.
       - key: PUBLIC_APP_ORIGIN
         value: https://ptcarcade.fun
         scope: RUN_TIME

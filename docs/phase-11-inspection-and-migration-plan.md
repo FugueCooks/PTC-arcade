@@ -47,7 +47,8 @@ Static browser client is served from the same origin: `arcade.js` (1113 dense li
 
 Deployment targets, all Docker on the same image: Fly (`fly.toml`, lax, 2 shared vCPU /
 1 GB, `/ready` health check), DigitalOcean App Platform (`.do/app.yaml`, sfo), Render
-(`render.yaml`, oregon). Game and BIOS binaries are served from Cloudflare R2 via
+(`render.yaml`, oregon). *Since this inspection, Render has been removed and Fly is the
+sole target for `ptcarcade.fun`; see `docs/deployment-ptcarcade-fun.md`.* Game and BIOS binaries are served from Cloudflare R2 via
 `GAME_ASSET_BASE_URL`. Cloudflare Pages/Worker configs exist under `cloudflare/`.
 
 ### 1.2 Cabinet architecture

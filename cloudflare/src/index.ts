@@ -399,7 +399,7 @@ function isAllowedOrigin(value: string | null): boolean {
   if (
     value === 'https://ptcarcade.fun'
     || value === 'https://www.ptcarcade.fun'
-    || value === 'https://retro-arcade-multiplayer.onrender.com'
+    || value === 'https://retro-arcade-fugue.fly.dev'
     || value === 'https://retro-arcade-om7.pages.dev'
   ) return true;
   return /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(value);

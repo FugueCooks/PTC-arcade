@@ -101,10 +101,12 @@ No database is required for the current rooms, movement, chat, cabinets, or worl
 
 For Phase 7 development, run `docker compose -f docker-compose.phase7.yml up redis`, set `REDIS_URL=redis://127.0.0.1:6379`, and set a non-production `REDIS_KEY_PREFIX`. Scaled deployments must set `REDIS_REQUIRED=1` and use sticky sessions while Socket.IO polling remains enabled. See `docs/phase-7-architecture.md` and `docs/redis-keys.md` for ownership, TTL, and security details.
 
-## Fly.io West Coast deployment
+## Fly.io West Coast deployment (canonical)
 
-`fly.toml` runs the current authoritative Socket.IO service as one always-on
-machine in Los Angeles (`lax`). Large game and BIOS downloads continue to come
+`fly.toml` is the deployment target for `ptcarcade.fun`. It runs the current
+authoritative Socket.IO service as one always-on machine in Los Angeles
+(`lax`). Domain, DNS, certificate, and secret setup are in
+`docs/deployment-ptcarcade-fun.md`. Large game and BIOS downloads continue to come
 directly from Cloudflare R2, so they never consume realtime-server bandwidth.
 
 Deploy after authenticating the Fly CLI and enabling billing:
@@ -121,9 +123,10 @@ replicas before regional room ownership or shared coordination exists can split
 players and cabinet ownership across independent server memories. The current
 configuration keeps the machine awake to avoid reconnects and cold-start delays.
 
-## DigitalOcean low-cost deployment
+## DigitalOcean low-cost deployment (spare)
 
-`.do/app.yaml` is the preferred low-cost deployment. It runs one fixed
+`.do/app.yaml` is kept as a spare target only; it does not serve
+`ptcarcade.fun` and does not deploy on push. It runs one fixed
 512 MiB container in DigitalOcean's San Francisco region and costs $5/month at
 current published pricing. Cloudflare R2 continues to serve game and BIOS data.
 
@@ -138,20 +141,3 @@ The fixed plan intentionally permits only one container, matching the current
 in-memory authoritative room architecture. If process memory approaches 400 MiB
 or the server becomes CPU-bound under load, change `instance_size_slug` to
 `apps-s-1vcpu-1gb-fixed` ($10/month) before considering horizontal scaling.
-
-## Render free testing deployment
-
-`render.yaml` defines a no-cost Render Web Service using the repository's
-Dockerfile. It runs one 512 MiB instance in Oregon, keeps room authority in one
-process, checks `/healthz`, and sends game and BIOS downloads directly to the
-existing Cloudflare R2 public bucket.
-
-Create a Blueprint from the private GitHub repository and accept the settings
-from `render.yaml`. No database is required. Render supplies `PORT`
-automatically, so do not hardcode it in the Blueprint.
-
-The free service is intended for remote testing. It can spin down after 15
-minutes without HTTP or WebSocket activity and may take about a minute to wake.
-It is not the production target for hundreds of concurrent players. If the
-free service reaches its included usage limits without a payment method, Render
-suspends it instead of charging the account.

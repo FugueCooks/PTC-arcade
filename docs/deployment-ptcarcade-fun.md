@@ -7,17 +7,24 @@ Canonical host: **Fly.io**, app `retro-arcade-fugue`, region `lax`.
 | Target | Serves | Idles? | Role |
 |---|---|---|---|
 | **Fly** | static + Socket.IO + auth + matchmaking + Phase 11 APIs | **No** — `min_machines_running = 1`, `auto_stop_machines = "off"` | canonical |
-| Render | same image | **Yes** — `plan: free` spins down when idle | spare, auto-deploy off |
-| DigitalOcean | same image | No, but paid | spare, auto-deploy off |
+| DigitalOcean | same image | No, but paid | spare, no domain, deploy-on-push off |
 | Cloudflare Pages + Worker | static + WebSocket realtime only | No | **cannot serve the whole app** |
+
+Render has been removed. `render.yaml` is deleted, so a merge to `main` no
+longer triggers a Render build, and the free plan's idle spin-down — the reason
+the site took a minute to wake — is gone with it. If a Render service still
+exists in the dashboard from an earlier deploy, delete or suspend it there;
+removing the blueprint from the repository stops future deploys but does not
+tear down a service that is already running.
 
 The Cloudflare split is not a substitute. `cloudflare/src/index.ts` handles
 WebSocket upgrades into Durable Objects and nothing else — it serves no
 `/api/auth`, `/api/account`, `/api/rooms`, or Phase 11 `/api/v1` route. Pointing
 the domain there would give you a lobby that cannot log anyone in.
 
-Auto-deploy is disabled on Render and DigitalOcean so a merge to `main` cannot
-quietly start a second build serving the same domain from different code.
+Deploy-on-push is disabled on DigitalOcean, and it holds no custom domain, so a
+merge to `main` cannot quietly start a second build serving `ptcarcade.fun`
+from different code.
 
 ## One-time setup
 
@@ -50,6 +57,12 @@ fly secrets set OPERATIONS_OPERATORS="yourname:admin:$(openssl rand -base64 32)"
 Keep that token somewhere safe; it is the only way into `/ops`, and only its
 hash is stored. Without this variable the console is not served at all.
 
+`DATABASE_URL` is optional but shapes what players can do. Without it every
+`/api/auth/*` route answers `503 auth-unavailable`; `avatar-selection.js`
+tolerates that and drops the player into a local `GUEST_xxxxxx` identity, so the
+arcade is playable but **wallet sign-in and saved profiles are not**. Set it
+when accounts should persist.
+
 ### 3. Get the app's IP addresses
 
 An apex domain cannot use a CNAME, so `ptcarcade.fun` needs A and AAAA records
@@ -69,7 +82,24 @@ fly ips allocate-v6
 
 Note both addresses.
 
-### 4. Add DNS at Spaceship
+### 4. Point DNS at Fly
+
+DNS for `ptcarcade.fun` must resolve to the Fly addresses from step 3, not to
+any previous host. Check what it answers with today before editing:
+
+```sh
+dig +short ptcarcade.fun A
+dig +short ptcarcade.fun AAAA
+dig +short NS ptcarcade.fun
+```
+
+If the `NS` answer is Cloudflare rather than Spaceship, the records live in the
+Cloudflare dashboard and editing Spaceship will change nothing — edit whichever
+one the `NS` records name, and delete any A/AAAA/CNAME still pointing at the old
+host. A proxied (orange-cloud) Cloudflare record must be set to DNS-only, or
+Fly's certificate validation cannot see the record.
+
+#### At Spaceship
 
 In the Spaceship dashboard: **Domains → ptcarcade.fun → Advanced DNS** (or
 "Manage DNS"). Delete any parking / placeholder records first, then add:

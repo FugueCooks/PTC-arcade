@@ -6,7 +6,7 @@ Phase 9 replaces public username/password player accounts with Solana signed-mes
 
 ## Production hosting
 
-The canonical production site is `https://ptcarcade.fun/`, served by Render behind Cloudflare DNS and TLS. Cloudflare Pages at `https://retro-arcade-om7.pages.dev/` is retained as a lightweight redirect and static rollback surface. Run `npm run pages:build` to create the strict `.pages-dist` bundle and `npm run pages:deploy` to publish it. The bundle excludes ROMs, BIOS files, unused model experiments, and every file over Cloudflare Pages' safe per-file limit. Hosted game and BIOS URLs continue to resolve through the R2 values written into `runtime-config.js`.
+The canonical production site is `https://ptcarcade.fun/`, served by Fly.io (app `retro-arcade-fugue`, region `lax`). Fly is the only deployment target for the domain; see `docs/deployment-ptcarcade-fun.md` for the DNS, certificate, and secret setup. Cloudflare Pages at `https://retro-arcade-om7.pages.dev/` is retained as a lightweight redirect and static rollback surface. Run `npm run pages:build` to create the strict `.pages-dist` bundle and `npm run pages:deploy` to publish it. The bundle excludes ROMs, BIOS files, unused model experiments, and every file over Cloudflare Pages' safe per-file limit. Hosted game and BIOS URLs continue to resolve through the R2 values written into `runtime-config.js`.
 
 The Node.js service now serves only approved browser assets, exposes liveness at `/health` and `/healthz`, readiness at `/ready`, and Prometheus text metrics at `/metrics`. It uses proxy-safe HTTP keep-alive settings and keeps movement traffic on compact Socket.IO messages with WebSocket support. Large game downloads are separated from realtime traffic through `GAME_ASSET_BASE_URL`; the hosted PlayStation BIOS is independently configured through `BIOS_ASSET_URL`.
 
@@ -33,7 +33,7 @@ Production uses one WebSocket-capable Node instance for authoritative multiplaye
 
 `cloudflare/` contains an optional low-latency native WebSocket backend built with Cloudflare Workers and Durable Objects. Each room name maps to exactly one Durable Object, giving that room an atomic authority for players, cabinet ownership, chat, reactions, presence, AFK state, and reconnect grace. WebSocket Hibernation allows idle rooms to sleep while connections remain open. Room chat, cabinet state, reconnect records, and world state use Durable Object storage; ROMs, BIOS files, emulator frames, controller input, saves, video, and audio never enter this service.
 
-The browser uses `realtime/realtime-socket.js`, a small Socket.IO-compatible transport boundary. With no `REALTIME_URL`, it uses the existing same-origin Socket.IO server unchanged. With `REALTIME_URL` configured, it uses native WebSockets and reconnects with bounded exponential backoff. This makes Cloudflare an opt-in production switch with an immediate Render fallback.
+The browser uses `realtime/realtime-socket.js`, a small Socket.IO-compatible transport boundary. With no `REALTIME_URL`, it uses the existing same-origin Socket.IO server unchanged. With `REALTIME_URL` configured, it uses native WebSockets and reconnects with bounded exponential backoff. This makes Cloudflare an opt-in production switch with an immediate fallback to the origin server.
 
 Cloudflare commands:
 
@@ -42,9 +42,9 @@ Cloudflare commands:
 - `npm run cloudflare:smoke` connects two local clients and verifies join, visibility, movement, sanitized chat, and acknowledgements.
 - `npm run cloudflare:deploy` deploys the Worker after Cloudflare authentication.
 
-After deployment, set the static host's `REALTIME_URL` to the full Worker endpoint, for example `https://retro-arcade-realtime.<account>.workers.dev/realtime`. Leave it blank to roll back to Render Socket.IO. The Worker validates room IDs, display names, approved avatar IDs, movement speed and bounds, cabinet proximity/ownership, chat, and reactions. Movement remains change-only at the browser and uses proximity-aware fan-out: nearby peers receive normal updates while far peers are capped at roughly one update per 300 ms.
+After deployment, set the static host's `REALTIME_URL` to the full Worker endpoint, for example `https://retro-arcade-realtime.<account>.workers.dev/realtime`. Leave it blank to roll back to the origin server's own Socket.IO. The Worker validates room IDs, display names, approved avatar IDs, movement speed and bounds, cabinet proximity/ownership, chat, and reactions. Movement remains change-only at the browser and uses proximity-aware fan-out: nearby peers receive normal updates while far peers are capped at roughly one update per 300 ms.
 
-The Worker currently accepts production WebSockets only from the approved Render and Cloudflare Pages origins (plus localhost development), limits each room to 25 active players, and validates the browser protocol version. Additional players are distributed into additional room IDs rather than raising this limit without load testing.
+The Worker currently accepts production WebSockets only from the approved `ptcarcade.fun`, Fly, and Cloudflare Pages origins (plus localhost development), limits each room to 25 active players, and validates the browser protocol version. Additional players are distributed into additional room IDs rather than raising this limit without load testing.
 
 ### Arcade instances
 

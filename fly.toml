@@ -20,6 +20,20 @@ primary_region = "lax"
   SOLANA_APP_DOMAIN = "ptcarcade.fun"
   SOLANA_APP_URI = "https://ptcarcade.fun"
 
+  # Auth posture, stated rather than inherited from the defaults in
+  # server/src/config.ts. These carry over from the Render blueprint this app
+  # replaces, so the live behaviour does not change with the host.
+  LEGACY_PASSWORD_AUTH_ENABLED = "0"
+  WALLET_AUTH_ENABLED = "1"
+  SOLANA_NETWORK = "mainnet-beta"
+  GUEST_SESSION_TTL_SECONDS = "3600"
+  WALLET_CHALLENGE_TTL_SECONDS = "300"
+  WALLET_CHALLENGE_MAX_ATTEMPTS = "5"
+
+  # REALTIME_URL is deliberately unset: this machine serves Socket.IO itself, so
+  # realtime stays on the same origin as auth and the APIs. Setting it would
+  # move only the WebSocket traffic to the Cloudflare Worker.
+
 [http_service]
   internal_port = 8080
   force_https = true
