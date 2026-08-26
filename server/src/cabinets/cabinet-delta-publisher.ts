@@ -41,20 +41,27 @@ export type ResyncReason = 'revision-gap' | 'zone-changed' | 'client-request';
 export class CabinetRevisionTracker {
   private readonly revisions = new Map<string, number>();
 
-  /** Current revision for a room; 0 before anything has changed. */
-  revisionFor(roomId: string): number {
-    return this.revisions.get(roomId) ?? 0;
+  /**
+   * Revisions are keyed per room *and* zone. A change in the Mega Man room must
+   * not invalidate a client's delta chain for the GameCube room, which a single
+   * per-room counter would do every time any cabinet anywhere changed.
+   */
+  revisionFor(roomId: string, zoneId: string): number {
+    return this.revisions.get(key(roomId, zoneId)) ?? 0;
   }
 
-  /** Advances a room's revision. Called once per accepted state change. */
-  bump(roomId: string): number {
-    const next = this.revisionFor(roomId) + 1;
-    this.revisions.set(roomId, next);
-    return next;
+  /** Advances one zone's revision and reports the edge it just created. */
+  bump(roomId: string, zoneId: string): { revision: number; previousRevision: number } {
+    const previousRevision = this.revisionFor(roomId, zoneId);
+    const revision = previousRevision + 1;
+    this.revisions.set(key(roomId, zoneId), revision);
+    return { revision, previousRevision };
   }
 
   forget(roomId: string): void {
-    this.revisions.delete(roomId);
+    for (const existing of [...this.revisions.keys()]) {
+      if (existing.startsWith(`${roomId}\u0000`)) this.revisions.delete(existing);
+    }
   }
 
   /**
@@ -62,13 +69,23 @@ export class CabinetRevisionTracker {
    * `deltaRevision`. A client exactly one behind applies it; anything else has
    * missed an update and must resync rather than silently diverge.
    */
-  evaluate(clientRevision: number, deltaRevision: number): { apply: boolean; resync: ResyncReason | null } {
+  evaluate(clientRevision: number, deltaRevision: number, previousRevision?: number): { apply: boolean; resync: ResyncReason | null } {
+    // When the delta names the revision it follows, the chain is checked
+    // directly rather than inferred from arithmetic on the client's counter.
+    if (previousRevision !== undefined) {
+      if (previousRevision === clientRevision) return { apply: true, resync: null };
+      if (deltaRevision <= clientRevision) return { apply: false, resync: null };
+      return { apply: false, resync: 'revision-gap' };
+    }
     if (deltaRevision === clientRevision + 1) return { apply: true, resync: null };
     // Already seen: a duplicate delivery, safe to drop.
     if (deltaRevision <= clientRevision) return { apply: false, resync: null };
     return { apply: false, resync: 'revision-gap' };
   }
 }
+
+/** Room and zone are joined on a separator neither may contain. */
+function key(roomId: string, zoneId: string): string { return `${roomId}\u0000${zoneId}`; }
 
 /**
  * Selects the cabinet states a client needs for the zones it currently occupies.

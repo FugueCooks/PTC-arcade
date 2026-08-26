@@ -12,7 +12,7 @@ export interface CabinetManagerOptions {
   requestCooldownMs: number;
 }
 export type CabinetEvent =
-  | { type: 'CabinetStateChanged'; roomId: string; state: CabinetState; revision: number; zoneId: string }
+  | { type: 'CabinetStateChanged'; roomId: string; state: CabinetState; revision: number; previousRevision: number; zoneId: string }
   | { type: 'CabinetForcedRelease'; roomId: string; playerId: string; cabinetId: string; reason: string };
 type LogLevel = 'info' | 'warn';
 type Logger = (level: LogLevel, event: string, details: Record<string, unknown>) => void;
@@ -55,15 +55,18 @@ export class CabinetManager {
    */
   activeStateCount(roomId: string): number { return this.roomStates.get(roomId)?.size ?? 0; }
 
-  /** Current cabinet-state revision for a room. */
-  revisionFor(roomId: string): number { return this.revisions.revisionFor(roomId); }
+  /** Current cabinet-state revision for one zone of a room. */
+  revisionFor(roomId: string, zoneId: string): number { return this.revisions.revisionFor(roomId, zoneId); }
 
   /**
    * Milestone 11.14: a join receives only the zones the client needs. Cabinets
    * outside those zones keep authoritative server state but never reach the wire.
    */
   zoneSnapshot(roomId: string, zoneIds: readonly string[]): CabinetZoneSnapshot {
-    return buildZoneSnapshot(roomId, this.revisions.revisionFor(roomId), zoneIds, (zoneId) =>
+    // A multi-zone snapshot reports the highest revision it covers, so a client
+    // never treats a later zone's delta as a gap.
+    const revision = zoneIds.reduce((highest, zoneId) => Math.max(highest, this.revisions.revisionFor(roomId, zoneId)), 0);
+    return buildZoneSnapshot(roomId, revision, zoneIds, (zoneId) =>
       this.index.forZone(zoneId).map(({ id }) => this.peekState(roomId, id)));
   }
 
@@ -274,9 +277,9 @@ export class CabinetManager {
    */
   private changed(roomId: string, state: CabinetState, previous?: CabinetState): void {
     if (!hasVisibleChange(previous, state)) return;
-    const revision = this.revisions.bump(roomId);
     const zoneId = this.zones.zoneIdForCabinet(state.cabinetId) ?? '';
-    this.publish({ type: 'CabinetStateChanged', roomId, state: copyState(state), revision, zoneId });
+    const { revision, previousRevision } = this.revisions.bump(roomId, zoneId);
+    this.publish({ type: 'CabinetStateChanged', roomId, state: copyState(state), revision, previousRevision, zoneId });
   }
   private publish(event: CabinetEvent): void { this.listeners.forEach((listener) => listener(event)); }
 }

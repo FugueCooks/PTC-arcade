@@ -333,7 +333,13 @@ cabinets.subscribe((event) => {
     // Milestone 11.14: the revision-stamped delta is the scaled channel. The
     // unstamped event stays alongside it so clients that predate zone streaming
     // keep working through the migration (Milestone 11.39).
-    io.to(event.roomId).emit('cabinet:delta', { roomId: event.roomId, revision: event.revision, zoneId: event.zoneId, state: event.state });
+    // Revisions are keyed per room and zone, and each delta names the revision it
+    // follows so a client can tell a real gap from a duplicate delivery.
+    io.to(event.roomId).emit('cabinet:delta', {
+      roomId: event.roomId, zoneId: event.zoneId,
+      revision: event.revision, previousRevision: event.previousRevision,
+      changes: [event.state]
+    });
     io.to(event.roomId).emit('cabinet:state-changed', event.state);
     metrics.increment('cabinet_delta_published_total');
     events.emit('cabinet.state.changed', {

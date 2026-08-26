@@ -65,12 +65,16 @@ export interface CabinetState {
   reservedAt: number | null;
   sessionStartedAt: number | null;
 }
-export interface CabinetSnapshot { roomId: string; cabinets: CabinetState[] }
+export interface CabinetSnapshot { roomId: string; cabinets: CabinetState[]; zoneId?: string; revision?: number }
 /**
  * Milestone 11.14. A snapshot covers only the zones a client needs and carries
- * the revision it was taken at; each later delta carries the revision it
- * produces, so a client can detect a gap and request a targeted resync rather
- * than silently drifting.
+ * the revision it was taken at; each later delta names both the revision it
+ * produces and the one it follows, so a client can detect a gap and request a
+ * targeted resync rather than silently drifting.
+ *
+ * `previousRevision` makes that chain explicit rather than inferred from
+ * `revision - 1`, which is what lets a client tell a genuine gap from a
+ * duplicate delivery without tracking its own arithmetic.
  */
 export interface CabinetZoneSnapshotPayload {
   roomId: string;
@@ -78,7 +82,15 @@ export interface CabinetZoneSnapshotPayload {
   zoneIds: string[];
   cabinets: CabinetState[];
 }
-export interface CabinetDeltaPayload { roomId: string; revision: number; zoneId: string; state: CabinetState }
+/** Revisions are keyed per room *and* zone, so a change in one zone never
+ *  invalidates another zone's chain. `changes` batches states in one message. */
+export interface CabinetDelta {
+  roomId: string;
+  zoneId: string;
+  revision: number;
+  previousRevision: number;
+  changes: CabinetState[];
+}
 export interface CabinetResyncResult { ok: boolean; reason?: 'invalid-request' | 'unknown-zone'; snapshot?: CabinetZoneSnapshotPayload }
 export type CabinetDenialReason = 'invalid-request' | 'unknown-cabinet' | 'disabled' | 'too-far' | 'already-using' | 'occupied' | 'rate-limited' | 'not-owner';
 export interface CabinetUseResult {
@@ -134,7 +146,7 @@ export interface ServerToClientEvents {
   'cabinet:snapshot': (payload: CabinetSnapshot) => void;
   'cabinet:state-changed': (payload: CabinetState) => void;
   'cabinet:zone-snapshot': (payload: CabinetZoneSnapshotPayload) => void;
-  'cabinet:delta': (payload: CabinetDeltaPayload) => void;
+  'cabinet:delta': (payload: CabinetDelta) => void;
   'cabinet:forced-release': (payload: { cabinetId: string; reason: string }) => void;
   'chat:snapshot': (payload: { roomId: string; messages: ChatMessage[] }) => void;
   'chat:message': (payload: ChatMessage) => void;

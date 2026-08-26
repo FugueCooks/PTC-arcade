@@ -48,14 +48,14 @@ void test('overlapping zones never duplicate a cabinet in one snapshot', () => {
 void test('state changes publish monotonic revisions', () => {
   const { players, cabinets, events } = setup();
   players.join('a', 'main', undefined, identity, 1_000);
-  assert.equal(cabinets.revisionFor('main'), 0);
+  assert.equal(cabinets.revisionFor('main', 'main-floor-west'), 0);
 
   assert.equal(cabinets.requestUse('a', 'crash-bandicoot', 2_000).ok, true);
-  assert.equal(cabinets.revisionFor('main'), 1);
+  assert.equal(cabinets.revisionFor('main', 'main-floor-west'), 1);
   assert.equal(cabinets.activate('a', 'crash-bandicoot', 2_100).ok, true);
-  assert.equal(cabinets.revisionFor('main'), 2);
+  assert.equal(cabinets.revisionFor('main', 'main-floor-west'), 2);
   assert.equal(cabinets.release('a', 'crash-bandicoot', 2_200).ok, true);
-  assert.equal(cabinets.revisionFor('main'), 3);
+  assert.equal(cabinets.revisionFor('main', 'main-floor-west'), 3);
 
   const changes = events.filter((event) => event.type === 'CabinetStateChanged');
   assert.deepEqual(changes.map((event) => event.revision), [1, 2, 3]);
@@ -67,6 +67,10 @@ void test('a client one revision behind applies the delta; a gap forces resync',
   const tracker = new CabinetRevisionTracker();
   assert.deepEqual(tracker.evaluate(4, 5), { apply: true, resync: null });
   assert.deepEqual(tracker.evaluate(4, 7), { apply: false, resync: 'revision-gap' });
+  // With previousRevision the chain is checked directly rather than inferred.
+  assert.deepEqual(tracker.evaluate(4, 5, 4), { apply: true, resync: null });
+  assert.deepEqual(tracker.evaluate(4, 9, 8), { apply: false, resync: 'revision-gap' });
+  assert.deepEqual(tracker.evaluate(4, 3, 2), { apply: false, resync: null }, 'a duplicate is dropped, not resynced');
   // A duplicate delivery is dropped, not treated as a gap.
   assert.deepEqual(tracker.evaluate(4, 4), { apply: false, resync: null });
   assert.deepEqual(tracker.evaluate(4, 2), { apply: false, resync: null });
@@ -74,12 +78,16 @@ void test('a client one revision behind applies the delta; a gap forces resync',
 
 void test('revisions are per room and reset when a room is forgotten', () => {
   const tracker = new CabinetRevisionTracker();
-  assert.equal(tracker.bump('main'), 1);
-  assert.equal(tracker.bump('main'), 2);
-  assert.equal(tracker.bump('other'), 1, 'rooms must not share a revision counter');
+  assert.equal(tracker.bump('main', 'z1').revision, 1);
+  assert.equal(tracker.bump('main', 'z1').revision, 2);
+  assert.equal(tracker.bump('other', 'z1').revision, 1, 'rooms must not share a revision counter');
+  // A change in one zone must not advance another zone's chain.
+  assert.equal(tracker.bump('main', 'z2').revision, 1, 'zones must not share a counter either');
+  assert.equal(tracker.revisionFor('main', 'z1'), 2);
   tracker.forget('main');
-  assert.equal(tracker.revisionFor('main'), 0);
-  assert.equal(tracker.revisionFor('other'), 1);
+  assert.equal(tracker.revisionFor('main', 'z1'), 0);
+  assert.equal(tracker.revisionFor('main', 'z2'), 0);
+  assert.equal(tracker.revisionFor('other', 'z1'), 1);
 });
 
 void test('unchanged state is never broadcast', () => {
@@ -122,7 +130,7 @@ void test('room state stays isolated', () => {
   const otherState = cabinets.snapshot('other').find(({ cabinetId }) => cabinetId === 'crash-bandicoot');
   assert.equal(mainState?.status, 'reserved');
   assert.equal(otherState?.status, 'available', 'one room must not observe another room’s occupancy');
-  assert.equal(cabinets.revisionFor('other'), 0);
+  assert.equal(cabinets.revisionFor('other', 'main-floor-west'), 0);
 });
 
 void test('a disconnect releases the held cabinet without scanning the room', () => {
@@ -148,10 +156,10 @@ void test('forgetting a room clears its state, ownership, and revision', () => {
   const { players, cabinets } = setup();
   players.join('a', 'main', undefined, identity, 1_000);
   cabinets.requestUse('a', 'crash-bandicoot', 2_000);
-  assert.ok(cabinets.revisionFor('main') > 0);
+  assert.ok(cabinets.revisionFor('main', 'main-floor-west') > 0);
 
   cabinets.forgetRoom('main');
-  assert.equal(cabinets.revisionFor('main'), 0);
+  assert.equal(cabinets.revisionFor('main', 'main-floor-west'), 0);
   assert.equal(cabinets.activeStateCount('main'), 0);
 });
 

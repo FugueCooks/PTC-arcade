@@ -15,13 +15,32 @@ export class CabinetSpatialIndex {
   #cells = new Map();
   #entries = new Map();
 
-  constructor(cellSize = DEFAULT_CELL_SIZE_METRES) {
+  /**
+   * Two call shapes are supported on purpose, because two callers need
+   * different things:
+   *
+   *  - `new CabinetSpatialIndex(definitions)` builds a lookup over static
+   *    registry rows, which is what the cabinet registry wants;
+   *  - `new CabinetSpatialIndex()` starts empty and is filled with `insert` as
+   *    the scene creates cabinets, which is what the render loop wants.
+   */
+  constructor(definitions = [], { cellSize = DEFAULT_CELL_SIZE_METRES } = {}) {
     if (!Number.isFinite(cellSize) || cellSize <= 0) throw new Error('Cell size must be a positive number.');
     this.cellSize = cellSize;
+    for (const definition of definitions ?? []) {
+      const point = definition?.interactionPosition;
+      if (!definition || !point) continue;
+      this.insert(definition.id, point.x, point.z, definition);
+    }
   }
 
   get size() { return this.#entries.size; }
   get cellCount() { return this.#cells.size; }
+
+  /** By-ID lookup over whatever was indexed: a definition, or a scene object. */
+  get(id) { return this.#entries.get(id)?.entry.payload; }
+  has(id) { return this.#entries.has(id); }
+  ids() { return [...this.#entries.keys()]; }
 
   /**
    * Entries are keyed so a cabinet can be re-inserted (a moved or rebuilt scene

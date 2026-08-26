@@ -18,7 +18,7 @@ window.ARCADE_PS2_CACHE = new Ps2GameCache();
 window.ARCADE_EMULATOR_ADAPTERS = createDefaultAdapterRegistry();
 // Milestone 11.15: the render loop queries this instead of measuring the
 // distance to every cabinet on every frame.
-window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex();
+window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
 await import('./arcade.js?v=megaman-mural-layout-1');
 await import('./avatar-selection.js?v=triple-t-label-2');

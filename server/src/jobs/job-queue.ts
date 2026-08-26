@@ -215,3 +215,17 @@ export class JobQueue {
     return { drained, abandoned: this.queue.filter((job) => job.status === 'queued').length };
   }
 }
+
+/**
+ * Adapts this queue to the narrow `ReplayJobQueue` shape the replay service
+ * depends on. The replay code arrived from a parallel Phase 11 branch that had
+ * its own simpler queue; rather than keep two queues, it now enqueues through
+ * this one and inherits retries, backoff, and dead-lettering.
+ */
+export function asReplayJobQueue(queue: JobQueue) {
+  return {
+    async enqueue(type: string, payload: SafeJsonValue, idempotencyKey: string): Promise<void> {
+      queue.enqueue(type, payload, { idempotencyKey });
+    }
+  };
+}

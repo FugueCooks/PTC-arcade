@@ -1,0 +1,14 @@
+{
+  "id": "cabinet-status",
+  "name": "Cabinet Status",
+  "version": "1.0.0",
+  "apiVersion": "11.1",
+  "description": "First-party operational cabinet status example.",
+  "entrypoints": {
+    "client": "plugins/cabinet-status/client.js",
+    "server": "server/src/plugins/examples/cabinet-status-plugin.js"
+  },
+  "permissions": ["register:dashboard-widget", "read:room-state"],
+  "capabilities": ["dashboard-widget"],
+  "critical": false
+}

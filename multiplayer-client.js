@@ -264,8 +264,9 @@
       });
       socket.on('player:disconnected', ({ id }) => { setRemoteDisconnected(id, true); presenceClient.disconnected(id); });
       socket.on('player:left', ({ id }) => removeRemotePlayer(id));
-      socket.on('cabinet:snapshot', ({ cabinets }) => cabinetVisuals.applySnapshot(cabinets));
+      socket.on('cabinet:snapshot', (snapshot) => cabinetVisuals.applySnapshot(snapshot));
       socket.on('cabinet:state-changed', (state) => cabinetVisuals.apply(state));
+      socket.on('cabinet:delta', (delta) => cabinetVisuals.applyDelta(delta));
       socket.on('cabinet:forced-release', ({ cabinetId, reason }) => cabinetSessions.forceRelease(cabinetId, reason));
       socket.on('disconnect', () => {
         cabinetSessions?.serverDisconnected();

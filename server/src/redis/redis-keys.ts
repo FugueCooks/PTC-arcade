@@ -17,4 +17,7 @@ export class RedisKeys {
   walletChallenge(challengeId: string): string { return `${this.prefix}:wallet-challenges:${challengeId}`; }
   walletAuthRateLimit(identifierHash: string): string { return `${this.prefix}:wallet-auth-rate-limit:${identifierHash}`; }
   walletAccountLock(network: string, addressHash: string): string { return `${this.prefix}:wallet-account-lock:${network}:${addressHash}`; }
+  operatorSession(tokenHash: string): string { return `${this.prefix}:operations:sessions:${tokenHash}`; }
+  plugin(pluginId: string, key: string): string { return `${this.prefix}:plugin:${pluginId}:${key}`; }
+  replayJob(jobId: string): string { return `${this.prefix}:jobs:replay:${jobId}`; }
 }
