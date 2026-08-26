@@ -51,6 +51,8 @@ import { DrizzleWalletAccountRepository } from './auth/wallet-account-repository
 import { WalletAuthService } from './auth/wallet-auth-service.js';
 import { installWalletAuthRoutes } from './http/wallet-auth-routes.js';
 import { InMemoryAsyncRateLimiter, RedisAsyncRateLimiter } from './auth/distributed-rate-limiter.js';
+import { bootstrapPlugins } from './plugins/plugin-bootstrap.js';
+import type { PluginHost } from './plugins/plugin-host.js';
 
 /** Bounds a resync request so one client cannot ask for unbounded work. */
 const MAX_RESYNC_ZONES = 16;
@@ -503,6 +505,40 @@ const worldEventTimer = setInterval(() => {
 }, Number(process.env.WORLD_EVENT_INTERVAL_MS ?? 90_000));
 worldEventTimer.unref();
 
+/**
+ * Milestone 11.7/11.9. Plugins are given only the narrow services below — never
+ * a database handle, a Redis client, or a socket. A plugin failure is contained
+ * by the host and surfaced through health, so it cannot take the arcade down.
+ */
+const pluginBootstrap = await bootstrapPlugins(config, {
+  safeProfile: (publicPlayerId) => {
+    const player = players.stateForPlayerId(publicPlayerId);
+    return player ? { publicPlayerId, displayName: player.n, avatarId: player.v } : undefined;
+  },
+  roomState: (roomId) => {
+    const population = players.roomPopulation(roomId);
+    if (population === undefined) return undefined;
+    return {
+      roomId,
+      population,
+      activeCabinetIds: cabinets.snapshot(roomId).filter(({ status }) => status !== 'available').map(({ cabinetId }) => cabinetId)
+    };
+  },
+  emitRoomEvent: (pluginId, roomId, event) => {
+    // Namespaced so a plugin event can never impersonate a core one.
+    io.to(roomId).emit('world:announcement', {
+      id: `plugin-${pluginId}-${Date.now()}`,
+      roomId,
+      text: String(event.payload.text ?? ''),
+      kind: 'event',
+      at: Date.now()
+    });
+    metrics.increment('plugin_room_events_total');
+  }
+}, (level, event, details) => logger[level === 'error' ? 'error' : level](event, details));
+
+const plugins: PluginHost = pluginBootstrap.host;
+
 const drain = new DrainController(httpServer, io, config, health, metrics, logger, {
   activePlayers: () => players.connectedCount,
   beginDraining: () => roomLifecycle.beginDraining(),
@@ -513,6 +549,9 @@ const drain = new DrainController(httpServer, io, config, health, metrics, logge
     if (databaseHealthTimer) clearInterval(databaseHealthTimer);
     clearInterval(worldEventTimer);
     await roomLifecycle.stop();
+    // Plugins stop before shared infrastructure so their cleanup still has
+    // whatever it needs, and a plugin that throws cannot block the drain.
+    await plugins.stopAll('shutdown');
     await serverRegistry?.stop();
     await redis?.close();
     await database?.close();

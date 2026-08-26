@@ -114,6 +114,15 @@ export class PlayerManager {
     return this.players.size;
   }
 
+  /** Connected players in one room, or undefined when the room has none. */
+  roomPopulation(roomId: string): number | undefined {
+    let population = 0;
+    for (const player of this.players.values()) {
+      if (player.roomId === roomId && typeof player.socketId === 'string') population += 1;
+    }
+    return population === 0 ? undefined : population;
+  }
+
   canResume(resumeToken: string | undefined, roomId: string, now = Date.now()): boolean {
     if (!resumeToken) return false;
     const player = this.playerForToken(resumeToken);
