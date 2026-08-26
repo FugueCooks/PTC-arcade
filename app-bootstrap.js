@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { loadGameRegistry } from './games/game-registry.js?v=megaman-cabinet-order-1';
+import { loadGameRegistry } from './games/game-registry.js?v=platform-id-2';
 import { Ps2GameCache } from './games/ps2-game-cache.js?v=ps2-local-cache-1';
 import { loadRoomRegistry } from './rooms/room-registry.js?v=10-rooms-1';
-import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=adapters-1';
+import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=cores-2';
 import { CabinetSpatialIndex } from './cabinets/cabinet-spatial-index.js?v=spatial-1';
 
 // Legacy scene code and newer ES modules now share the exact same Three.js
@@ -20,6 +20,6 @@ window.ARCADE_EMULATOR_ADAPTERS = createDefaultAdapterRegistry();
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=megaman-mural-layout-1');
+await import('./arcade.js?v=cores-2');
 await import('./avatar-selection.js?v=triple-t-label-2');
 await import('./multiplayer-client.js?v=megaman-cabinet-order-1');

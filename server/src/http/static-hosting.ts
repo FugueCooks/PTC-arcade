@@ -93,7 +93,9 @@ function normalizeSolanaNetwork(value: string | undefined): string {
 }
 
 function sendRootFile(response: Response, projectRoot: string, file: typeof ROOT_FILES[number]): void {
-  response.setHeader('Cache-Control', file.endsWith('.html') ? 'no-store' : 'public, max-age=300, must-revalidate');
+  // arcade.js and app-bootstrap.js are application code, so they revalidate for
+  // the same reason the module directories do — see setAssetCacheHeaders.
+  response.setHeader('Cache-Control', file.endsWith('.html') ? 'no-store' : 'no-cache');
   response.sendFile(path.join(projectRoot, file));
 }
 
@@ -107,5 +109,12 @@ function setAssetCacheHeaders(response: Response, filePath: string, includesGame
     response.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
     return;
   }
-  response.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+  // Application code, not content. The `?v=` tokens in the import graph only
+  // version the modules app-bootstrap.js names directly: everything they import
+  // in turn — the emulator adapters among them — is requested at a plain URL. So
+  // an hour of max-age, plus a day of stale-while-revalidate, meant a deployed
+  // fix could sit unreachable behind a browser cache while the page looked
+  // current. `no-cache` still stores the file and still sends the ETag; it just
+  // asks first, and the answer is almost always a 304.
+  response.setHeader('Cache-Control', 'no-cache');
 }
