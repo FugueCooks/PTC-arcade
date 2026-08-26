@@ -3,7 +3,12 @@ import avatarRegistry from '../../assets/avatars/registry.json';
 import worldConfig from '../../assets/world/config.json';
 import roomRegistry from '../../assets/rooms/registry.json';
 
-interface Env { ARCADE_ROOMS: DurableObjectNamespace; MULTIPLAYER_TICKET_SECRET?: string; ORIGIN_HEALTH_URL?: string }
+interface Env {
+  ARCADE_ROOMS: DurableObjectNamespace;
+  ARCADE_ASSETS: R2Bucket;
+  MULTIPLAYER_TICKET_SECRET?: string;
+  ORIGIN_HEALTH_URL?: string;
+}
 type AnimationState = 'idle' | 'walk' | 'run' | 'interact';
 type PlayerStatus = 'idle' | 'walking' | 'playing' | 'loading' | 'away' | 'disconnected';
 type Position = [number, number, number];
@@ -56,8 +61,9 @@ const spawnPoints = [
 ] as const;
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (url.hostname === 'assets.ptcarcade.fun') return serveAsset(request, env, ctx);
     if (url.pathname === '/healthz') return json({ ok: true, service: 'retro-arcade-realtime', edge: request.cf?.colo ?? null });
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') return json({ ok: false, message: 'WebSocket upgrade required.' }, 426);
     if (!isAllowedOrigin(request.headers.get('Origin'))) return json({ ok: false, message: 'Origin is not allowed.' }, 403);
@@ -95,6 +101,107 @@ export default {
     })());
   }
 } satisfies ExportedHandler<Env>;
+
+const MAX_EDGE_CHUNK_BYTES = 8 * 1024 * 1024;
+const ASSET_KEY_PATTERN = /^arcade\/(games|bios)\/[A-Za-z0-9._-]+$/;
+
+export function assetKeyFromUrl(url: URL): string | null {
+  let key: string;
+  try { key = decodeURIComponent(url.pathname.replace(/^\/+/, '')); } catch { return null; }
+  return ASSET_KEY_PATTERN.test(key) ? key : null;
+}
+
+export function finiteByteRange(value: string | null): { start: number; end: number } | null {
+  const match = /^bytes=(\d+)-(\d+)$/.exec(value ?? '');
+  if (!match) return null;
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || end < start || end - start + 1 > MAX_EDGE_CHUNK_BYTES) return null;
+  return { start, end };
+}
+
+async function serveAsset(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: assetCorsHeaders() });
+  if (request.method !== 'GET' && request.method !== 'HEAD') return assetError(405, 'Method not allowed.');
+  const url = new URL(request.url);
+  const key = assetKeyFromUrl(url);
+  if (!key) return assetError(404, 'Asset not found.');
+
+  if (request.method === 'HEAD') {
+    const object = await env.ARCADE_ASSETS.head(key);
+    if (!object) return assetError(404, 'Asset not found.');
+    return new Response(null, { status: 200, headers: assetHeaders(object, object.size) });
+  }
+
+  const requestedRange = request.headers.get('Range');
+  const finiteRange = finiteByteRange(requestedRange);
+  if (finiteRange) {
+    const cacheKey = new Request(`${url.origin}/.arcade-range-cache/${encodeURIComponent(key)}/${finiteRange.start}-${finiteRange.end}`);
+    const cached = await caches.default.match(cacheKey);
+    if (cached) return rangeResponse(cached, finiteRange.start, finiteRange.end, Number(cached.headers.get('x-arcade-object-size')), 'HIT');
+
+    const object = await env.ARCADE_ASSETS.get(key, {
+      range: { offset: finiteRange.start, length: finiteRange.end - finiteRange.start + 1 }
+    });
+    if (!object) return assetError(404, 'Asset not found.');
+    if (finiteRange.start >= object.size) return assetError(416, 'Requested range is outside this asset.');
+    const actualEnd = Math.min(finiteRange.end, object.size - 1);
+    const cacheHeaders = assetHeaders(object, actualEnd - finiteRange.start + 1);
+    cacheHeaders.set('x-arcade-object-size', String(object.size));
+    const cacheable = new Response(object.body, { status: 200, headers: cacheHeaders });
+    ctx.waitUntil(caches.default.put(cacheKey, cacheable.clone()));
+    return rangeResponse(cacheable, finiteRange.start, actualEnd, object.size, 'MISS');
+  }
+
+  const object = await env.ARCADE_ASSETS.get(key, requestedRange ? { range: request.headers } : undefined);
+  if (!object) return assetError(404, 'Asset not found.');
+  const range = object.range;
+  const rangeOffset = range && 'offset' in range && typeof range.offset === 'number' ? range.offset : null;
+  const rangeLength = range && 'length' in range && typeof range.length === 'number' ? range.length : null;
+  const headers = assetHeaders(object, rangeLength ?? object.size);
+  if (rangeOffset !== null && rangeLength !== null) {
+    headers.set('content-range', `bytes ${rangeOffset}-${rangeOffset + rangeLength - 1}/${object.size}`);
+    return new Response(object.body, { status: 206, headers });
+  }
+  return new Response(object.body, { status: 200, headers });
+}
+
+function rangeResponse(cached: Response, start: number, requestedEnd: number, totalSize: number, cacheStatus: 'HIT' | 'MISS'): Response {
+  if (!Number.isSafeInteger(totalSize) || totalSize <= start) return assetError(502, 'Cached asset metadata is invalid.');
+  const end = Math.min(requestedEnd, totalSize - 1);
+  const headers = new Headers(cached.headers);
+  headers.delete('x-arcade-object-size');
+  headers.set('content-range', `bytes ${start}-${end}/${totalSize}`);
+  headers.set('content-length', String(end - start + 1));
+  headers.set('x-arcade-edge-cache', cacheStatus);
+  return new Response(cached.body, { status: 206, headers });
+}
+
+function assetHeaders(object: R2Object, contentLength: number): Headers {
+  const headers = assetCorsHeaders();
+  object.writeHttpMetadata(headers);
+  headers.set('accept-ranges', 'bytes');
+  headers.set('cache-control', 'public, max-age=31536000, immutable');
+  headers.set('content-disposition', 'inline');
+  headers.set('content-length', String(contentLength));
+  headers.set('etag', object.httpEtag);
+  headers.set('last-modified', object.uploaded.toUTCString());
+  return headers;
+}
+
+function assetCorsHeaders(): Headers {
+  return new Headers({
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'GET, HEAD, OPTIONS',
+    'access-control-allow-headers': 'Range',
+    'access-control-expose-headers': 'Accept-Ranges, Content-Length, Content-Range, ETag, X-Arcade-Edge-Cache',
+    'x-content-type-options': 'nosniff'
+  });
+}
+
+function assetError(status: number, message: string): Response {
+  return new Response(message, { status, headers: assetCorsHeaders() });
+}
 
 export class ArcadeRoom implements DurableObject {
   private readonly ctx: DurableObjectState;

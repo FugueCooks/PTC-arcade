@@ -29,10 +29,70 @@
     </main>
     <script>
       const statusElement = document.querySelector('#ps2-status');
+      const RANGE_CACHE_DIRECTORY = 'retro-arcade-ps2-ranges-v1';
+      const RANGE_CHUNK_BYTES = 4 * 1024 * 1024;
       let pendingFile = null;
       let pendingRemote = null;
       let readySent = false;
       let discFailureReported = false;
+
+      function cacheKey(source) {
+        let hash = 2166136261;
+        for (const character of `${source.url}|${source.name}|${source.size}`) {
+          hash ^= character.charCodeAt(0);
+          hash = Math.imul(hash, 16777619);
+        }
+        const safeName = source.name.toLowerCase().replace(/[^a-z0-9.-]+/g, '-').slice(0, 48) || 'disc';
+        return `${safeName}-${source.size}-${(hash >>> 0).toString(16)}`;
+      }
+
+      async function rangeCache(source, maxChunks) {
+        if (typeof navigator.storage?.getDirectory !== 'function') return null;
+        try {
+          await navigator.storage.persist?.();
+          const root = await navigator.storage.getDirectory();
+          const cache = await root.getDirectoryHandle(RANGE_CACHE_DIRECTORY, { create: true });
+          const directory = await cache.getDirectoryHandle(cacheKey(source), { create: true });
+          const storedIndexes = new Set();
+          for await (const name of directory.keys()) {
+            const match = /^(\d+)\.chunk$/.exec(name);
+            if (match) storedIndexes.add(Number(match[1]));
+          }
+          return {
+            async get(index, expectedBytes) {
+              const name = `${index}.chunk`;
+              try {
+                const handle = await directory.getFileHandle(name);
+                const file = await handle.getFile();
+                if (file.size === expectedBytes) return file.arrayBuffer();
+                await directory.removeEntry(name);
+              } catch (error) {
+                if (error?.name !== 'NotFoundError') console.warn('Could not read a cached PS2 disc range.', error);
+              }
+              return null;
+            },
+            async put(index, buffer) {
+              if (!storedIndexes.has(index) && storedIndexes.size >= maxChunks) return false;
+              const isNew = !storedIndexes.has(index);
+              storedIndexes.add(index);
+              const handle = await directory.getFileHandle(`${index}.chunk`, { create: true });
+              const writable = await handle.createWritable({ keepExistingData: false });
+              try {
+                await writable.write(buffer);
+                await writable.close();
+                return true;
+              } catch (error) {
+                if (isNew) storedIndexes.delete(index);
+                try { await writable.abort(); } catch { /* Already closed. */ }
+                throw error;
+              }
+            }
+          };
+        } catch (error) {
+          console.warn('Persistent PS2 range caching is unavailable.', error);
+          return null;
+        }
+      }
 
       function reportDiscFailure(error, start, end) {
         if (discFailureReported) return;
@@ -72,10 +132,29 @@
       }
 
       function remoteDisc(source) {
-        const chunkSize = 4 * 1024 * 1024;
+        const chunkSize = RANGE_CHUNK_BYTES;
         const maxCachedChunks = 40;
-        const readAheadChunks = navigator.connection?.saveData ? 0 : 2;
+        const readAheadChunks = navigator.connection?.saveData ? 0 : (navigator.connection?.downlink >= 10 ? 4 : 2);
+        const maxPersistentChunks = navigator.deviceMemory && navigator.deviceMemory <= 4 ? 32 : 128;
         const chunks = new Map();
+        const persistentCache = rangeCache(source, maxPersistentChunks);
+        const persistentWrites = new Set();
+        let persistentCacheFailed = false;
+
+        async function loadChunk(index, start, end) {
+          const persistent = await persistentCache;
+          const cached = await persistent?.get(index, end - start);
+          if (cached) return cached;
+          const buffer = await fetchRange(source.url, start, end);
+          if (persistent && !persistentCacheFailed && !persistentWrites.has(index)) {
+            persistentWrites.add(index);
+            void persistent.put(index, buffer).catch(error => {
+              persistentCacheFailed = true;
+              console.warn('Could not persist a PS2 disc range.', error);
+            });
+          }
+          return buffer;
+        }
 
         function cachedChunk(index) {
           const existing = chunks.get(index);
@@ -86,7 +165,7 @@
           }
           const start = index * chunkSize;
           const end = Math.min(source.size, start + chunkSize);
-          const request = fetchRange(source.url, start, end).catch(error => {
+          const request = loadChunk(index, start, end).catch(error => {
             chunks.delete(index);
             throw error;
           });
@@ -150,7 +229,7 @@
       function bootStatus(name, mode) {
         const title = name.toUpperCase();
         if (/KINGDOM[-_ ]HEARTS/.test(title)) return `${mode} ${title} // BLACK INTRO MOVIE? PRESS ENTER ONCE TO SKIP`;
-        return `${mode} ${title} // LARGE IMAGES MAY TAKE SEVERAL MINUTES`;
+        return `${mode} ${title} // VISITED DISC DATA CACHES AUTOMATICALLY`;
       }
 
       function loadPendingFile() {

@@ -4,6 +4,12 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-08-22",
   "workers_dev": true,
+  "routes": [
+    { "pattern": "assets.ptcarcade.fun/*", "zone_name": "ptcarcade.fun" }
+  ],
+  "r2_buckets": [
+    { "binding": "ARCADE_ASSETS", "bucket_name": "retro-arcade-assets" }
+  ],
   // Keeps the free-plan origin from idling: it spins down after 15 minutes
   // without traffic and then takes about a minute to wake, which is the delay
   // players actually notice. Ten minutes leaves margin for a late run.

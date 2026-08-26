@@ -43,9 +43,9 @@ await copyTree('assets', (relative, info) => {
 });
 
 const runtimeConfig = {
-  gameAssetBaseUrl: process.env.GAME_ASSET_BASE_URL || 'https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games',
-  biosAssetUrl: process.env.BIOS_ASSET_URL || 'https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/SCPH1001.BIN',
-  gameCubeDspAssetUrl: process.env.GAMECUBE_DSP_ASSET_URL || 'https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/bios/dsp_rom.bin',
+  gameAssetBaseUrl: process.env.GAME_ASSET_BASE_URL || 'https://assets.ptcarcade.fun/arcade/games',
+  biosAssetUrl: process.env.BIOS_ASSET_URL || 'https://assets.ptcarcade.fun/arcade/bios/SCPH1001.BIN',
+  gameCubeDspAssetUrl: process.env.GAMECUBE_DSP_ASSET_URL || 'https://assets.ptcarcade.fun/arcade/bios/dsp_rom.bin',
   realtimeUrl: process.env.REALTIME_URL || 'https://retro-arcade-realtime.roms-retro-arcade.workers.dev',
   matchmakingUrl: process.env.MATCHMAKING_URL || '',
   solanaNetwork: process.env.SOLANA_NETWORK || 'mainnet-beta'

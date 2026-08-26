@@ -59,6 +59,13 @@ origins because game and BIOS objects are already public, non-credentialed
 downloads; it still permits only `GET` and `HEAD`, including byte ranges. Public
 read access must not grant object listing or write access.
 
+Production uses `assets.ptcarcade.fun`. The Cloudflare Worker route declared in
+`cloudflare/wrangler.jsonc` fronts the same bucket through the `ARCADE_ASSETS`
+binding. Finite byte ranges up to 8 MiB are stored as independent Cache API
+objects, allowing multi-gigabyte PS2 images to benefit from edge caching even
+though they exceed the CDN's whole-object cache-size limit. Responses expose
+`X-Arcade-Edge-Cache: MISS` or `HIT` for read-only verification.
+
 ## Object-storage requirements
 
 - Preserve the exact filenames and layout in `public-assets.manifest.json`.

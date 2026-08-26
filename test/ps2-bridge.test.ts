@@ -20,10 +20,15 @@ void test('the PS2 cabinet waits for Play! readiness and acknowledges disc hando
   assert.match(player, /type: 'arcade:ps2-source-accepted', core: 'ps2-play'/);
   assert.match(player, /Range: `bytes=\$\{start\}-\$\{end - 1\}`/);
   assert.match(player, /response\.status !== 206/);
-  assert.match(player, /const chunkSize = 4 \* 1024 \* 1024/);
+  assert.match(player, /const RANGE_CHUNK_BYTES = 4 \* 1024 \* 1024/);
+  assert.match(player, /const chunkSize = RANGE_CHUNK_BYTES/);
   assert.match(player, /const maxCachedChunks = 40/);
-  assert.match(player, /const readAheadChunks = navigator\.connection\?\.saveData \? 0 : 2/);
+  assert.match(player, /navigator\.connection\?\.downlink >= 10 \? 4 : 2/);
   assert.match(player, /void cachedChunk\(nextChunk\)\.catch/);
+  assert.match(player, /navigator\.storage\?\.getDirectory/);
+  assert.match(player, /retro-arcade-ps2-ranges-v1/);
+  assert.match(player, /persistent\?\.get\(index, end - start\)/);
+  assert.match(player, /persistent\.put\(index, buffer\)/);
   assert.match(player, /arrayBuffer: \(\) => read\(safeStart, safeEnd\)\.catch/);
   assert.match(player, /const expectedRange = `bytes \$\{start\}-\$\{end - 1\}\//);
   assert.match(player, /buffer\.byteLength !== end - start/);
