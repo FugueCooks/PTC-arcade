@@ -26,9 +26,25 @@ Deploy-on-push is disabled on DigitalOcean, and it holds no custom domain, so a
 merge to `main` cannot quietly start a second build serving `ptcarcade.fun`
 from different code.
 
-## One-time setup
+## Deploying
 
-### 1. Deploy the current build to Fly
+`.github/workflows/deploy-fly.yml` deploys `main` to Fly on every push, after
+`npm run lint` and `npm test` pass — a red build never reaches the domain. It
+needs one repository secret, set once:
+
+```sh
+fly tokens create deploy -x 8760h     # prints the token
+```
+
+Add it at **Settings → Secrets and variables → Actions → New repository
+secret**, named `FLY_API_TOKEN`. Until that secret exists the workflow's verify
+job passes and the deploy job fails on authentication.
+
+To deploy the current `main` without pushing a commit — a rollback, or after
+changing a secret — run the workflow from **Actions → Deploy to Fly → Run
+workflow**.
+
+By hand, from a machine with the Fly CLI authenticated:
 
 ```sh
 fly deploy
@@ -36,7 +52,9 @@ fly status                       # confirm one machine, started
 curl -s https://retro-arcade-fugue.fly.dev/health
 ```
 
-### 2. Set secrets (never in fly.toml)
+## One-time setup
+
+### 1. Set secrets (never in fly.toml)
 
 `fly.toml` is committed, so it holds only public configuration. Anything
 secret goes through `fly secrets`, which is encrypted and injected at runtime:
@@ -63,7 +81,7 @@ tolerates that and drops the player into a local `GUEST_xxxxxx` identity, so the
 arcade is playable but **wallet sign-in and saved profiles are not**. Set it
 when accounts should persist.
 
-### 3. Get the app's IP addresses
+### 2. Get the app's IP addresses
 
 An apex domain cannot use a CNAME, so `ptcarcade.fun` needs A and AAAA records
 pointing at Fly's addresses for this app:
@@ -82,9 +100,9 @@ fly ips allocate-v6
 
 Note both addresses.
 
-### 4. Point DNS at Fly
+### 3. Point DNS at Fly
 
-DNS for `ptcarcade.fun` must resolve to the Fly addresses from step 3, not to
+DNS for `ptcarcade.fun` must resolve to the Fly addresses from step 2, not to
 any previous host. Check what it answers with today before editing:
 
 ```sh
@@ -113,7 +131,7 @@ In the Spaceship dashboard: **Domains → ptcarcade.fun → Advanced DNS** (or
 Leave Spaceship's nameservers as they are — you are editing records, not
 delegating the zone elsewhere.
 
-### 5. Issue the certificate
+### 4. Issue the certificate
 
 ```sh
 fly certs add ptcarcade.fun
@@ -121,11 +139,11 @@ fly certs add www.ptcarcade.fun
 fly certs show ptcarcade.fun
 ```
 
-Fly validates ownership through the records from step 4, so add DNS first.
+Fly validates ownership through the records from step 3, so add DNS first.
 `fly certs show` reports both DNS and certificate status; it usually completes
 within a few minutes, but allow up to an hour for propagation.
 
-### 6. Verify
+### 5. Verify
 
 ```sh
 curl -s https://ptcarcade.fun/health
@@ -184,6 +202,8 @@ end:
 fly releases                     # find the previous version
 fly deploy --image <previous>    # or: fly releases rollback
 ```
+
+Or revert the commit and push: the workflow deploys `main` as it stands.
 
 No data migration reverses, because Phase 11 added no tables. The one
 forward-incompatible change is `assets/games/registry.json` at version 2; the

@@ -1,0 +1,44 @@
+name: Deploy to Fly
+
+# ptcarcade.fun is served by Fly, and Fly has no deploy-on-push of its own, so
+# this workflow is what makes a merge to main reach the live site. It replaces
+# the Render blueprint that used to do it.
+on:
+  push:
+    branches: [main]
+  # Redeploy the current main without pushing a commit — for a rollback, or
+  # after changing a secret.
+  workflow_dispatch:
+
+# One deploy at a time. A second push mid-deploy queues rather than racing the
+# first onto the same machine.
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+  deploy:
+    # A red build must not reach the domain: this is the whole reason the deploy
+    # is a workflow rather than a host watching the branch.
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # --remote-only builds the image on Fly's builders, so this runner needs
+      # no Docker layer cache and no registry credentials.
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
