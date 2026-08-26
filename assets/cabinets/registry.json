@@ -1,41 +1,831 @@
 [
-  {"id":"pixel-rally","name":"Tony Hawk's Pro Skater 2","sceneKey":"TONY HAWK'S PRO SKATER 2","enabled":true,"interactionPosition":{"x":-27.2,"y":1.65,"z":-10},"playerPosition":{"x":-26.85,"y":1.65,"z":-10},"playerRotationY":1.5707963267948966,"defaultGameId":"tony-hawks-pro-skater-2"},
-  {"id":"gex-enter-the-gecko","name":"Gex: Enter the Gecko","sceneKey":"GEX: ENTER THE GECKO","enabled":true,"interactionPosition":{"x":-27.2,"y":1.65,"z":-4},"playerPosition":{"x":-26.85,"y":1.65,"z":-4},"playerRotationY":1.5707963267948966,"defaultGameId":"gex-enter-the-gecko"},
-  {"id":"crash-bandicoot","name":"Crash Bandicoot","sceneKey":"CRASH BANDICOOT","enabled":true,"interactionPosition":{"x":-27.2,"y":1.65,"z":-1},"playerPosition":{"x":-26.85,"y":1.65,"z":-1},"playerRotationY":1.5707963267948966,"defaultGameId":"crash-bandicoot"},
-  {"id":"dungeon-88","name":"Spyro - Year of the Dragon","sceneKey":"SPYRO - YEAR OF THE DRAGON","enabled":true,"interactionPosition":{"x":-24.5,"y":1.65,"z":-13.2},"playerPosition":{"x":-24.5,"y":1.65,"z":-12.85},"playerRotationY":0,"defaultGameId":"spyro-year-of-the-dragon"},
-  {"id":"turbo-grid","name":"Twisted Metal World Tour","sceneKey":"TWISTED METAL WORLD TOUR","enabled":true,"interactionPosition":{"x":-20.5,"y":1.65,"z":-13.2},"playerPosition":{"x":-20.5,"y":1.65,"z":-12.85},"playerRotationY":0,"defaultGameId":"twisted-metal-world-tour"},
-  {"id":"silent-hill","name":"Silent Hill","sceneKey":"SILENT HILL","enabled":true,"interactionPosition":{"x":-27.2,"y":1.65,"z":-13},"playerPosition":{"x":-26.85,"y":1.65,"z":-13},"playerRotationY":1.5707963267948966,"defaultGameId":"silent-hill"},
-  {"id":"metal-gear-solid","name":"Metal Gear Solid","sceneKey":"METAL GEAR SOLID","enabled":true,"interactionPosition":{"x":-16.5,"y":1.65,"z":-13.2},"playerPosition":{"x":-16.5,"y":1.65,"z":-12.85},"playerRotationY":0,"defaultGameId":"metal-gear-solid"},
-  {"id":"megaman-cabinet-01","name":"Mega Man X","sceneKey":"MEGA MAN X","system":"snes","enabled":true,"interactionPosition":{"x":-51.2,"y":1.65,"z":-16},"playerPosition":{"x":-50.85,"y":1.65,"z":-16},"playerRotationY":1.5707963267948966,"defaultGameId":"mega-man-x"},
-  {"id":"megaman-cabinet-02","name":"Mega Man X2","sceneKey":"MEGA MAN X2","system":"snes","enabled":true,"interactionPosition":{"x":-51.2,"y":1.65,"z":-11},"playerPosition":{"x":-50.85,"y":1.65,"z":-11},"playerRotationY":1.5707963267948966,"defaultGameId":"mega-man-x2"},
-  {"id":"megaman-cabinet-03","name":"Mega Man X3","sceneKey":"MEGA MAN X3","system":"snes","enabled":true,"interactionPosition":{"x":-51.2,"y":1.65,"z":-6},"playerPosition":{"x":-50.85,"y":1.65,"z":-6},"playerRotationY":1.5707963267948966,"defaultGameId":"mega-man-x3"},
-  {"id":"megaman-cabinet-04","name":"Mega Man X4","sceneKey":"MEGA MAN X4","system":"psx","enabled":true,"interactionPosition":{"x":-51.2,"y":1.65,"z":-1},"playerPosition":{"x":-50.85,"y":1.65,"z":-1},"playerRotationY":1.5707963267948966,"defaultGameId":"mega-man-x4"},
-  {"id":"megaman-cabinet-05","name":"Mega Man X5","sceneKey":"MEGA MAN X5","system":"psx","enabled":true,"interactionPosition":{"x":-51.2,"y":1.65,"z":4},"playerPosition":{"x":-50.85,"y":1.65,"z":4},"playerRotationY":1.5707963267948966,"defaultGameId":"mega-man-x5"},
-  {"id":"megaman-cabinet-06","name":"Mega Man X6","sceneKey":"MEGA MAN X6","system":"psx","enabled":true,"interactionPosition":{"x":-49,"y":1.65,"z":-15.2},"playerPosition":{"x":-49,"y":1.65,"z":-14.85},"playerRotationY":0,"defaultGameId":"mega-man-x6"},
-  {"id":"megaman-cabinet-07","name":"Mega Man 8","sceneKey":"MEGA MAN 8","system":"psx","enabled":true,"interactionPosition":{"x":-45,"y":1.65,"z":-15.2},"playerPosition":{"x":-45,"y":1.65,"z":-14.85},"playerRotationY":0,"defaultGameId":"mega-man-8"},
-  {"id":"megaman-cabinet-08","name":"MegaMan Room PlayStation Cabinet 8","sceneKey":"PLAYSTATION // READY 08","system":"psx","enabled":true,"interactionPosition":{"x":-41,"y":1.65,"z":-15.2},"playerPosition":{"x":-41,"y":1.65,"z":-14.85},"playerRotationY":0},
-  {"id":"megaman-cabinet-09","name":"MegaMan Room PlayStation Cabinet 9","sceneKey":"PLAYSTATION // READY 09","system":"psx","enabled":true,"interactionPosition":{"x":-37,"y":1.65,"z":-15.2},"playerPosition":{"x":-37,"y":1.65,"z":-14.85},"playerRotationY":0},
-  {"id":"megaman-cabinet-10","name":"MegaMan Room PlayStation Cabinet 10","sceneKey":"PLAYSTATION // READY 10","system":"psx","enabled":true,"interactionPosition":{"x":-33,"y":1.65,"z":-15.2},"playerPosition":{"x":-33,"y":1.65,"z":-14.85},"playerRotationY":0},
-  {"id":"n64-cabinet-01","name":"Pokemon Snap","sceneKey":"POKEMON SNAP","enabled":true,"interactionPosition":{"x":27.2,"y":1.65,"z":-13},"playerPosition":{"x":26.85,"y":1.65,"z":-13},"playerRotationY":-1.5707963267948966,"defaultGameId":"pokemon-snap"},
-  {"id":"n64-cabinet-02","name":"Super Mario 64","sceneKey":"SUPER MARIO 64","enabled":true,"interactionPosition":{"x":27.2,"y":1.65,"z":-9},"playerPosition":{"x":26.85,"y":1.65,"z":-9},"playerRotationY":-1.5707963267948966,"defaultGameId":"super-mario-64"},
-  {"id":"n64-cabinet-03","name":"Glover","sceneKey":"GLOVER","enabled":true,"interactionPosition":{"x":27.2,"y":1.65,"z":-5},"playerPosition":{"x":26.85,"y":1.65,"z":-5},"playerRotationY":-1.5707963267948966,"defaultGameId":"glover"},
-  {"id":"n64-cabinet-04","name":"Doom 64","sceneKey":"DOOM 64","enabled":true,"interactionPosition":{"x":27.2,"y":1.65,"z":-1},"playerPosition":{"x":26.85,"y":1.65,"z":-1},"playerRotationY":-1.5707963267948966,"defaultGameId":"doom-64"},
-  {"id":"n64-cabinet-05","name":"The Legend of Zelda: Ocarina of Time","sceneKey":"THE LEGEND OF ZELDA: OCARINA OF TIME","enabled":true,"interactionPosition":{"x":16.5,"y":1.65,"z":-13.2},"playerPosition":{"x":16.5,"y":1.65,"z":-12.85},"playerRotationY":0,"defaultGameId":"zelda-ocarina-of-time"},
-  {"id":"n64-cabinet-06","name":"Star Fox 64","sceneKey":"STAR FOX 64","enabled":true,"interactionPosition":{"x":20.5,"y":1.65,"z":-13.2},"playerPosition":{"x":20.5,"y":1.65,"z":-12.85},"playerRotationY":0,"defaultGameId":"star-fox-64"},
-  {"id":"n64-cabinet-07","name":"Mega Man 64","sceneKey":"MEGA MAN 64","enabled":true,"interactionPosition":{"x":24.5,"y":1.65,"z":-13.2},"playerPosition":{"x":24.5,"y":1.65,"z":-12.85},"playerRotationY":0,"defaultGameId":"mega-man-64"},
-  {"id":"gamecube-cabinet-01","name":"The Legend of Zelda: The Wind Waker","sceneKey":"THE LEGEND OF ZELDA: THE WIND WAKER","system":"gamecube","emulatorId":"gecko","enabled":true,"interactionPosition":{"x":-8.2,"y":1.65,"z":23},"playerPosition":{"x":-7.85,"y":1.65,"z":23},"playerRotationY":1.5707963267948966,"defaultGameId":"wind-waker"},
-  {"id":"gamecube-cabinet-02","name":"The Legend of Zelda: Twilight Princess","sceneKey":"THE LEGEND OF ZELDA: TWILIGHT PRINCESS","system":"gamecube","emulatorId":"gecko","enabled":true,"interactionPosition":{"x":-8.2,"y":1.65,"z":31},"playerPosition":{"x":-7.85,"y":1.65,"z":31},"playerRotationY":1.5707963267948966,"defaultGameId":"zelda-twilight-princess"},
-  {"id":"gamecube-cabinet-03","name":"Pikmin","sceneKey":"PIKMIN","system":"gamecube","emulatorId":"gecko","enabled":true,"interactionPosition":{"x":8.2,"y":1.65,"z":23},"playerPosition":{"x":7.85,"y":1.65,"z":23},"playerRotationY":-1.5707963267948966,"defaultGameId":"pikmin"},
-  {"id":"gamecube-cabinet-04","name":"Super Smash Bros. Melee","sceneKey":"SUPER SMASH BROS. MELEE","system":"gamecube","emulatorId":"gecko","enabled":true,"interactionPosition":{"x":8.2,"y":1.65,"z":31},"playerPosition":{"x":7.85,"y":1.65,"z":31},"playerRotationY":-1.5707963267948966,"defaultGameId":"super-smash-bros-melee"},
-  {"id":"gamecube-cabinet-05","name":"Super Mario Sunshine","sceneKey":"SUPER MARIO SUNSHINE","system":"gamecube","emulatorId":"gecko","enabled":true,"interactionPosition":{"x":0,"y":1.65,"z":37.2},"playerPosition":{"x":0,"y":1.65,"z":36.85},"playerRotationY":3.141592653589793,"defaultGameId":"super-mario-sunshine"},
-  {"id":"psx-back-cabinet-01","name":"God of War (PS2)","sceneKey":"GOD OF WAR","enabled":false,"interactionPosition":{"x":-27.2,"y":1.65,"z":-30},"playerPosition":{"x":-26.85,"y":1.65,"z":-30},"playerRotationY":1.5707963267948966},
-  {"id":"psx-back-cabinet-02","name":"Kingdom Hearts (PS2)","sceneKey":"KINGDOM HEARTS","enabled":true,"interactionPosition":{"x":-27.2,"y":1.65,"z":-25},"playerPosition":{"x":-26.85,"y":1.65,"z":-25},"playerRotationY":1.5707963267948966,"defaultGameId":"kingdom-hearts"},
-  {"id":"psx-back-cabinet-03","name":"Grand Theft Auto: San Andreas (PS2)","sceneKey":"GRAND THEFT AUTO: SAN ANDREAS","enabled":true,"interactionPosition":{"x":-27.2,"y":1.65,"z":-20},"playerPosition":{"x":-26.85,"y":1.65,"z":-20},"playerRotationY":1.5707963267948966,"defaultGameId":"gta-san-andreas"},
-  {"id":"psx-back-cabinet-04","name":"Dragon Ball Z: Budokai Tenkaichi 3 (PS2)","sceneKey":"DBZ TENKAICHI 3","enabled":true,"interactionPosition":{"x":-24.5,"y":1.65,"z":-30},"playerPosition":{"x":-24.5,"y":1.65,"z":-29.65},"playerRotationY":0,"defaultGameId":"dbz-tenkaichi-3"},
-  {"id":"psx-back-cabinet-05","name":"PS2 Cabinet 5","sceneKey":"PS2 // READY 05","enabled":false,"interactionPosition":{"x":-18.5,"y":1.65,"z":-30},"playerPosition":{"x":-18.5,"y":1.65,"z":-29.65},"playerRotationY":0},
-  {"id":"xbox-cabinet-01","name":"Xbox Cabinet 1","sceneKey":"XBOX // READY 01","enabled":false,"interactionPosition":{"x":27.2,"y":1.65,"z":3},"playerPosition":{"x":26.85,"y":1.65,"z":3},"playerRotationY":-1.5707963267948966},
-  {"id":"xbox-cabinet-02","name":"Xbox Cabinet 2","sceneKey":"XBOX // READY 02","enabled":false,"interactionPosition":{"x":27.2,"y":1.65,"z":8},"playerPosition":{"x":26.85,"y":1.65,"z":8},"playerRotationY":-1.5707963267948966},
-  {"id":"xbox-cabinet-03","name":"Xbox Cabinet 3","sceneKey":"XBOX // READY 03","enabled":false,"interactionPosition":{"x":27.2,"y":1.65,"z":13},"playerPosition":{"x":26.85,"y":1.65,"z":13},"playerRotationY":-1.5707963267948966},
-  {"id":"xbox-cabinet-04","name":"Xbox Cabinet 4","sceneKey":"XBOX // READY 04","enabled":false,"interactionPosition":{"x":17,"y":1.65,"z":13.2},"playerPosition":{"x":17,"y":1.65,"z":12.85},"playerRotationY":3.141592653589793},
-  {"id":"xbox-cabinet-05","name":"Xbox Cabinet 5","sceneKey":"XBOX // READY 05","enabled":false,"interactionPosition":{"x":23,"y":1.65,"z":13.2},"playerPosition":{"x":23,"y":1.65,"z":12.85},"playerRotationY":3.141592653589793}
+  {
+    "id": "pixel-rally",
+    "name": "Tony Hawk's Pro Skater 2",
+    "sceneKey": "TONY HAWK'S PRO SKATER 2",
+    "cabinetType": "psx-upright",
+    "zoneId": "main-floor-west",
+    "gameId": "tony-hawks-pro-skater-2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -27.2,
+      "y": 1.65,
+      "z": -10
+    },
+    "playerPosition": {
+      "x": -26.85,
+      "y": 1.65,
+      "z": -10
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "tony-hawks-pro-skater-2"
+  },
+  {
+    "id": "gex-enter-the-gecko",
+    "name": "Gex: Enter the Gecko",
+    "sceneKey": "GEX: ENTER THE GECKO",
+    "cabinetType": "psx-upright",
+    "zoneId": "main-floor-west",
+    "gameId": "gex-enter-the-gecko",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -27.2,
+      "y": 1.65,
+      "z": -4
+    },
+    "playerPosition": {
+      "x": -26.85,
+      "y": 1.65,
+      "z": -4
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "gex-enter-the-gecko"
+  },
+  {
+    "id": "crash-bandicoot",
+    "name": "Crash Bandicoot",
+    "sceneKey": "CRASH BANDICOOT",
+    "cabinetType": "psx-upright",
+    "zoneId": "main-floor-west",
+    "gameId": "crash-bandicoot",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -27.2,
+      "y": 1.65,
+      "z": -1
+    },
+    "playerPosition": {
+      "x": -26.85,
+      "y": 1.65,
+      "z": -1
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "crash-bandicoot"
+  },
+  {
+    "id": "dungeon-88",
+    "name": "Spyro - Year of the Dragon",
+    "sceneKey": "SPYRO - YEAR OF THE DRAGON",
+    "cabinetType": "psx-upright",
+    "zoneId": "main-floor-west",
+    "gameId": "spyro-year-of-the-dragon",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -24.5,
+      "y": 1.65,
+      "z": -13.2
+    },
+    "playerPosition": {
+      "x": -24.5,
+      "y": 1.65,
+      "z": -12.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "spyro-year-of-the-dragon"
+  },
+  {
+    "id": "turbo-grid",
+    "name": "Twisted Metal World Tour",
+    "sceneKey": "TWISTED METAL WORLD TOUR",
+    "cabinetType": "psx-upright",
+    "zoneId": "main-floor-west",
+    "gameId": "twisted-metal-world-tour",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -20.5,
+      "y": 1.65,
+      "z": -13.2
+    },
+    "playerPosition": {
+      "x": -20.5,
+      "y": 1.65,
+      "z": -12.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "twisted-metal-world-tour"
+  },
+  {
+    "id": "silent-hill",
+    "name": "Silent Hill",
+    "sceneKey": "SILENT HILL",
+    "cabinetType": "psx-upright",
+    "zoneId": "main-floor-west",
+    "gameId": "silent-hill",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -27.2,
+      "y": 1.65,
+      "z": -13
+    },
+    "playerPosition": {
+      "x": -26.85,
+      "y": 1.65,
+      "z": -13
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "silent-hill"
+  },
+  {
+    "id": "metal-gear-solid",
+    "name": "Metal Gear Solid",
+    "sceneKey": "METAL GEAR SOLID",
+    "cabinetType": "psx-upright",
+    "zoneId": "main-floor-west",
+    "gameId": "metal-gear-solid",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -16.5,
+      "y": 1.65,
+      "z": -13.2
+    },
+    "playerPosition": {
+      "x": -16.5,
+      "y": 1.65,
+      "z": -12.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "metal-gear-solid"
+  },
+  {
+    "id": "megaman-cabinet-01",
+    "name": "Mega Man X",
+    "sceneKey": "MEGA MAN X",
+    "cabinetType": "snes-upright",
+    "zoneId": "megaman-room",
+    "gameId": "mega-man-x",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -51.2,
+      "y": 1.65,
+      "z": -16
+    },
+    "playerPosition": {
+      "x": -50.85,
+      "y": 1.65,
+      "z": -16
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "mega-man-x",
+    "system": "snes"
+  },
+  {
+    "id": "megaman-cabinet-02",
+    "name": "Mega Man X2",
+    "sceneKey": "MEGA MAN X2",
+    "cabinetType": "snes-upright",
+    "zoneId": "megaman-room",
+    "gameId": "mega-man-x2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -51.2,
+      "y": 1.65,
+      "z": -11
+    },
+    "playerPosition": {
+      "x": -50.85,
+      "y": 1.65,
+      "z": -11
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "mega-man-x2",
+    "system": "snes"
+  },
+  {
+    "id": "megaman-cabinet-03",
+    "name": "Mega Man X3",
+    "sceneKey": "MEGA MAN X3",
+    "cabinetType": "snes-upright",
+    "zoneId": "megaman-room",
+    "gameId": "mega-man-x3",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -51.2,
+      "y": 1.65,
+      "z": -6
+    },
+    "playerPosition": {
+      "x": -50.85,
+      "y": 1.65,
+      "z": -6
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "mega-man-x3",
+    "system": "snes"
+  },
+  {
+    "id": "megaman-cabinet-04",
+    "name": "Mega Man X4",
+    "sceneKey": "MEGA MAN X4",
+    "cabinetType": "psx-upright",
+    "zoneId": "megaman-room",
+    "gameId": "mega-man-x4",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -51.2,
+      "y": 1.65,
+      "z": -1
+    },
+    "playerPosition": {
+      "x": -50.85,
+      "y": 1.65,
+      "z": -1
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "mega-man-x4",
+    "system": "psx"
+  },
+  {
+    "id": "megaman-cabinet-05",
+    "name": "Mega Man X5",
+    "sceneKey": "MEGA MAN X5",
+    "cabinetType": "psx-upright",
+    "zoneId": "megaman-room",
+    "gameId": "mega-man-x5",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -51.2,
+      "y": 1.65,
+      "z": 4
+    },
+    "playerPosition": {
+      "x": -50.85,
+      "y": 1.65,
+      "z": 4
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "mega-man-x5",
+    "system": "psx"
+  },
+  {
+    "id": "megaman-cabinet-06",
+    "name": "Mega Man X6",
+    "sceneKey": "MEGA MAN X6",
+    "cabinetType": "psx-upright",
+    "zoneId": "megaman-room",
+    "gameId": "mega-man-x6",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -49,
+      "y": 1.65,
+      "z": -15.2
+    },
+    "playerPosition": {
+      "x": -49,
+      "y": 1.65,
+      "z": -14.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "mega-man-x6",
+    "system": "psx"
+  },
+  {
+    "id": "megaman-cabinet-07",
+    "name": "Mega Man 8",
+    "sceneKey": "MEGA MAN 8",
+    "cabinetType": "psx-upright",
+    "zoneId": "megaman-room",
+    "gameId": "mega-man-8",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -45,
+      "y": 1.65,
+      "z": -15.2
+    },
+    "playerPosition": {
+      "x": -45,
+      "y": 1.65,
+      "z": -14.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "mega-man-8",
+    "system": "psx"
+  },
+  {
+    "id": "megaman-cabinet-08",
+    "name": "MegaMan Room PlayStation Cabinet 8",
+    "sceneKey": "PLAYSTATION // READY 08",
+    "cabinetType": "psx-upright",
+    "zoneId": "megaman-room",
+    "gameId": null,
+    "enabled": true,
+    "interactionPosition": {
+      "x": -41,
+      "y": 1.65,
+      "z": -15.2
+    },
+    "playerPosition": {
+      "x": -41,
+      "y": 1.65,
+      "z": -14.85
+    },
+    "playerRotationY": 0,
+    "system": "psx"
+  },
+  {
+    "id": "megaman-cabinet-09",
+    "name": "MegaMan Room PlayStation Cabinet 9",
+    "sceneKey": "PLAYSTATION // READY 09",
+    "cabinetType": "psx-upright",
+    "zoneId": "megaman-room",
+    "gameId": null,
+    "enabled": true,
+    "interactionPosition": {
+      "x": -37,
+      "y": 1.65,
+      "z": -15.2
+    },
+    "playerPosition": {
+      "x": -37,
+      "y": 1.65,
+      "z": -14.85
+    },
+    "playerRotationY": 0,
+    "system": "psx"
+  },
+  {
+    "id": "megaman-cabinet-10",
+    "name": "MegaMan Room PlayStation Cabinet 10",
+    "sceneKey": "PLAYSTATION // READY 10",
+    "cabinetType": "psx-upright",
+    "zoneId": "megaman-room",
+    "gameId": null,
+    "enabled": true,
+    "interactionPosition": {
+      "x": -33,
+      "y": 1.65,
+      "z": -15.2
+    },
+    "playerPosition": {
+      "x": -33,
+      "y": 1.65,
+      "z": -14.85
+    },
+    "playerRotationY": 0,
+    "system": "psx"
+  },
+  {
+    "id": "n64-cabinet-01",
+    "name": "Pokemon Snap",
+    "sceneKey": "POKEMON SNAP",
+    "cabinetType": "n64-upright",
+    "zoneId": "main-floor-east",
+    "gameId": "pokemon-snap",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 27.2,
+      "y": 1.65,
+      "z": -13
+    },
+    "playerPosition": {
+      "x": 26.85,
+      "y": 1.65,
+      "z": -13
+    },
+    "playerRotationY": -1.5707963267948966,
+    "defaultGameId": "pokemon-snap"
+  },
+  {
+    "id": "n64-cabinet-02",
+    "name": "Super Mario 64",
+    "sceneKey": "SUPER MARIO 64",
+    "cabinetType": "n64-upright",
+    "zoneId": "main-floor-east",
+    "gameId": "super-mario-64",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 27.2,
+      "y": 1.65,
+      "z": -9
+    },
+    "playerPosition": {
+      "x": 26.85,
+      "y": 1.65,
+      "z": -9
+    },
+    "playerRotationY": -1.5707963267948966,
+    "defaultGameId": "super-mario-64"
+  },
+  {
+    "id": "n64-cabinet-03",
+    "name": "Glover",
+    "sceneKey": "GLOVER",
+    "cabinetType": "n64-upright",
+    "zoneId": "main-floor-east",
+    "gameId": "glover",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 27.2,
+      "y": 1.65,
+      "z": -5
+    },
+    "playerPosition": {
+      "x": 26.85,
+      "y": 1.65,
+      "z": -5
+    },
+    "playerRotationY": -1.5707963267948966,
+    "defaultGameId": "glover"
+  },
+  {
+    "id": "n64-cabinet-04",
+    "name": "Doom 64",
+    "sceneKey": "DOOM 64",
+    "cabinetType": "n64-upright",
+    "zoneId": "main-floor-east",
+    "gameId": "doom-64",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 27.2,
+      "y": 1.65,
+      "z": -1
+    },
+    "playerPosition": {
+      "x": 26.85,
+      "y": 1.65,
+      "z": -1
+    },
+    "playerRotationY": -1.5707963267948966,
+    "defaultGameId": "doom-64"
+  },
+  {
+    "id": "n64-cabinet-05",
+    "name": "The Legend of Zelda: Ocarina of Time",
+    "sceneKey": "THE LEGEND OF ZELDA: OCARINA OF TIME",
+    "cabinetType": "n64-upright",
+    "zoneId": "main-floor-east",
+    "gameId": "zelda-ocarina-of-time",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 16.5,
+      "y": 1.65,
+      "z": -13.2
+    },
+    "playerPosition": {
+      "x": 16.5,
+      "y": 1.65,
+      "z": -12.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "zelda-ocarina-of-time"
+  },
+  {
+    "id": "n64-cabinet-06",
+    "name": "Star Fox 64",
+    "sceneKey": "STAR FOX 64",
+    "cabinetType": "n64-upright",
+    "zoneId": "main-floor-east",
+    "gameId": "star-fox-64",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 20.5,
+      "y": 1.65,
+      "z": -13.2
+    },
+    "playerPosition": {
+      "x": 20.5,
+      "y": 1.65,
+      "z": -12.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "star-fox-64"
+  },
+  {
+    "id": "n64-cabinet-07",
+    "name": "Mega Man 64",
+    "sceneKey": "MEGA MAN 64",
+    "cabinetType": "n64-upright",
+    "zoneId": "main-floor-east",
+    "gameId": "mega-man-64",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 24.5,
+      "y": 1.65,
+      "z": -13.2
+    },
+    "playerPosition": {
+      "x": 24.5,
+      "y": 1.65,
+      "z": -12.85
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "mega-man-64"
+  },
+  {
+    "id": "gamecube-cabinet-01",
+    "name": "The Legend of Zelda: The Wind Waker",
+    "sceneKey": "THE LEGEND OF ZELDA: THE WIND WAKER",
+    "cabinetType": "gamecube-kiosk",
+    "zoneId": "gamecube-room",
+    "gameId": "wind-waker",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -8.2,
+      "y": 1.65,
+      "z": 23
+    },
+    "playerPosition": {
+      "x": -7.85,
+      "y": 1.65,
+      "z": 23
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "wind-waker",
+    "system": "gamecube",
+    "emulatorId": "gecko"
+  },
+  {
+    "id": "gamecube-cabinet-02",
+    "name": "The Legend of Zelda: Twilight Princess",
+    "sceneKey": "THE LEGEND OF ZELDA: TWILIGHT PRINCESS",
+    "cabinetType": "gamecube-kiosk",
+    "zoneId": "gamecube-room",
+    "gameId": "zelda-twilight-princess",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -8.2,
+      "y": 1.65,
+      "z": 31
+    },
+    "playerPosition": {
+      "x": -7.85,
+      "y": 1.65,
+      "z": 31
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "zelda-twilight-princess",
+    "system": "gamecube",
+    "emulatorId": "gecko"
+  },
+  {
+    "id": "gamecube-cabinet-03",
+    "name": "Pikmin",
+    "sceneKey": "PIKMIN",
+    "cabinetType": "gamecube-kiosk",
+    "zoneId": "gamecube-room",
+    "gameId": "pikmin",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 8.2,
+      "y": 1.65,
+      "z": 23
+    },
+    "playerPosition": {
+      "x": 7.85,
+      "y": 1.65,
+      "z": 23
+    },
+    "playerRotationY": -1.5707963267948966,
+    "defaultGameId": "pikmin",
+    "system": "gamecube",
+    "emulatorId": "gecko"
+  },
+  {
+    "id": "gamecube-cabinet-04",
+    "name": "Super Smash Bros. Melee",
+    "sceneKey": "SUPER SMASH BROS. MELEE",
+    "cabinetType": "gamecube-kiosk",
+    "zoneId": "gamecube-room",
+    "gameId": "super-smash-bros-melee",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 8.2,
+      "y": 1.65,
+      "z": 31
+    },
+    "playerPosition": {
+      "x": 7.85,
+      "y": 1.65,
+      "z": 31
+    },
+    "playerRotationY": -1.5707963267948966,
+    "defaultGameId": "super-smash-bros-melee",
+    "system": "gamecube",
+    "emulatorId": "gecko"
+  },
+  {
+    "id": "gamecube-cabinet-05",
+    "name": "Super Mario Sunshine",
+    "sceneKey": "SUPER MARIO SUNSHINE",
+    "cabinetType": "gamecube-kiosk",
+    "zoneId": "gamecube-room",
+    "gameId": "super-mario-sunshine",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 0,
+      "y": 1.65,
+      "z": 37.2
+    },
+    "playerPosition": {
+      "x": 0,
+      "y": 1.65,
+      "z": 36.85
+    },
+    "playerRotationY": 3.141592653589793,
+    "defaultGameId": "super-mario-sunshine",
+    "system": "gamecube",
+    "emulatorId": "gecko"
+  },
+  {
+    "id": "psx-back-cabinet-01",
+    "name": "God of War (PS2)",
+    "sceneKey": "GOD OF WAR",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "psx-back-gallery",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": -27.2,
+      "y": 1.65,
+      "z": -30
+    },
+    "playerPosition": {
+      "x": -26.85,
+      "y": 1.65,
+      "z": -30
+    },
+    "playerRotationY": 1.5707963267948966
+  },
+  {
+    "id": "psx-back-cabinet-02",
+    "name": "Kingdom Hearts (PS2)",
+    "sceneKey": "KINGDOM HEARTS",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "psx-back-gallery",
+    "gameId": "kingdom-hearts",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -27.2,
+      "y": 1.65,
+      "z": -25
+    },
+    "playerPosition": {
+      "x": -26.85,
+      "y": 1.65,
+      "z": -25
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "kingdom-hearts"
+  },
+  {
+    "id": "psx-back-cabinet-03",
+    "name": "Grand Theft Auto: San Andreas (PS2)",
+    "sceneKey": "GRAND THEFT AUTO: SAN ANDREAS",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "psx-back-gallery",
+    "gameId": "gta-san-andreas",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -27.2,
+      "y": 1.65,
+      "z": -20
+    },
+    "playerPosition": {
+      "x": -26.85,
+      "y": 1.65,
+      "z": -20
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "gta-san-andreas"
+  },
+  {
+    "id": "psx-back-cabinet-04",
+    "name": "Dragon Ball Z: Budokai Tenkaichi 3 (PS2)",
+    "sceneKey": "DBZ TENKAICHI 3",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "psx-back-gallery",
+    "gameId": "dbz-tenkaichi-3",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -24.5,
+      "y": 1.65,
+      "z": -30
+    },
+    "playerPosition": {
+      "x": -24.5,
+      "y": 1.65,
+      "z": -29.65
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "dbz-tenkaichi-3"
+  },
+  {
+    "id": "psx-back-cabinet-05",
+    "name": "PS2 Cabinet 5",
+    "sceneKey": "PS2 // READY 05",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "psx-back-gallery",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": -18.5,
+      "y": 1.65,
+      "z": -30
+    },
+    "playerPosition": {
+      "x": -18.5,
+      "y": 1.65,
+      "z": -29.65
+    },
+    "playerRotationY": 0
+  },
+  {
+    "id": "xbox-cabinet-01",
+    "name": "Xbox Cabinet 1",
+    "sceneKey": "XBOX // READY 01",
+    "cabinetType": "xbox-display",
+    "zoneId": "xbox-gallery",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": 27.2,
+      "y": 1.65,
+      "z": 3
+    },
+    "playerPosition": {
+      "x": 26.85,
+      "y": 1.65,
+      "z": 3
+    },
+    "playerRotationY": -1.5707963267948966
+  },
+  {
+    "id": "xbox-cabinet-02",
+    "name": "Xbox Cabinet 2",
+    "sceneKey": "XBOX // READY 02",
+    "cabinetType": "xbox-display",
+    "zoneId": "xbox-gallery",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": 27.2,
+      "y": 1.65,
+      "z": 8
+    },
+    "playerPosition": {
+      "x": 26.85,
+      "y": 1.65,
+      "z": 8
+    },
+    "playerRotationY": -1.5707963267948966
+  },
+  {
+    "id": "xbox-cabinet-03",
+    "name": "Xbox Cabinet 3",
+    "sceneKey": "XBOX // READY 03",
+    "cabinetType": "xbox-display",
+    "zoneId": "xbox-gallery",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": 27.2,
+      "y": 1.65,
+      "z": 13
+    },
+    "playerPosition": {
+      "x": 26.85,
+      "y": 1.65,
+      "z": 13
+    },
+    "playerRotationY": -1.5707963267948966
+  },
+  {
+    "id": "xbox-cabinet-04",
+    "name": "Xbox Cabinet 4",
+    "sceneKey": "XBOX // READY 04",
+    "cabinetType": "xbox-display",
+    "zoneId": "xbox-gallery",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": 17,
+      "y": 1.65,
+      "z": 13.2
+    },
+    "playerPosition": {
+      "x": 17,
+      "y": 1.65,
+      "z": 12.85
+    },
+    "playerRotationY": 3.141592653589793
+  },
+  {
+    "id": "xbox-cabinet-05",
+    "name": "Xbox Cabinet 5",
+    "sceneKey": "XBOX // READY 05",
+    "cabinetType": "xbox-display",
+    "zoneId": "xbox-gallery",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": 23,
+      "y": 1.65,
+      "z": 13.2
+    },
+    "playerPosition": {
+      "x": 23,
+      "y": 1.65,
+      "z": 12.85
+    },
+    "playerRotationY": 3.141592653589793
+  }
 ]

@@ -1,6 +1,6 @@
 # Phase 11 — Repository Inspection and Staged Migration Plan
 
-Status: **inspection complete, implementation not started.**
+Status: **inspection complete; operator decisions recorded in §0; implementation underway.**
 
 This document satisfies steps 1–15 of the Phase 11 implementation process. It records
 the systems that exist today, the coupling Phase 11 must break, the systems the Phase 11
@@ -9,6 +9,24 @@ file changes, and the staged milestone plan.
 
 No production code has been changed. Baseline at time of inspection: **115/115 tests pass**
 (`npm test`), working tree clean at `d5217ee`.
+
+---
+
+## 0. Operator decisions
+
+The inspection below was presented before implementation. The operator made three calls:
+
+1. **Replay and ghost systems are deferred to Phase 12.** Stage E (Milestones 11.17–11.24) is
+   not implemented in Phase 11. The §2 gap analysis stands as the reason. Phase 11 therefore
+   delivers cabinet/emulator decoupling, plugins, cabinet scale, operations, and the versioned
+   API — a coherent subset that does not depend on the missing competitive layer.
+2. **Run all remaining stages** (A, B, C, D, F, G), committing each separately as it goes green.
+3. **Storage uses a filesystem-backed adapter behind an interface.** With replay deferred this
+   applies to plugin-scoped storage and any later payload store, so the eventual R2
+   implementation is a swap with no call-site changes.
+
+Milestone coverage in Phase 11 is therefore 11.1–11.16 and 11.25–11.40, with 11.17–11.24
+carried to Phase 12.
 
 ---
 
@@ -278,7 +296,7 @@ one 125 KB file with very long lines, no module boundaries, and no direct test c
 
 ## 4. Staged migration plan
 
-Seven stages. Each stage ends green (`npm run lint && npm run typecheck && npm test`) and is
+Six implemented stages (E is deferred). Each stage ends green (`npm run lint && npm run typecheck && npm test`) and is
 committed separately. No stage begins before the previous one is green.
 
 **Stage A — domain model, no behavior change (11.1, 11.2, 11.6)**
@@ -309,12 +327,11 @@ first-party info-kiosk example. Operator-installed only; no dynamic remote code;
 access to DB clients, Redis, filesystem, cookies, wallet signatures, secrets, or ROM files.
 Noncritical plugin failure is contained and reported. *Exit: the 9 plugin tests from 11.40.*
 
-**Stage E — replay and ghost (11.17–11.24)**
-Capability model, versioned format with checksums, logical-control input recording (never
-chat, passwords, or wallet input), storage split PG metadata / object-storage payload,
-playback that cannot submit a score, ghost isolation, and the determinism harness tested
-against a deterministic fixture adapter. Leaderboard integration lands as the declared seam
-described in §2. *Exit: the 10 replay tests from 11.40.*
+**Stage E — replay and ghost (11.17–11.24) — DEFERRED TO PHASE 12**
+Not implemented, per the operator decision in §0. The §2 gap analysis is the reason: with no
+competitive layer, no score extraction, and three opaque emulator iframes, replay would be
+interface-only. Tests 26–35 of Milestone 11.40 are out of scope for Phase 11 and are recorded
+as such rather than reported as passing.
 
 **Stage F — operations (11.25–11.29)**
 Operations API, separately authenticated dashboard, scoped idempotent actions with dry-run,
@@ -327,7 +344,7 @@ bus, background jobs with retry/backoff/DLQ, and the 11.37 metrics. Existing unv
 routes stay mounted as compatibility aliases until the client migration is verified.
 *Exit: the 9 API tests, plus the 10 regression tests from 11.40.*
 
-Then the security review (11.38) and the 36 documentation deliverables.
+Stage E is skipped. Then the security review (11.38) and the 36 documentation deliverables.
 
 **Sequencing rationale:** A and B are prerequisites for everything. C is independent of D–F
 and could run in parallel, but touches `arcade.js` heavily, so it is kept serial to keep the
@@ -343,18 +360,18 @@ rewritten by each preceding stage.
    catch a regression there.
 2. **Three emulator iframes are opaque.** Determinism, score extraction, and true ghost
    support cannot be delivered through the current boundary. Declared honestly, not faked.
-3. **Object storage has no upload path.** Stage E needs R2 write credentials and a bucket
-   policy that do not exist yet — an operator decision, flagged before Stage E starts.
+3. **Object storage has no upload path.** Resolved for Phase 11 by §0.3: storage sits behind
+   an interface with a filesystem adapter. No R2 write credentials are needed this phase.
 4. **Scope.** This is 40 milestones against a 4.5 KLOC server and a monolithic client. The
-   staged plan exists so the work is reviewable at seven points rather than one.
+   staged plan exists so the work is reviewable at six points rather than one.
 
 ---
 
-## 6. Open questions for the operator
+## 6. Resolved questions
 
-1. Confirm the §2 resolution: replay/ghost/leaderboard touchpoints delivered as declared
-   seams, with no competitive or monetization system built.
-2. Object storage for replay payloads — provision an R2 bucket with write credentials, or
-   defer Stage E's storage half and keep replays metadata-only?
-3. Operator identity — separate credential store, or an `operator` role on existing accounts
-   with its own session boundary? The brief requires the boundary; it does not fix the store.
+1. Competitive/replay gap — resolved by §0.1: deferred to Phase 12.
+2. Object storage — resolved by §0.3: filesystem adapter behind an interface.
+3. Operator identity — resolved during Stage F: a separate operator credential store with its
+   own session boundary, rather than a role on player accounts. A connected player wallet
+   grants no operations access under either design, but a separate store makes that
+   structural rather than a check that could be forgotten.
