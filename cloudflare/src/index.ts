@@ -429,9 +429,14 @@ function isAllowedOrigin(value: string | null): boolean {
   if (
     value === 'https://ptcarcade.fun'
     || value === 'https://www.ptcarcade.fun'
-    || value === 'https://retro-arcade-fugue.fly.dev'
+    // The origin the domain currently fronts. Reachable directly, and the
+    // useful thing to test against when the domain itself is in doubt.
+    || value === 'https://retro-arcade-multiplayer.onrender.com'
     || value === 'https://retro-arcade-om7.pages.dev'
   ) return true;
+  // Deliberately absent: the Fly hostname. Allowlisting a name nobody has
+  // registered hands the entry to whoever registers it first; it goes back in
+  // when the app exists and serves the site.
   return /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(value);
 }
 async function verifyRealtimeTicket(value: string | null, secret: string): Promise<TicketIdentity | undefined> {

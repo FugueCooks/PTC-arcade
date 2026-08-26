@@ -48,3 +48,14 @@ void test('the endpoint being pinged is one the server actually serves', async (
   const routes = await readFile(path.join(root, 'server/src/http/operational-routes.ts'), 'utf8');
   assert.match(routes, /app\.get\('\/healthz'/, 'the keep-warm target must exist on the origin');
 });
+
+void test('the realtime worker only trusts origins that exist and are ours', () => {
+  // An allowlisted hostname that nobody has registered is an open door: whoever
+  // claims the name inherits a trusted origin. The Fly app was allowlisted
+  // while it was the plan, and it was never created.
+  const allowlist = /function isAllowedOrigin[\s\S]*?\n}/.exec(worker)?.[0] ?? '';
+  assert.ok(allowlist, 'the origin check must exist');
+  assert.doesNotMatch(allowlist, /fly\.dev/, 'the Fly app does not exist yet');
+  assert.match(allowlist, /https:\/\/ptcarcade\.fun/);
+  assert.match(allowlist, /onrender\.com/, 'the current origin must be able to connect');
+});
