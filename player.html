@@ -34,10 +34,39 @@
         gamepad: true,
         settings: true
       };
-      addEventListener('error', () => parent.postMessage({ type: 'arcade:emulator-error' }, location.origin));
-      addEventListener('unhandledrejection', () => parent.postMessage({ type: 'arcade:emulator-error' }, location.origin));
+      // Every failure used to collapse into one opaque "could not load", which
+      // made a blocked script indistinguishable from a bad ROM. Report why.
+      function reportError(detail) {
+        parent.postMessage({ type: 'arcade:emulator-error', detail: String(detail).slice(0, 300) }, location.origin);
+      }
+      addEventListener('error', (event) => reportError(event?.message || 'script error'));
+      addEventListener('unhandledrejection', (event) => reportError(event?.reason?.message || event?.reason || 'promise rejection'));
       addEventListener('pagehide', () => parent.postMessage({ type: 'arcade:emulator-closed' }, location.origin));
     </script>
-    <script src="https://cdn.emulatorjs.org/stable/data/loader.js" onload="parent.postMessage({type:'arcade:emulator-ready'},location.origin)" onerror="parent.postMessage({type:'arcade:emulator-error'},location.origin)"></script>
+    <script>
+      /**
+       * The server sends Cross-Origin-Embedder-Policy: credentialless for the
+       * PS2 core's SharedArrayBuffer workers, and that policy also governs this
+       * page. Under COEP a cross-origin script is admitted two different ways:
+       * a no-cors load whose response carries CORP, or a CORS load whose
+       * response carries Access-Control-Allow-Origin.
+       *
+       * Which one the CDN supports cannot be assumed, and picking wrong turns a
+       * working emulator into a blocked one, so both are tried: CORS first,
+       * then a plain load, and only then is it reported as a failure.
+       */
+      function loadEmulatorRuntime(useCors) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+        if (useCors) script.crossOrigin = 'anonymous';
+        script.onload = () => parent.postMessage({ type: 'arcade:emulator-ready' }, location.origin);
+        script.onerror = () => {
+          if (useCors) { loadEmulatorRuntime(false); return; }
+          reportError('loader.js was blocked or unreachable with and without CORS (check COEP and the CDN)');
+        };
+        document.body.append(script);
+      }
+      loadEmulatorRuntime(true);
+    </script>
   </body>
 </html>

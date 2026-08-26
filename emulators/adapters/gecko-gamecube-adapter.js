@@ -66,7 +66,7 @@ export function createGeckoGameCubeAdapter({ runtime } = {}) {
       if (message?.type === 'arcade:gamecube-load-progress' && Number.isFinite(message?.percent)) {
         return { kind: FRAME_SIGNALS.PROGRESS, percent: message.percent };
       }
-      if (message?.type === 'arcade:emulator-error') return { kind: FRAME_SIGNALS.ERROR, message: 'EMULATOR COULD NOT LOAD.' };
+      if (message?.type === 'arcade:emulator-error') return { kind: FRAME_SIGNALS.ERROR, message: 'EMULATOR COULD NOT LOAD.', detail: message.detail ?? null };
       if (message?.type === 'arcade:emulator-closed') return { kind: FRAME_SIGNALS.CLOSED, message: 'EMULATOR SESSION CLOSED.' };
       return { kind: FRAME_SIGNALS.IGNORE };
     },

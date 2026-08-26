@@ -72,7 +72,7 @@ export function createEmulatorJsAdapter({ runtime } = {}) {
 
     interpretMessage(message) {
       if (message?.type === 'arcade:emulator-ready') return { kind: FRAME_SIGNALS.READY };
-      if (message?.type === 'arcade:emulator-error') return { kind: FRAME_SIGNALS.ERROR, message: 'EMULATOR COULD NOT LOAD.' };
+      if (message?.type === 'arcade:emulator-error') return { kind: FRAME_SIGNALS.ERROR, message: 'EMULATOR COULD NOT LOAD.', detail: message.detail ?? null };
       if (message?.type === 'arcade:emulator-closed') return { kind: FRAME_SIGNALS.CLOSED, message: 'EMULATOR SESSION CLOSED.' };
       return { kind: FRAME_SIGNALS.IGNORE };
     },

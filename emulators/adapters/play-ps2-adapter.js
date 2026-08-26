@@ -63,7 +63,7 @@ export function createPlayPs2Adapter({ runtime } = {}) {
       if (message?.type === 'arcade:emulator-ready' && message?.core === 'ps2-play') return { kind: FRAME_SIGNALS.READY, needsSource: true };
       if (message?.type === 'arcade:ps2-source-accepted') return { kind: FRAME_SIGNALS.SOURCE_ACCEPTED };
       if (message?.type === 'arcade:ps2-disc-error') return { kind: FRAME_SIGNALS.ERROR, message: 'GAME STREAM INTERRUPTED. RETRY OR CACHE IT LOCALLY.' };
-      if (message?.type === 'arcade:emulator-error') return { kind: FRAME_SIGNALS.ERROR, message: 'EMULATOR COULD NOT LOAD.' };
+      if (message?.type === 'arcade:emulator-error') return { kind: FRAME_SIGNALS.ERROR, message: 'EMULATOR COULD NOT LOAD.', detail: message.detail ?? null };
       if (message?.type === 'arcade:emulator-closed') return { kind: FRAME_SIGNALS.CLOSED, message: 'EMULATOR SESSION CLOSED.' };
       return { kind: FRAME_SIGNALS.IGNORE };
     },
