@@ -6,6 +6,20 @@ export interface RuntimeMetricSources {
   activeRooms(): number;
   averageRoomPopulation(): number;
   draining(): boolean;
+  /**
+   * Milestone 11.37 gauges. Optional so a caller that has not wired a subsystem
+   * yet simply omits it, rather than reporting a fabricated zero.
+   */
+  cabinetRegistrySize?(): number;
+  activeCabinetStates?(): number;
+  cabinetZones?(): number;
+  gameRegistrySize?(): number;
+  pluginsStarted?(): number;
+  pluginsFailed?(): number;
+  jobQueueDepth?(): number;
+  jobsDeadLettered?(): number;
+  eventBusHandlerFailures?(): number;
+  operatorSessions?(): number;
 }
 
 export class RuntimeMetrics {
@@ -26,6 +40,16 @@ export class RuntimeMetrics {
   eventLoopDelayMs(): number {
     const mean = this.eventLoop.mean / 1_000_000;
     return Number.isFinite(mean) ? mean : 0;
+  }
+
+  /**
+   * Records a duration in milliseconds as a counter pair, so a rate and a mean
+   * can both be derived without shipping a histogram implementation.
+   */
+  observeDuration(name: string, milliseconds: number): void {
+    if (!Number.isFinite(milliseconds) || milliseconds < 0) return;
+    this.increment(`${name}_count`);
+    this.increment(`${name}_milliseconds_total`, Math.round(milliseconds));
   }
 
   observeTransportPacket(direction: 'received' | 'sent', payload: unknown): void {
@@ -59,6 +83,25 @@ export class RuntimeMetrics {
       `arcade_event_loop_delay_p99_seconds ${percentileSeconds(this.eventLoop, 99).toFixed(6)}`,
       `arcade_event_loop_delay_max_seconds ${(this.eventLoop.max / 1_000_000_000).toFixed(6)}`
     ];
+    // Only gauges whose source is wired are emitted: a metric that is always
+    // zero because nothing reports it is worse than an absent one.
+    const gauges: Array<[string, (() => number) | undefined]> = [
+      ['arcade_cabinet_registry_size', this.sources.cabinetRegistrySize],
+      ['arcade_active_cabinet_states', this.sources.activeCabinetStates],
+      ['arcade_cabinet_zones', this.sources.cabinetZones],
+      ['arcade_game_registry_size', this.sources.gameRegistrySize],
+      ['arcade_plugins_started', this.sources.pluginsStarted],
+      ['arcade_plugins_failed', this.sources.pluginsFailed],
+      ['arcade_job_queue_depth', this.sources.jobQueueDepth],
+      ['arcade_jobs_dead_lettered', this.sources.jobsDeadLettered],
+      ['arcade_event_bus_handler_failures', this.sources.eventBusHandlerFailures],
+      ['arcade_operator_sessions', this.sources.operatorSessions]
+    ];
+    for (const [name, read] of gauges) {
+      if (read === undefined) continue;
+      const value = read.call(this.sources);
+      if (Number.isFinite(value)) lines.push(`${name} ${value}`);
+    }
     for (const [name, value] of [...this.counters].sort(([left], [right]) => left.localeCompare(right))) {
       lines.push(`${name} ${value}`);
     }

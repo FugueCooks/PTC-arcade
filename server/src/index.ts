@@ -55,6 +55,11 @@ import { bootstrapPlugins } from './plugins/plugin-bootstrap.js';
 import { createOperationsRuntime } from './operations/operations-bootstrap.js';
 import { installOperationsRoutes } from './http/operations-routes.js';
 import { loadGameRegistry } from './games/game-registry-service.js';
+import { CabinetCatalogService, GameCatalogService } from './services/catalog-service.js';
+import { installCatalogRoutes } from './http/api/v1/catalog-routes.js';
+import { installApiNotFound } from './http/api/middleware/api-context.js';
+import { EventBus } from './events/event-bus.js';
+import { JobQueue } from './jobs/job-queue.js';
 import type { PluginHost } from './plugins/plugin-host.js';
 
 /** Bounds a resync request so one client cannot ask for unbounded work. */
@@ -97,12 +102,23 @@ const reactions = new ReactionManager(players, Number(process.env.REACTION_COOLD
 const world = new WorldManager(players, Number(process.env.WORLD_REQUEST_COOLDOWN_MS ?? 500));
 
 let health: HealthService;
-const metrics = new RuntimeMetrics({
+const metrics: RuntimeMetrics = new RuntimeMetrics({
   connectedSockets: () => io.engine.clientsCount,
   activePlayers: () => players.connectedCount,
   activeRooms: () => rooms.roomCount,
   averageRoomPopulation: () => rooms.averagePopulation,
-  draining: () => health?.isDraining ?? false
+  draining: () => health?.isDraining ?? false,
+  // Milestone 11.37 gauges.
+  cabinetRegistrySize: () => cabinets.index.size,
+  activeCabinetStates: () => rooms.records.reduce((total, record) => total + cabinets.activeStateCount(record.id), 0),
+  cabinetZones: () => cabinets.zones.size,
+  gameRegistrySize: () => gameCatalog.size,
+  pluginsStarted: () => plugins.health().started,
+  pluginsFailed: () => plugins.health().failed,
+  jobQueueDepth: () => jobs.stats().depth,
+  jobsDeadLettered: () => jobs.stats().deadLettered,
+  eventBusHandlerFailures: () => events.stats().handlerFailures,
+  operatorSessions: () => operationsRuntime.auth.activeSessionCount
 });
 io.engine.on('connection', (transportSocket) => {
   transportSocket.on('packet', (packet: { data?: unknown }) => metrics.observeTransportPacket('received', packet.data));
@@ -320,6 +336,9 @@ cabinets.subscribe((event) => {
     io.to(event.roomId).emit('cabinet:delta', { roomId: event.roomId, revision: event.revision, zoneId: event.zoneId, state: event.state });
     io.to(event.roomId).emit('cabinet:state-changed', event.state);
     metrics.increment('cabinet_delta_published_total');
+    events.emit('cabinet.state.changed', {
+      roomId: event.roomId, cabinetId: event.state.cabinetId, status: event.state.status, revision: event.revision
+    });
   }
   if (event.type === 'CabinetForcedRelease') {
     const socketId = players.socketIdForPlayerId(event.playerId);
@@ -543,6 +562,45 @@ const pluginBootstrap = await bootstrapPlugins(config, {
 
 const plugins: PluginHost = pluginBootstrap.host;
 
+// Milestone 11.35. A throwing subscriber is contained and counted here rather
+// than being allowed to break whatever published the event.
+const events = new EventBus((event, error) => {
+  metrics.increment('event_bus_handler_failure_total');
+  logger.warn('event_bus_handler_failed', { event, error: error instanceof Error ? error.message : String(error) });
+});
+
+// Milestone 11.36. In-memory for Phase 11 and honest about it: `durable` is
+// false, and the operations dashboard shows that.
+const jobs: JobQueue = new JobQueue({
+  metrics,
+  onEvent: (kind, job) => {
+    if (kind === 'completed') events.emit('job.completed', { jobId: job.id, name: job.name, attempts: job.attempts });
+    else events.emit('job.dead-lettered', { jobId: job.id, name: job.name, error: job.lastError ?? 'unknown' });
+  }
+});
+const jobTimer = setInterval(() => void jobs.runDue().catch(() => metrics.increment('jobs_tick_failure_total')), 1_000);
+jobTimer.unref();
+
+// Milestone 11.34: services own the logic; routes and socket handlers delegate.
+const cabinetCatalog = new CabinetCatalogService(cabinets.index, cabinets.zones);
+const gameCatalog = new GameCatalogService(gameRegistry);
+
+const emulatorAdapterCatalog = [
+  { adapterId: 'emulatorjs', platforms: ['psx', 'n64', 'snes'] },
+  { adapterId: 'play-ps2', platforms: ['ps2'] },
+  { adapterId: 'gecko-gamecube', platforms: ['gamecube'] }
+] as const;
+
+// Milestone 11.30: the versioned public catalogue. Existing unversioned routes
+// stay mounted for compatibility until the client migration is verified.
+installCatalogRoutes(app, config, {
+  cabinets: cabinetCatalog,
+  games: gameCatalog,
+  emulatorAdapters: () => emulatorAdapterCatalog,
+  log: (event, details) => logger.warn(event, details),
+  metrics
+});
+
 /**
  * Milestones 11.25 through 11.29. Operations authenticate against a separate
  * credential store, so no player session — wallet or otherwise — can reach any
@@ -559,6 +617,9 @@ const operationsRuntime = createOperationsRuntime({
   roomPopulation: (roomId) => players.roomPopulation(roomId),
   refreshRegistry: () => {
     gameRegistry = loadGameRegistry(projectRoot).registry;
+    // The catalogue service holds the registry, so it must be swapped too or
+    // the API would keep serving the pre-refresh view.
+    gameCatalog.replaceRegistry(gameRegistry);
     return { cabinetDefinitions: cabinets.index.size, gameDefinitions: gameRegistry.size };
   },
   sources: {
@@ -626,7 +687,10 @@ const operationsRuntime = createOperationsRuntime({
     // Game sessions are client-side in Phase 11; the server counts cabinets in
     // use rather than reporting a number it cannot observe.
     activeGameSessions: () => rooms.records.reduce((total, record) => total + cabinets.activeStateCount(record.id), 0),
-    queues: () => []
+    queues: () => {
+      const stats = jobs.stats();
+      return [{ name: 'background', depth: stats.depth, failed: stats.deadLettered }];
+    }
   },
   auditSink: (record) => logger.info('operations_audit', record as Record<string, unknown>)
 });
@@ -640,6 +704,10 @@ installOperationsRoutes(app, config, {
   metrics
 }, projectRoot);
 
+// Installed after every /api/v1 router: a catch-all registered earlier would
+// swallow the namespaces mounted after it.
+installApiNotFound(app, (event, details) => logger.warn(event, details));
+
 const drain = new DrainController(httpServer, io, config, health, metrics, logger, {
   activePlayers: () => players.connectedCount,
   beginDraining: () => roomLifecycle.beginDraining(),
@@ -649,6 +717,8 @@ const drain = new DrainController(httpServer, io, config, health, metrics, logge
     if (identityHeartbeatTimer) clearInterval(identityHeartbeatTimer);
     if (databaseHealthTimer) clearInterval(databaseHealthTimer);
     clearInterval(worldEventTimer);
+    clearInterval(jobTimer);
+    await jobs.stop();
     await roomLifecycle.stop();
     // Plugins stop before shared infrastructure so their cleanup still has
     // whatever it needs, and a plugin that throws cannot block the drain.
