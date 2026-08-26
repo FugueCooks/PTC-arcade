@@ -6,7 +6,7 @@ Phase 9 replaces public username/password player accounts with Solana signed-mes
 
 ## Production hosting
 
-The production frontend is deployed on Cloudflare Pages at `https://retro-arcade-om7.pages.dev/`. Run `npm run pages:build` to create the strict `.pages-dist` bundle and `npm run pages:deploy` to publish it. The bundle excludes ROMs, BIOS files, unused model experiments, and every file over Cloudflare Pages' safe per-file limit. Hosted game and BIOS URLs continue to resolve through the R2 values written into `runtime-config.js`. Render remains a rollback Node host.
+The canonical production site is `https://ptcarcade.fun/`, served by Render behind Cloudflare DNS and TLS. Cloudflare Pages at `https://retro-arcade-om7.pages.dev/` is retained as a lightweight redirect and static rollback surface. Run `npm run pages:build` to create the strict `.pages-dist` bundle and `npm run pages:deploy` to publish it. The bundle excludes ROMs, BIOS files, unused model experiments, and every file over Cloudflare Pages' safe per-file limit. Hosted game and BIOS URLs continue to resolve through the R2 values written into `runtime-config.js`.
 
 The Node.js service now serves only approved browser assets, exposes liveness at `/health` and `/healthz`, readiness at `/ready`, and Prometheus text metrics at `/metrics`. It uses proxy-safe HTTP keep-alive settings and keeps movement traffic on compact Socket.IO messages with WebSocket support. Large game downloads are separated from realtime traffic through `GAME_ASSET_BASE_URL`; the hosted PlayStation BIOS is independently configured through `BIOS_ASSET_URL`.
 

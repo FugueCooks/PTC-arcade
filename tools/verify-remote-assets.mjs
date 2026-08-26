@@ -10,7 +10,7 @@ const manifest = [
 const publicBase = (process.env.STORAGE_PUBLIC_BASE_URL || process.env.REMOTE_ASSET_BASE_URL || '').trim().replace(/\/+$/, '');
 if (!publicBase) throw new Error('Set STORAGE_PUBLIC_BASE_URL or REMOTE_ASSET_BASE_URL.');
 const prefix = (process.env.STORAGE_PREFIX || 'arcade').trim().replace(/^\/+|\/+$/g, '');
-const corsOrigin = (process.env.ASSET_CORS_ORIGIN || 'https://retro-arcade-om7.pages.dev').trim();
+const corsOrigin = (process.env.ASSET_CORS_ORIGIN || 'https://ptcarcade.fun').trim();
 let failed = false;
 
 async function fetchWithRetry(url, options, attempts = 3) {

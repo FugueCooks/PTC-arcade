@@ -26,11 +26,11 @@ services:
       - key: SOLANA_NETWORK
         value: mainnet-beta
       - key: SOLANA_APP_DOMAIN
-        value: retro-arcade-multiplayer.onrender.com
+        value: ptcarcade.fun
       - key: SOLANA_APP_URI
-        value: https://retro-arcade-multiplayer.onrender.com
+        value: https://ptcarcade.fun
       - key: PUBLIC_APP_ORIGIN
-        value: https://retro-arcade-multiplayer.onrender.com
+        value: https://ptcarcade.fun
       - key: GAME_ASSET_BASE_URL
         value: https://pub-88860093179f4c448466f5a36bf8e618.r2.dev/arcade/games
       - key: BIOS_ASSET_URL

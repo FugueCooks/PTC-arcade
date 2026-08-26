@@ -396,7 +396,12 @@ function asObject(value: unknown): Record<string, unknown> | undefined { return 
 function normalizeRoomId(value: string | null): string { return typeof value === 'string' && approvedRooms.has(value) ? value : ROOM_ID; }
 function isAllowedOrigin(value: string | null): boolean {
   if (!value) return true; // Native smoke tests and non-browser health tooling.
-  if (value === 'https://retro-arcade-multiplayer.onrender.com' || value === 'https://retro-arcade-om7.pages.dev') return true;
+  if (
+    value === 'https://ptcarcade.fun'
+    || value === 'https://www.ptcarcade.fun'
+    || value === 'https://retro-arcade-multiplayer.onrender.com'
+    || value === 'https://retro-arcade-om7.pages.dev'
+  ) return true;
   return /^http:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/.test(value);
 }
 async function verifyRealtimeTicket(value: string | null, secret: string): Promise<TicketIdentity | undefined> {
