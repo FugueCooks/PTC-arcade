@@ -886,16 +886,20 @@ function setEmulatorRuntimeActive(active){
 }
 function stopEmulator(){
   clearTimeout(emulatorLoadTimer);
-  try {
-    if(typeof window.EJS_terminate==='function') window.EJS_terminate();
-    else if(typeof window.EJS_emulator?.exit==='function') window.EJS_emulator.exit();
-  } catch(error) { console.warn('Could not terminate the emulator cleanly.', error); }
-  document.querySelector('#emulator-host').replaceChildren();
+  const frame=activeEmulatorFrame,objectUrls=emulatorObjectUrls;
+  // EmulatorJS owns its runtime inside the iframe. Calling EJS_terminate on
+  // this parent window never reached it, and removing the frame immediately
+  // skipped the final memory-card/SRAM flush. Give the child a short,
+  // bounded shutdown window; remove only the captured frame so a fast reopen
+  // cannot be erased by the previous session's cleanup.
+  try { frame?.contentWindow?.postMessage({type:'arcade:emulator-stop'},location.origin); }
+  catch(error) { console.warn('Could not request a clean emulator shutdown.',error); }
+  setTimeout(()=>{frame?.remove();objectUrls.forEach(url=>URL.revokeObjectURL(url))},500);
   document.querySelector('#emulator-stage').style.display='none';
   document.querySelector('.screen-wrap .scanlines').style.display='block';
   cvs.style.display='block';
   activeEmulatorFrame=null;pendingEmulatorSource=null;activeEmulatorAdapter=null;
-  emulatorObjectUrls.forEach(url=>URL.revokeObjectURL(url));emulatorObjectUrls=[];
+  emulatorObjectUrls=[];
   setEmulatorRuntimeActive(false);
 }
 function closeMachine(notifyServer=true){const closing=activeCabinet;ps2CacheController?.abort();ps2CacheController=null;if(resolveEmulatorAdapter(closing))stopEmulator();modal.style.display='none';modal.setAttribute('aria-hidden','true');activeCabinet=null;document.body.classList.remove('cabinet-open');if(notifyServer&&closing)window.dispatchEvent(new CustomEvent('arcade:cabinet-session-ended',{detail:{cabinetId:closing.id}}));if(!mobileInputAvailable())renderer.domElement.requestPointerLock()}

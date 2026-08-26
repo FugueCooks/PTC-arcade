@@ -35,6 +35,61 @@
         gamepad: true,
         settings: true
       };
+      // EmulatorJS currently has two settings stores. Some stable builds
+      // repopulate `allSettings` after applying EJS_defaultOptions, which makes
+      // the menu look correct while Save State still downloads a file instead
+      // of persisting it. Apply the option to the live emulator after its
+      // settings UI exists as well as supplying the documented startup option.
+      function enforceBrowserSavePersistence() {
+        const emulator = window.EJS_emulator;
+        if (!emulator) return false;
+        emulator.settings = {
+          ...(emulator.settings || {}),
+          'save-state-location': 'browser'
+        };
+        if (emulator.allSettings && typeof emulator.allSettings === 'object') {
+          emulator.allSettings['save-state-location'] = 'browser';
+        }
+        return true;
+      }
+      function enforceBrowserSavePersistenceWithRetries() {
+        let attempts = 0;
+        const apply = () => {
+          attempts += 1;
+          if (!enforceBrowserSavePersistence() && attempts < 20) {
+            setTimeout(apply, 250);
+          }
+        };
+        apply();
+      }
+      window.EJS_ready = enforceBrowserSavePersistenceWithRetries;
+      window.EJS_onGameStart = enforceBrowserSavePersistenceWithRetries;
+
+      let stopRequested = false;
+      async function flushAndStopEmulator() {
+        if (stopRequested) return;
+        stopRequested = true;
+        const emulator = window.EJS_emulator;
+        enforceBrowserSavePersistence();
+        try {
+          const saveOwner = typeof emulator?.gameManager?.saveSaveFiles === 'function'
+            ? emulator.gameManager
+            : (typeof emulator?.saveSaveFiles === 'function' ? emulator : null);
+          await saveOwner?.saveSaveFiles?.();
+        } catch (error) {
+          console.warn('Could not flush emulator save files before exit.', error);
+        }
+        try {
+          if (typeof window.EJS_terminate === 'function') window.EJS_terminate();
+          else if (typeof emulator?.exit === 'function') emulator.exit();
+        } finally {
+          parent.postMessage({ type: 'arcade:emulator-stopped' }, location.origin);
+        }
+      }
+      addEventListener('message', (event) => {
+        if (event.origin !== location.origin || event.source !== parent) return;
+        if (event.data?.type === 'arcade:emulator-stop') void flushAndStopEmulator();
+      });
       // Every failure used to collapse into one opaque "could not load", which
       // made a blocked script indistinguishable from a bad ROM. Report why.
       function reportError(detail) {
