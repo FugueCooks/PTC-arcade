@@ -112,5 +112,26 @@
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
     <script type="module" src="app-bootstrap.js?v=cores-2"></script>
+    <script>
+      // A module graph that fails to load leaves this page looking merely slow.
+      // The markup renders, the stylesheet applies, nothing runs, and no error
+      // reaches the person looking at it — which is indistinguishable from a
+      // server that is still waking up. Say what is missing instead.
+      //
+      // Classic script on purpose: it has to survive whatever killed the module
+      // graph, so it cannot be part of it.
+      setTimeout(function () {
+        var status = document.getElementById('avatar-status');
+        if (!status || status.textContent.indexOf('Loading avatar choices') === -1) return;
+        var missing = [];
+        if (!window.ARCADE_RUNTIME) missing.push('runtime-config.js — the server did not answer');
+        if (!window.THREE) missing.push('three.module.js from cdn.jsdelivr.net — blocked or unreachable');
+        else if (!window.ARCADE_GAME_REGISTRY) missing.push('assets/games/registry.json');
+        else if (!window.ARCADE_ROOM_REGISTRY) missing.push('assets/rooms/registry.json');
+        var detail = missing.length ? missing.join('; ') : 'a script error before startup finished';
+        status.textContent = 'Could not start: ' + detail + '. Open the browser console for the failing request.';
+        console.error('[arcade] startup incomplete: ' + detail);
+      }, 8000);
+    </script>
   </body>
 </html>

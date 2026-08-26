@@ -59,3 +59,20 @@ void test('the realtime worker only trusts origins that exist and are ours', () 
   assert.match(allowlist, /https:\/\/ptcarcade\.fun/);
   assert.match(allowlist, /onrender\.com/, 'the current origin must be able to connect');
 });
+
+void test('a dead module graph reports itself instead of looking slow', async () => {
+  // Twice now a blank-looking entry screen has been indistinguishable from a
+  // waking server, because everything visible on it is static markup.
+  const index = await readFile(path.join(root, 'index.html'), 'utf8');
+  const guard = /setTimeout\(function \(\) \{[\s\S]*?\}, \d+\);/.exec(index)?.[0] ?? '';
+  assert.ok(guard, 'index.html must carry a startup guard');
+
+  // It has to survive whatever killed the module graph, so it must not be one.
+  const scriptTag = /<script>[\s\S]*?setTimeout/.exec(index)?.[0] ?? '';
+  assert.doesNotMatch(scriptTag, /type="module"/, 'the guard cannot be a module');
+
+  for (const probe of ['ARCADE_RUNTIME', 'THREE', 'ARCADE_GAME_REGISTRY']) {
+    assert.ok(guard.includes(probe), `the guard must distinguish a missing ${probe}`);
+  }
+  assert.match(guard, /avatar-status/, 'the report must reach the page, not only the console');
+});
