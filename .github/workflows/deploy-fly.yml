@@ -37,8 +37,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: ${{ secrets.FLY_API_TOKEN != '' }}
       # --remote-only builds the image on Fly's builders, so this runner needs
       # no Docker layer cache and no registry credentials.
       - run: flyctl deploy --remote-only
+        if: ${{ secrets.FLY_API_TOKEN != '' }}
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # Without the secret this would fail on every push with "no access token
+      # available", which reads as a broken build rather than an unfinished
+      # setup — and a permanently red main hides the failures that do matter.
+      - if: ${{ secrets.FLY_API_TOKEN == '' }}
+        run: |
+          echo "::notice::FLY_API_TOKEN is not set, so nothing was deployed."
+          echo "::notice::Create one with 'fly tokens create deploy -x 8760h' and add it under Settings -> Secrets and variables -> Actions."
+
