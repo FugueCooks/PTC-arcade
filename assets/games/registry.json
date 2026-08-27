@@ -578,7 +578,9 @@
           "required": false,
           "label": null
         }
-      ]
+      ],
+      "maxPlayers": 4,
+      "minPlayers": 2
     },
     {
       "id": "super-mario-sunshine",
