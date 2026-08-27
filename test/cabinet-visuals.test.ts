@@ -103,6 +103,12 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
 
   // Third mural: full rear wall, which needs no rotation to face inward.
   assert.match(arcade, /megaman-room-mural-3\.webp/);
+
+  // The fourth mural faces the hub from outside the room, between the doorway
+  // and the corner. Turned to face +x, so Mega Man's side of the image lands
+  // against the door.
+  assert.match(arcade, /megaman-hall-mural\.webp/);
+  assert.match(arcade, /megaManHallMural\.position\.set\(PLAYSTATION_WALL_X\+\.35,2\.5,MEGAMAN_HALL_MURAL_CENTER_Z\);megaManHallMural\.rotation\.y=Math\.PI\/2/);
   assert.match(arcade, /megaManMuralThree\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,\.32\)/);
   assert.equal((arcade.match(/new THREE\.PlaneGeometry\(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT\)/g) ?? []).length, 3);
   assert.equal((arcade.match(/side:THREE\.DoubleSide/g) ?? []).length >= 3, true);
