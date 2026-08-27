@@ -61,6 +61,9 @@ import { loadGameRegistry } from './games/game-registry-service.js';
 import { CabinetCatalogService, GameCatalogService } from './services/catalog-service.js';
 import { installCatalogRoutes } from './http/api/v1/catalog-routes.js';
 import { installRuntimeRoutes } from './http/api/v1/runtime-routes.js';
+import { MatchManager } from './matches/match-manager.js';
+import type { MatchStateView } from './protocol.js';
+import { bridgeMatchEvents, installMatchHandlers } from './matches/match-sockets.js';
 import { buildRuntimeCatalog } from './runtime/runtime-catalog.js';
 import { installApiNotFound } from './http/api/middleware/api-context.js';
 import { EventBus } from './events/event-bus.js';
@@ -484,6 +487,21 @@ io.on('connection', (socket) => {
   socket.on('cabinet:activate', (payload, acknowledge) => {
     metrics.increment('events_cabinet_activate_received_total');
     const result = cabinets.activate(socket.id, payload?.cabinetId);
+    // The cabinet's owner becomes the host of a match at it. Opened for solo
+    // games too, so a game that later seats two needs no new path — and so the
+    // lifecycle a client renders is the same everywhere.
+    if (result.ok) {
+      const playerId = players.playerIdForSocket(socket.id);
+      const player = playerId ? players.stateForPlayerId(playerId) : undefined;
+      const cabinet = player ? cabinets.index.get(String(payload?.cabinetId)) : undefined;
+      const game = cabinet?.gameId ? gameCatalog.get(cabinet.gameId) : undefined;
+      if (player && cabinet && game) {
+        const opened = matches.open(player.roomId, cabinet.id, game.id,
+          { playerId: player.id, displayName: player.n },
+          { maxPlayers: game.maxPlayers, minPlayers: game.minPlayers });
+        if (!opened.ok) logger.warn('match_open_failed', { cabinetId: cabinet.id, reason: opened.reason });
+      }
+    }
     if (typeof acknowledge === 'function') acknowledge(result);
   });
   socket.on('cabinet:resync', (payload, acknowledge) => {
@@ -505,12 +523,36 @@ io.on('connection', (socket) => {
 
   socket.on('cabinet:release', (payload, acknowledge) => {
     metrics.increment('events_cabinet_release_received_total');
+    const playerId = players.playerIdForSocket(socket.id);
+    const player = playerId ? players.stateForPlayerId(playerId) : undefined;
     const result = cabinets.release(socket.id, payload?.cabinetId);
+    // The machine going free ends the game on it, for everyone seated — not
+    // only for the owner who walked away.
+    if (result.ok && player) matches.close(player.roomId, String(payload?.cabinetId));
     if (typeof acknowledge === 'function') acknowledge(result);
+  });
+
+  installMatchHandlers(socket, {
+    matches,
+    playerFor: (socketId) => {
+      const id = players.playerIdForSocket(socketId);
+      const state = id ? players.stateForPlayerId(id) : undefined;
+      return state ? { playerId: state.id, displayName: state.n, roomId: state.roomId, position: state.p } : undefined;
+    },
+    cabinetPosition: (cabinetId) => {
+      const definition = cabinets.index.get(cabinetId);
+      return definition ? { x: definition.interactionPosition.x, z: definition.interactionPosition.z } : undefined;
+    },
+    metrics
   });
 
   socket.on('disconnect', () => {
     metrics.increment('socket_disconnects_total');
+    // Before the player record goes: leaving needs the room to find the match,
+    // and a seat left behind would hold a slot nobody could take.
+    const leavingId = players.playerIdForSocket(socket.id);
+    const leaving = leavingId ? players.stateForPlayerId(leavingId) : undefined;
+    if (leaving) matches.leave(leaving.roomId, leaving.id);
     players.disconnect(socket.id);
     socketIdentities.delete(socket.id);
     const playerId = socketPlayerIds.get(socket.id);
@@ -608,6 +650,17 @@ jobTimer.unref();
 // Milestone 11.34: services own the logic; routes and socket handlers delegate.
 const cabinetCatalog = new CabinetCatalogService(cabinets.index, cabinets.zones);
 const gameCatalog = new GameCatalogService(gameRegistry);
+
+/**
+ * Matches sit beside cabinet ownership: the owner hosts, others join the game
+ * at that cabinet. Cabinet state itself is untouched, so the Worker's mirror of
+ * it stays correct without any change.
+ */
+const matches = new MatchManager({ interactionDistance: Number(process.env.CABINET_INTERACTION_DISTANCE ?? 2.6) });
+bridgeMatchEvents(matches, (roomId, event, payload) => {
+  if (event === 'match:closed') io.to(roomId).emit('match:closed', payload as { matchId: string; cabinetId: string });
+  else io.to(roomId).emit(event as 'match:opened' | 'match:changed', payload as MatchStateView);
+});
 
 const emulatorAdapterCatalog = [
   { adapterId: 'emulatorjs', platforms: ['psx', 'n64', 'snes'] },

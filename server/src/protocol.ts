@@ -128,10 +128,44 @@ export interface ClientToServerEvents {
   'presence:activity': () => void;
   'social:ping': (payload: { sentAt?: unknown }, acknowledge: (result: { serverAt: number }) => void) => void;
   'world:jukebox-set': (payload: { trackId?: unknown; playing?: unknown }, acknowledge: (result: JukeboxResult) => void) => void;
+  /**
+   * Matches. A client asks to sit down; it never names a seat, and it never
+   * says who hosts or who won — seat order decides the first, and the server
+   * decides the rest.
+   */
+  'match:join': (payload: { cabinetId?: unknown }, acknowledge: (result: MatchActionResult) => void) => void;
+  'match:ready': (payload: { ready?: unknown }, acknowledge: (result: MatchActionResult) => void) => void;
+  'match:start': (payload: unknown, acknowledge: (result: MatchActionResult) => void) => void;
+  'match:leave': (payload: unknown, acknowledge: (result: { ok: boolean; closed?: boolean }) => void) => void;
 }
+
+/** What a client is told about a match. Seats only; nothing internal. */
+export interface MatchSeatView {
+  seatIndex: number;
+  playerId: string;
+  displayName: string;
+  ready: boolean;
+}
+export interface MatchStateView {
+  matchId: string;
+  cabinetId: string;
+  gameId: string;
+  state: 'forming' | 'ready' | 'running' | 'finished' | 'abandoned';
+  maxPlayers: number;
+  minPlayers: number;
+  hostPlayerId: string | null;
+  seats: MatchSeatView[];
+  result: { winnerPlayerId: string | null; source: 'client-reported' | 'operator-confirmed' | 'verified' } | null;
+}
+export type MatchActionResult =
+  | { ok: true; seatIndex?: number; match: MatchStateView }
+  | { ok: false; reason: string };
 
 export interface ServerToClientEvents {
   'server:draining': (payload: { message: string; deadlineAt: number; warningMs: number }) => void;
+  'match:opened': (payload: MatchStateView) => void;
+  'match:changed': (payload: MatchStateView) => void;
+  'match:closed': (payload: { matchId: string; cabinetId: string }) => void;
   'room:snapshot': (payload: RoomSnapshot) => void;
   'room:resume': (payload: { resumeToken: string; resumed: boolean }) => void;
   'room:error': (payload: { message: string; code?: string }) => void;

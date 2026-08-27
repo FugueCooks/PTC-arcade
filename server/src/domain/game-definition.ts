@@ -41,6 +41,13 @@ export interface GameDefinition {
   readonly assetRequirements: readonly GameAssetRequirement[];
   readonly inputProfileId: string;
   readonly replayCapability: ReplayCapability;
+  /**
+   * How many players share one cabinet. One unless the game says otherwise, so
+   * every existing entry keeps meaning what it meant.
+   */
+  readonly maxPlayers: number;
+  /** Below this the match will not start. A versus game is not playable alone. */
+  readonly minPlayers: number;
   readonly leaderboardIds?: readonly string[];
   readonly enabled: boolean;
   readonly metadata?: Record<string, SafeJsonValue>;
@@ -84,6 +91,14 @@ export function toGameDefinition(value: unknown): GameDefinition | GameDefinitio
   if (!REPLAY_CAPABILITIES.includes(replayCapability as ReplayCapability)) {
     return { gameId: id, problem: `replayCapability must be one of ${REPLAY_CAPABILITIES.join(', ')}` };
   }
+  const maxPlayers = row.maxPlayers ?? 1;
+  if (!Number.isSafeInteger(maxPlayers) || (maxPlayers as number) < 1 || (maxPlayers as number) > 8) {
+    return { gameId: id, problem: 'maxPlayers must be an integer between 1 and 8' };
+  }
+  const minPlayers = row.minPlayers ?? 1;
+  if (!Number.isSafeInteger(minPlayers) || (minPlayers as number) < 1 || (minPlayers as number) > (maxPlayers as number)) {
+    return { gameId: id, problem: 'minPlayers must be an integer between 1 and maxPlayers' };
+  }
   if (typeof row.enabled !== 'boolean') return { gameId: id, problem: 'enabled must be a boolean' };
   if (!isSafeMetadata(row.metadata)) return { gameId: id, problem: 'metadata must be a plain JSON object' };
 
@@ -104,6 +119,8 @@ export function toGameDefinition(value: unknown): GameDefinition | GameDefinitio
     assetRequirements,
     inputProfileId,
     replayCapability: replayCapability as ReplayCapability,
+    maxPlayers: maxPlayers as number,
+    minPlayers: minPlayers as number,
     ...(leaderboardIds ? { leaderboardIds: Object.freeze([...leaderboardIds as string[]]) } : {}),
     enabled: row.enabled,
     ...(row.metadata ? { metadata: row.metadata as Record<string, SafeJsonValue> } : {})
