@@ -24,6 +24,7 @@ COPY --from=build /app/realtime ./realtime
 COPY --from=build /app/wallet ./wallet
 COPY --from=build /app/games ./games
 COPY --from=build /app/rooms ./rooms
+COPY --from=build /app/matches ./matches
 # Served by the operations routes when OPERATIONS_OPERATORS is set, and loaded
 # by the plugin host for any ID in ENABLED_PLUGINS. Both are off by default,
 # which is exactly why a missing directory would only surface the first time an

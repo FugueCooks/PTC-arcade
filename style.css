@@ -39,3 +39,20 @@ body.mobile-input.arcade-started:not(.cabinet-open):not(.emulator-running) #cros
 @media (max-width:560px) { .wallet-picker-row { grid-template-columns:1fr; }.wallet-picker-row button { width:100%; } }
 #machine-modal { display:none; position:fixed; z-index:10; inset:0; background:#06030bd9; place-items:center; padding:20px; }.machine-panel { position:relative; width:min(760px,100%); padding:31px; background:linear-gradient(130deg,#170d30,#080612); border:1px solid #7e55d5; box-shadow:0 0 60px #a32cff66, inset 0 0 40px #220c4a; }.machine-panel h2 { color:var(--cyan); font-size:clamp(18px,4vw,30px); margin-bottom:22px; }.close { position:absolute; top:13px; right:13px; border:0; box-shadow:none; padding:7px 12px; color:#fff; font-size:22px; }.screen-wrap { position:relative; border:10px solid #20222f; background:#030407; box-shadow:inset 0 0 40px #000, 0 0 22px #36f9f644; }.screen-wrap canvas { width:100%; height:auto; image-rendering:pixelated; }.scanlines { position:absolute; inset:0; pointer-events:none; opacity:.32; background:repeating-linear-gradient(0deg,transparent 0 3px,#000 3px 5px); }#rom-control { display:flex; gap:14px; align-items:center; margin:20px 0 12px; flex-wrap:wrap; } #rom-control label { padding:11px 14px; font-size:11px; } #rom-file { display:none; }#rom-name { font-size:11px; color:#d4c8df; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.controls { color:var(--pink); font-size:10px; line-height:1.7; }.legal { color:#867c96; font-size:9px; line-height:1.7; margin:15px 0 0; } code { color:#a5dbff; } @media(max-width:620px){#hud{padding:14px}.status{display:none}.brand{font-size:11px}.machine-panel{padding:22px 18px}.avatar-panel{padding:22px 18px}.avatar-card{min-height:50px}#social-hud{right:8px;top:44px}#chat-panel{left:10px;bottom:160px;width:min(360px,calc(100vw - 20px))}#reaction-bar{display:none}#player-inspection{right:10px;top:125px;width:220px}#audio-toggle{display:none}#prompt{bottom:164px;max-width:calc(100vw - 32px);white-space:nowrap}#world-prompt{bottom:210px}}
 @media(max-width:620px) and (orientation:portrait){#mobile-move-zone{width:116px;height:130px}.mobile-stick-ring{width:98px;height:98px}#mobile-look-zone{width:50vw;height:46vh}#mobile-look-zone span{transform:translateY(-62px)}#mobile-use,#mobile-view{width:68px;height:54px}}
+
+/* Seats at a multiplayer cabinet. Sits above the ROM controls in the modal. */
+#match-panel { display: grid; gap: .55rem; margin: 0 0 .9rem; padding: .75rem .9rem;
+  border: 1px solid #2b2a44; background: #0b0a16; }
+#match-panel[hidden] { display: none; }
+#match-panel .status { margin: 0; font-size: .72rem; letter-spacing: .16em; color: #ff3cac; }
+#match-panel .match-message { margin: 0; font-size: .72rem; color: #ffb42e; }
+.match-seats { list-style: none; display: grid; gap: .3rem; margin: 0; padding: 0; }
+.match-seat { font-size: .74rem; letter-spacing: .08em; color: #a99abe;
+  padding: .35rem .5rem; border-left: 2px solid #2b2a44; }
+.match-seat[data-ready="true"] { color: #7dff67; border-left-color: #7dff67; }
+.match-seat.is-you { color: #36f9f6; border-left-color: #36f9f6; }
+.match-seat.empty { color: #4a4560; font-style: italic; }
+.match-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.match-actions button { font-family: inherit; font-size: .72rem; letter-spacing: .14em;
+  padding: .45rem .8rem; background: #12111f; color: #36f9f6; border: 1px solid #36f9f6; cursor: pointer; }
+.match-actions button:disabled { color: #4a4560; border-color: #2b2a44; cursor: not-allowed; }

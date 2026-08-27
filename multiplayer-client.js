@@ -1,3 +1,5 @@
+import { MatchPanel } from './matches/match-panel.js?v=matches-1';
+
 (() => {
   const arcade = window.arcadeMultiplayer;
   if (!arcade || typeof window.createArcadeSocket !== 'function') {
@@ -169,7 +171,7 @@
         import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=ps2-touch-1'),
         import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=network-meter-1'),
         import('./social/reaction-client.js?v=phase5-2'), import('./social/inspection-client.js?v=phase5-1'),
-        import('./world/world-manager.js?v=ps2-touch-1')
+        import('./world/world-manager.js?v=matches-1')
       ]);
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
@@ -244,6 +246,9 @@
       socket.on('room:snapshot', ({ roomId, selfId, players }) => {
         fullRoomAttempts.clear();
         localPlayerId = selfId;
+        // The panel marks which seat is yours, so it needs this before it can
+        // render a match usefully.
+        if (window.ARCADE_MATCH_PANEL) window.ARCADE_MATCH_PANEL.playerId = selfId;
         presenceClient.snapshot(roomId, selfId, players);
         const self = players.find((player) => player.id === selfId);
         if (self) applyServerCorrection(self);
@@ -264,6 +269,11 @@
       });
       socket.on('player:disconnected', ({ id }) => { setRemoteDisconnected(id, true); presenceClient.disconnected(id); });
       socket.on('player:left', ({ id }) => removeRemotePlayer(id));
+      // Seats at a cabinet. Built here because this is where the socket is;
+      // arcade.js shows and hides it as cabinets open.
+      window.ARCADE_MATCH_PANEL = new MatchPanel({
+        root: document.querySelector('#match-panel'), socket, playerId: localPlayerId ?? null
+      });
       socket.on('cabinet:snapshot', (snapshot) => cabinetVisuals.applySnapshot(snapshot));
       socket.on('cabinet:state-changed', (state) => cabinetVisuals.apply(state));
       socket.on('cabinet:delta', (delta) => cabinetVisuals.applyDelta(delta));

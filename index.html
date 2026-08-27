@@ -89,6 +89,7 @@
         <p id="machine-type" class="eyebrow">CABINET_01</p>
         <h2 id="machine-name">STAR RAIDERS</h2>
         <div class="screen-wrap"><canvas id="game-screen" width="640" height="440"></canvas><div id="emulator-stage"><div id="emulator-host"></div></div><div class="scanlines"></div></div>
+        <div id="match-panel" aria-live="polite" hidden></div>
         <div id="rom-control">
           <button id="play-hosted-game" type="button">PLAY INSTALLED GAME</button>
           <div id="hosted-disc-selector" aria-label="Installed game discs" hidden></div>
@@ -111,7 +112,7 @@
     </script>
     <script src="runtime-config.js"></script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
-    <script type="module" src="app-bootstrap.js?v=gamecube-runtime-1"></script>
+    <script type="module" src="app-bootstrap.js?v=matches-1"></script>
     <script>
       // A module graph that fails to load leaves this page looking merely slow.
       // The markup renders, the stylesheet applies, nothing runs, and no error
