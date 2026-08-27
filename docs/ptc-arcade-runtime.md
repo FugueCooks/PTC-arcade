@@ -144,3 +144,60 @@ before distributing an installer that bundles a Dolphin build.
 Android is a different problem, not a port: it has no loopback-service model a
 browser can reach the same way, so it would need the arcade to run inside a
 native shell instead. Worth doing after Windows proves the shape, not alongside.
+
+
+## Verifying a result from a replay
+
+`server/src/matches/slp-replay.ts` reads a Slippi replay and says who won.
+
+This is the answer to the problem native emulation creates: the game runs on a
+player's machine, so a result it reports is a claim rather than evidence. A
+replay is different — it is the record the emulator wrote as the game ran, so a
+winner derived from it is derived from what happened.
+
+The file is a UBJSON envelope around a stream of binary events, and the stream
+opens with a table declaring how long every other event is. The parser reads
+those lengths from the file rather than hardcoding them, which is why a replay
+from a newer Slippi than this parser has ever seen still walks correctly.
+
+Everything is treated as hostile: a replay arrives from a player's machine and
+decides an outcome. The declared length is clamped to what is present rather
+than believed, an implausible one is refused, the payload table is validated
+before use, and an undeclared event stops the walk rather than being skipped by
+a guessed length.
+
+### It refuses to guess
+
+The verdict carries `confident`, and only a confident verdict is safe to settle
+on. A stock count tells you who was *ahead*; that is not always who *won*.
+
+| Situation | Verdict |
+|---|---|
+| One player left with stocks | winner, confident |
+| Timeout, ahead on stocks | winner, confident |
+| Timeout, level on stocks, lower damage | winner, confident |
+| Timeout, level on both | draw, confident |
+| Opponent quit, two players | winner, confident |
+| Someone quit a four-player game | **undetermined** |
+| Ended with nobody named as quitting | **undetermined** |
+| No end event recorded | **undetermined** |
+| Stock counts missing | **undetermined** |
+
+The undetermined cases are exactly where a parser that picked whoever was ahead
+would quietly pay out the wrong player.
+
+### What it was tested against
+
+40 real replays spanning replay versions 0.1.0.0 to 3.8.0.0, including
+four-player games: 24 confident verdicts, and every non-confident one a genuine
+case of the file not establishing a winner. Those files are LGPL and are not
+vendored here. To run against your own, point `SLP_CORPUS` at a folder of
+replays — a Slippi replay directory works as it is:
+
+```sh
+SLP_CORPUS=~/Documents/Slippi npm test
+```
+
+The winner rules are tested from constructed games rather than from files.
+Building a replay and parsing it back would only prove the parser agrees with
+itself; the judgement that decides an outcome deserves better than that.
