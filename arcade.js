@@ -296,21 +296,24 @@ const expansionFloorMaterial=(()=>{
 // The relocated MegaMan Room reuses the existing front-left floor and shell.
 // Each mural fills one of its three solid walls; the east wall stays open at
 // the hub doorway so players can walk straight in.
-const MEGAMAN_MURAL_SPAN=16.4,MEGAMAN_MURAL_HEIGHT=4.55;
-box(MEGAMAN_MURAL_SPAN,4.8,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,16.61,.12);
+// Each mural is stretched to its wall rather than centred on it: the room is
+// 21.3 m along its long walls and 16.5 m across, and a mural at the artwork's
+// own aspect left a metre of bare wall at both ends of every one of them.
+const MEGAMAN_MURAL_SPAN=21.3,MEGAMAN_SIDE_MURAL_SPAN=16.5,MEGAMAN_MURAL_HEIGHT=4.8;
+box(MEGAMAN_MURAL_SPAN,5,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,16.61,.12);
 const megaManMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural.webp?v=megaman-mural-1');
 megaManMuralTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const megaManMural=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
 megaManMural.position.set(MEGAMAN_ROOM_CENTER_X,2.5,16.54);megaManMural.rotation.y=Math.PI;megaManMural.renderOrder=4;scene.add(megaManMural);
-box(.08,4.8,MEGAMAN_MURAL_SPAN,0x050711,-35.41,2.5,MEGAMAN_ROOM_CENTER_Z,.12);
+box(.08,5,MEGAMAN_SIDE_MURAL_SPAN,0x050711,-35.41,2.5,MEGAMAN_ROOM_CENTER_Z,.12);
 const megaManMuralTwoTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-2.webp?v=megaman-mural-2');
 megaManMuralTwoTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTwoTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManMuralTwo=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTwoTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+const megaManMuralTwo=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_SIDE_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTwoTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
 megaManMuralTwo.position.set(-35.28,2.5,MEGAMAN_ROOM_CENTER_Z);megaManMuralTwo.rotation.y=Math.PI/2;megaManMuralTwo.renderOrder=4;scene.add(megaManMuralTwo);
 // The third mural fills the divider wall and faces into the room.
-box(MEGAMAN_MURAL_SPAN,4.8,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,.19,.12);
+box(MEGAMAN_MURAL_SPAN,5,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,.19,.12);
 const megaManMuralThreeTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-3.webp?v=megaman-mural-3');
 megaManMuralThreeTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralThreeTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
@@ -321,13 +324,25 @@ megaManMuralThree.position.set(MEGAMAN_ROOM_CENTER_X,2.5,.32);megaManMuralThree.
 // the image, and with the plane turned to face the hub its right edge lands
 // against the doorway, so the blue runs north to the corner behind him. Sized to
 // the 7.1 m wall segment at the image's own 907x527 aspect, so nothing stretches.
-const MEGAMAN_HALL_MURAL_SPAN=7.1,MEGAMAN_HALL_MURAL_HEIGHT=4.13,MEGAMAN_HALL_MURAL_CENTER_Z=13.25;
-box(.08,4.8,MEGAMAN_HALL_MURAL_SPAN,0x050711,PLAYSTATION_WALL_X+.22,2.5,MEGAMAN_HALL_MURAL_CENTER_Z,.12);
-const megaManHallMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-hall-mural.webp?v=megaman-hall-mural-1');
-megaManHallMuralTexture.colorSpace=THREE.SRGBColorSpace;
-megaManHallMuralTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManHallMural=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_HALL_MURAL_SPAN,MEGAMAN_HALL_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManHallMuralTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-megaManHallMural.position.set(PLAYSTATION_WALL_X+.35,2.5,MEGAMAN_HALL_MURAL_CENTER_Z);megaManHallMural.rotation.y=Math.PI/2;megaManHallMural.renderOrder=4;scene.add(megaManHallMural);
+// Split at the doorway rather than hung beside it. Mega Man takes the wall on
+// the right of the door as you face it from the hub, cropped from the artwork at
+// its own aspect; the blue that was dead space behind him is stretched across
+// the whole span on the far side. Read together they are one image the doorway
+// happens to interrupt.
+const MEGAMAN_HALL_MURAL_HEIGHT=4.8,MEGAMAN_HALL_MURAL_X=PLAYSTATION_WALL_X+.35;
+const MEGAMAN_HALL_FIGURE_SPAN=4.6,MEGAMAN_HALL_FIGURE_CENTER_Z=4.1;
+const MEGAMAN_HALL_GLOW_SPAN=7.1,MEGAMAN_HALL_GLOW_CENTER_Z=13.25;
+function hallMural(file,span,centerZ){
+  box(.08,5,span,0x050711,PLAYSTATION_WALL_X+.22,2.5,centerZ,.12);
+  const texture=new THREE.TextureLoader().load(`assets/art/${file}?v=megaman-hall-2`);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  const mural=new THREE.Mesh(new THREE.PlaneGeometry(span,MEGAMAN_HALL_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+  mural.position.set(MEGAMAN_HALL_MURAL_X,2.5,centerZ);mural.rotation.y=Math.PI/2;mural.renderOrder=4;scene.add(mural);
+  return mural;
+}
+const megaManHallGlow=hallMural('megaman-hall-glow.webp',MEGAMAN_HALL_GLOW_SPAN,MEGAMAN_HALL_GLOW_CENTER_Z);
+const megaManHallFigure=hallMural('megaman-hall-figure.webp',MEGAMAN_HALL_FIGURE_SPAN,MEGAMAN_HALL_FIGURE_CENTER_Z);
 lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_WIDTH,MEGAMAN_ROOM_DEPTH,0x4aa8ff);
 // Each side annex is split into two near-square rooms. The rear pair contains
 // the playable PlayStation and N64 galleries; the front pair remains available
@@ -705,7 +720,8 @@ for(const [finX,direction,glowColor] of [[-13.72,1,0xd18a52],[13.72,-1,0x36f9f6]
     // The fins stand 0.42 m proud of the wall, so two of them would cut the hall
     // mural into three panels. The mural is the feature on that span; the fins
     // resume either side of it.
-    if(finX<0&&Math.abs(z-MEGAMAN_HALL_MURAL_CENTER_Z)<MEGAMAN_HALL_MURAL_SPAN/2)continue;
+    if(finX<0&&[[MEGAMAN_HALL_FIGURE_CENTER_Z,MEGAMAN_HALL_FIGURE_SPAN],[MEGAMAN_HALL_GLOW_CENTER_Z,MEGAMAN_HALL_GLOW_SPAN]]
+      .some(([centerZ,span])=>Math.abs(z-centerZ)<span/2))continue;
     const fin=new THREE.Mesh(wallFinGeometry,wallFinBody);
     fin.position.set(finX+direction*.2,2.32,z);fin.rotation.y=Math.PI/2;scene.add(fin);
     const glow=new THREE.Mesh(finGlowGeometry,glowMaterial);

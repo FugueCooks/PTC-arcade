@@ -1,0 +1,46 @@
+name: Deploy the realtime Worker
+
+# The world bounds and the room collisions exist in three places: the server,
+# arcade.js, and the Cloudflare Worker that serves the realtime path. The first
+# two ship with the site; the Worker did not, so a change to the world reached
+# the client and the server while the edge kept enforcing the previous shape —
+# which the player experiences as an invisible wall exactly where the old bound
+# used to be. This workflow closes that gap.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cloudflare/**'
+      - '.github/workflows/deploy-cloudflare.yml'
+  # Redeploy the current main without pushing a commit.
+  workflow_dispatch:
+
+concurrency:
+  group: cloudflare-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # The Worker has no build step. Typecheck is what stands between a bad edit
+      # and every connected player; that the Worker's world bounds still match
+      # the server's is asserted by test/world-bounds.test.ts on every push.
+      - run: npm run cloudflare:typecheck
+      - run: npx wrangler deploy --config cloudflare/wrangler.jsonc
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Same reasoning as the Fly workflow: without the secret this would fail on
+      # every push, and a permanently red main hides the failures that matter.
+      - if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' }}
+        run: |
+          echo "::notice::CLOUDFLARE_API_TOKEN is not set, so the Worker was not deployed."
+          echo "::notice::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID under Settings -> Secrets and variables -> Actions."

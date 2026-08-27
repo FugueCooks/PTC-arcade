@@ -89,7 +89,10 @@ void test('the main room is a collision-safe social lounge beside square console
 void test('the MegaMan Room gives each mural its own full-length solid wall', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
-  assert.match(arcade, /const MEGAMAN_MURAL_SPAN=16\.4,MEGAMAN_MURAL_HEIGHT=4\.55/);
+  // Stretched to the walls, not centred on them: the long walls are 21.3 m and
+  // the side wall 16.5 m, and a mural at the artwork's own aspect left bare wall
+  // at both ends of every one.
+  assert.match(arcade, /const MEGAMAN_MURAL_SPAN=21\.3,MEGAMAN_SIDE_MURAL_SPAN=16\.5,MEGAMAN_MURAL_HEIGHT=4\.8/);
 
   // First mural: full front wall, facing back into the room.
   assert.match(arcade, /megaman-room-mural\.webp/);
@@ -104,12 +107,15 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
   // Third mural: full rear wall, which needs no rotation to face inward.
   assert.match(arcade, /megaman-room-mural-3\.webp/);
 
-  // The fourth mural faces the hub from outside the room, between the doorway
-  // and the corner. Turned to face +x, so Mega Man's side of the image lands
-  // against the door.
-  assert.match(arcade, /megaman-hall-mural\.webp/);
-  assert.match(arcade, /megaManHallMural\.position\.set\(PLAYSTATION_WALL_X\+\.35,2\.5,MEGAMAN_HALL_MURAL_CENTER_Z\);megaManHallMural\.rotation\.y=Math\.PI\/2/);
+  // The hall mural is split by the doorway: Mega Man on the near side of the
+  // door, the blue stretched across the span beyond it.
+  assert.match(arcade, /megaman-hall-figure\.webp/);
+  assert.match(arcade, /megaman-hall-glow\.webp/);
+  assert.match(arcade, /MEGAMAN_HALL_FIGURE_CENTER_Z=4\.1/);
+  assert.match(arcade, /MEGAMAN_HALL_GLOW_CENTER_Z=13\.25/);
+  assert.match(arcade, /mural\.rotation\.y=Math\.PI\/2/);
   assert.match(arcade, /megaManMuralThree\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,\.32\)/);
-  assert.equal((arcade.match(/new THREE\.PlaneGeometry\(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT\)/g) ?? []).length, 3);
+  assert.equal((arcade.match(/new THREE\.PlaneGeometry\(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT\)/g) ?? []).length, 2);
+  assert.equal((arcade.match(/new THREE\.PlaneGeometry\(MEGAMAN_SIDE_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT\)/g) ?? []).length, 1);
   assert.equal((arcade.match(/side:THREE\.DoubleSide/g) ?? []).length >= 3, true);
 });
