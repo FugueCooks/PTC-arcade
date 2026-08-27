@@ -116,7 +116,7 @@ try {
   const expect = (condition, message) => { if (!condition) failures.push(message); };
   expect(wiring.threeShared, 'window.THREE was not shared with legacy scene code');
   expect(wiring.gameCount > 0, 'the game registry loaded no games');
-  expect(wiring.adapterIds.length === 3, `expected 3 emulator adapters, saw ${wiring.adapterIds.join(', ') || 'none'}`);
+  expect(wiring.adapterIds.length === 4, `expected 4 emulator adapters, saw ${wiring.adapterIds.join(', ') || 'none'}`);
   expect(wiring.capabilitiesHonest, 'an adapter claims a capability it cannot provide across its iframe boundary');
   expect(wiring.resolvesDeclaredAdapter === 'play-ps2', 'a game did not resolve the adapter it declares');
   expect(wiring.refusesUnknownAdapter === 'unknown-adapter', 'an unknown adapter was silently substituted instead of refused');

@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import express from 'express';
 import type { Request } from 'express';
 import { Server } from 'socket.io';
@@ -59,6 +60,8 @@ import { installOperationsRoutes } from './http/operations-routes.js';
 import { loadGameRegistry } from './games/game-registry-service.js';
 import { CabinetCatalogService, GameCatalogService } from './services/catalog-service.js';
 import { installCatalogRoutes } from './http/api/v1/catalog-routes.js';
+import { installRuntimeRoutes } from './http/api/v1/runtime-routes.js';
+import { buildRuntimeCatalog } from './runtime/runtime-catalog.js';
 import { installApiNotFound } from './http/api/middleware/api-context.js';
 import { EventBus } from './events/event-bus.js';
 import { JobQueue } from './jobs/job-queue.js';
@@ -609,11 +612,46 @@ const gameCatalog = new GameCatalogService(gameRegistry);
 const emulatorAdapterCatalog = [
   { adapterId: 'emulatorjs', platforms: ['psx', 'n64', 'snes'] },
   { adapterId: 'play-ps2', platforms: ['ps2'] },
-  { adapterId: 'gecko-gamecube', platforms: ['gamecube'] }
+  { adapterId: 'gecko-gamecube', platforms: ['gamecube'] },
+  { adapterId: 'ptc-runtime-gamecube', platforms: ['gamecube'] }
 ] as const;
+
+/**
+ * The catalogue the native runtime resolves a launch against.
+ *
+ * Built once at startup from the two files that already describe these images —
+ * the game registry and the upload manifest that carries their digests — so the
+ * catalogue and the objects in storage agree by construction rather than by a
+ * second measurement. A game the manifest cannot vouch for is omitted, and the
+ * omission is logged when the route is read.
+ */
+const runtimeCatalog = (() => {
+  try {
+    const registry = JSON.parse(readFileSync(path.resolve(projectRoot, 'assets', 'games', 'registry.json'), 'utf8'));
+    const manifest = JSON.parse(readFileSync(path.resolve(projectRoot, 'deploy', 'remote-gamecube-assets.json'), 'utf8'));
+    const built = buildRuntimeCatalog({
+      games: registry.games,
+      manifest,
+      assetBaseUrl: publicRuntimeConfig().gameAssetBaseUrl,
+      platforms: ['gamecube']
+    });
+    logger.info('runtime_catalog_built', { entries: built.entries.length, omitted: built.omitted.length });
+    return built;
+  } catch (error) {
+    // A runtime that fetches an empty catalogue launches nothing, which is the
+    // correct failure: it must never fall back to an unverified image.
+    logger.error('runtime_catalog_failed', { message: error instanceof Error ? error.message : 'unknown' });
+    return { entries: [], omitted: [] };
+  }
+})();
 
 // Milestone 11.30: the versioned public catalogue. Existing unversioned routes
 // stay mounted for compatibility until the client migration is verified.
+installRuntimeRoutes(app, {
+  catalog: () => runtimeCatalog,
+  log: (event, details) => logger.warn(event, details)
+});
+
 installCatalogRoutes(app, config, {
   cabinets: cabinetCatalog,
   games: gameCatalog,

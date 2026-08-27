@@ -855,6 +855,9 @@ function openMachine(c){
   if(c.system==='n64') document.querySelector('#rom-name').textContent=c.hostedGame?'LICENSED N64 GAME READY — PRESS PLAY':'N64 EMULATOR READY — LOAD A .Z64, .N64, OR .V64 ROM';
   if(c.system==='snes') document.querySelector('#rom-name').textContent=c.hostedGame?'LICENSED SNES GAME READY — PRESS PLAY':'SNES EMULATOR READY — LOAD A .SFC OR .SMC ROM';
   if(c.system==='ps2') document.querySelector('#rom-name').textContent='EXPERIMENTAL PLAY! CORE READY — LOAD A LOCAL .ISO, .CHD, .CSO, .ISZ, .BIN, OR .ELF FILE';
+  // Walking up to the cabinet is the first moment the answer could matter, and
+  // the player has a modal to read before they press anything.
+  if(c.system==='gamecube') window.ARCADE_ENSURE_RUNTIME_DETECTION?.();
   if(c.system==='gamecube') document.querySelector('#rom-name').textContent=c.disabledReason==='desktop-only'
     ?'GAMECUBE GAMES ARE DESKTOP ONLY — ABOUT 1 GB EACH'
     :(c.hostedGame?'EXPERIMENTAL GAMECUBE IMAGE READY — PRESS PLAY':'GECKO READY — LOAD A LOCAL .RVZ, .ISO, OR .GCM IMAGE');
@@ -925,6 +928,13 @@ function emulatorGameFor(cabinet){return cabinet?.gameRegistryId?window.ARCADE_G
 // coverage. Either way the decision lives in the registry, not here.
 function resolveEmulatorAdapter(cabinet){
   const adapters=window.ARCADE_EMULATOR_ADAPTERS;if(!adapters)return null;
+  // GameCube is the one platform where the right emulator depends on the
+  // player rather than the game: native through the runtime if they have it
+  // installed, the browser core if they do not. The registry cannot know which,
+  // so the choice is made here from the startup probe.
+  if(cabinet?.system==='gamecube'&&window.ARCADE_CHOOSE_GAMECUBE_ADAPTER){
+    return window.ARCADE_CHOOSE_GAMECUBE_ADAPTER({adapters,detection:window.ARCADE_RUNTIME_DETECTION,isMobileDevice}).adapter;
+  }
   const game=emulatorGameFor(cabinet);
   if(game){const resolution=adapters.resolveForGame(game);if(resolution.ok)return resolution.adapter}
   return adapters.forPlatform(cabinet?.system)[0]??null;
@@ -942,7 +952,7 @@ function launchEmulator(gameFile,options={}){
   const gameUrl=typeof gameFile==='string'?gameFile:(usesSourceHandshake?'':URL.createObjectURL(gameFile));
   const biosUrl=activeCabinet?.system==='psx'?(psxBios?URL.createObjectURL(psxBios):hostedPsxBios):'';
   const gameName=activeCabinet?.gameName||'Arcade Game';
-  const context={game:emulatorGameFor(activeCabinet),platformId:activeCabinet?.system,gameUrl,biosUrl,displayName:gameName,emulatorContentId:activeCabinet?.gameId||1,downloadBytes,localFile,dspUrl:gameCubeDspAssetUrl,baseUrl:location.href};
+  const context={game:emulatorGameFor(activeCabinet),platformId:activeCabinet?.system,cabinetId:activeCabinet?.id,gameUrl,biosUrl,displayName:gameName,emulatorContentId:activeCabinet?.gameId||1,downloadBytes,localFile,dspUrl:gameCubeDspAssetUrl,baseUrl:location.href};
   // An adapter refuses rather than guesses when it cannot cover the platform,
   // so a resolution bug stops here with a message instead of booting a core
   // that cannot read the game.

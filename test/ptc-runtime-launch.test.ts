@@ -146,27 +146,27 @@ void test('the runtime is preferred when present, and Gecko carries the rest', a
   const adapters = createDefaultAdapterRegistry();
   adapters.register(adapterModule.createPtcRuntimeGameCubeAdapter({ detectRuntime: async () => ({ present: true }) }));
 
-  const withRuntime = await adapterModule.chooseGameCubeAdapter({
-    adapters, detect: async () => ({ present: true, usable: true, dolphinPresent: true })
+  const withRuntime = adapterModule.chooseGameCubeAdapter({
+    adapters, detection: { present: true, usable: true, dolphinPresent: true }
   });
   assert.equal(withRuntime.adapter.id, 'ptc-runtime-gamecube');
 
-  const withoutRuntime = await adapterModule.chooseGameCubeAdapter({ adapters, detect: async () => ({ present: false }) });
+  const withoutRuntime = adapterModule.chooseGameCubeAdapter({ adapters, detection: { present: false } });
   assert.equal(withoutRuntime.adapter.id, 'gecko-gamecube', 'the browser core remains the fallback');
   assert.equal(withoutRuntime.reason, 'runtime-absent');
 
   // An installed runtime that cannot run anything must not be preferred over a
   // fallback that can.
-  const brokenRuntime = await adapterModule.chooseGameCubeAdapter({
-    adapters, detect: async () => ({ present: true, usable: true, dolphinPresent: false })
+  const brokenRuntime = adapterModule.chooseGameCubeAdapter({
+    adapters, detection: { present: true, usable: true, dolphinPresent: false }
   });
   assert.equal(brokenRuntime.adapter.id, 'gecko-gamecube');
 });
 
 void test('a phone is told before the download, not during it', async () => {
   const adapters = createDefaultAdapterRegistry();
-  const onMobile = await adapterModule.chooseGameCubeAdapter({
-    adapters, detect: async () => ({ present: false }), isMobileDevice: true
+  const onMobile = adapterModule.chooseGameCubeAdapter({
+    adapters, detection: { present: false }, isMobileDevice: true
   });
   assert.equal(onMobile.adapter, null);
   assert.equal(onMobile.reason, 'desktop-only');
@@ -249,4 +249,16 @@ void test('terminating asks politely before it insists', async () => {
   child.emit('exit', 0, null);
   await terminating;
   assert.deepEqual(child.killed, ['SIGTERM'], 'a process that exits on request is never killed harder');
+});
+
+void test('a detection that has not finished yet lands on the browser core', () => {
+  // The probe runs once at startup. A player who reaches a cabinet before it
+  // finishes gets exactly what they would have had without the runtime, rather
+  // than an error or a wait.
+  const adapters = createDefaultAdapterRegistry();
+  adapters.register(adapterModule.createPtcRuntimeGameCubeAdapter({}));
+  for (const detection of [null, undefined, {}]) {
+    const chosen = adapterModule.chooseGameCubeAdapter({ adapters, detection });
+    assert.equal(chosen.adapter.id, 'gecko-gamecube', String(detection));
+  }
 });

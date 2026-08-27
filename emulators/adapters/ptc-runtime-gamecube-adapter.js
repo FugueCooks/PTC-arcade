@@ -139,14 +139,18 @@ export function createPtcRuntimeGameCubeAdapter({ runtime, detectRuntime } = {})
  * one function because the choice is per-player rather than per-game: the same
  * cabinet is native for someone with the runtime and experimental for someone
  * without, and the registry cannot know which.
+ *
+ * Takes the detection result rather than performing it, and so is synchronous.
+ * Probing loopback ports takes a few hundred milliseconds, and the launch path
+ * this feeds runs when a player presses a button — the probe belongs at
+ * startup, once, not in front of a keypress. A detection that has not finished
+ * yet reads as absent, which lands the player on the same browser core they
+ * would have had anyway.
  */
-export async function chooseGameCubeAdapter({ adapters, detect, isMobileDevice = false }) {
+export function chooseGameCubeAdapter({ adapters, detection, isMobileDevice = false }) {
   const runtimeAdapter = adapters.get(RUNTIME_ADAPTER_ID);
-  if (runtimeAdapter && typeof detect === 'function') {
-    const detection = await detect();
-    if (detection?.present && detection.usable && detection.dolphinPresent !== false) {
-      return { adapter: runtimeAdapter, reason: 'runtime-available' };
-    }
+  if (runtimeAdapter && detection?.present && detection.usable && detection.dolphinPresent !== false) {
+    return { adapter: runtimeAdapter, reason: 'runtime-available' };
   }
   const fallback = adapters.get('gecko-gamecube');
   if (!fallback) return { adapter: null, reason: 'no-gamecube-adapter' };

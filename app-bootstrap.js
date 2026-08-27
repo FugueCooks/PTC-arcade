@@ -4,6 +4,8 @@ import { Ps2GameCache } from './games/ps2-game-cache.js?v=ps2-local-cache-1';
 import { loadRoomRegistry } from './rooms/room-registry.js?v=10-rooms-1';
 import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=ps2-touch-1';
 import { CabinetSpatialIndex } from './cabinets/cabinet-spatial-index.js?v=spatial-1';
+import { createPtcRuntimeGameCubeAdapter, chooseGameCubeAdapter } from './emulators/adapters/ptc-runtime-gamecube-adapter.js?v=runtime-1';
+import { RuntimeClient } from './emulators/ptc-runtime/runtime-client.js?v=runtime-1';
 
 // Legacy scene code and newer ES modules now share the exact same Three.js
 // instance. This avoids duplicated render state and an unnecessary 650 KB
@@ -16,10 +18,38 @@ window.ARCADE_PS2_CACHE = new Ps2GameCache();
 // adapter's declaration, so a misdeclared core fails here at startup rather than
 // when a player walks up to a cabinet.
 window.ARCADE_EMULATOR_ADAPTERS = createDefaultAdapterRegistry();
+// GameCube can run natively through the PTC Arcade Runtime. The adapter is
+// always registered; whether it is chosen depends on the probe below.
+window.ARCADE_EMULATOR_ADAPTERS.register(createPtcRuntimeGameCubeAdapter());
+window.ARCADE_CHOOSE_GAMECUBE_ADAPTER = chooseGameCubeAdapter;
+window.ARCADE_RUNTIME_CLIENT = new RuntimeClient();
+window.ARCADE_RUNTIME_DETECTION = null;
+
+/**
+ * Probes for the runtime, once, and only when it could matter.
+ *
+ * Not run at startup on purpose. A browser cannot fetch a closed port quietly —
+ * every refused connection prints a network error the page has no way to
+ * suppress — so probing on load would put four red lines in the console of
+ * every player who has no runtime installed, which is most of them. Nothing in
+ * this session has been harder than telling a real console error from noise,
+ * and permanent noise is how that starts.
+ *
+ * So the probe waits until a player walks up to a GameCube cabinet. They then
+ * see it once, and only if they were going to play a GameCube game anyway.
+ */
+window.ARCADE_ENSURE_RUNTIME_DETECTION = () => {
+  window.ARCADE_RUNTIME_DETECTION ??= { present: false, pending: true };
+  return window.ARCADE_RUNTIME_CLIENT.detect().then((detection) => {
+    window.ARCADE_RUNTIME_DETECTION = detection;
+    if (detection?.usable) console.info('[arcade] PTC Arcade Runtime detected; GameCube runs natively.');
+    return detection;
+  }).catch(() => (window.ARCADE_RUNTIME_DETECTION = { present: false }));
+};
 // Milestone 11.15: the render loop queries this instead of measuring the
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=ps2-touch-1');
+await import('./arcade.js?v=gamecube-runtime-1');
 await import('./avatar-selection.js?v=triple-t-label-2');
 await import('./multiplayer-client.js?v=ps2-touch-1');
