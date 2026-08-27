@@ -85,8 +85,11 @@ void test('unique N64 games are consolidated in the main room and the rear room 
     .map(([, cabinet]) => cabinet);
   assert.equal(megaManCabinets.length, 10);
   assert.ok(megaManCabinets.every((cabinet) => cabinet.enabled));
+  // Cabinet 08 is held for a PS2 title and stands between X6 and Mega Man 8 in
+  // the row; the ids stay in their original order, which is why the odd one out
+  // is eighth here and seventh on the wall.
   assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.system), [
-    'snes', 'snes', 'snes', 'psx', 'psx', 'psx', 'psx', 'psx', 'psx', 'psx'
+    'snes', 'snes', 'snes', 'psx', 'psx', 'psx', 'psx', 'ps2', 'psx', 'psx'
   ]);
   assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.defaultGameId), [
     'mega-man-x',

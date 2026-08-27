@@ -155,12 +155,12 @@
     "gameId": "mega-man-x",
     "enabled": true,
     "interactionPosition": {
-      "x": -15.58,
+      "x": -16,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -15.58,
+      "x": -16,
       "y": 1.65,
       "z": 12.85
     },
@@ -177,12 +177,12 @@
     "gameId": "mega-man-x2",
     "enabled": true,
     "interactionPosition": {
-      "x": -17.63,
+      "x": -18.3,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -17.63,
+      "x": -18.3,
       "y": 1.65,
       "z": 12.85
     },
@@ -199,12 +199,12 @@
     "gameId": "mega-man-x3",
     "enabled": true,
     "interactionPosition": {
-      "x": -19.68,
+      "x": -20.6,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -19.68,
+      "x": -20.6,
       "y": 1.65,
       "z": 12.85
     },
@@ -221,12 +221,12 @@
     "gameId": "mega-man-x4",
     "enabled": true,
     "interactionPosition": {
-      "x": -21.73,
+      "x": -22.9,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -21.73,
+      "x": -22.9,
       "y": 1.65,
       "z": 12.85
     },
@@ -243,12 +243,12 @@
     "gameId": "mega-man-x5",
     "enabled": true,
     "interactionPosition": {
-      "x": -23.78,
+      "x": -25.2,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -23.78,
+      "x": -25.2,
       "y": 1.65,
       "z": 12.85
     },
@@ -265,12 +265,12 @@
     "gameId": "mega-man-x6",
     "enabled": true,
     "interactionPosition": {
-      "x": -25.82,
+      "x": -27.5,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -25.82,
+      "x": -27.5,
       "y": 1.65,
       "z": 12.85
     },
@@ -287,12 +287,12 @@
     "gameId": "mega-man-8",
     "enabled": true,
     "interactionPosition": {
-      "x": -27.88,
+      "x": -32.1,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -27.88,
+      "x": -32.1,
       "y": 1.65,
       "z": 12.85
     },
@@ -302,24 +302,24 @@
   },
   {
     "id": "megaman-cabinet-08",
-    "name": "MegaMan Room PlayStation Cabinet 8",
-    "sceneKey": "PLAYSTATION // READY 08",
-    "cabinetType": "psx-upright",
+    "name": "MegaMan Room PS2 Cabinet",
+    "sceneKey": "PS2 // READY 08",
+    "cabinetType": "ps2-kiosk",
     "zoneId": "megaman-room",
     "gameId": null,
     "enabled": true,
     "interactionPosition": {
-      "x": -29.93,
+      "x": -29.8,
       "y": 1.65,
       "z": 13.2
     },
     "playerPosition": {
-      "x": -29.93,
+      "x": -29.8,
       "y": 1.65,
       "z": 12.85
     },
     "playerRotationY": 3.141592653589793,
-    "system": "psx"
+    "system": "ps2"
   },
   {
     "id": "megaman-cabinet-09",
@@ -330,16 +330,16 @@
     "gameId": null,
     "enabled": true,
     "interactionPosition": {
-      "x": -31.98,
+      "x": -32,
       "y": 1.65,
-      "z": 13.2
+      "z": 14.5
     },
     "playerPosition": {
-      "x": -31.98,
+      "x": -31.65,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.5
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "system": "psx"
   },
   {
@@ -351,16 +351,16 @@
     "gameId": null,
     "enabled": true,
     "interactionPosition": {
-      "x": -34.02,
+      "x": -32,
       "y": 1.65,
-      "z": 13.2
+      "z": 12.2
     },
     "playerPosition": {
-      "x": -34.02,
+      "x": -31.65,
       "y": 1.65,
-      "z": 12.85
+      "z": 12.2
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "system": "psx"
   },
   {

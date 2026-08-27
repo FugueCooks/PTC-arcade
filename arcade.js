@@ -630,20 +630,33 @@ playstationRow.forEach(([id,label,hue,isCrash,isGex],index)=>{
   makeCabinet(id,label,playstationRowX[index],-1.7,hue,isCrash,isGex,'psx');
   cabinets[cabinets.length-1].g.rotation.y=Math.PI;configureHostedCabinet(id);
 });
-// The same row, ten wide, on the north wall — the one on your left as you walk
-// in through the doorway. Ten machines need 20.5 m of wall at row spacing, which
-// is why the room was lengthened westward rather than the cabinets crowded.
+// The row starts on the north wall — the one on your left as you walk in — and
+// turns the corner onto the west wall rather than crowding ten machines onto
+// one. Facing the north wall puts +x on your left, so it is laid out east to
+// west and the series still reads left to right, with Mega Man X nearest the
+// door and the line continuing round the corner rather than restarting.
 //
-// Facing that wall puts +x on your left, so the row is laid out east to west and
-// the series still reads left to right: Mega Man X stands nearest the door.
-const megaManHues=[0x42a5ff,0xff3cac,0x36f9f6,0xffb42e,0x7dff67,0x934dff,0x36f9f6,0xff4da6,0xffb42e,0x5d75d9];
-const megaManCabinetLayout=arcadeRow(MEGAMAN_ROOM_CENTER_X,10,2.05).reverse()
-  .map((x,index)=>[index+1,Number(x.toFixed(2)),15.2,Math.PI,megaManHues[index]]);
-for(const [index,x,z,rotation,hue] of megaManCabinetLayout){
+// The order is the series order, and the PS2 machine takes its place in it
+// between X6 and Mega Man 8. It is cabinet 08 because these ids are stable
+// identities rather than positions: renumbering to match the new order would
+// move every hosted game to a different cabinet for no gain. The two machines
+// with no game yet are last, on the west wall.
+const MEGAMAN_ROW_Z=15.2,MEGAMAN_ROW_START_X=-16,MEGAMAN_SIDE_ROW_X=-34,MEGAMAN_SIDE_ROW_START_Z=14.5;
+const megaManHues={1:0x42a5ff,2:0xff3cac,3:0x36f9f6,4:0xffb42e,5:0x7dff67,6:0x934dff,7:0xff4da6,8:0x36f9f6,9:0xffb42e,10:0x5d75d9};
+// The one cabinet whose system is not decided by a hosted game: it is being held
+// for a PS2 title, and saying so is what gives the player the PS2 prompt rather
+// than a PlayStation one.
+const megaManSystems={8:'ps2'};
+const megaManCabinetLayout=[
+  ...[1,2,3,4,5,6,8,7].map((index,seat)=>[index,MEGAMAN_ROW_START_X-seat*ARCADE_ROW_SPACING,MEGAMAN_ROW_Z,Math.PI]),
+  ...[9,10].map((index,seat)=>[index,MEGAMAN_SIDE_ROW_X,MEGAMAN_SIDE_ROW_START_Z-seat*ARCADE_ROW_SPACING,Math.PI/2])
+];
+for(const [index,x,z,rotation] of megaManCabinetLayout){
   const cabinetId=`megaman-cabinet-${String(index).padStart(2,'0')}`;
-  const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId),system=hosted?.system||'psx';
-  makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`PLAYSTATION // READY ${String(index).padStart(2,'0')}`,x,z,hue,false,false,system);
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system,gameName:hosted?.name||`PlayStation Cabinet ${index}`,enabled:true,status:'available'});configureHostedCabinet(cabinetId);
+  const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId),system=hosted?.system||megaManSystems[index]||'psx';
+  const label=hosted?hosted.name.toUpperCase():`${system==='ps2'?'PS2':'PLAYSTATION'} // READY ${String(index).padStart(2,'0')}`;
+  makeCabinet(cabinetId,label,x,z,megaManHues[index],false,false,system);
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system,gameName:hosted?.name||label,enabled:true,status:'available'});configureHostedCabinet(cabinetId);
 }
 const n64CabinetLayout=[[1,29.2,-13,-Math.PI/2,0x8b5cf6],[2,29.2,-9,-Math.PI/2,0xff4da6],[3,29.2,-5,-Math.PI/2,0x36f9f6],[4,29.2,-1,-Math.PI/2,0xffb42e],[5,16.5,-15.2,0,0x7dff67],[6,20.5,-15.2,0,0xff3cac],[7,24.5,-15.2,0,0x42a5ff]];
 for(const [index,x,z,rotation,hue] of n64CabinetLayout){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
