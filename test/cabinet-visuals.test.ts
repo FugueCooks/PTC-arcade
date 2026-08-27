@@ -16,8 +16,11 @@ void test('console controllers fit within and rest on the cabinet control deck',
 void test('the custom Crash and Gex cabinets use PlayStation controllers', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
-  assert.match(arcade, /makeCabinet\('gex-enter-the-gecko',[^\n]+false,true,'psx'\)/);
-  assert.match(arcade, /makeCabinet\('crash-bandicoot',[^\n]+true,false,'psx'\)/);
+  // The gallery is built from a row table now, so the two custom cabinets carry
+  // their flags there. The flags are what matters: they pick the controller.
+  assert.match(arcade, /\['gex-enter-the-gecko',[^\n]+,false,true\]/);
+  assert.match(arcade, /\['crash-bandicoot',[^\n]+,true,false\]/);
+  assert.match(arcade, /makeCabinet\(id,label,playstationRowX\[index\],[^\n]+,'psx'\)/);
 });
 
 void test('the N64 wall loads the window-free environment module without a stale cache', async () => {
@@ -95,7 +98,7 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
 
   // Second mural: full left wall, facing into the room.
   assert.match(arcade, /megaman-room-mural-2\.webp/);
-  assert.match(arcade, /megaManMuralTwo\.position\.set\(-30\.68,2\.5,MEGAMAN_ROOM_CENTER_Z\)/);
+  assert.match(arcade, /megaManMuralTwo\.position\.set\(-35\.28,2\.5,MEGAMAN_ROOM_CENTER_Z\)/);
   assert.match(arcade, /megaManMuralTwo\.rotation\.y=Math\.PI\/2/);
 
   // Third mural: full rear wall, which needs no rotation to face inward.

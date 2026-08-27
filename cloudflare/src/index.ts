@@ -36,7 +36,13 @@ const MOVEMENT_TOLERANCE = 0.3;
 const MIN_WORLD_X = -30.5;
 const MAX_WORLD_X = 30.5;
 const MIN_WORLD_Z = -33.2;
-const MAX_WORLD_Z = 40;   // Must match server/src/players/player-manager.ts.
+const MAX_WORLD_Z = 16;   // Must match server/src/players/player-manager.ts.
+// The Mega Man room's western extension. A second region rather than a wider
+// MIN_WORLD_X, for the reason spelled out in player-manager.ts.
+const MEGAMAN_ALCOVE_MIN_X = -35.1;
+const MEGAMAN_ALCOVE_MAX_X = -30.5;
+const MEGAMAN_ALCOVE_MIN_Z = 0.6;
+const MEGAMAN_ALCOVE_MAX_Z = 16;
 const PARTITION_WALL_X = 14;
 const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 const PLAYABLE_ROOM_DOOR_Z = -8;
@@ -47,7 +53,8 @@ const SOCIAL_COUCH_OUTER_RADIUS = 6.75;
 const SOCIAL_COUCH_INNER_RADIUS = 4.2;
 const SOCIAL_COUCH_GAP_HALF_ANGLE = 0.34;
 const SOCIAL_DISPLAY_RADIUS = 2.07;
-const LEGACY_WORLD_MIN_X = -30.5;
+// The westernmost wall any annex reaches. Must match player-manager.ts.
+const ANNEX_MIN_X = MEGAMAN_ALCOVE_MIN_X;
 const MEGAMAN_ROOM_DOOR_Z = 8;
 const CABINET_DISTANCE = 2.6;
 const CABINET_TIMEOUT_MS = 5_000;
@@ -365,7 +372,7 @@ export class ArcadeRoom implements DurableObject {
     const x = position[0]; const z = position[1]; const rotation = input?.r;
     const now = Date.now();
     if (!player || player.movementLocked || ![x, z, rotation].every(Number.isFinite)) return this.correct(socket, player);
-    if ((x as number) < MIN_WORLD_X || (x as number) > MAX_WORLD_X || (z as number) < MIN_WORLD_Z || (z as number) > MAX_WORLD_Z) return this.correct(socket, player);
+    if (!isInsideWorld(x as number, z as number)) return this.correct(socket, player);
     if (violatesSocialLayout(player.p[0], player.p[2], x as number, z as number)) return this.correct(socket, player);
     const elapsed = now - attachment.lastAcceptedAt;
     const distance = Math.hypot((x as number) - player.p[0], (z as number) - player.p[2]);
@@ -570,6 +577,12 @@ function decodeBase64Url(value: string): Uint8Array {
   const binary = atob(normalized);
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
+function isInsideWorld(x: number, z: number): boolean {
+  if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
+  return x >= MEGAMAN_ALCOVE_MIN_X && x <= MEGAMAN_ALCOVE_MAX_X
+    && z >= MEGAMAN_ALCOVE_MIN_Z && z <= MEGAMAN_ALCOVE_MAX_Z;
+}
+
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
   const socialDistance = Math.hypot(toX, toZ);
   if (socialDistance < SOCIAL_DISPLAY_RADIUS) return true;
@@ -589,11 +602,11 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     if (crossing >= 0 && crossing <= 1 && !crossingInPlayableDoor && !crossingInMegaManDoor) return true;
   }
   const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
-    && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
+    && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
   const inPlayStationRearGallery = Math.max(fromX, toX) <= -PARTITION_WALL_X - PARTITION_COLLISION_HALF_WIDTH
-    && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
+    && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inPlayStationRearGallery) {
     const targetInPs2Door = Math.abs(toX - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
     if (!targetInPs2Door && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;

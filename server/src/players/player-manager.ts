@@ -7,12 +7,29 @@ import type { PlayerIdentity } from './player-identity.js';
 const MIN_WORLD_X = -30.5;
 const MAX_WORLD_X = 30.5;
 const MIN_WORLD_Z = -33.2;
-// Reaches the back of the GameCube room, whose furthest cabinet is stood at
-// from z 37.2. This bound is duplicated in the Cloudflare Worker and in
-// arcade.js, and test/world-bounds.test.ts holds the three to the same numbers:
-// a player who can walk somewhere the server will not accept gets snapped back
-// on every step, which reads as lag rather than as a wall.
-const MAX_WORLD_Z = 40;
+// Stops at the hub's north wall: the GameCube room is sealed behind its
+// construction barrier again, so nothing beyond z 16 is meant to be walked to.
+// This bound is duplicated in the Cloudflare Worker and in arcade.js, and
+// test/world-bounds.test.ts holds the three to the same numbers: a player who
+// can walk somewhere the server will not accept gets snapped back on every
+// step, which reads as lag rather than as a wall.
+const MAX_WORLD_Z = 16;
+// The world is not one rectangle. The Mega Man room reaches 4.6 m further west
+// than the rest of the building, so ten cabinets stand in a single row against
+// the wall carrying the PlayStation logo. That strip is out of bounds
+// everywhere else, which is why it is a second region rather than a wider
+// MIN_WORLD_X: widening the box would open the west wall of the PlayStation
+// gallery and the PS2 room behind it.
+const MEGAMAN_ALCOVE_MIN_X = -35.1;
+const MEGAMAN_ALCOVE_MAX_X = -30.5;
+const MEGAMAN_ALCOVE_MIN_Z = 0.6;
+const MEGAMAN_ALCOVE_MAX_Z = 16;
+
+function isInsideWorld(x: number, z: number): boolean {
+  if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
+  return x >= MEGAMAN_ALCOVE_MIN_X && x <= MEGAMAN_ALCOVE_MAX_X
+    && z >= MEGAMAN_ALCOVE_MIN_Z && z <= MEGAMAN_ALCOVE_MAX_Z;
+}
 const PLAYER_HEIGHT = 1.65;
 const MAX_SPEED_PER_SECOND = 7;
 const MAX_PACKET_RATE_MS = 50;
@@ -28,7 +45,10 @@ const SOCIAL_COUCH_OUTER_RADIUS = 6.75;
 const SOCIAL_COUCH_INNER_RADIUS = 4.2;
 const SOCIAL_COUCH_GAP_HALF_ANGLE = 0.34;
 const SOCIAL_DISPLAY_RADIUS = 2.07;
-const LEGACY_WORLD_MIN_X = -30.5;
+// The westernmost wall any annex reaches, which is now the Mega Man room's.
+// Scopes the checks below to the side rooms; a player west of it is outside the
+// building entirely and has already been refused by the world bounds.
+const ANNEX_MIN_X = MEGAMAN_ALCOVE_MIN_X;
 const MEGAMAN_ROOM_DOOR_Z = 8;
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
@@ -50,11 +70,11 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     if (crossing >= 0 && crossing <= 1 && !crossingInPlayableDoor && !crossingInMegaManDoor) return true;
   }
   const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
-    && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
+    && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
   const inPlayStationRearGallery = Math.max(fromX, toX) <= -PARTITION_WALL_X - PARTITION_COLLISION_HALF_WIDTH
-    && Math.min(fromX, toX) >= LEGACY_WORLD_MIN_X;
+    && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inPlayStationRearGallery) {
     const targetInPs2Door = Math.abs(toX - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
     if (!targetInPs2Door && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
@@ -322,7 +342,7 @@ export class PlayerManager {
   private isValidMove(player: ManagedPlayer, input: PlayerMoveInput, now: number): boolean {
     const [x, z] = input.p;
     if (![x, z, input.r].every(Number.isFinite)) return false;
-    if (x < MIN_WORLD_X || x > MAX_WORLD_X || z < MIN_WORLD_Z || z > MAX_WORLD_Z) return false;
+    if (!isInsideWorld(x, z)) return false;
     if (violatesSocialLayout(player.position[0], player.position[2], x, z)) return false;
     const elapsed = now - player.lastAcceptedAt;
     if (elapsed < MAX_PACKET_RATE_MS) return false;

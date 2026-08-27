@@ -131,9 +131,10 @@ try {
 
   const running = await page.evaluate(() => {
     const spatial = window.ARCADE_CABINET_SPATIAL_INDEX;
-    // crash-bandicoot sits at x -29.2, z -1 in the scene; querying its own
-    // position is the same lookup the render loop performs every frame.
-    const nearCrash = spatial?.nearest(-29.2, -1, 2.25) ?? null;
+    // crash-bandicoot stands fourth in the PlayStation row at x -22.5, z -1.7;
+    // querying its own position is the same lookup the render loop performs
+    // every frame.
+    const nearCrash = spatial?.nearest(-22.5, -1.7, 2.25) ?? null;
     return {
       emulatorActive: window.arcadeMultiplayer?.isEmulatorActive?.() ?? null,
       hasCamera: Boolean(window.arcadeMultiplayer?.getCamera?.()),

@@ -9,8 +9,8 @@ import type { CabinetState } from '../server/src/protocol.js';
 const identity = { displayName: 'SCALE TESTER', avatarId: 'neon-capsule' };
 const quiet = () => undefined;
 const roomConfigs = [
-  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -27.2, y: 1.65, z: -1, rotationY: Math.PI / 2 }, { x: -27.1, y: 1.65, z: -1, rotationY: Math.PI / 2 }] },
-  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -27.2, y: 1.65, z: -1, rotationY: Math.PI / 2 }] }
+  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -22.5, y: 1.65, z: -3.7, rotationY: Math.PI }, { x: -22.4, y: 1.65, z: -3.7, rotationY: Math.PI }] },
+  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -22.5, y: 1.65, z: -3.7, rotationY: Math.PI }] }
 ];
 
 function setup() {
@@ -147,7 +147,7 @@ void test('a disconnect releases the held cabinet without scanning the room', ()
 
 void test('nearby lookup goes through the spatial index', () => {
   const { cabinets } = setup();
-  const near = cabinets.nearestCabinet(-27.2, -1);
+  const near = cabinets.nearestCabinet(-22.5, -3.7);
   assert.equal(near?.definition.id, 'crash-bandicoot');
   assert.equal(cabinets.nearestCabinet(9_999, 9_999), undefined);
 });

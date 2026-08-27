@@ -7,8 +7,8 @@ import { RoomManager } from '../server/src/rooms/room-manager.js';
 const identity = { displayName: 'CABINET TESTER', avatarId: 'neon-capsule' };
 const quiet = () => undefined;
 const roomConfigs = [
-  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -27.2, y: 1.65, z: -1, rotationY: Math.PI / 2 }, { x: -27.1, y: 1.65, z: -1, rotationY: Math.PI / 2 }] },
-  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -27.2, y: 1.65, z: -1, rotationY: Math.PI / 2 }] }
+  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -22.5, y: 1.65, z: -3.7, rotationY: Math.PI }, { x: -22.4, y: 1.65, z: -3.7, rotationY: Math.PI }] },
+  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -22.5, y: 1.65, z: -3.7, rotationY: Math.PI }] }
 ];
 
 function setup(options = {}) {

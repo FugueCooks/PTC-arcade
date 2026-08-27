@@ -3,10 +3,10 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-void test('PS2 and GameCube are open; Xbox keeps its barrier', async () => {
-  // GameCube opened deliberately: its room holds the four-player Melee cabinet,
-  // and the barrier plus the world bound behind it made that cabinet
-  // unreachable. Xbox has no cabinets yet, so its tape stays.
+void test('PS2 is open; Xbox and GameCube keep their barriers', async () => {
+  // GameCube is sealed again while its runtime is finished. Its cabinets stay in
+  // the registry and the match system still seats four at them, so reopening the
+  // room is this barrier plus the world bound behind it, not a rebuild.
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const edge = await readFile(path.resolve(process.cwd(), 'cloudflare/src/index.ts'), 'utf8');
 
@@ -15,13 +15,13 @@ void test('PS2 and GameCube are open; Xbox keeps its barrier', async () => {
   assert.match(arcade, /xboxConstructionBarrier\.userData\.roomName='Xbox'/);
   assert.doesNotMatch(arcade, /ps2ConstructionBarrier|PS2 Room Under Construction/);
   assert.match(arcade, /xboxConstructionPanel\.rotation\.y=-Math\.PI\/2/);
-  assert.doesNotMatch(arcade, /gamecubeConstructionBarrier/);
+  assert.match(arcade, /gamecubeConstructionBarrier\.userData\.roomName='GameCube'/);
   assert.doesNotMatch(arcade, /ConstructionPanel=new THREE\.Mesh\([^\n]+side:THREE\.DoubleSide/);
   assert.match(arcade, /const ps2CabinetLayout=\[\[1,-29\.2,-30/);
   // Room signage was removed on purpose: the wall logos identify each room,
   // so asserting the old text plates would pin behaviour that is now gone.
-  // The GameCube doorway no longer reports the room as closed, because it is not.
-  assert.doesNotMatch(arcade, /playerPosition\.z>13\.2&&Math\.abs\(playerPosition\.x\)<2\.5/);
+  // The GameCube doorway reports the room as closed, because it is.
+  assert.match(arcade, /playerPosition\.z>13\.2&&Math\.abs\(playerPosition\.x\)<2\.5/);
   assert.match(arcade, /Math\.abs\(playerPosition\.x-PS2_ROOM_CENTER_X\)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /nearbyConstructionRoom\(\)/);
