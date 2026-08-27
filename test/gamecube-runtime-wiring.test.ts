@@ -55,7 +55,7 @@ void test('the import chain moved together', async () => {
   const bootstrapKey = /app-bootstrap\.js\?v=([A-Za-z0-9-]+)/.exec(index)?.[1];
   const arcadeKey = /arcade\.js\?v=([A-Za-z0-9-]+)/.exec(bootstrap)?.[1];
   assert.equal(bootstrapKey, arcadeKey);
-  assert.equal(bootstrapKey, 'arcade-rows-3', 'the key must move when this chain changes');
+  assert.equal(bootstrapKey, 'arcade-rows-4', 'the key must move when this chain changes');
 });
 
 void test('the catalogue route serves what the runtime parser reads', async () => {

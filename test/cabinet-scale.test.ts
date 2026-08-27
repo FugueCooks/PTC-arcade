@@ -114,10 +114,10 @@ void test('zones derive bounds from their cabinets and know their neighbours', (
 
 void test('zone activation follows the player and never leaves nothing loaded', () => {
   const zones = new ZoneRegistry(new CabinetIndex(CABINET_REGISTRY));
-  // The room's cabinets now stand in one row along its south wall, so the zone
-  // its bounds describe is a band in front of that wall rather than the whole
-  // floor. Streaming still follows the player through preloadDistance.
-  const inMegaman = zones.activeZoneIds(-22.5, 6);
+  // The room's cabinets stand in one row along its north wall, so the zone its
+  // bounds describe is a band in front of that wall rather than the whole floor.
+  // Streaming still follows the player through preloadDistance.
+  const inMegaman = zones.activeZoneIds(-22.5, 12);
   assert.ok(inMegaman.includes('megaman-room'));
   assert.ok(!inMegaman.includes('xbox-gallery'), 'a distant zone must not be activated');
 
@@ -126,7 +126,7 @@ void test('zone activation follows the player and never leaves nothing loaded', 
 
   // Standing between zones still resolves to the nearby ones by distance.
   assert.ok(zones.activeZoneIds(-30, -14).length > 0);
-  assert.equal(zones.zoneAt(-22.5, 6)?.id, 'megaman-room');
+  assert.equal(zones.zoneAt(-22.5, 12)?.id, 'megaman-room');
 });
 
 void test('zone activation cost does not grow with cabinet count', () => {

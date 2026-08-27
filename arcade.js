@@ -630,11 +630,15 @@ playstationRow.forEach(([id,label,hue,isCrash,isGex],index)=>{
   makeCabinet(id,label,playstationRowX[index],-1.7,hue,isCrash,isGex,'psx');
   cabinets[cabinets.length-1].g.rotation.y=Math.PI;configureHostedCabinet(id);
 });
-// The same row, ten wide. Ten machines need 20.5 m of wall at row spacing, which
+// The same row, ten wide, on the north wall — the one on your left as you walk
+// in through the doorway. Ten machines need 20.5 m of wall at row spacing, which
 // is why the room was lengthened westward rather than the cabinets crowded.
+//
+// Facing that wall puts +x on your left, so the row is laid out east to west and
+// the series still reads left to right: Mega Man X stands nearest the door.
 const megaManHues=[0x42a5ff,0xff3cac,0x36f9f6,0xffb42e,0x7dff67,0x934dff,0x36f9f6,0xff4da6,0xffb42e,0x5d75d9];
-const megaManCabinetLayout=arcadeRow(MEGAMAN_ROOM_CENTER_X,10,2.05)
-  .map((x,index)=>[index+1,Number(x.toFixed(2)),1.6,0,megaManHues[index]]);
+const megaManCabinetLayout=arcadeRow(MEGAMAN_ROOM_CENTER_X,10,2.05).reverse()
+  .map((x,index)=>[index+1,Number(x.toFixed(2)),15.2,Math.PI,megaManHues[index]]);
 for(const [index,x,z,rotation,hue] of megaManCabinetLayout){
   const cabinetId=`megaman-cabinet-${String(index).padStart(2,'0')}`;
   const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId),system=hosted?.system||'psx';
