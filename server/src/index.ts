@@ -64,6 +64,8 @@ import { installRuntimeRoutes } from './http/api/v1/runtime-routes.js';
 import { MatchManager } from './matches/match-manager.js';
 import type { MatchStateView } from './protocol.js';
 import { bridgeMatchEvents, installMatchHandlers } from './matches/match-sockets.js';
+import { PortAllocator, planNetplay, seatPlanFor } from './matches/netplay.js';
+import { createDefaultTransportRegistry } from './matches/netplay-transports.js';
 import { buildRuntimeCatalog } from './runtime/runtime-catalog.js';
 import { installApiNotFound } from './http/api/middleware/api-context.js';
 import { EventBus } from './events/event-bus.js';
@@ -534,6 +536,48 @@ io.on('connection', (socket) => {
 
   installMatchHandlers(socket, {
     matches,
+    /**
+     * A started match becomes a netplay session, or an honest explanation of
+     * why it will not be one.
+     *
+     * Each seat is sent only its own plan. The plan names the host's address,
+     * so broadcasting it to the room would hand one player's address to
+     * everybody standing nearby rather than to the people connecting to them.
+     */
+    onMatchStarted: (roomId, view) => {
+      const live = matches.rawMatch(roomId, view.cabinetId);
+      const game = gameCatalog.get(view.gameId);
+      const planned = live && game ? planNetplay({
+        match: live, platformId: game.platformId, transports: netplayTransports,
+        addressOf: addressOfPlayer, allocatePort: () => netplayPorts.claim()
+      }) : { ok: false, reason: 'no-transport' } as const;
+
+      for (const seat of view.seats) {
+        const socketId = players.socketIdForPlayerId(seat.playerId);
+        if (!socketId) continue;
+        if (!planned.ok) {
+          io.to(socketId).emit('match:netplay-unavailable', { matchId: view.matchId, reason: planned.reason });
+          continue;
+        }
+        const mine = seatPlanFor(planned.plan, seat.playerId);
+        if (!mine) continue;
+        io.to(socketId).emit('match:netplay', {
+          matchId: planned.plan.matchId,
+          transportId: planned.plan.transportId,
+          automation: planned.plan.automation,
+          playerInstruction: planned.plan.playerInstruction,
+          role: mine.role, hostAddress: mine.hostAddress, port: mine.port, nickname: mine.nickname
+        });
+      }
+      if (planned.ok) {
+        netplayPortByMatch.set(planned.plan.matchId, planned.plan.port);
+        logger.info('netplay_planned', {
+          matchId: planned.plan.matchId, transportId: planned.plan.transportId, seats: view.seats.length
+        });
+      } else {
+        logger.info('netplay_unavailable', { matchId: view.matchId, reason: planned.reason });
+      }
+    },
     playerFor: (socketId) => {
       const id = players.playerIdForSocket(socketId);
       const state = id ? players.stateForPlayerId(id) : undefined;
@@ -657,8 +701,33 @@ const gameCatalog = new GameCatalogService(gameRegistry);
  * it stays correct without any change.
  */
 const matches = new MatchManager({ interactionDistance: Number(process.env.CABINET_INTERACTION_DISTANCE ?? 2.6) });
+const netplayTransports = createDefaultTransportRegistry();
+const netplayPorts = new PortAllocator();
+/** Ports in use, so a finished match gives its port back rather than leaking it. */
+const netplayPortByMatch = new Map<string, number>();
+
+/**
+ * Where a player is connected from, as this server saw it.
+ *
+ * Direct netplay needs the host's address, and only this side of the system
+ * knows it. It is read once, at the moment a match starts, and placed only in
+ * the plan of the seats that must connect to it.
+ */
+function addressOfPlayer(playerId: string): string | undefined {
+  const socketId = players.socketIdForPlayerId(playerId);
+  const socket = socketId ? io.sockets.sockets.get(socketId) : undefined;
+  const address = socket?.handshake?.address;
+  // Express and Socket.IO report IPv4 through an IPv6 prefix behind a proxy.
+  return typeof address === 'string' ? address.replace(/^::ffff:/, '') : undefined;
+}
+
 bridgeMatchEvents(matches, (roomId, event, payload) => {
-  if (event === 'match:closed') io.to(roomId).emit('match:closed', payload as { matchId: string; cabinetId: string });
+  if (event === 'match:closed') {
+    const closed = payload as { matchId: string; cabinetId: string };
+    const port = netplayPortByMatch.get(closed.matchId);
+    if (port !== undefined) { netplayPorts.release(port); netplayPortByMatch.delete(closed.matchId); }
+    io.to(roomId).emit('match:closed', closed);
+  }
   else io.to(roomId).emit(event as 'match:opened' | 'match:changed', payload as MatchStateView);
 });
 

@@ -19,6 +19,12 @@ export interface MatchSocketDependencies {
   /** Where a cabinet is stood at, for the proximity check. */
   cabinetPosition: (cabinetId: string) => { x: number; z: number } | undefined;
   metrics?: { increment(name: string): void };
+  /**
+   * Called when a match actually starts. Netplay planning needs the room, the
+   * game and every player's address, none of which belong in a socket handler —
+   * so this reports the fact and the composition root does the work.
+   */
+  onMatchStarted?: (roomId: string, match: MatchView) => void;
 }
 
 type Acknowledge = (response: unknown) => void;
@@ -75,6 +81,7 @@ export function installMatchHandlers(socket: MatchSocketLike, dependencies: Matc
     // Host-only, decided by seat order on the server. A client claiming to be
     // the host is not consulted.
     const result = matches.start(player.roomId, player.playerId);
+    if (result.ok) dependencies.onMatchStarted?.(player.roomId, result.view);
     answer(acknowledge, result.ok ? { ok: true, match: result.view } : refuse(result.reason));
   });
 

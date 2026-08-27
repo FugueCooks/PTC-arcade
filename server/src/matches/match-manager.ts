@@ -188,6 +188,18 @@ export class MatchManager {
     return true;
   }
 
+  /**
+   * The live match, for netplay planning.
+   *
+   * A view is deliberately lossy — no seat timestamps, no internal state — and
+   * planning needs the match itself. Returned rather than copied because the
+   * planner only reads it; anything that mutates a match goes through the
+   * methods above, so the lifecycle stays in one place.
+   */
+  rawMatch(roomId: string, cabinetId: string): Match | undefined {
+    return this.#byCabinet.get(this.#key(roomId, cabinetId));
+  }
+
   view(roomId: string, cabinetId: string): MatchView | null {
     const match = this.#byCabinet.get(this.#key(roomId, cabinetId));
     return match ? toView(match) : null;

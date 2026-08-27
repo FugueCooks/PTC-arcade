@@ -166,6 +166,22 @@ export interface ServerToClientEvents {
   'match:opened': (payload: MatchStateView) => void;
   'match:changed': (payload: MatchStateView) => void;
   'match:closed': (payload: { matchId: string; cabinetId: string }) => void;
+  /**
+   * One seat's netplay instructions, sent only to that seat. It carries the
+   * host's address, so it is never part of a room broadcast.
+   */
+  'match:netplay': (payload: {
+    matchId: string;
+    transportId: string;
+    automation: 'full' | 'assisted' | 'none';
+    playerInstruction: string | null;
+    role: 'host' | 'guest';
+    hostAddress: string | null;
+    port: number;
+    nickname: string;
+  }) => void;
+  /** Why this match will not be a shared game, when it will not be. */
+  'match:netplay-unavailable': (payload: { matchId: string; reason: string }) => void;
   'room:snapshot': (payload: RoomSnapshot) => void;
   'room:resume': (payload: { resumeToken: string; resumed: boolean }) => void;
   'room:error': (payload: { message: string; code?: string }) => void;
