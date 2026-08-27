@@ -201,3 +201,52 @@ SLP_CORPUS=~/Documents/Slippi npm test
 The winner rules are tested from constructed games rather than from files.
 Building a replay and parsing it back would only prove the parser agrees with
 itself; the judgement that decides an outcome deserves better than that.
+
+
+## Netplay, and what Dolphin will actually let us do
+
+Dolphin has **no netplay command line**. Its complete option list, read from
+`Source/Core/UICommon/CommandLineParse.cpp` rather than remembered:
+
+```
+--user  --movie  --exec  --nand_title  --config  --save_state
+--debugger  --logger  --batch  --confirm  --video_backend  --audio_emulation
+```
+
+Nothing there starts or joins a session. So the runtime cannot press Connect,
+and any design that assumed otherwise was wrong.
+
+What `--config` can do is set any value in Dolphin's configuration, and the
+netplay dialog reads its fields from exactly those values. So the runtime fills
+them in — address, port, nickname — and the player presses one button:
+
+| | Host (seat 0) | Guest |
+|---|---|---|
+| `Main.NetPlay.TraversalChoice` | `direct` | `direct` |
+| `Main.NetPlay.HostPort` | the match port | — |
+| `Main.NetPlay.UseUPNP` | `True` | — |
+| `Main.NetPlay.Address` | — | the host's address |
+| `Main.NetPlay.ConnectPort` | — | the match port |
+| `Main.NetPlay.Nickname` | display name | display name |
+
+**Direct rather than traversal.** Dolphin's traversal server would handle NAT
+for us, but the host code it produces is generated inside Dolphin and shown in
+its window — the runtime has no way to read it back out and hand it to the
+other players. The arcade already knows where every player is connected from,
+which is what makes the direct path possible at all, and is the one thing the
+arcade adds that a bare copy of Dolphin cannot.
+
+### Every argument is `--config=Key=Value`
+
+Which makes a comma or an equals sign in a player-supplied nickname a way to
+write a second setting — `Main.Core.EnableCheats=True`, say. Nicknames are
+stripped to letters, digits, spaces and `._-`, and a host address that contains
+a separator is refused rather than cleaned. Both are tested with the smuggled
+value spelled out.
+
+### The remaining click
+
+The player still opens Netplay in Dolphin and presses Host or Connect. Closing
+that last gap means patching Dolphin, which is a fork to maintain and a GPL
+distribution obligation to meet, and is not worth it before anybody has played
+a match this way.

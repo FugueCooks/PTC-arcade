@@ -262,3 +262,64 @@ void test('a detection that has not finished yet lands on the browser core', () 
     assert.equal(chosen.adapter.id, 'gecko-gamecube', String(detection));
   }
 });
+
+/* Netplay. Dolphin has no flag for it; --config is the whole lever. */
+
+void test('a host listens, a guest is pointed at the host', () => {
+  const host = dolphin.buildNetplayArgs({ role: 'host', port: 2626, nickname: 'HOST' });
+  assert.ok(host.includes('--config=Main.NetPlay.HostPort=2626'));
+  assert.ok(host.includes('--config=Main.NetPlay.UseUPNP=True'), 'most players are behind a router');
+  assert.ok(!host.some((a: string) => a.includes('NetPlay.Address')), 'a host connects to nobody');
+
+  const guest = dolphin.buildNetplayArgs({ role: 'guest', hostAddress: '203.0.113.7', port: 2626, nickname: 'TWO' });
+  assert.ok(guest.includes('--config=Main.NetPlay.Address=203.0.113.7'));
+  assert.ok(guest.includes('--config=Main.NetPlay.ConnectPort=2626'));
+});
+
+void test('direct connection, not traversal', () => {
+  // A traversal host code is generated inside Dolphin and shown in its window,
+  // so the runtime cannot read it back out to hand to the other players.
+  for (const role of ['host', 'guest']) {
+    const args = dolphin.buildNetplayArgs({ role, hostAddress: '203.0.113.7', port: 2626, nickname: 'X' });
+    assert.ok(args.includes('--config=Main.NetPlay.TraversalChoice=direct'), role);
+  }
+});
+
+void test('a nickname cannot smuggle a second setting', () => {
+  // Every argument is --config=Key=Value, so a comma or an equals sign in a
+  // player-supplied name would be read by Dolphin as another assignment.
+  const args = dolphin.buildNetplayArgs({
+    role: 'host', port: 2626, nickname: 'evil,Main.Core.EnableCheats=True'
+  });
+  const nickname = args.find((a: string) => a.startsWith('--config=Main.NetPlay.Nickname='))!;
+  const value = nickname.slice('--config=Main.NetPlay.Nickname='.length);
+  // The separators are what matter, not the surviving letters: without an
+  // equals sign or a comma there is no second assignment to be read.
+  assert.ok(!value.includes(','), 'no comma survives');
+  assert.ok(!value.includes('='), 'no equals sign survives');
+  assert.ok(!args.some((a: string) => a.includes('EnableCheats=True')));
+});
+
+void test('an empty or unusable nickname still names somebody', () => {
+  assert.equal(dolphin.sanitizeNickname('***'), 'PLAYER');
+  assert.equal(dolphin.sanitizeNickname(''), 'PLAYER');
+  assert.equal(dolphin.sanitizeNickname(null), 'PLAYER');
+  assert.equal(dolphin.sanitizeNickname('a'.repeat(80)).length, 24);
+});
+
+void test('an address that could carry a setting is refused', () => {
+  for (const bad of ['1.2.3.4,Main.Core.EnableCheats=True', 'host name', '', 'a'.repeat(60), '1.2.3.4"']) {
+    assert.equal(dolphin.isRoutableAddress(bad), false, bad);
+    assert.throws(() => dolphin.buildNetplayArgs({ role: 'guest', hostAddress: bad, port: 2626, nickname: 'X' }));
+  }
+  for (const good of ['203.0.113.7', '2001:db8::1', 'host.example.com']) {
+    assert.equal(dolphin.isRoutableAddress(good), true, good);
+  }
+});
+
+void test('a nonsense role or port is refused rather than defaulted', () => {
+  assert.throws(() => dolphin.buildNetplayArgs({ role: 'spectator', port: 2626, nickname: 'X' }), /host or guest/);
+  for (const port of [0, 80, 70000, 2626.5, null]) {
+    assert.throws(() => dolphin.buildNetplayArgs({ role: 'host', port, nickname: 'X' }), /usable port/);
+  }
+});

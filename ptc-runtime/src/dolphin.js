@@ -108,3 +108,86 @@ export class LaunchGuard {
     if (this.#active === sessionId) this.#active = null;
   }
 }
+
+/**
+ * Netplay, as far as Dolphin's command line actually goes.
+ *
+ * Dolphin has no netplay flag. Its complete option list — read from
+ * UICommon/CommandLineParse.cpp rather than remembered — is user, movie, exec,
+ * nand_title, config, save_state, debugger, logger, batch, confirm,
+ * video_backend and audio_emulation. Nothing starts or joins a session.
+ *
+ * What `--config` can do is set any value in Dolphin's configuration, and the
+ * netplay dialog reads its fields from exactly those values. So the runtime
+ * fills in the address, the port and the nickname, and the player presses
+ * Connect. That is one click rather than a form, and it is the honest limit of
+ * what can be automated without patching Dolphin.
+ *
+ * Direct connection rather than Dolphin's traversal server: a traversal host
+ * code is generated inside Dolphin and shown in its window, so the runtime has
+ * no way to read it back out and hand it to the other players. The arcade
+ * already knows where every player is connected from, which is what makes the
+ * direct path possible at all.
+ */
+const NETPLAY = Object.freeze({
+  traversalChoice: 'Main.NetPlay.TraversalChoice',
+  hostPort: 'Main.NetPlay.HostPort',
+  address: 'Main.NetPlay.Address',
+  connectPort: 'Main.NetPlay.ConnectPort',
+  nickname: 'Main.NetPlay.Nickname',
+  useUpnp: 'Main.NetPlay.UseUPNP'
+});
+
+/** A nickname Dolphin will accept, and that cannot smuggle a second setting. */
+export function sanitizeNickname(displayName) {
+  const cleaned = String(displayName ?? '')
+    .normalize('NFKC')
+    // A comma or an equals sign would be read as another config assignment.
+    .replace(/[^A-Za-z0-9 ._-]/g, '')
+    .trim()
+    .slice(0, 24);
+  return cleaned || 'PLAYER';
+}
+
+/**
+ * The `--config` arguments that prepare one seat's netplay.
+ *
+ * Seat zero hosts and listens; everyone else connects to it. The role comes
+ * from the server's seat order, so the two sides cannot disagree about who is
+ * waiting for whom.
+ */
+export function buildNetplayArgs({ role, hostAddress, port, nickname }) {
+  if (role !== 'host' && role !== 'guest') throw new Error('A netplay seat is either host or guest.');
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Netplay needs a usable port.');
+
+  const args = [
+    `--config=${NETPLAY.traversalChoice}=direct`,
+    `--config=${NETPLAY.nickname}=${sanitizeNickname(nickname)}`
+  ];
+
+  if (role === 'host') {
+    args.push(`--config=${NETPLAY.hostPort}=${port}`);
+    // Most players are behind a router, and without this the guests cannot
+    // reach the host at all.
+    args.push(`--config=${NETPLAY.useUpnp}=True`);
+    return args;
+  }
+
+  if (!isRoutableAddress(hostAddress)) throw new Error('A guest needs the host address.');
+  args.push(`--config=${NETPLAY.address}=${hostAddress}`);
+  args.push(`--config=${NETPLAY.connectPort}=${port}`);
+  return args;
+}
+
+/**
+ * An address the runtime will pass on.
+ *
+ * Refuses anything that is not a plain host: a value carrying a comma or an
+ * equals sign would be read by Dolphin as a further configuration assignment,
+ * which would turn "who am I connecting to" into "change any setting you like".
+ */
+export function isRoutableAddress(value) {
+  if (typeof value !== 'string' || value.length === 0 || value.length > 45) return false;
+  if (/[,=\s"']/.test(value)) return false;
+  return /^[0-9.]+$/.test(value) || /^[0-9a-fA-F:]+$/.test(value) || /^[A-Za-z0-9.-]+$/.test(value);
+}
