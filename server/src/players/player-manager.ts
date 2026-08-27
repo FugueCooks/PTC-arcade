@@ -7,7 +7,12 @@ import type { PlayerIdentity } from './player-identity.js';
 const MIN_WORLD_X = -30.5;
 const MAX_WORLD_X = 30.5;
 const MIN_WORLD_Z = -33.2;
-const MAX_WORLD_Z = 16;
+// Reaches the back of the GameCube room, whose furthest cabinet is stood at
+// from z 37.2. This bound is duplicated in the Cloudflare Worker and in
+// arcade.js, and test/world-bounds.test.ts holds the three to the same numbers:
+// a player who can walk somewhere the server will not accept gets snapped back
+// on every step, which reads as lag rather than as a wall.
+const MAX_WORLD_Z = 40;
 const PLAYER_HEIGHT = 1.65;
 const MAX_SPEED_PER_SECOND = 7;
 const MAX_PACKET_RATE_MS = 50;
