@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      html, body { width: 100%; height: 100%; margin: 0; background: #02030a; color: #36f9f6;
+        font-family: monospace; letter-spacing: .1em; overflow: hidden; }
+      main { height: 100%; display: grid; place-content: center; justify-items: center; gap: 1.2rem; padding: 2rem; text-align: center; }
+      h1 { font-size: 1.1rem; margin: 0; color: #ff3cac; letter-spacing: .18em; }
+      p { margin: 0; font-size: .8rem; color: #a99abe; max-width: 34rem; line-height: 1.7; }
+      #state { color: #36f9f6; font-size: .95rem; }
+      #bar { width: min(30rem, 70vw); height: .5rem; background: #12111f; border: 1px solid #2b2a44; }
+      #fill { height: 100%; width: 0%; background: #36f9f6; transition: width .3s linear; }
+      .hidden { display: none; }
+      input, button { font-family: monospace; font-size: 1rem; letter-spacing: .2em; padding: .6rem .9rem;
+        background: #12111f; color: #36f9f6; border: 1px solid #36f9f6; }
+      button { cursor: pointer; }
+      #code { width: 8rem; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="title">PTC ARCADE RUNTIME</h1>
+      <div id="state">CONNECTING TO THE RUNTIME…</div>
+      <div id="bar" class="hidden"><div id="fill"></div></div>
+      <p id="detail"></p>
+      <div id="pairing" class="hidden">
+        <p>Your runtime window is showing a six digit code. Type it here to let this arcade start games.</p>
+        <input id="code" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="Pairing code" />
+        <button id="submit" type="button">PAIR</button>
+      </div>
+    </main>
+
+    <script type="module">
+      import { RuntimeClient } from './runtime-client.js?v=runtime-1';
+      import { FRAME_MESSAGES, FAILURE_REASONS, SESSION_STATES } from './protocol.js?v=runtime-1';
+
+      /**
+       * The arcade's view of a native session.
+       *
+       * Dolphin has the player's screen, but the arcade still needs a session it
+       * can see: the server holds one cabinet per player, tells the room it is
+       * occupied, and releases it when this frame reports the session closed.
+       * That is why a native launch still lives behind a frame — without it the
+       * player would stand at a cabinet the server believed was free.
+       */
+      const client = new RuntimeClient();
+      const stateLine = document.getElementById('state');
+      const detail = document.getElementById('detail');
+      const bar = document.getElementById('bar');
+      const fill = document.getElementById('fill');
+      const pairingPanel = document.getElementById('pairing');
+      const codeInput = document.getElementById('code');
+
+      const post = (message) => parent.postMessage(message, location.origin);
+      const say = (text, note = '') => { stateLine.textContent = text; detail.textContent = note; };
+      const fail = (reason, note) => { say('COULD NOT START', note ?? ''); post({ type: FRAME_MESSAGES.ERROR, detail: reason }); };
+
+      const REASON_TEXT = {
+        [FAILURE_REASONS.RUNTIME_ABSENT]: 'The PTC Arcade Runtime is not running on this computer.',
+        [FAILURE_REASONS.PROTOCOL_MISMATCH]: 'The installed runtime is a different version than this arcade expects. Update it.',
+        [FAILURE_REASONS.DOLPHIN_MISSING]: 'The runtime cannot find Dolphin. Install it, or set its path in the runtime settings.',
+        [FAILURE_REASONS.UNKNOWN_GAME]: 'The runtime does not have this game in its catalogue.',
+        [FAILURE_REASONS.INTEGRITY_FAILED]: 'The downloaded game did not match its published checksum, so it was discarded.',
+        [FAILURE_REASONS.DOWNLOAD_FAILED]: 'The download did not finish.',
+        [FAILURE_REASONS.DISK_FULL]: 'There is not enough disk space for this game.',
+        [FAILURE_REASONS.ALREADY_RUNNING]: 'The runtime is already running a game. Close it first.',
+        [FAILURE_REASONS.LAUNCH_FAILED]: 'The emulator did not start.'
+      };
+
+      const STATE_TEXT = {
+        [SESSION_STATES.RESOLVING]: 'PREPARING…',
+        [SESSION_STATES.DOWNLOADING]: 'DOWNLOADING GAME…',
+        [SESSION_STATES.VERIFYING]: 'CHECKING THE DOWNLOAD…',
+        [SESSION_STATES.LAUNCHING]: 'STARTING THE EMULATOR…',
+        [SESSION_STATES.RUNNING]: 'NOW PLAYING — SWITCH TO THE EMULATOR WINDOW'
+      };
+
+      let launched = false;
+
+      // The host tells this frame which game to ask for. It sends an id, never
+      // a URL: a frame that could hand the runtime a URL could hand it any URL.
+      addEventListener('message', (event) => {
+        if (event.origin !== location.origin) return;
+        if (event.data?.type !== 'arcade:runtime-launch' || launched) return;
+        launched = true;
+        document.getElementById('title').textContent = (event.data.displayName ?? 'ARCADE GAME').toUpperCase();
+        void run(event.data);
+      });
+
+      addEventListener('pagehide', () => post({ type: FRAME_MESSAGES.CLOSED }));
+
+      post({ type: FRAME_MESSAGES.READY });
+
+      async function run(request) {
+        const detection = await client.detect();
+        if (!detection.present) return fail(FAILURE_REASONS.RUNTIME_ABSENT, REASON_TEXT[FAILURE_REASONS.RUNTIME_ABSENT]);
+        if (!detection.usable) return fail(detection.reason, REASON_TEXT[detection.reason] ?? '');
+        if (detection.dolphinPresent === false) return fail(FAILURE_REASONS.DOLPHIN_MISSING, REASON_TEXT[FAILURE_REASONS.DOLPHIN_MISSING]);
+
+        if (!client.token) {
+          const paired = await pair();
+          if (!paired) return;
+        }
+        await launch(request);
+      }
+
+      /**
+       * Pairing is deliberately manual. The code appears in the runtime's own
+       * window, where only somebody sitting at the machine can read it, so a
+       * page cannot quietly authorize itself to start native processes.
+       */
+      async function pair() {
+        say('PAIRING REQUIRED');
+        const begun = await client.beginPairing();
+        if (!begun.ok) { fail(FAILURE_REASONS.NOT_PAIRED, 'The runtime would not start pairing.'); return false; }
+        pairingPanel.classList.remove('hidden');
+        codeInput.focus();
+
+        return new Promise((resolve) => {
+          const attempt = async () => {
+            const result = await client.completePairing(codeInput.value);
+            if (result.ok) {
+              pairingPanel.classList.add('hidden');
+              resolve(true);
+              return;
+            }
+            codeInput.value = '';
+            detail.textContent = result.attemptsRemaining
+              ? `That code did not match. ${result.attemptsRemaining} attempts left.`
+              : 'Pairing failed. Close this cabinet and try again.';
+            if (!result.attemptsRemaining) { pairingPanel.classList.add('hidden'); resolve(false); }
+          };
+          document.getElementById('submit').addEventListener('click', attempt);
+          codeInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') void attempt(); });
+        });
+      }
+
+      async function launch(request) {
+        say(STATE_TEXT[SESSION_STATES.RESOLVING]);
+        const started = await client.launch({
+          gameId: request.gameId, platformId: request.platformId, cabinetId: request.cabinetId
+        });
+        if (!started.ok) return fail(started.reason, REASON_TEXT[started.reason] ?? '');
+
+        for await (const update of client.follow(started.sessionId)) {
+          if (update.state === SESSION_STATES.DOWNLOADING && Number.isFinite(update.percent)) {
+            bar.classList.remove('hidden');
+            fill.style.width = `${update.percent}%`;
+            post({ type: FRAME_MESSAGES.PROGRESS, percent: update.percent });
+          }
+          if (update.state === SESSION_STATES.RUNNING) {
+            bar.classList.add('hidden');
+            post({ type: FRAME_MESSAGES.RUNNING });
+          }
+          say(STATE_TEXT[update.state] ?? update.state.toUpperCase(),
+            update.state === SESSION_STATES.RUNNING ? 'Close the emulator window to return to the arcade.' : detail.textContent);
+
+          if (update.state === SESSION_STATES.EXITED) { post({ type: FRAME_MESSAGES.CLOSED }); return; }
+          if (update.state === SESSION_STATES.FAILED) { return fail(update.reason, REASON_TEXT[update.reason] ?? ''); }
+        }
+      }
+    </script>
+  </body>
+</html>
