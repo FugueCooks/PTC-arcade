@@ -171,3 +171,82 @@ void test('a phone is told before the download, not during it', async () => {
   assert.equal(onMobile.adapter, null);
   assert.equal(onMobile.reason, 'desktop-only');
 });
+
+const { DolphinLauncher } = await importBrowserModule<any>('ptc-runtime/src/dolphin-launcher.js');
+
+/** A stand-in for a spawned emulator, so supervision is deterministic. */
+function fakeChild() {
+  const listeners = new Map<string, Array<(...args: any[]) => void>>();
+  return {
+    killed: [] as string[],
+    once(event: string, handler: (...args: any[]) => void) {
+      listeners.set(event, [...(listeners.get(event) ?? []), handler]);
+      return this;
+    },
+    kill(signal?: string) { this.killed.push(signal ?? 'SIGTERM'); },
+    emit(event: string, ...args: any[]) { for (const h of listeners.get(event) ?? []) h(...args); }
+  };
+}
+
+void test('the launcher spawns without a shell, with the fixed argument list', async () => {
+  // A shell between here and the emulator would reintroduce quoting as an
+  // attack surface, and would add nothing.
+  let seen: any = null;
+  const child = fakeChild();
+  const launcher = new DolphinLauncher({
+    dolphinPath: 'C:\\Dolphin\\Dolphin.exe',
+    userDirectory: 'C:\\PTC\\user',
+    spawnImpl: (command: string, args: string[], options: any) => { seen = { command, args, options }; return child; }
+  });
+
+  const launched = await launcher.launch({ sessionId: 'a'.repeat(32), imagePath: 'C:\\Library\\wind-waker.rvz' });
+  assert.equal(launched.ok, true);
+  assert.equal(seen.command, 'C:\\Dolphin\\Dolphin.exe');
+  assert.equal(seen.options.shell, false, 'never through a shell');
+  assert.equal(seen.options.stdio, 'ignore', 'a full pipe buffer would stall the game');
+  assert.ok(seen.args.includes('--exec=C:\\Library\\wind-waker.rvz'));
+});
+
+void test('an emulator that dies immediately is reported as a failure to start', async () => {
+  const child = fakeChild();
+  let clock = 1_000;
+  const launcher = new DolphinLauncher({
+    dolphinPath: '/usr/bin/dolphin-emu', spawnImpl: () => child, now: () => clock
+  });
+
+  const launched = await launcher.launch({ sessionId: 'a'.repeat(32), imagePath: '/library/game.rvz' });
+  clock += 150;
+  child.emit('exit', 3, null);
+
+  assert.deepEqual(await launched.exited, { outcome: 'failed', reason: 'exited with code 3' });
+});
+
+void test('a spawn that throws does not take the runtime with it', async () => {
+  const launcher = new DolphinLauncher({
+    dolphinPath: '/usr/bin/dolphin-emu',
+    spawnImpl: () => { throw new Error('ENOENT'); }
+  });
+  const launched = await launcher.launch({ sessionId: 'a'.repeat(32), imagePath: '/library/game.rvz' });
+  assert.equal(launched.ok, false);
+  assert.equal(launched.reason, 'launch-failed');
+});
+
+void test('a launcher with no Dolphin refuses rather than spawning nothing', async () => {
+  let spawned = false;
+  const launcher = new DolphinLauncher({ dolphinPath: null, spawnImpl: () => { spawned = true; return fakeChild(); } });
+  const launched = await launcher.launch({ sessionId: 'a'.repeat(32), imagePath: '/library/game.rvz' });
+  assert.equal(launched.reason, 'dolphin-missing');
+  assert.equal(spawned, false);
+});
+
+void test('terminating asks politely before it insists', async () => {
+  // A core mid-write to a memory card deserves a moment.
+  const child = fakeChild();
+  const launcher = new DolphinLauncher({ dolphinPath: '/usr/bin/dolphin-emu', spawnImpl: () => child });
+  await launcher.launch({ sessionId: 'b'.repeat(32), imagePath: '/library/game.rvz' });
+
+  const terminating = launcher.terminate('b'.repeat(32));
+  child.emit('exit', 0, null);
+  await terminating;
+  assert.deepEqual(child.killed, ['SIGTERM'], 'a process that exits on request is never killed harder');
+});
