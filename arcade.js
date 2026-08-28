@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=hill-2';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -167,8 +167,10 @@ stadiumHole.moveTo(10.8,-58.8);stadiumHole.lineTo(43.2,-58.8);stadiumHole.lineTo
 ceilingShape.holes.push(stadiumHole);
 // And a second over the Chao Garden, whose sky dome also rises past the
 // building's ceiling. Local y is world z plus the plane's offset, as above.
+// The garden moved a room north, and the Pokemon Center that took its old
+// room fits under the ceiling, so the hole moved with the sky.
 const gardenHole=new THREE.Path();
-gardenHole.moveTo(21.6,-25.2);gardenHole.lineTo(43.2,-25.2);gardenHole.lineTo(43.2,-3.6);gardenHole.lineTo(21.6,-3.6);gardenHole.closePath();
+gardenHole.moveTo(21.6,13.2);gardenHole.lineTo(43.2,13.2);gardenHole.lineTo(43.2,30);gardenHole.lineTo(21.6,30);gardenHole.closePath();
 ceilingShape.holes.push(gardenHole);
 // The third hole is Silent Hill's: its facades rise past the ceiling and its
 // sky is the dark the fog fades into. The block mirrors the stadium in the
@@ -660,7 +662,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-hill-2');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-poke-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -861,13 +863,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=hill-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=poke-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=hill-2',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=poke-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=hill-2',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=poke-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -907,9 +909,12 @@ function buildChaoGarden(centerX,centerZ){
   // the room's centre no longer lines up with it.
   // Tall enough to swallow the tops of the room's five-metre walls, which
   // were poking into the sky as floating black slabs.
-  const R=10.35,RX=R,RZ=R,BAND_BASE=.4,BAND_TOP=5.3;
-  const MOUTH_ARC=3.6/R;
-  const MOUTH_THETA=Math.atan2(21.6-centerX,-25.2-centerZ);
+  // The new room is standard depth, so the cove is an ellipse: full width
+  // along the walls, shallower toward the dividers. The mouth is on the long
+  // axis where the radius is RX, so the arch's radial placement holds.
+  const R=10.35,RX=R,RZ=7.95,BAND_BASE=.4,BAND_TOP=5.3;
+  const MOUTH_ARC=3.6/RZ;
+  const MOUTH_THETA=Math.atan2(21.6-centerX,0);
   const THETA_START=MOUTH_THETA+MOUTH_ARC/2,THETA_LENGTH=Math.PI*2-MOUTH_ARC;
   // The horizon band: sky over sea all the way round, with two headlands of
   // cliff painted on top so the garden reads as a cove. The mouth faces the
@@ -1039,6 +1044,7 @@ function buildChaoGarden(centerX,centerZ){
   meadowGeometry.setIndex(indices);meadowGeometry.computeVertexNormals();
   const meadow=new THREE.Mesh(meadowGeometry,
     new THREE.MeshStandardMaterial({map:grassTexture,roughness:.85,metalness:.02,emissive:0x1c6b24,emissiveIntensity:.42}));
+  meadow.scale.z=RZ/RX;
   meadow.position.set(centerX,.02,centerZ);meadow.receiveShadow=true;scene.add(meadow);
   // A worn sandy path from the mouth toward the middle of the garden.
   const sandCanvas=document.createElement('canvas');sandCanvas.width=128;sandCanvas.height=128;
@@ -1123,7 +1129,9 @@ function buildChaoGarden(centerX,centerZ){
     scene.add(sun);managedSceneLights.push(sun);
   }
 }
-buildChaoGarden(ANNEX_ROOM_CENTER_X,-22.8);
+// The Sonic room moved to the east column's blank middle room; the Pokemon
+// Center grew into the room it left.
+buildChaoGarden(ANNEX_ROOM_CENTER_X,13.2);
 /**
  * The garden's modelled props: palms, boulders, and the columnar stone the
  * waterfall pours over, generated in Blender (tools/make-chao-props.py) as one
@@ -1156,15 +1164,15 @@ function installPokemonCenter(){
     loader.load('assets/models/pokemon/pokemon-center.glb?v=pokecenter-1',gltf=>{
       const mount=new THREE.Group();
       mount.add(gltf.scene);
-      mount.position.set(31.1,.04,-37.53);
-      mount.scale.setScalar(.66);
+      mount.position.set(32.49,.04,-36.05);
+      mount.scale.setScalar(.885);
       scene.add(mount);
       mount.updateWorldMatrix(true,true);
       // The bookshelf and the wall behind it, aligned on the stadium's door
-      // gap; and the entry doorway in the west wall, facing the walkway.
+      // gap. The model's own open storefront faces the plaza south of it, so
+      // no second opening is cut any more.
       const OPENINGS=[
-        {minX:25.29,maxX:28.9,minY:-.2,maxY:3.25,minZ:-42.4,maxZ:-38.6},
-        {minX:24.1,maxX:25.1,minY:-.3,maxY:3.4,minZ:-37.6,maxZ:-33.0}
+        {minX:25.29,maxX:28.9,minY:-.2,maxY:4.15,minZ:-42.4,maxZ:-38.6}
       ];
       const vertex=new THREE.Vector3();
       mount.traverse(o=>{
@@ -1456,18 +1464,23 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   // Both columns run under a plate again in full: Silent Hill left the west
   // column for the top row's corner, and Zelda's murals took its old room.
   if(west)box(ROOM_SPAN,.12,67.2,0x090b18,roomX,5.08,0,.08);
-  // The east column's plate stops at the garden too: its sky dome was being
-  // sliced at ceiling height by a lid nothing had removed.
-  else box(ROOM_SPAN,.12,45.6,0x090b18,roomX,5.08,10.8,.08);
+  // The east column's plate stops at the garden's new room: its sky dome
+  // rises through the hole cut for it. The old garden room is the Pokemon
+  // Center's plaza now, covered by the main ceiling like any other room.
+  else{box(ROOM_SPAN,.12,16.8,0x090b18,roomX,5.08,-3.6,.08);box(ROOM_SPAN,.12,12,0x090b18,roomX,5.08,27.6,.08);}
   for(const wallZ of [SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z]){
+    // The east column's end wall is gone: the Pokemon Center runs from the
+    // stadium's wall across the old band pocket into its plaza.
+    if(!west&&wallZ===SIDE_COLUMN_MIN_Z)continue;
     // The east column's dividers all moved with the garden's growth: full
     // rooms follow it, and the bottom room absorbs the squeeze.
     const wallAt=(!west&&EAST_WALL_Z[String(wallZ)]!==undefined)?EAST_WALL_Z[String(wallZ)]:wallZ;
     const wall=box(ROOM_SPAN,5,.3,0x11182c,roomX,2.5,wallAt,.05);wall.receiveShadow=true;
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
-    // The Chao Garden lights itself — suns and sky — so it takes no troffers.
-    if(!west&&index===0)return;
+    // The Chao Garden lights itself — suns and sky — so its new slot takes
+    // no troffers; the plaza it left inherits the rig like any room.
+    if(!west&&index===2)return;
     const at=west?centerZ:EAST_ROOM_Z[index];
     for(let z=at-6;z<=at+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
     lightRoom(roomX,at,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
@@ -2230,7 +2243,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenPropsStarted&&playerPosition.x>14&&playerPosition.z>-36&&playerPosition.z<-8){chaoGardenPropsStarted=true;installChaoGardenProps();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-26){pokemonCenterStarted=true;installPokemonCenter();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenPropsStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenPropsStarted=true;installChaoGardenProps();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -2493,7 +2506,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=hill-2')
+  import('./emulators/disc-range-cache.js?v=poke-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2513,7 +2526,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=hill-2')
+  import('./emulators/disc-range-cache.js?v=poke-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2733,6 +2746,8 @@ const SIDE_ROOM_DIVIDER_Z=[SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUM
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
   for(const dividerZ of SIDE_ROOM_DIVIDER_Z){
+    // The east column's end wall is open: the Pokemon Center spans it.
+    if(dividerZ===SIDE_COLUMN_MIN_Z&&playerPosition.x>0)continue;
     // The east column's dividers all stand at their re-planned lines.
     const wallZ=(playerPosition.x>0&&EAST_WALL_Z[String(dividerZ)]!==undefined)?EAST_WALL_Z[String(dividerZ)]:dividerZ;
     if(wallZ!==dividerZ){
@@ -2770,9 +2785,9 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:POKEMON_CENTER_Z,ax:15.35,az:11.75,laneHa
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={cx:ANNEX_ROOM_CENTER_X,cz:-22.8,ax:10.2,az:10.2,laneHalfWidth:1.5,doorZ:-25.2};
+const CHAO_GARDEN={cx:ANNEX_ROOM_CENTER_X,cz:13.2,ax:10.2,az:7.8,laneHalfWidth:1.5,doorZ:13.2};
 function resolveChaoGardenCollisions(previousX,previousZ){
-  if(playerPosition.x<21.6||playerPosition.z<-33.6||playerPosition.z>-12)return;
+  if(playerPosition.x<21.6||playerPosition.z<4.8||playerPosition.z>21.6)return;
   if(Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5)return;
   const dx=(playerPosition.x-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,dz=(playerPosition.z-CHAO_GARDEN.cz)/CHAO_GARDEN.az;
   const now=dx*dx+dz*dz;

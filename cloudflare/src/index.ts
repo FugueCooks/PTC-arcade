@@ -73,7 +73,9 @@ const NORTH_ROW_DIVIDER_X = [-21.6];
 const POKEBOWL = { cx: 27, cz: -54.6, ax: 15.35, az: 11.75, laneHalfWidth: 1.5 };
 // The Chao Garden's cliffs: the same rule at the garden's scale, passable only
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
-const CHAO_GARDEN = { cx: 32.4, cz: -22.8, ax: 10.2, az: 10.2, laneHalfWidth: 1.5, doorZ: -25.2 };
+// The garden moved to the east column's middle room and is an ellipse now,
+// shallower along z to fit a standard-depth room. Matches arcade.js.
+const CHAO_GARDEN = { cx: 32.4, cz: 13.2, ax: 10.2, az: 7.8, laneHalfWidth: 1.5, doorZ: 13.2 };
 function insideChaoGarden(x: number, z: number): boolean {
   const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
   const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
@@ -689,6 +691,9 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inSideColumn) {
     for (const dividerZ of SIDE_ROOM_DIVIDER_Z) {
+      // The east column's end wall is open: the Pokemon Center runs from the
+      // stadium's wall across the old band pocket into its plaza.
+      if (dividerZ === -33.6 && Math.min(fromX, toX) > 0) continue;
       // The east column's dividers all stand at their re-planned lines.
       const wallZ = (Math.min(fromX, toX) > 0 && EAST_WALL_Z[String(dividerZ)] !== undefined) ? EAST_WALL_Z[String(dividerZ)] : dividerZ;
       if (Math.abs(toZ - wallZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
