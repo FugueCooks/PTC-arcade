@@ -241,4 +241,22 @@ void test('a streaming disc fills itself in while the game is being played', asy
   // The store has to be able to hold the whole disc, or it evicts the start of
   // the game to make room for the end and never finishes.
   assert.match(frame, /Math\.max\(128, totalChunks\)/);
+  // And where it cannot — the low-memory cap — the install must not run at
+  // all: it would stream the whole image and keep only the tail.
+  assert.match(install, /maxPersistentChunks < totalChunks/);
+});
+
+void test('disc IO is offered to a worker before the main thread', async () => {
+  // OPFS costs used to land on the thread the PS2 core renders on; the
+  // frame's own BLOCKED readout measured long tasks near 300 ms for them.
+  const source = await readFile(path.resolve(process.cwd(), 'emulators/disc-range-cache.js'), 'utf8');
+  assert.match(source, /disc-cache-worker\.js/);
+  assert.match(source, /openWorkerBackedCache/);
+  const worker = await readFile(path.resolve(process.cwd(), 'emulators/disc-cache-worker.js'), 'utf8');
+  // Sync access handles are the fast path through OPFS, and chunks come back
+  // as transferables rather than copies.
+  assert.match(worker, /createSyncAccessHandle/);
+  assert.match(worker, /reply\(\{ id, buffer \}, \[buffer\]\)/);
+  // The worker's LRU keeps the same pinned boot region the page store keeps.
+  assert.match(worker, /index < store\.pinnedChunks/);
 });

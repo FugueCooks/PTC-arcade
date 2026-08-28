@@ -291,8 +291,8 @@
       </section>
     </main>
     <script type="module">
-      import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=floorplan-1';
-      import { RANGE_CHUNK_BYTES, bootChunkRecorder, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=floorplan-1';
+      import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=hill-2';
+      import { RANGE_CHUNK_BYTES, bootChunkRecorder, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=hill-2';
 
       const statusElement = document.querySelector('#ps2-status');
       let pendingFile = null;
@@ -356,6 +356,11 @@
        *          which is a different fault from the core running slowly
        */
       const diagnostics = { chunksLocal: 0, chunksTotal: 0, longTasks: [] };
+      // The NET readout reads resource timings, and the default buffer stops
+      // recording at 250 entries — a few minutes of streaming — after which
+      // the readout silently reports an idle network under a busy one.
+      performance.setResourceTimingBufferSize?.(2000);
+      performance.addEventListener?.('resourcetimingbufferfull', () => performance.clearResourceTimings());
       if (typeof PerformanceObserver === 'function') {
         try {
           new PerformanceObserver(list => {
@@ -773,7 +778,12 @@
           const buffer = await fetchDiscRange(source.url, start, end, { priority: 'high' });
           if (persistent && !persistentCacheFailed && !persistentWrites.has(index)) {
             persistentWrites.add(index);
-            void persistent.put(index, buffer).catch(error => {
+            // The same buffer goes to the core, so the store clones it rather
+            // than taking it. A worker-backed store reports failure as false
+            // instead of throwing; both spell the same thing.
+            void persistent.put(index, buffer).then(kept => {
+              if (kept === false) persistentCacheFailed = true;
+            }).catch(error => {
               persistentCacheFailed = true;
               console.warn('Could not persist a PS2 disc range.', error);
             });
@@ -846,6 +856,11 @@
          */
         async function installDisc() {
           if (navigator.connection?.saveData) return;
+          // A store capped below the disc cannot finish an install: it would
+          // stream the whole image and keep only the tail, evicting the front
+          // of the game to hold the end of it. A low-memory device streams on
+          // demand instead and spends nothing.
+          if (maxPersistentChunks < totalChunks) return;
           const persistent = await persistentCache;
           if (!persistent) return;
           const estimate = await navigator.storage?.estimate?.().catch(() => null);
@@ -867,7 +882,13 @@
             const controller = new AbortController();
             installFetch = controller;
             try {
-              await persistent.put(index, await fetchDiscRange(source.url, start, end, { attempts: 2, signal: controller.signal, priority: 'low' }));
+              // The install is done with its buffer the moment it is stored,
+              // so it is transferred to the store's worker rather than copied.
+              // A store that answers no — worker put reports failure as false
+              // rather than throwing — ends the install the same as one that
+              // throws: hammering a refusing store helps nobody.
+              const kept = await persistent.put(index, await fetchDiscRange(source.url, start, end, { attempts: 2, signal: controller.signal, priority: 'low' }), { transfer: true });
+              if (!kept) { console.warn('Stopped filling the local copy of this disc: the store refused a range.'); return; }
               installed += 1;
             } catch (error) {
               // Cancelled to get out of the core's way: that chunk simply waits

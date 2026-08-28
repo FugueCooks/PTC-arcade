@@ -69,14 +69,111 @@ export async function fetchDiscRange(url, start, end, { attempts = 5, timeoutMs 
 }
 
 /**
+ * The store worker, one per page, shared by every disc it opens.
+ *
+ * OPFS costs used to land on the thread the PS2 core renders on: reading a
+ * chunk materializes 4 MB, and committing one through createWritable().close()
+ * copies a swap file into place. The frame's BLOCKED readout measured those as
+ * long tasks approaching 300 ms. The worker pays them instead, uses the
+ * worker-only synchronous access handles, and transfers chunks back rather
+ * than copying them.
+ */
+const WORKER_CALL_TIMEOUT_MS = 10000;
+let workerChannelPromise = null;
+
+function cacheWorkerChannel() {
+  if (workerChannelPromise !== null) return workerChannelPromise;
+  workerChannelPromise = (async () => {
+    // Node (the tests) and old browsers take the in-page store below.
+    if (typeof Worker !== 'function' || typeof document === 'undefined') return null;
+    try {
+      const worker = new Worker(new URL('./disc-cache-worker.js?v=hill-2', import.meta.url), { type: 'module' });
+      const pending = new Map();
+      let nextId = 1;
+      worker.onmessage = ({ data }) => {
+        const resolve = pending.get(data?.id);
+        if (!resolve) return;
+        pending.delete(data.id);
+        resolve(data);
+      };
+      worker.onerror = () => {
+        for (const resolve of pending.values()) resolve(null);
+        pending.clear();
+      };
+      const call = (message, transfer = []) => new Promise(resolve => {
+        const id = nextId++;
+        pending.set(id, resolve);
+        // A wedged worker must read as a miss, never hang a read the core is
+        // blocked on.
+        const bail = setTimeout(() => { pending.delete(id); resolve(null); }, WORKER_CALL_TIMEOUT_MS);
+        const settle = pending.get(id);
+        pending.set(id, value => { clearTimeout(bail); settle(value); });
+        try { worker.postMessage({ ...message, id }, transfer); }
+        catch { clearTimeout(bail); pending.delete(id); resolve(null); }
+      });
+      const capable = await call({ op: 'capability' });
+      if (!capable?.ok) { worker.terminate(); return null; }
+      return { call };
+    } catch {
+      return null;
+    }
+  })();
+  return workerChannelPromise;
+}
+
+/** The same store surface as below, served from the worker. */
+async function openWorkerBackedCache(source, maxChunks, pinnedChunks) {
+  const channel = await cacheWorkerChannel();
+  if (!channel) return null;
+  const key = discCacheKey(source);
+  const opened = await channel.call({
+    op: 'open', storeId: key, directory: RANGE_CACHE_DIRECTORY, key, maxChunks, pinnedChunks
+  });
+  if (!opened?.ok || !Array.isArray(opened.keys)) return null;
+  // Membership mirror, so has() and size never wait on a message round trip.
+  const stored = new Set(opened.keys);
+  return {
+    has(index) {
+      return stored.has(index);
+    },
+    get size() {
+      return stored.size;
+    },
+    async get(index, expectedBytes) {
+      const result = await channel.call({ op: 'get', storeId: key, index, expectedBytes });
+      if (result?.removed) stored.delete(index);
+      return result?.buffer ?? null;
+    },
+    /**
+     * `transfer` hands the buffer to the worker without a copy — for callers
+     * that are done with it. The default clones, because the frame stores the
+     * same buffer it persists and a detached chunk would reach the core.
+     */
+    async put(index, buffer, { transfer = false } = {}) {
+      const result = await channel.call({ op: 'put', storeId: key, index, buffer }, transfer ? [buffer] : []);
+      if (!result?.ok) return false;
+      stored.add(index);
+      for (const evicted of result.evicted ?? []) stored.delete(evicted);
+      return true;
+    }
+  };
+}
+
+/**
  * Opens the on-disk chunk store for one disc. Returns null where OPFS is
  * unavailable — every caller treats persistence as an optimisation, never a
  * requirement, so a private window still plays, it just re-fetches.
+ *
+ * Served from a worker where the platform allows, so neither the arcade's
+ * render loop nor the PS2 core pays for disk IO; the in-page store below is
+ * the fallback, and the semantics of the two are identical.
  */
 export async function openDiscRangeCache(source, maxChunks, { pinnedChunks = 0 } = {}) {
   if (typeof navigator.storage?.getDirectory !== 'function') return null;
   try {
     await navigator.storage.persist?.();
+    const offThread = await openWorkerBackedCache(source, maxChunks, pinnedChunks).catch(() => null);
+    if (offThread) return offThread;
     const root = await navigator.storage.getDirectory();
     const cache = await root.getDirectoryHandle(RANGE_CACHE_DIRECTORY, { create: true });
     const directory = await cache.getDirectoryHandle(discCacheKey(source), { create: true });
@@ -192,7 +289,7 @@ export async function prewarmDiscRanges(source, { chunks = 3, chunkList = null, 
       // Speculative by definition: nobody is waiting on these, so they queue
       // behind any read the core is actually blocked on.
       const buffer = await fetchDiscRange(source.url, start, end, { attempts: 2, signal, priority });
-      await cache.put(index, buffer);
+      await cache.put(index, buffer, { transfer: true });
       warmed += 1;
     } catch (error) {
       if (signal?.aborted) break;
