@@ -38,6 +38,7 @@ await copyTree('assets', (relative, info) => {
     // Cabinet controller models are needed too; the allow-list below only
     // covers the prize display.
     if (normalized.startsWith('assets/models/controllers/')) return true;
+    if (normalized.startsWith('assets/models/megaman/')) return true;
     return requiredPrizeModels.has(path.basename(normalized));
   }
   if (normalized.startsWith('assets/avatars/models/') && info.isFile()) {

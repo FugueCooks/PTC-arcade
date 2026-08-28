@@ -303,22 +303,71 @@ const expansionFloorMaterial=(()=>{
 // Each mural is stretched to its wall rather than centred on it: the room is
 // 21.3 m along its long walls and 16.5 m across, and a mural at the artwork's
 // own aspect left a metre of bare wall at both ends of every one of them.
+// Mood lighting taken from the murals themselves. Each image is sampled down to
+// a coarse grid, the brightest cells of it — the white of a helmet, the blown
+// highlight on a visor — become dim lights standing just off the wall, and every
+// colour is pulled halfway to the room's accent so three different images light
+// one room rather than three. They are ranked over the range they reach, so the
+// three nearest the player are all that is ever drawn no matter how many a wall
+// contributes.
+// Standing well off the wall rather than against it: a light on the mural's
+// own face only rims whatever stands in front of it, which is exactly what the
+// statue line does. Out here the wall still reads as the source and the room
+// in front of it is what gets lit.
+const MURAL_MOOD_ACCENT=new THREE.Color(0x4aa8ff),MURAL_MOOD_MIN_LUMINANCE=.4,MURAL_MOOD_COLUMNS=16,MURAL_MOOD_ROWS=3,MURAL_MOOD_STANDOFF=2.6;
+function addMuralMoodLights(texture,{center,normal,along,span,height,count=5}){
+  const image=texture?.image;
+  if(!image?.width||!image?.height)return;
+  const canvas=document.createElement('canvas');canvas.width=MURAL_MOOD_COLUMNS;canvas.height=MURAL_MOOD_ROWS;
+  const context=canvas.getContext('2d',{willReadFrequently:true});
+  if(!context)return;
+  // Drawing the whole mural into a 16x3 canvas is the averaging step: each cell
+  // is the mean colour of that patch of wall, which is what a bounce would be.
+  context.drawImage(image,0,0,MURAL_MOOD_COLUMNS,MURAL_MOOD_ROWS);
+  let pixels;
+  try{pixels=context.getImageData(0,0,MURAL_MOOD_COLUMNS,MURAL_MOOD_ROWS).data}
+  catch(error){console.warn('A mural could not be sampled for mood lighting.',error);return}
+  const cells=[];
+  for(let index=0;index<MURAL_MOOD_COLUMNS*MURAL_MOOD_ROWS;index+=1){
+    const red=pixels[index*4]/255,green=pixels[index*4+1]/255,blue=pixels[index*4+2]/255;
+    cells.push({column:index%MURAL_MOOD_COLUMNS,row:Math.floor(index/MURAL_MOOD_COLUMNS),red,green,blue,luminance:.2126*red+.7152*green+.0722*blue});
+  }
+  cells.sort((first,second)=>second.luminance-first.luminance);
+  // Brightest first, but never two from the same stretch of wall: without the
+  // spacing rule all five lights land inside one bright figure and the rest of
+  // the mural stays dark.
+  const spacing=MURAL_MOOD_COLUMNS/(count+1),chosen=[];
+  for(const cell of cells){
+    if(chosen.length>=count)break;
+    if(cell.luminance<MURAL_MOOD_MIN_LUMINANCE)break;
+    if(chosen.some(other=>Math.abs(other.column-cell.column)<spacing))continue;
+    chosen.push(cell);
+  }
+  for(const cell of chosen){
+    const offset=((cell.column+.5)/MURAL_MOOD_COLUMNS-.5)*span;
+    const color=new THREE.Color(cell.red,cell.green,cell.blue).lerp(MURAL_MOOD_ACCENT,.5);
+    const light=new THREE.PointLight(color,4.2+cell.luminance*3.2,16,2);
+    light.position.set(center.x+along.x*offset+normal.x*MURAL_MOOD_STANDOFF,center.y+(.5-(cell.row+.5)/MURAL_MOOD_ROWS)*height,center.z+along.z*offset+normal.z*MURAL_MOOD_STANDOFF);
+    light.userData.muralLight=true;
+    scene.add(light);managedSceneLights.push(light);
+  }
+}
 const MEGAMAN_MURAL_SPAN=21.3,MEGAMAN_SIDE_MURAL_SPAN=16.5,MEGAMAN_MURAL_HEIGHT=4.8;
 box(MEGAMAN_MURAL_SPAN,5,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,16.61,.12);
-const megaManMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural.webp?v=megaman-mural-1');
+const megaManMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural.webp?v=megaman-mural-1',texture=>addMuralMoodLights(texture,{center:new THREE.Vector3(MEGAMAN_ROOM_CENTER_X,2.5,16.54),normal:new THREE.Vector3(0,0,-1),along:new THREE.Vector3(-1,0,0),span:MEGAMAN_MURAL_SPAN,height:MEGAMAN_MURAL_HEIGHT}));
 megaManMuralTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const megaManMural=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
 megaManMural.position.set(MEGAMAN_ROOM_CENTER_X,2.5,16.54);megaManMural.rotation.y=Math.PI;megaManMural.renderOrder=4;scene.add(megaManMural);
 box(.08,5,MEGAMAN_SIDE_MURAL_SPAN,0x050711,-35.41,2.5,MEGAMAN_ROOM_CENTER_Z,.12);
-const megaManMuralTwoTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-2.webp?v=megaman-mural-2');
+const megaManMuralTwoTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-2.webp?v=megaman-mural-2',texture=>addMuralMoodLights(texture,{center:new THREE.Vector3(-35.28,2.5,MEGAMAN_ROOM_CENTER_Z),normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),span:MEGAMAN_SIDE_MURAL_SPAN,height:MEGAMAN_MURAL_HEIGHT,count:4}));
 megaManMuralTwoTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralTwoTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const megaManMuralTwo=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_SIDE_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTwoTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
 megaManMuralTwo.position.set(-35.28,2.5,MEGAMAN_ROOM_CENTER_Z);megaManMuralTwo.rotation.y=Math.PI/2;megaManMuralTwo.renderOrder=4;scene.add(megaManMuralTwo);
 // The third mural fills the divider wall and faces into the room.
 box(MEGAMAN_MURAL_SPAN,5,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,.19,.12);
-const megaManMuralThreeTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-3.webp?v=megaman-mural-3');
+const megaManMuralThreeTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-3.webp?v=megaman-mural-3',texture=>addMuralMoodLights(texture,{center:new THREE.Vector3(MEGAMAN_ROOM_CENTER_X,2.5,.32),normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),span:MEGAMAN_MURAL_SPAN,height:MEGAMAN_MURAL_HEIGHT}));
 megaManMuralThreeTexture.colorSpace=THREE.SRGBColorSpace;
 megaManMuralThreeTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
 const megaManMuralThree=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralThreeTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
@@ -645,22 +694,120 @@ playstationRow.forEach(([id,label,hue,isCrash,isGex],index)=>{
 // identities rather than positions: renumbering to match the new order would
 // move every hosted game to a different cabinet for no gain. The two machines
 // with no game yet are last, on the west wall.
-const MEGAMAN_ROW_Z=15.2,MEGAMAN_ROW_START_X=-16,MEGAMAN_SIDE_ROW_X=-34,MEGAMAN_SIDE_ROW_START_Z=14.5;
+const MEGAMAN_ROW_Z=15.2,MEGAMAN_ROW_START_X=-16,MEGAMAN_SIDE_ROW_X=-34,MEGAMAN_SIDE_ROW_START_Z=14.5,MEGAMAN_ISLAND_ROW_Z=9.6;
+// The colours the ten cabinets on the floor already wear. Anything added after
+// them takes the next colour in the cycle rather than no colour at all, which
+// is what an index missing from a fixed map used to give it.
 const megaManHues={1:0x42a5ff,2:0xff3cac,3:0x36f9f6,4:0xffb42e,5:0x7dff67,6:0x934dff,7:0xff4da6,8:0x36f9f6,9:0xffb42e,10:0x5d75d9};
+const MEGAMAN_HUE_CYCLE=[0x42a5ff,0xff3cac,0x36f9f6,0xffb42e,0x7dff67,0x934dff,0xff4da6,0x5d75d9];
+const megaManHue=index=>megaManHues[index]??MEGAMAN_HUE_CYCLE[(index-1)%MEGAMAN_HUE_CYCLE.length];
 // The one cabinet whose system is not decided by a hosted game: it is being held
 // for a PS2 title, and saying so is what gives the player the PS2 prompt rather
 // than a PlayStation one.
 const megaManSystems={8:'ps2'};
-const megaManCabinetLayout=[
-  ...[1,2,3,4,5,6,8,7].map((index,seat)=>[index,MEGAMAN_ROW_START_X-seat*ARCADE_ROW_SPACING,MEGAMAN_ROW_Z,Math.PI]),
-  ...[9,10].map((index,seat)=>[index,MEGAMAN_SIDE_ROW_X,MEGAMAN_SIDE_ROW_START_Z-seat*ARCADE_ROW_SPACING,Math.PI/2])
+// Seats, in the order the room fills them: the wall you face on the way in,
+// then round the corner onto the west wall, then a second row down the middle
+// of the floor with an aisle between the two. The seat a cabinet takes is its
+// position in MEGAMAN_CABINET_ORDER, so adding a game is adding an id to that
+// list and a row to the registry — the geometry is not something anyone has to
+// work out again, and there is room for eleven more before the runs are full.
+const MEGAMAN_SEAT_RUNS=[
+  {seats:8,x:MEGAMAN_ROW_START_X,z:MEGAMAN_ROW_Z,stepX:-ARCADE_ROW_SPACING,stepZ:0,rotation:Math.PI},
+  {seats:5,x:MEGAMAN_SIDE_ROW_X,z:MEGAMAN_SIDE_ROW_START_Z,stepX:0,stepZ:-ARCADE_ROW_SPACING,rotation:Math.PI/2},
+  {seats:8,x:MEGAMAN_ROW_START_X,z:MEGAMAN_ISLAND_ROW_Z,stepX:-ARCADE_ROW_SPACING,stepZ:0,rotation:Math.PI}
 ];
+// The ids are stable identities rather than positions, which is why 8 sits
+// between 6 and 7: renumbering to match the order would move every hosted game
+// to a different cabinet for no gain.
+const MEGAMAN_CABINET_ORDER=[1,2,3,4,5,6,8,7,9,10];
+function megaManSeat(seat){
+  let remaining=seat;
+  for(const run of MEGAMAN_SEAT_RUNS){
+    if(remaining<run.seats)return {x:run.x+run.stepX*remaining,z:run.z+run.stepZ*remaining,rotation:run.rotation};
+    remaining-=run.seats;
+  }
+  return null;
+}
+const megaManCabinetLayout=MEGAMAN_CABINET_ORDER.map((index,seat)=>{
+  const place=megaManSeat(seat);
+  // A cabinet with nowhere to stand is left out rather than dropped at the
+  // origin, where it would appear in the middle of the hub.
+  if(!place)console.warn(`No seat left in the Mega Man room for cabinet ${index}.`);
+  return place?[index,place.x,place.z,place.rotation]:null;
+}).filter(Boolean);
 for(const [index,x,z,rotation] of megaManCabinetLayout){
   const cabinetId=`megaman-cabinet-${String(index).padStart(2,'0')}`;
   const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId),system=hosted?.system||megaManSystems[index]||'psx';
   const label=hosted?hosted.name.toUpperCase():`${system==='ps2'?'PS2':'PLAYSTATION'} // READY ${String(index).padStart(2,'0')}`;
-  makeCabinet(cabinetId,label,x,z,megaManHues[index],false,false,system);
+  makeCabinet(cabinetId,label,x,z,megaManHue(index),false,false,system);
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system,gameName:hosted?.name||label,enabled:true,status:'available'});configureHostedCabinet(cabinetId);
+}
+
+// A line of the cast down the south wall, standing on the floor and facing the
+// cabinets across the room, in the same series order the cabinets already read
+// in. The models are a few megabytes and arrive on approach rather than at
+// boot, so the room is walkable before they land.
+const MEGAMAN_STATUE_Z=1.62,MEGAMAN_STATUE_HEIGHT=1.62,MEGAMAN_STATUE_MAX_SPAN=3.1,MEGAMAN_STATUE_RADIUS=.66;
+// Five of the seven models dropped in. Two of them carry no textures and no
+// colours — three white parts and nothing to paint them from — and an
+// untextured figure under coloured light is a mannequin however it is dressed.
+// Spaced for the widest of them rather than evenly for the narrowest: these are
+// action poses, and one scaled to the same height as the others is three metres
+// across with its arms out while another is two-thirds of a metre.
+const MEGAMAN_STATUES=[
+  ['x-fourth-armor',-17],
+  ['zero-copy-x',-21.2],
+  ['exe5-soul',-25.4],
+  ['exe4-alma',-29.6],
+  ['x8-zero',-33.8]
+];
+const megaManStatueMounts=[];
+for(const [slug,x] of MEGAMAN_STATUES){
+  const mount=new THREE.Group();mount.name=`megaman-statue-${slug}`;mount.position.set(x,0,MEGAMAN_STATUE_Z);scene.add(mount);
+  megaManStatueMounts.push({slug,mount,radius:MEGAMAN_STATUE_RADIUS});
+}
+async function installMegaManStatues(){
+  let loader;
+  try{loader=await getOptimizedGltfLoader()}catch(error){console.warn('Mega Man statue loader could not initialize.',error);return}
+  for(const entry of megaManStatueMounts){
+    const {slug,mount}=entry;
+    loader.load(`assets/models/megaman/${slug}.optimized.glb?v=megaman-statues-1`,gltf=>{
+      // Scaled by height rather than longest side: these are figures, and a
+      // wide pose would otherwise stand shorter than the one beside it.
+      const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+      // Height first, so the line reads as one gallery, but never past the span
+      // it is allotted: a lunging pose scaled purely by height reaches into its
+      // neighbour, and the widest of these is five times the width of the
+      // narrowest at the same height.
+      const scale=Math.min(MEGAMAN_STATUE_HEIGHT/Math.max(size.y,.001),MEGAMAN_STATUE_MAX_SPAN/Math.max(size.x,size.z,.001));
+      model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);
+      const scaled=new THREE.Box3().setFromObject(model);model.position.y-=scaled.min.y;
+      // A statue is as solid as it is wide. One radius for all of them either
+      // let a player walk through an outstretched arm or held them a metre off
+      // a figure that is barely wider than its own shoulders.
+      entry.radius=Math.min(1.15,Math.max(MEGAMAN_STATUE_RADIUS,(scaled.max.x-scaled.min.x)*.34));
+      // Lit by the room and by the mural lights standing in front of the wall,
+      // not by themselves: a figure that carries its own light has no shape.
+      const materials=[];
+      model.traverse(node=>{if(node.isMesh)for(const material of Array.isArray(node.material)?node.material:[node.material])if(material?.emissive)materials.push(material)});
+      // Taking the shine off: these are lit entirely by the mural lights, and a
+      // glossy figure under three coloured point lights is mostly highlights.
+      for(const material of materials){material.roughness=Math.min(material.roughness??1,.62);material.needsUpdate=true}
+      mount.add(model);
+    },undefined,error=>console.warn(`Mega Man statue ${slug} could not load.`,error));
+  }
+}
+// Cheap because it never runs outside the room: a player anywhere else fails
+// the first comparison and pays two subtractions for the whole gallery.
+function resolveStatueCollisions(previousX,previousZ){
+  if(playerPosition.x>-15.5||playerPosition.z>MEGAMAN_STATUE_Z+1.2)return;
+  for(const {mount,radius} of megaManStatueMounts){
+    const dx=playerPosition.x-mount.position.x,dz=playerPosition.z-mount.position.z,distance=Math.hypot(dx,dz);
+    if(distance>=radius)continue;
+    if(distance>.001){playerPosition.x=mount.position.x+dx/distance*radius;playerPosition.z=mount.position.z+dz/distance*radius}
+    else{playerPosition.x=previousX;playerPosition.z=previousZ}
+    return;
+  }
 }
 const n64CabinetLayout=[[1,29.2,-13,-Math.PI/2,0x8b5cf6],[2,29.2,-9,-Math.PI/2,0xff4da6],[3,29.2,-5,-Math.PI/2,0x36f9f6],[4,29.2,-1,-Math.PI/2,0xffb42e],[5,16.5,-15.2,0,0x7dff67],[6,20.5,-15.2,0,0xff3cac],[7,24.5,-15.2,0,0x42a5ff]];
 for(const [index,x,z,rotation,hue] of n64CabinetLayout){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
@@ -813,7 +960,7 @@ async function installFurthermoreModel(){try{const loader=await getOptimizedGltf
 async function installEnterpriseModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/enterprise.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('enterprise-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.76/Math.max(size.x,size.y,size.z));model.rotation.y=Math.PI/2;model.position.y=.02;slot.add(model);},undefined,error=>console.warn('Enterprise model could not load.',error));}catch(error){console.warn('Enterprise model loader could not initialize.',error)}}
 async function installKurackModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/kurack.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('kurack-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.72/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.rotation.y=Math.PI*1.5;model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y=-scaledBounds.min.y-.18;slot.add(model);},undefined,error=>console.warn('Kurack model could not load.',error));}catch(error){console.warn('Kurack model loader could not initialize.',error)}}
 async function installGangsterPepe(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-gangster-animated.optimized.glb?v=meshopt-1',gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.016/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;gangsterPepeMount.add(model);if(gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());animatedMixers.push(mixer);}},undefined,error=>console.warn('Animated gangster Pepe model could not load.',error));}catch(error){console.warn('Animated gangster Pepe loader could not initialize.',error)}}
-let prizeModelsStarted=false,centerModelStarted=false,nextHeavyAssetCheck=0;
+let prizeModelsStarted=false,centerModelStarted=false,megaManStatuesStarted=false,nextHeavyAssetCheck=0;
 // Real controllers on the deck instead of a generic stick and four buttons.
 // Each model loads once per system and is cloned onto every cabinet of that
 // system; clones share geometry and materials, so the cost is one upload each.
@@ -874,7 +1021,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();}if(!centerModelStarted&&playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z<16){centerModelStarted=true;installGangsterPepe();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();}if(!centerModelStarted&&playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z<16){centerModelStarted=true;installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-11&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -883,12 +1030,16 @@ function managedLightPosition(light){
   if(!light.userData.worldPosition){light.updateWorldMatrix(true,false);light.userData.worldPosition=light.getWorldPosition(new THREE.Vector3())}
   return light.userData.worldPosition;
 }
-function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<324;const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
+function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<324;const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[];const muralLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.muralLight?muralLights:light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
 // Accent beacons only reach 2.8 units, so they are ranked against their own
 // radius. Sharing one budget with the room lights let them win both slots from
 // across the room and leave the floor unlit.
 roomLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<2&&distanceSq<144});
-accentLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<2&&distanceSq<16});const centerDistanceSq=playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z;gangsterPepeLight.visible=centerDistanceSq<25;counterDisplayLight.visible=centerDistanceSq<49;const prizeVisible=playerPosition.distanceToSquared(prizeDisplay.position)<144;prizeDisplayLights.forEach(light=>{light.visible=prizeVisible});}
+accentLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<2&&distanceSq<16});
+// A mural washes its wall from across the room, so it is ranked over the range
+// it actually reaches. On the accent budget every one of these sat dark unless
+// the player pressed into the wall, which is the one place you cannot see it.
+muralLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<3&&distanceSq<225});const centerDistanceSq=playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z;gangsterPepeLight.visible=centerDistanceSq<25;counterDisplayLight.visible=centerDistanceSq<49;const prizeVisible=playerPosition.distanceToSquared(prizeDisplay.position)<144;prizeDisplayLights.forEach(light=>{light.visible=prizeVisible});}
 const prizeSignCanvas=document.createElement('canvas');prizeSignCanvas.width=1024;prizeSignCanvas.height=192;const psc=prizeSignCanvas.getContext('2d');const prizeLedTexture=new THREE.CanvasTexture(prizeSignCanvas);
 function drawPrizeLed(time=0){psc.fillStyle='#05060b';psc.fillRect(0,0,1024,192);for(let x=8;x<1024;x+=16){for(let y=8;y<192;y+=16){psc.fillStyle=(x+y)%32?'#101527':'#1c2540';psc.fillRect(x,y,3,3)}}psc.font='bold 88px monospace';psc.textBaseline='middle';psc.shadowColor='#ff3cac';psc.shadowBlur=20;psc.fillStyle='#fff4cc';const text='  ✦  PRIZE COUNTER  ✦  ';const width=psc.measureText(text).width;const offset=(time*.14)%(width+1024);psc.fillText(text,1024-offset,98);psc.fillText(text,1024-offset+width+160,98);psc.shadowBlur=0;prizeLedTexture.needsUpdate=true;}
 drawPrizeLed();
@@ -1279,6 +1430,6 @@ function updatePerformanceStats(now){performanceFrames++;const elapsed=now-perfo
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,devicePixelRatio,pixelRatioCap);renderer.setPixelRatio(currentPixelRatio)});
