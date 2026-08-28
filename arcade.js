@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=dome-2';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=dome-3';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -537,21 +537,31 @@ function pokemonFieldTexture(){
  */
 function buildPokemonStadium(centerX,centerZ){
   const RX=10.5,RZ=8.1,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-dome-2');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-dome-3');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  // The band stops short of a full circle: the missing arc is the tunnel
+  // mouth, so the way in is an opening in the stands rather than a walk
+  // through the image. The arc faces the doorway (local theta 3pi/2 is -x),
+  // and its width is the tunnel plus a shoulder, measured along the ellipse
+  // where dz/dtheta is RZ.
+  const MOUTH_ARC=3.8/RZ;
+  const BAND_THETA_START=Math.PI*1.5+MOUTH_ARC/2,BAND_THETA_LENGTH=Math.PI*2-MOUTH_ARC;
   const band=new THREE.Mesh(
-    new THREE.CylinderGeometry(1,1,BAND_TOP-BAND_BASE,72,1,true),
+    new THREE.CylinderGeometry(1,1,BAND_TOP-BAND_BASE,72,1,true,BAND_THETA_START,BAND_THETA_LENGTH),
     new THREE.MeshBasicMaterial({map:bandTexture,side:THREE.DoubleSide}));
   band.scale.set(RX,1,RZ);
   band.position.set(centerX,(BAND_BASE+BAND_TOP)/2,centerZ);
   // Rotating the mesh a quarter turn would swing the 10.5 m axis across the
   // room's 8.4 m half-depth and push the band through both neighbouring
   // rooms — and out of line with the dome. The jumbotron is aimed by sliding
-  // the texture around the loop instead: its panel is the first 25.4% of the
-  // strip, so this offset centres it on the wall a player faces walking in.
+  // the texture instead. The arc starts at the far edge of the tunnel mouth,
+  // and the jumbotron panel — the first 25.4% of the strip, centre .127 —
+  // belongs opposite the mouth, which is halfway along the arc. The seam where
+  // the loop would have joined lands inside the mouth, where there is no wall
+  // to show it on.
   bandTexture.wrapS=THREE.RepeatWrapping;
-  bandTexture.offset.x=.123;
+  bandTexture.offset.x=.127-.5;
   scene.add(band);
   // The roof: a shallow dome from the band's rim to just under the ceiling,
   // drawn as a night sky with a lit rim so the bowl reads as open to the dark
@@ -573,8 +583,10 @@ function buildPokemonStadium(centerX,centerZ){
   scene.add(dome);
   // Below the band, a dark skirt down to the floor, so no sightline under the
   // stands reaches the room outside. It is the wall the stands sit on.
+  // The skirt leaves the same arc open, or it would wall off the bottom 60 cm
+  // of the tunnel mouth.
   const skirt=new THREE.Mesh(
-    new THREE.CylinderGeometry(1,1,BAND_BASE,72,1,true),
+    new THREE.CylinderGeometry(1,1,BAND_BASE,72,1,true,BAND_THETA_START,BAND_THETA_LENGTH),
     new THREE.MeshStandardMaterial({color:0x0c1220,emissive:0x0a1425,emissiveIntensity:.4,roughness:.6,metalness:.3,side:THREE.DoubleSide}));
   skirt.scale.set(RX,1,RZ);
   skirt.position.set(centerX,BAND_BASE/2,centerZ);
@@ -598,20 +610,8 @@ function buildPokemonStadium(centerX,centerZ){
   const field=new THREE.Mesh(new THREE.PlaneGeometry(12.6,9.4),
     new THREE.MeshStandardMaterial({map:pokemonFieldTexture(),roughness:.82,metalness:.05,emissive:0x0d2a12,emissiveIntensity:.35}));
   field.rotation.x=-Math.PI/2;field.position.set(centerX,.014,centerZ);field.receiveShadow=true;scene.add(field);
-  // The barrier follows the bowl: a ring of segments on the same ellipse,
-  // standing where the stands meet the field.
-  const rail=new THREE.MeshStandardMaterial({color:0xd8e2ea,emissive:0x35506b,emissiveIntensity:.5,metalness:.55,roughness:.35});
-  const trim=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.5,metalness:.4,roughness:.3});
-  const SEGMENTS=26,BRX=7.4,BRZ=5.6;
-  const segmentLength=2*Math.PI*Math.sqrt((BRX*BRX+BRZ*BRZ)/2)/SEGMENTS;
-  for(let i=0;i<SEGMENTS;i++){
-    const a=i/SEGMENTS*Math.PI*2,x=Math.cos(a)*BRX,z=Math.sin(a)*BRZ;
-    const heading=Math.atan2(Math.cos(a)*BRZ,-Math.sin(a)*BRX);
-    const barrier=new THREE.Mesh(new THREE.BoxGeometry(segmentLength*1.04,.62,.3),rail);
-    barrier.position.set(centerX+x,.31,centerZ+z);barrier.rotation.y=heading;scene.add(barrier);
-    const strip=new THREE.Mesh(new THREE.BoxGeometry(segmentLength*1.04,.05,.28),trim);
-    strip.position.set(centerX+x,.64,centerZ+z);strip.rotation.y=heading;scene.add(strip);
-  }
+  // No barrier ring: the field runs open to the foot of the stands, which is
+  // the space the Pokemon will occupy.
   // Floodlight rigs on the dome rim, leaning in over the field, with one
   // managed light per side as before: the rigs are the look, the two lights
   // are the proof, and two is what the budget carries.
@@ -1687,7 +1687,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=dome-2')
+  import('./emulators/disc-range-cache.js?v=dome-3')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1707,7 +1707,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=dome-2')
+  import('./emulators/disc-range-cache.js?v=dome-3')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
