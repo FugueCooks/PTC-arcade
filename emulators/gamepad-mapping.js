@@ -98,8 +98,13 @@ export function gamepadHasActivity(pad, deadZone = DEFAULT_DEAD_ZONE) {
   if (buttons) for (let index = 0; index < buttons.length; index += 1) {
     if (buttonPressed(pad, index)) return true;
   }
+  // Only the four stick axes. Pads that fall outside the standard mapping put
+  // a hat switch on a further axis and rest it at a value like 3.29 — reading
+  // every axis meant one of those counted as a player's hands on the sticks
+  // from the moment it was plugged in, which is the state this test exists to
+  // rule out. Anything a non-standard axis carries reaches us as a button.
   const axes = pad.axes;
-  if (axes) for (let index = 0; index < axes.length; index += 1) {
+  if (axes) for (let index = GAMEPAD_AXES.LEFT_X; index <= GAMEPAD_AXES.RIGHT_Y; index += 1) {
     const value = axes[index];
     if (Number.isFinite(value) && Math.abs(value) > deadZone) return true;
   }

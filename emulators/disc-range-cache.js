@@ -69,40 +69,78 @@ export async function fetchDiscRange(url, start, end, { attempts = 5, timeoutMs 
  * unavailable — every caller treats persistence as an optimisation, never a
  * requirement, so a private window still plays, it just re-fetches.
  */
-export async function openDiscRangeCache(source, maxChunks) {
+export async function openDiscRangeCache(source, maxChunks, { pinnedChunks = 0 } = {}) {
   if (typeof navigator.storage?.getDirectory !== 'function') return null;
   try {
     await navigator.storage.persist?.();
     const root = await navigator.storage.getDirectory();
     const cache = await root.getDirectoryHandle(RANGE_CACHE_DIRECTORY, { create: true });
     const directory = await cache.getDirectoryHandle(discCacheKey(source), { create: true });
-    const storedIndexes = new Set();
+    // Insertion order is the recency order: a Map re-keyed on every hit is the
+    // whole LRU. What was on disk at open has no recorded order, so it starts
+    // as the oldest and earns its place back the first time it is read.
+    const stored = new Map();
     for await (const name of directory.keys()) {
       const match = /^(\d+)\.chunk$/.exec(name);
-      if (match) storedIndexes.add(Number(match[1]));
+      if (match) stored.set(Number(match[1]), true);
     }
+    const touch = index => {
+      if (!stored.has(index)) return;
+      stored.delete(index);
+      stored.set(index, true);
+    };
+    /**
+     * Frees one slot, never touching the pinned opening chunks. Those are what
+     * the next launch reads first, so evicting them to make room for something
+     * read once, deep in a level, would trade a fast boot for nothing.
+     */
+    const evictOne = async () => {
+      for (const index of stored.keys()) {
+        if (index < pinnedChunks) continue;
+        stored.delete(index);
+        try {
+          await directory.removeEntry(`${index}.chunk`);
+        } catch (error) {
+          if (error?.name !== 'NotFoundError') console.warn('Could not evict a cached disc range.', error);
+        }
+        return true;
+      }
+      return false;
+    };
     return {
       /** True where a chunk is on disk, without paying to read it back. */
       has(index) {
-        return storedIndexes.has(index);
+        return stored.has(index);
+      },
+      get size() {
+        return stored.size;
       },
       async get(index, expectedBytes) {
         const name = `${index}.chunk`;
         try {
           const handle = await directory.getFileHandle(name);
           const file = await handle.getFile();
-          if (file.size === expectedBytes) return file.arrayBuffer();
+          if (file.size === expectedBytes) {
+            touch(index);
+            return file.arrayBuffer();
+          }
           await directory.removeEntry(name);
-          storedIndexes.delete(index);
+          stored.delete(index);
         } catch (error) {
           if (error?.name !== 'NotFoundError') console.warn('Could not read a cached disc range.', error);
         }
         return null;
       },
       async put(index, buffer) {
-        if (!storedIndexes.has(index) && storedIndexes.size >= maxChunks) return false;
-        const isNew = !storedIndexes.has(index);
-        storedIndexes.add(index);
+        const isNew = !stored.has(index);
+        // A full cache used to stop accepting anything, so whatever a player
+        // happened to read first was all they ever kept: every later session
+        // re-fetched the rest of a multi-gigabyte disc from scratch.
+        while (isNew && stored.size >= maxChunks) {
+          if (!await evictOne()) return false;
+        }
+        stored.set(index, true);
+        touch(index);
         const handle = await directory.getFileHandle(`${index}.chunk`, { create: true });
         const writable = await handle.createWritable({ keepExistingData: false });
         try {
@@ -110,7 +148,7 @@ export async function openDiscRangeCache(source, maxChunks) {
           await writable.close();
           return true;
         } catch (error) {
-          if (isNew) storedIndexes.delete(index);
+          if (isNew) stored.delete(index);
           try { await writable.abort(); } catch { /* Already closed. */ }
           throw error;
         }
@@ -134,13 +172,14 @@ export async function openDiscRangeCache(source, maxChunks) {
  * Deliberately quiet: it resolves rather than throwing, because nothing the
  * player asked for has failed if a speculative fetch does.
  */
-export async function prewarmDiscRanges(source, { chunks = 3, maxChunks = 128, signal } = {}) {
+export async function prewarmDiscRanges(source, { chunks = 3, chunkList = null, maxChunks = 128, signal } = {}) {
   if (!source?.url?.startsWith('https://') || !Number.isSafeInteger(source.size) || source.size <= 0) return { warmed: 0, skipped: true };
-  const cache = await openDiscRangeCache(source, maxChunks);
+  const wanted = bootChunkOrder(source, { chunks, chunkList });
+  if (!wanted.length) return { warmed: 0, skipped: true };
+  const cache = await openDiscRangeCache(source, maxChunks, { pinnedChunks: chunks });
   if (!cache) return { warmed: 0, skipped: true };
-  const lastChunk = Math.min(chunks, Math.ceil(source.size / RANGE_CHUNK_BYTES));
   let warmed = 0;
-  for (let index = 0; index < lastChunk; index += 1) {
+  for (const index of wanted) {
     if (signal?.aborted) break;
     if (cache.has(index)) continue;
     const start = index * RANGE_CHUNK_BYTES;
@@ -156,4 +195,46 @@ export async function prewarmDiscRanges(source, { chunks = 3, maxChunks = 128, s
     }
   }
   return { warmed, skipped: false };
+}
+
+/**
+ * Which chunks to warm, and in what order.
+ *
+ * Warming the opening chunks is a guess that holds for a disc whose executable
+ * sits near the front, and misses for one that does not. A title that has been
+ * observed booting can say exactly which chunks it read instead — see
+ * `bootChunkRecorder` — and that list is warmed in the order it was read, so
+ * the first thing the core asks for is the first thing on disk.
+ */
+export function bootChunkOrder(source, { chunks = 3, chunkList = null } = {}) {
+  const available = Math.ceil(source.size / RANGE_CHUNK_BYTES);
+  if (Array.isArray(chunkList) && chunkList.length) {
+    const seen = new Set();
+    for (const value of chunkList) {
+      if (Number.isSafeInteger(value) && value >= 0 && value < available) seen.add(value);
+    }
+    if (seen.size) return [...seen];
+  }
+  const count = Math.min(chunks, available);
+  return Array.from({ length: Math.max(0, count) }, (_unused, index) => index);
+}
+
+/**
+ * Records the chunks a core reads while booting, so a title can be measured
+ * once and warmed exactly thereafter. Order matters and duplicates do not: what
+ * is wanted is the sequence of first touches.
+ */
+export function bootChunkRecorder({ limit = 64 } = {}) {
+  const order = [];
+  const seen = new Set();
+  return {
+    record(index) {
+      if (!Number.isSafeInteger(index) || seen.has(index) || order.length >= limit) return;
+      seen.add(index);
+      order.push(index);
+    },
+    get chunks() {
+      return [...order];
+    }
+  };
 }

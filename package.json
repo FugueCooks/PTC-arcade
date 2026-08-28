@@ -14,6 +14,7 @@
     "lint": "eslint \"server/**/*.ts\" \"test/**/*.ts\"",
     "test": "npm run build && node --test dist/test/*.test.js",
     "verify:games": "node tools/verify-game-assets.mjs",
+    "verify:images": "node tools/inspect-disc-images.mjs",
     "verify:assets": "node tools/verify-game-assets.mjs",
     "storage:upload": "node tools/storage-upload.mjs",
     "storage:upload-external": "node tools/storage-upload-external.mjs",

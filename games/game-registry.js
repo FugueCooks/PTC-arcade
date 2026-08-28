@@ -35,7 +35,21 @@ function isValidGame(game) {
     && Number.isSafeInteger(game.emulatorId) && game.emulatorId > 0
     && Number.isSafeInteger(game.sizeBytes) && game.sizeBytes > 0
     && validDiscs(game)
+    && validBootChunks(game)
     && typeof game.enabled === 'boolean';
+}
+
+/**
+ * Optional. The 4 MB chunk indexes a core was observed reading while this title
+ * booted, in the order it read them, recorded once with the PS2 frame's boot
+ * recorder. The arcade warms exactly these on approach instead of guessing at
+ * the opening megabytes. Absent means guess; present means measured.
+ */
+function validBootChunks(game) {
+  if (game.bootChunks === undefined) return true;
+  if (!Array.isArray(game.bootChunks) || game.bootChunks.length === 0 || game.bootChunks.length > 64) return false;
+  const chunkCount = Math.ceil(game.sizeBytes / (4 * 1024 * 1024));
+  return game.bootChunks.every(index => Number.isSafeInteger(index) && index >= 0 && index < chunkCount);
 }
 
 function validDiscs(game) {

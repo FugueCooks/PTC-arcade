@@ -611,7 +611,7 @@ function applyCabinetArt(cabinet,slug){
 // Milestone 11.15: every cabinet the scene creates is registered with the
 // spatial index, which the render loop queries instead of scanning.
 function indexCabinet(cabinet){window.ARCADE_CABINET_SPATIAL_INDEX?.insert(cabinet.id,cabinet.g.position.x,cabinet.g.position.z,cabinet)}
-function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{artSlug:game.id,system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
+function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{artSlug:game.id,system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,bootChunks:game.bootChunks??null,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
 // Classic arcade layout: one unbroken row facing into the room, backs against
 // the wall that carries the PlayStation logo. This is the arrangement every
 // room moves to, so the spacing constant is shared rather than repeated — 2.3 m
@@ -1085,7 +1085,7 @@ function warmStreamingDisc(cabinet){
   import('./emulators/disc-range-cache.js?v=input-and-loading-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
-      {chunks:lowPowerDevice?1:3}))
+      {chunks:lowPowerDevice?1:3,chunkList:cabinet.bootChunks}))
     .catch(error=>console.warn('Could not warm the disc for this cabinet.',error));
 }
 function warmEmulatorCore(cabinet){

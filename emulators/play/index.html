@@ -214,7 +214,7 @@
     </main>
     <script type="module">
       import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=input-and-loading-1';
-      import { RANGE_CHUNK_BYTES, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=input-and-loading-1';
+      import { RANGE_CHUNK_BYTES, bootChunkRecorder, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=input-and-loading-1';
 
       const statusElement = document.querySelector('#ps2-status');
       let pendingFile = null;
@@ -247,6 +247,8 @@
         KeyZ: { key: 'z', keyCode: 90 }
       });
       const activeTouchKeys = new Map();
+      const bootChunks = bootChunkRecorder();
+      const BOOT_RECORD_MS = 45000;
       const activeGamepadKeys = new Set();
       const CONTROLLER_IDLE_STATUS = 'CONTROLLER: CONNECT OR PRESS A BUTTON';
       const GAMEPAD_KEY_BINDINGS = Object.freeze([
@@ -441,6 +443,7 @@
         }
 
         function cachedChunk(index) {
+          bootChunks.record(index);
           const existing = chunks.get(index);
           if (existing) {
             chunks.delete(index);
@@ -540,6 +543,17 @@
         input.dispatchEvent(new Event('change', { bubbles: true }));
         statusElement.textContent = bootStatus(source.name, 'STREAMING');
         parent.postMessage({ type: 'arcade:ps2-source-accepted', core: 'ps2-play' }, location.origin);
+        // The chunks a disc reads while booting are the ones worth warming
+        // before a player reaches the cabinet. Guessing at the opening
+        // megabytes holds for a disc whose executable sits near the front and
+        // misses for one that does not, so report what this title actually
+        // read: paste it into the registry entry as `bootChunks`.
+        setTimeout(() => {
+          const measured = bootChunks.chunks;
+          if (!measured.length) return;
+          console.info(`arcade: bootChunks for ${source.name} = ${JSON.stringify(measured)}`);
+          parent.postMessage({ type: 'arcade:ps2-boot-chunks', core: 'ps2-play', name: source.name, chunks: measured }, location.origin);
+        }, BOOT_RECORD_MS);
         pendingRemote = null;
         document.querySelector('#outputCanvas').focus();
         return true;

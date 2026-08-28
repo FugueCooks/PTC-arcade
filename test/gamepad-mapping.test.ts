@@ -85,6 +85,17 @@ void test('a connected but untouched pad reports no activity', () => {
   assert.equal(mapping.gamepadHasActivity(pad({ axes: [0.05, -0.04, 0, 0] })), false);
 });
 
+void test('a pad that rests a hat switch on a spare axis still reads as idle', () => {
+  // Measured from an "NSW Wired controller" sitting untouched: ten axes, the
+  // sticks at rest and a hat parked at 3.29 on axis 9. Scanning every axis
+  // made that pad permanently "in use" the moment it was plugged in, which
+  // held the HUD hints and the movement grant exactly as a stuck class did.
+  const untouched = pad({ axes: [0.14, 0.03, 0, 0, 0, 0, 0, 0, 0, 3.29] });
+  assert.equal(mapping.gamepadHasActivity(untouched), false);
+  // The sticks on that same pad still register when a hand is on them.
+  assert.equal(mapping.gamepadHasActivity(pad({ axes: [0.14, 0.03, 0.8, 0, 0, 0, 0, 0, 0, 3.29] })), true);
+});
+
 void test('the d-pad reads as a direction pair', () => {
   const target = { x: 0, y: 0 };
   const controller = pad();

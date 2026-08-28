@@ -97,3 +97,104 @@ void test('walking up to a streaming cabinet warms its boot region', async () =>
   assert.match(arcade, /prewarmDiscRanges/);
   assert.match(arcade, /warmedDiscCabinets\.has\(cabinet\.id\)/, 'a cabinet must only be warmed once');
 });
+
+void test('a measured boot order is warmed instead of the opening chunks', () => {
+  // Absent measurement, warming the front of the disc is the best guess. A
+  // title that has been observed booting can say exactly what it read, and the
+  // order is kept: the first thing the core asks for is the first on disk.
+  assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 3 }), [0, 1, 2]);
+  assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 3, chunkList: [0, 41, 7] }), [0, 41, 7]);
+  assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 3, chunkList: [4, 4, 4] }), [4]);
+  // A list that cannot be trusted falls back rather than requesting bytes the
+  // disc does not have.
+  assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 2, chunkList: [-1, 1.5, 9e9] }), [0, 1]);
+  assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 2, chunkList: [] }), [0, 1]);
+  // Never past the end of a disc smaller than the warm depth.
+  assert.deepEqual(rangeCache.bootChunkOrder({ ...disc, size: 1024 }, { chunks: 4 }), [0]);
+});
+
+void test('the boot recorder keeps first touches, in order, bounded', () => {
+  const recorder = rangeCache.bootChunkRecorder({ limit: 3 });
+  for (const index of [5, 5, 2, 5, 9, 11, 12]) recorder.record(index);
+  assert.deepEqual(recorder.chunks, [5, 2, 9], 'duplicates are dropped and the limit holds');
+  const bad = rangeCache.bootChunkRecorder();
+  for (const index of [null, 'x', 1.5, -0.5]) bad.record(index as never);
+  assert.deepEqual(bad.chunks, []);
+});
+
+void test('a full cache evicts its coldest chunk instead of refusing to cache', async () => {
+  // The store used to stop accepting anything once full, so whatever a player
+  // read first was all they ever kept and every later session re-fetched the
+  // rest of a multi-gigabyte disc from scratch.
+  const cache = await openStubCache({ maxChunks: 3, pinnedChunks: 0 });
+  for (const index of [0, 1, 2]) await cache.put(index, new ArrayBuffer(8));
+  await cache.get(0, 8); // 0 is now the most recently used, 1 the coldest.
+  assert.equal(await cache.put(3, new ArrayBuffer(8)), true);
+  assert.equal(cache.has(1), false, 'the least recently used chunk is the one that goes');
+  assert.deepEqual([cache.has(0), cache.has(2), cache.has(3)], [true, true, true]);
+  assert.equal(cache.size, 3);
+});
+
+void test('the pinned boot region survives eviction', async () => {
+  // Evicting the chunks the next launch reads first would trade a fast boot
+  // for one deep-level read that may never happen again.
+  const cache = await openStubCache({ maxChunks: 3, pinnedChunks: 2 });
+  for (const index of [0, 1, 5]) await cache.put(index, new ArrayBuffer(8));
+  assert.equal(await cache.put(6, new ArrayBuffer(8)), true);
+  assert.deepEqual([cache.has(0), cache.has(1)], [true, true], 'pinned chunks stay');
+  assert.equal(cache.has(5), false, 'the unpinned chunk is the one that goes');
+  // Later reads keep trading places among themselves, never with a pin.
+  assert.equal(await cache.put(7, new ArrayBuffer(8)), true);
+  assert.deepEqual([cache.has(0), cache.has(1), cache.has(6), cache.has(7)], [true, true, false, true]);
+});
+
+void test('a cache with nothing but pins declines rather than dropping one', async () => {
+  const cache = await openStubCache({ maxChunks: 2, pinnedChunks: 2 });
+  for (const index of [0, 1]) await cache.put(index, new ArrayBuffer(8));
+  assert.equal(await cache.put(9, new ArrayBuffer(8)), false);
+  assert.deepEqual([cache.has(0), cache.has(1), cache.has(9)], [true, true, false]);
+});
+
+/**
+ * OPFS in miniature: enough of the directory handle surface for the cache to
+ * run against, so eviction and pinning are tested for real rather than read.
+ */
+function stubDirectory() {
+  const files = new Map<string, number>();
+  return {
+    files,
+    keys: async function* () { yield* [...files.keys()]; },
+    async getFileHandle(name: string, options?: { create?: boolean }) {
+      if (!files.has(name) && !options?.create) throw Object.assign(new Error('missing'), { name: 'NotFoundError' });
+      return {
+        async getFile() {
+          const size = files.get(name);
+          if (size === undefined) throw Object.assign(new Error('missing'), { name: 'NotFoundError' });
+          return { size, arrayBuffer: async () => new ArrayBuffer(size) };
+        },
+        async createWritable() {
+          return {
+            async write(buffer: ArrayBuffer) { files.set(name, buffer.byteLength); },
+            async close() { /* written */ },
+            async abort() { files.delete(name); }
+          };
+        }
+      };
+    },
+    async removeEntry(name: string) {
+      if (!files.delete(name)) throw Object.assign(new Error('missing'), { name: 'NotFoundError' });
+    }
+  };
+}
+
+async function openStubCache(options: { maxChunks: number; pinnedChunks: number }) {
+  const directory = stubDirectory();
+  const storage = { persist: async () => true, getDirectory: async () => ({ getDirectoryHandle: async () => ({ getDirectoryHandle: async () => directory }) }) };
+  const original = (globalThis as Record<string, unknown>).navigator;
+  Object.defineProperty(globalThis, 'navigator', { value: { storage }, configurable: true });
+  try {
+    return await rangeCache.openDiscRangeCache(disc, options.maxChunks, { pinnedChunks: options.pinnedChunks });
+  } finally {
+    Object.defineProperty(globalThis, 'navigator', { value: original, configurable: true });
+  }
+}
