@@ -1246,7 +1246,7 @@ document.querySelector('#rom-file').addEventListener('change',e=>{const f=e.targ
 let emulatorObjectUrls=[],emulatorLoadTimer,activeEmulatorFrame=null,pendingEmulatorSource=null,activeEmulatorAdapter=null;
 const ps2Cache=window.ARCADE_PS2_CACHE,ps2CacheButton=document.querySelector('#cache-hosted-game');
 let ps2CacheController=null;
-const warmedEmulatorSystems=new Set(),warmedDiscCabinets=new Set();
+const warmedEmulatorSystems=new Set(),warmedDiscCabinets=new Set(),fullyWarmedDiscs=new Set();
 // Local caching is worth offering for anything with a download long enough to
 // notice. The store itself is system agnostic; only the offer was PS2 only, so
 // the main room's PlayStation and GameCube cabinets re-downloaded every launch.
@@ -1276,8 +1276,29 @@ function warmStreamingDisc(cabinet){
   import('./emulators/disc-range-cache.js?v=input-and-loading-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
-      {chunks:lowPowerDevice?1:3,chunkList:cabinet.bootChunks}))
+      {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
     .catch(error=>console.warn('Could not warm the disc for this cabinet.',error));
+}
+// Once a game is actually running, the rest of what it was measured reading is
+// worth fetching in the background. A demand read that misses costs the player a
+// visible stall — a 4 MB chunk is over half a second on a 45 Mbit line, and Mega
+// Man X7 touches 46 of them before its title screen — so the difference between
+// warming these during the intro and waiting for the core to ask for them is the
+// difference between a game that runs and one that hitches every few seconds.
+// Sequential on purpose: this shares a connection with the reads the core is
+// waiting on, and taking them in the order they were first read means the
+// earliest are on disk before the core reaches them.
+function warmRemainingDisc(cabinet){
+  const chunkList=cabinet?.bootChunks;
+  if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
+  if(fullyWarmedDiscs.has(cabinet.id))return;
+  fullyWarmedDiscs.add(cabinet.id);
+  import('./emulators/disc-range-cache.js?v=input-and-loading-1')
+    .then(({prewarmDiscRanges})=>prewarmDiscRanges(
+      {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
+      {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
+    .then(result=>{if(result?.warmed)console.info(`Warmed ${result.warmed} more disc ranges for ${cabinet.gameName}.`)})
+    .catch(error=>console.warn('Could not warm the rest of the disc.',error));
 }
 function warmEmulatorCore(cabinet){
   warmStreamingDisc(cabinet);
@@ -1310,7 +1331,7 @@ function launchEmulator(gameFile,options={}){
   const downloadBytes=options.sizeBytes??(typeof gameFile==='string'?activeCabinet?.gameSizeBytes:gameFile?.size),loadingLabel=options.label||activeCabinet?.gameName||'ARCADE GAME';
   const adapter=resolveEmulatorAdapter(activeCabinet);
   if(!adapter){showCabinetMessage('NO EMULATOR IS AVAILABLE FOR THIS GAME.');closeMachine();return}
-  setEmulatorRuntimeActive(true);cvs.style.display='none';document.querySelector('.screen-wrap .scanlines').style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${loadingLabel.toUpperCase()} · ${formatDownloadSize(downloadBytes)}...`;
+  setEmulatorRuntimeActive(true);warmRemainingDisc(activeCabinet);cvs.style.display='none';document.querySelector('.screen-wrap .scanlines').style.display='none';stage.style.display='grid';stage.style.placeItems='center';stage.style.color='#36f9f6';stage.style.fontFamily='monospace';stage.style.letterSpacing='.12em';host.textContent=`LOADING ${loadingLabel.toUpperCase()} · ${formatDownloadSize(downloadBytes)}...`;
   // Backends that take their source over postMessage boot with an empty frame,
   // so no object URL is minted for them: the File itself is handed across.
   const usesSourceHandshake=adapter.usesSourceHandshake===true;

@@ -56,6 +56,18 @@ Two refinements are in place beyond the original scheme:
   Paste that array into the game's registry entry. Absent means guess; present
   means measured.
 
+  Mega Man X7 is measured. It reads **46 chunks — 184 MB — before its title
+  screen**, and they are not at the front of the disc: after the opening five it
+  jumps to 189, 185-188, 168-172, 34-38, and on. Warming the first three chunks
+  of the disc, which is what the guess does, caught three of those forty-six.
+
+  Two numbers from booting it against the live CDN. Cold, it issued 59 range
+  requests, each taking **517-1080 ms** — a 4 MB chunk on a 45 Mbit line — and
+  every one of those is a stall the player sees. With the boot set already on
+  disk, the same boot issued **zero**. That is the whole argument for measuring
+  a title and for warming the rest of its list in the background once it starts:
+  the stalls are not the emulator being slow, they are the disc arriving late.
+
 ### GameCube — blocked, and mostly by design
 
 Gecko's `DiscBuffer.append()` then `.start()` needs the whole image resident in
@@ -131,8 +143,8 @@ TLS handshake at the moment a player is waiting.
 In rough order of payoff:
 
 1. Re-encode the five GameCube images with zstd. Free, halves that queue.
-2. Record `bootChunks` for the three PS2 titles. Turns a 12 MB guess into an
-   exact warm.
+2. Record  for the remaining PS2 titles — Kingdom Hearts, GTA San
+   Andreas, DBZ Tenkaichi 3. Mega Man X7 is done; each is one play session.
 3. Convert `crash-bandicoot` from pbp to CHD.
 4. Convert the two raw PS2 ISOs to CHD.
 5. Only then, if browser GameCube still matters: a streaming disc reader in

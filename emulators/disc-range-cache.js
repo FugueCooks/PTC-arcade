@@ -213,7 +213,12 @@ export function bootChunkOrder(source, { chunks = 3, chunkList = null } = {}) {
     for (const value of chunkList) {
       if (Number.isSafeInteger(value) && value >= 0 && value < available) seen.add(value);
     }
-    if (seen.size) return [...seen];
+    // The budget bounds a measured list too. Mega Man X7 reads 46 chunks before
+    // its title screen — 184 MB — and fetching all of that because somebody
+    // walked past the cabinet is worse than the wait it was meant to remove.
+    // Taking them in the order they were read means the budget buys the ones
+    // the core asks for first.
+    if (seen.size) return [...seen].slice(0, Math.max(0, chunks));
   }
   const count = Math.min(chunks, available);
   return Array.from({ length: Math.max(0, count) }, (_unused, index) => index);

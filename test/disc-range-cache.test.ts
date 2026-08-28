@@ -104,6 +104,10 @@ void test('a measured boot order is warmed instead of the opening chunks', () =>
   // order is kept: the first thing the core asks for is the first on disk.
   assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 3 }), [0, 1, 2]);
   assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 3, chunkList: [0, 41, 7] }), [0, 41, 7]);
+  // The budget bounds a measured list too, taking the earliest reads first.
+  // Mega Man X7 touches 46 chunks before its title screen, and fetching all
+  // 184 MB because somebody walked past the cabinet is worse than the wait.
+  assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 2, chunkList: [0, 41, 7, 9] }), [0, 41]);
   assert.deepEqual(rangeCache.bootChunkOrder(disc, { chunks: 3, chunkList: [4, 4, 4] }), [4]);
   // A list that cannot be trusted falls back rather than requesting bytes the
   // disc does not have.
