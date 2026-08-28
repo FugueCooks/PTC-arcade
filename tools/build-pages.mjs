@@ -25,6 +25,10 @@ for (const file of rootFiles) await copyFile(file);
 for (const directory of sourceDirectories) await copyTree(directory);
 await copyTree('assets', (relative, info) => {
   const normalized = relative.replaceAll('\\', '/');
+  // Import/source drops may contain full disc images and unoptimized model
+  // iterations. Runtime code never references this directory; playable images
+  // are delivered through the configured asset CDN instead.
+  if (normalized.startsWith('assets/incoming/')) return false;
   if (normalized.startsWith('assets/games/') && normalized !== 'assets/games/registry.json') return false;
   if (normalized.startsWith('assets/bios/')) return false;
   // The arcade loads WebP art. The PNG originals are kept in the repo as the
