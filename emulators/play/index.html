@@ -98,6 +98,7 @@
       .ps2-remap-row button.is-listening { color:#071018; background:#ffb000; border-color:#ffb000; }
       #ps2-remap-reset { width:100%; margin-top:.45rem; padding:.3rem; color:#ff9db1; background:transparent; border:1px solid #ff9db155; border-radius:.2rem; font:700 .58rem "Courier New",monospace; cursor:pointer; }
       #ps2-controller-status { color:#fff4a8; }
+      #ps2-diagnostics { margin-top:.45rem; padding-top:.4rem; border-top:1px solid #543386; color:#8ffdfa; font-size:.58rem; line-height:1.7; white-space:pre; }
       #ps2-controller-help strong { color:#36f9f6; }
       #ps2-touch-controls { display:none; }
       body.touch-controls #ps2-touch-controls {
@@ -226,6 +227,7 @@
         <button id="ps2-controller-toggle" type="button" aria-expanded="false">CONTROLS</button>
         <div id="ps2-controller-help" hidden>
           <div id="ps2-controller-status">CONTROLLER: CONNECT OR PRESS A BUTTON</div>
+          <div id="ps2-diagnostics">MEASURING…</div>
           <div><strong>LEFT STICK / D-PAD</strong> MOVE</div>
           <div><strong>RIGHT STICK</strong> CAMERA</div>
           <div><strong>A / B / X / Y</strong> × / ○ / □ / △</div>
@@ -273,8 +275,8 @@
       </section>
     </main>
     <script type="module">
-      import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=ps2-native-1';
-      import { RANGE_CHUNK_BYTES, bootChunkRecorder, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=ps2-native-1';
+      import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=ps2-diag-1';
+      import { RANGE_CHUNK_BYTES, bootChunkRecorder, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=ps2-diag-1';
 
       const statusElement = document.querySelector('#ps2-status');
       let pendingFile = null;
@@ -323,6 +325,44 @@
         Wrapped.prototype = Original.prototype;
         window[name] = Wrapped;
       }
+      /**
+       * A readout of the three things that make a PS2 cabinet feel slow, so a
+       * player can say which one it is.
+       *
+       * Written because the alternative was guessing: the core reports its own
+       * frame rate, but whether a stutter is the emulator, the disc arriving
+       * late, or the page being blocked is invisible from outside, and every
+       * hypothesis so far has been tested against the wrong machine.
+       *
+       * DISC   how much of the game is already local
+       * NET    ranges fetched in the last ten seconds, and their size
+       * BLOCKED  main-thread long tasks in the same window: page-side jank,
+       *          which is a different fault from the core running slowly
+       */
+      const diagnostics = { chunksLocal: 0, chunksTotal: 0, longTasks: [] };
+      if (typeof PerformanceObserver === 'function') {
+        try {
+          new PerformanceObserver(list => {
+            for (const entry of list.getEntries()) diagnostics.longTasks.push({ at: entry.startTime, ms: Math.round(entry.duration) });
+          }).observe({ entryTypes: ['longtask'] });
+        } catch { /* Not every browser reports long tasks; the rest still works. */ }
+      }
+      function renderDiagnostics() {
+        const element = document.querySelector('#ps2-diagnostics');
+        if (!element) return;
+        const since = performance.now() - 10_000;
+        const ranges = performance.getEntriesByType('resource')
+          .filter(entry => entry.startTime > since && /\.(chd|iso|cso|isz|bin)(\?|$)/i.test(entry.name));
+        const megabytes = Math.round(ranges.reduce((total, entry) => total + (entry.transferSize || 0), 0) / 1048576);
+        diagnostics.longTasks = diagnostics.longTasks.filter(task => task.at > since);
+        const worst = diagnostics.longTasks.reduce((most, task) => Math.max(most, task.ms), 0);
+        const disc = diagnostics.chunksTotal
+          ? `${diagnostics.chunksLocal}/${diagnostics.chunksTotal} chunks local (${Math.round(diagnostics.chunksLocal / diagnostics.chunksTotal * 100)}%)`
+          : 'no streamed disc';
+        element.textContent = `DISC     ${disc}\nNET      ${ranges.length} ranges / ${megabytes} MB in 10s\nBLOCKED  ${diagnostics.longTasks.length} long tasks, worst ${worst} ms`;
+      }
+      setInterval(renderDiagnostics, 1000);
+
       const bootChunks = bootChunkRecorder();
       const BOOT_RECORD_MS = 45000;
       // Leave the browser room to breathe rather than filling its quota, wait
@@ -814,6 +854,13 @@
           parent.postMessage({ type: 'arcade:ps2-disc-installed', core: 'ps2-play', name: source.name }, location.origin);
         }
         void installDisc().catch(error => console.warn('The local copy of this disc could not be completed.', error));
+        diagnostics.chunksTotal = totalChunks;
+        void persistentCache.then(cache => {
+          if (!cache) return;
+          const track = () => { diagnostics.chunksLocal = cache.size; };
+          track();
+          setInterval(track, 1000);
+        });
 
         return Object.freeze({
           name: source.name,
