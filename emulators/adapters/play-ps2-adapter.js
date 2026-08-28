@@ -1,6 +1,6 @@
 import { FRAME_SIGNALS, createCapabilities, estimateLoadTimeoutMs, preflightAssets } from '../emulator-adapter.js';
 
-export const PLAY_FRAME_SRC = 'emulators/play/index.html?v=murals-4';
+export const PLAY_FRAME_SRC = 'emulators/play/index.html?v=murals-5';
 
 /**
  * Milestone 11.5 — thin wrapper around the existing experimental Play! PS2 core.
