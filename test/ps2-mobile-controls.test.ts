@@ -27,7 +27,7 @@ void test('touch controls use Play upstream key codes and support simultaneous h
 });
 
 void test('the PS2 frame cache key changes with the shared-input release', () => {
-  assert.match(adapter, /index\.html\?v=ps2-diag-1/);
+  assert.match(adapter, /index\.html\?v=ps2-compositing-1/);
 });
 
 void test('Play PS2 maps a standard physical gamepad and exposes its controls panel', () => {
@@ -124,4 +124,22 @@ void test('the PS2 output is presented on a stable pixel grid', () => {
   // Re-measured when the panel changes and when the core switches video mode.
   assert.match(frame, /new ResizeObserver\(presentAtWholeScale\)/);
   assert.match(frame, /attributeFilter: \['width', 'height'\]/);
+});
+
+void test('the arcade stops compositing itself while a game runs', async () => {
+  // The arcade stops rendering when an emulator starts, but its WebGL canvas
+  // stayed in the page beneath a translucent modal. A non-opaque layer above a
+  // GPU layer means the compositor cannot skip what is underneath, so every
+  // emulator frame was blended over a live canvas — a cost that exists only
+  // inside the arcade, which is exactly why a frame opened on its own always
+  // measured fine and the cabinet still felt bad.
+  const { readFile } = await import('node:fs/promises');
+  const pathModule = await import('node:path');
+  const css = await readFile(pathModule.resolve(process.cwd(), 'style.css'), 'utf8');
+  const arcadeSource = await readFile(pathModule.resolve(process.cwd(), 'arcade.js'), 'utf8');
+
+  assert.match(arcadeSource, /renderer\.domElement\.id='arcade-canvas'/, 'the canvas needs a handle to be hidden by');
+  assert.match(css, /body\.emulator-running #arcade-canvas \{ display:none; \}/);
+  // And the backdrop over it becomes opaque, or hiding the canvas gains nothing.
+  assert.match(css, /body\.emulator-running #machine-modal \{ background:#06030b; \}/);
 });
