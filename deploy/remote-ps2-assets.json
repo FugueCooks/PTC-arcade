@@ -1,5 +1,27 @@
 [
-  {"kind":"game","file":"kingdom-hearts-v1.chd","bytes":2495930070,"sha256":"84be0ca50587ea4f97f3a602897a819df0205cbc3248e9e0e293d284d0fc2fd8"},
-  {"kind":"game","file":"gta-san-andreas-v3.iso","bytes":4517036032,"sha256":"c94e9b16ffab9ab04dbf15109e8716a2bf0a853a246bd3d2641bf354a5068e6d"},
-  {"kind":"game","file":"dbz-tenkaichi-3.iso","bytes":3020816384,"sha256":"93f1f911e9a2bbdf92e5794fc3075ddf3f87db3df4b1cb8cfbb0448721c91172"}
+  {
+    "kind": "game",
+    "file": "kingdom-hearts-v1.chd",
+    "bytes": 2495930070,
+    "sha256": "84be0ca50587ea4f97f3a602897a819df0205cbc3248e9e0e293d284d0fc2fd8"
+  },
+  {
+    "kind": "game",
+    "file": "gta-san-andreas-v3.iso",
+    "bytes": 4517036032,
+    "sha256": "c94e9b16ffab9ab04dbf15109e8716a2bf0a853a246bd3d2641bf354a5068e6d"
+  },
+  {
+    "kind": "game",
+    "file": "dbz-tenkaichi-3.iso",
+    "bytes": 3020816384,
+    "sha256": "93f1f911e9a2bbdf92e5794fc3075ddf3f87db3df4b1cb8cfbb0448721c91172"
+  },
+  {
+    "kind": "game",
+    "system": "ps2",
+    "file": "mega-man-x7.chd",
+    "bytes": 797582980,
+    "sha256": "6592a617fca2981c933f53e6399b9df311588e01cf9c60b19ae20edb5f8f97ca"
+  }
 ]

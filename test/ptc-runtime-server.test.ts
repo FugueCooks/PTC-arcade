@@ -65,7 +65,9 @@ void test('status is readable without pairing, and says nothing about the machin
     const body = await response.json();
     assert.equal(body.runtime, 'ptc-arcade-runtime');
     assert.equal(body.protocolVersion, PROTOCOL_VERSION);
-    assert.deepEqual(body.platforms, ['gamecube']);
+    // PS2 joined GameCube on the native path: the browser core holds 40 f/s
+    // on the demanding titles and no caching changes that.
+    assert.deepEqual(body.platforms, ['gamecube', 'ps2']);
     assert.equal(body.dolphin.present, true);
 
     const serialized = JSON.stringify(body);

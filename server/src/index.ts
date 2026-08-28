@@ -735,7 +735,8 @@ const emulatorAdapterCatalog = [
   { adapterId: 'emulatorjs', platforms: ['psx', 'n64', 'snes'] },
   { adapterId: 'play-ps2', platforms: ['ps2'] },
   { adapterId: 'gecko-gamecube', platforms: ['gamecube'] },
-  { adapterId: 'ptc-runtime-gamecube', platforms: ['gamecube'] }
+  { adapterId: 'ptc-runtime-gamecube', platforms: ['gamecube'] },
+  { adapterId: 'ptc-runtime-ps2', platforms: ['ps2'] }
 ] as const;
 
 /**
@@ -750,12 +751,16 @@ const emulatorAdapterCatalog = [
 const runtimeCatalog = (() => {
   try {
     const registry = JSON.parse(readFileSync(path.resolve(projectRoot, 'assets', 'games', 'registry.json'), 'utf8'));
-    const manifest = JSON.parse(readFileSync(path.resolve(projectRoot, 'deploy', 'remote-gamecube-assets.json'), 'utf8'));
+    // Both native platforms, from the two manifests that carry their digests.
+    const manifest = [
+      ...JSON.parse(readFileSync(path.resolve(projectRoot, 'deploy', 'remote-gamecube-assets.json'), 'utf8')),
+      ...JSON.parse(readFileSync(path.resolve(projectRoot, 'deploy', 'remote-ps2-assets.json'), 'utf8'))
+    ];
     const built = buildRuntimeCatalog({
       games: registry.games,
       manifest,
       assetBaseUrl: publicRuntimeConfig().gameAssetBaseUrl,
-      platforms: ['gamecube']
+      platforms: ['gamecube', 'ps2']
     });
     logger.info('runtime_catalog_built', { entries: built.entries.length, omitted: built.omitted.length });
     return built;

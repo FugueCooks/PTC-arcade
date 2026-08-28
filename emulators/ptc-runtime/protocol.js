@@ -33,9 +33,12 @@ export const ALLOWED_ORIGINS = Object.freeze([
 ]);
 
 /** Platforms the runtime claims. GameCube first; others follow the same path. */
-export const RUNTIME_PLATFORMS = Object.freeze(['gamecube']);
+export const RUNTIME_PLATFORMS = Object.freeze(['gamecube', 'ps2']);
 
 export const RUNTIME_ADAPTER_ID = 'ptc-runtime-gamecube';
+export const RUNTIME_PS2_ADAPTER_ID = 'ptc-runtime-ps2';
+/** Which adapter drives which platform natively. */
+export const RUNTIME_ADAPTER_IDS = Object.freeze({ gamecube: RUNTIME_ADAPTER_ID, ps2: RUNTIME_PS2_ADAPTER_ID });
 
 /** Session lifecycle, as reported to the page. */
 export const SESSION_STATES = Object.freeze({
@@ -77,6 +80,7 @@ export const FAILURE_REASONS = Object.freeze({
   UNKNOWN_GAME: 'unknown-game',
   PLATFORM_UNSUPPORTED: 'platform-unsupported',
   DOLPHIN_MISSING: 'dolphin-missing',
+  PCSX2_MISSING: 'pcsx2-missing',
   DOWNLOAD_FAILED: 'download-failed',
   INTEGRITY_FAILED: 'integrity-failed',
   DISK_FULL: 'disk-full',

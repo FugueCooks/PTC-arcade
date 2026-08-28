@@ -323,3 +323,52 @@ void test('a nonsense role or port is refused rather than defaulted', () => {
     assert.throws(() => dolphin.buildNetplayArgs({ role: 'host', port, nickname: 'X' }), /usable port/);
   }
 });
+
+const pcsx2 = await importBrowserModule<any>('ptc-runtime/src/pcsx2.js');
+const { Pcsx2Launcher } = await importBrowserModule<any>('ptc-runtime/src/pcsx2-launcher.js');
+
+void test('a PS2 launch names the image after the flags end', () => {
+  // `--` closes the flag list, so an image path can never be read as one. The
+  // path came from the catalogue rather than the page, and a path that looks
+  // like a flag is refused anyway: it means something upstream is wrong.
+  const image = String.raw`C:\Library\mega-man-x7.chd`;
+  const args = pcsx2.buildPcsx2Args({ imagePath: image });
+  assert.deepEqual(args, ['-batch', '-fullscreen', '--', image]);
+  assert.deepEqual(pcsx2.buildPcsx2Args({ imagePath: '/library/x7.chd', fullscreen: false }), ['-batch', '--', '/library/x7.chd']);
+  assert.throws(() => pcsx2.buildPcsx2Args({ imagePath: '-fullscreen' }), /would parse as a flag/);
+  assert.throws(() => pcsx2.buildPcsx2Args({ imagePath: '' }), /resolved image path/);
+});
+
+void test('PCSX2 is found where it installs, and a configured path wins', () => {
+  const installed = String.raw`C:\Program Files\PCSX2\pcsx2-qt.exe`;
+  const exists = (candidate: string) => candidate === installed;
+  assert.equal(pcsx2.locatePcsx2({ platform: 'win32', configuredPath: null, exists }).path, installed);
+  // A portable build is not forced into a standard location.
+  const portable = String.raw`D:\portable\pcsx2-qt.exe`;
+  assert.deepEqual(
+    pcsx2.locatePcsx2({ platform: 'win32', configuredPath: portable, exists: () => true }),
+    { ok: true, path: portable, source: 'configured' }
+  );
+  assert.equal(pcsx2.locatePcsx2({ platform: 'win32', configuredPath: String.raw`D:\gone.exe`, exists: () => false }).reason, 'configured-path-missing');
+  assert.equal(pcsx2.locatePcsx2({ platform: 'linux', configuredPath: null, exists: () => false }).reason, 'not-found');
+});
+
+void test('a PS2 launch without PCSX2 installed says which emulator is missing', async () => {
+  let spawned = false;
+  const launcher = new Pcsx2Launcher({ pcsx2Path: null, spawnImpl: () => { spawned = true; return fakeChild(); } });
+  const launched = await launcher.launch({ sessionId: 'c'.repeat(32), imagePath: '/library/x7.chd' });
+  assert.equal(launched.ok, false);
+  assert.equal(launched.reason, 'pcsx2-missing');
+  assert.equal(spawned, false, 'nothing is spawned when the emulator is not there');
+});
+
+void test('both emulators spawn without a shell', async () => {
+  const calls: Array<{ binary: string; options: { shell: boolean } }> = [];
+  const launcher = new Pcsx2Launcher({
+    pcsx2Path: '/usr/bin/pcsx2-qt',
+    spawnImpl: (binary: string, _args: string[], options: { shell: boolean }) => { calls.push({ binary, options }); return fakeChild(); }
+  });
+  await launcher.launch({ sessionId: 'd'.repeat(32), imagePath: '/library/x7.chd' });
+  assert.equal(calls[0].binary, '/usr/bin/pcsx2-qt');
+  assert.equal(calls[0].options.shell, false, 'a shell here would put quoting back in the attack surface');
+});

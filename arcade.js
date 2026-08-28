@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=perf-notes-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=ps2-native-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -1207,7 +1207,7 @@ function openMachine(c){
   if(c.system==='ps2') document.querySelector('#rom-name').textContent='EXPERIMENTAL PLAY! CORE READY — LOAD A LOCAL .ISO, .CHD, .CSO, .ISZ, .BIN, OR .ELF FILE';
   // Walking up to the cabinet is the first moment the answer could matter, and
   // the player has a modal to read before they press anything.
-  if(c.system==='gamecube') window.ARCADE_ENSURE_RUNTIME_DETECTION?.();
+  if(c.system==='gamecube'||c.system==='ps2') window.ARCADE_ENSURE_RUNTIME_DETECTION?.();
   if(c.system==='gamecube') document.querySelector('#rom-name').textContent=c.disabledReason==='desktop-only'
     ?'GAMECUBE GAMES ARE DESKTOP ONLY — ABOUT 1 GB EACH'
     :(c.hostedGame?'EXPERIMENTAL GAMECUBE IMAGE READY — PRESS PLAY':'GECKO READY — LOAD A LOCAL .RVZ, .ISO, OR .GCM IMAGE');
@@ -1275,7 +1275,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=perf-notes-1')
+  import('./emulators/disc-range-cache.js?v=ps2-native-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1295,7 +1295,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=perf-notes-1')
+  import('./emulators/disc-range-cache.js?v=ps2-native-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -1321,6 +1321,9 @@ function resolveEmulatorAdapter(cabinet){
   // player rather than the game: native through the runtime if they have it
   // installed, the browser core if they do not. The registry cannot know which,
   // so the choice is made here from the startup probe.
+  if(cabinet?.system==='ps2'&&window.ARCADE_CHOOSE_PS2_ADAPTER){
+    return window.ARCADE_CHOOSE_PS2_ADAPTER({adapters,detection:window.ARCADE_RUNTIME_DETECTION}).adapter;
+  }
   if(cabinet?.system==='gamecube'&&window.ARCADE_CHOOSE_GAMECUBE_ADAPTER){
     return window.ARCADE_CHOOSE_GAMECUBE_ADAPTER({adapters,detection:window.ARCADE_RUNTIME_DETECTION,isMobileDevice}).adapter;
   }

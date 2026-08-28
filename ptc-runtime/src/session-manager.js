@@ -16,19 +16,37 @@ export class SessionManager {
   #catalog;
   #library;
   #launcher;
+  #launchers;
   #guard;
   #now;
   #log;
   #retention;
 
-  constructor({ catalog, library, launcher, guard, now = () => Date.now(), log = () => {}, retentionMs = 300_000 }) {
+  /**
+    * `launchers` maps a platform to the emulator that runs it. A single
+    * `launcher` is still accepted and used for every platform, which is what
+    * the tests that predate the second emulator pass.
+    */
+  constructor({ catalog, library, launcher, launchers, guard, now = () => Date.now(), log = () => {}, retentionMs = 300_000 }) {
     this.#catalog = catalog;
     this.#library = library;
-    this.#launcher = launcher;
+    this.#launcher = launcher ?? null;
+    this.#launchers = launchers ?? null;
     this.#guard = guard;
     this.#now = now;
     this.#log = log;
     this.#retention = retentionMs;
+  }
+
+  /**
+   * The emulator for a platform. A runtime configured with one launcher uses it
+   * for everything; one configured with a map and missing an entry would
+   * otherwise fail deep inside a launch, so it fails here instead.
+   */
+  #launcherFor(platformId) {
+    const launcher = this.#launchers?.[platformId] ?? this.#launcher;
+    if (!launcher) throw new Error(`No emulator is configured for ${platformId}.`);
+    return launcher;
   }
 
   /**
@@ -48,7 +66,7 @@ export class SessionManager {
     if (!claim.ok) return { ok: false, reason: FAILURE_REASONS.ALREADY_RUNNING };
 
     const session = {
-      sessionId, gameId, cabinetId: cabinetId ?? null,
+      sessionId, gameId, cabinetId: cabinetId ?? null, platformId,
       state: SESSION_STATES.RESOLVING, percent: null, reason: null,
       startedAt: this.#now(), endedAt: null, controller: new AbortController()
     };
@@ -73,7 +91,7 @@ export class SessionManager {
     const session = this.#sessions.get(sessionId);
     if (!session) return { ok: false, reason: 'unknown-session' };
     session.controller.abort();
-    if (session.state === SESSION_STATES.RUNNING) await this.#launcher.terminate?.(sessionId);
+    if (session.state === SESSION_STATES.RUNNING) await this.#launcherFor(session.platformId).terminate?.(sessionId);
     return { ok: true };
   }
 
@@ -152,7 +170,7 @@ export class SessionManager {
       if (!resolved.ok) return this.#fail(session, resolved.reason ?? FAILURE_REASONS.LAUNCH_FAILED);
 
       if (!this.#move(session, SESSION_STATES.LAUNCHING)) return;
-      const launched = await this.#launcher.launch({
+      const launched = await this.#launcherFor(entry.platformId).launch({
         sessionId: session.sessionId, imagePath: resolved.path, gameId: session.gameId
       });
       if (!launched.ok) return this.#fail(session, launched.reason ?? FAILURE_REASONS.LAUNCH_FAILED);

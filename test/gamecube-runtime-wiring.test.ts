@@ -30,10 +30,12 @@ void test('the runtime probe does not run at startup', async () => {
   assert.ok(!beforeHelper.includes('.detect()'), 'nothing may probe before the helper is defined');
 });
 
-void test('the probe starts when a player reaches a GameCube cabinet', () => {
+void test('the probe starts when a player reaches a natively-runnable cabinet', () => {
   // Early enough that the answer is ready before they press play, and late
-  // enough that a player who never touches GameCube never pays for it.
-  assert.match(arcade, /system==='gamecube'\)\s*window\.ARCADE_ENSURE_RUNTIME_DETECTION\?\.\(\)/);
+  // enough that a player who touches neither native platform never pays for it.
+  // PS2 joined GameCube here: without the probe a PS2 cabinet would never learn
+  // the runtime exists and would always fall back to the browser core.
+  assert.match(arcade, /system==='gamecube'\|\|c\.system==='ps2'\)\s*window\.ARCADE_ENSURE_RUNTIME_DETECTION\?\.\(\)/);
 });
 
 void test('GameCube asks who should run it; other platforms are untouched', () => {
@@ -69,4 +71,46 @@ void test('the catalogue route serves what the runtime parser reads', async () =
     assert.match(route, new RegExp(`\\b${field}:`), `the catalogue must carry ${field}`);
   }
   assert.match(route, /games: entries\.map/, 'the runtime parser reads `games`');
+});
+
+void test('PlayStation 2 takes the native path the same way GameCube does', async () => {
+  // The browser core holds about 40 f/s on the demanding PS2 titles, which is
+  // the core's speed rather than anything caching reaches, so a player with the
+  // runtime installed gets PCSX2 instead.
+  const adapter = await readFile(path.join(root, 'emulators/adapters/ptc-runtime-ps2-adapter.js'), 'utf8');
+  assert.match(adapter, /platform: 'ps2'/);
+  assert.match(adapter, /emulatorKey: 'pcsx2Present'/);
+  assert.match(adapter, /fallbackId: 'play-ps2'/);
+  // Gecko needs a desktop; Play! does not, and gating PS2 the same way would
+  // leave a phone with nothing where it previously had a working core.
+  assert.doesNotMatch(adapter, /fallbackNeedsDesktop/);
+
+  // Registered in the browser, chosen by the cabinet, and the probe that
+  // decides it now runs when a player walks up to a PS2 cabinet as well.
+  const bootstrap = await readFile(path.join(root, 'app-bootstrap.js'), 'utf8');
+  assert.match(bootstrap, /register\(createPtcRuntimePs2Adapter\(\)\)/);
+  assert.match(bootstrap, /window\.ARCADE_CHOOSE_PS2_ADAPTER = choosePs2Adapter/);
+  const arcadeSource = await readFile(path.join(root, 'arcade.js'), 'utf8');
+  assert.match(arcadeSource, /c\.system==='gamecube'\|\|c\.system==='ps2'\) window\.ARCADE_ENSURE_RUNTIME_DETECTION/);
+  assert.match(arcadeSource, /cabinet\?\.system==='ps2'&&window\.ARCADE_CHOOSE_PS2_ADAPTER/);
+
+  // And the two emulators are reported separately, because having the runtime
+  // is not having the emulator it drives.
+  const client = await readFile(path.join(root, 'emulators/ptc-runtime/runtime-client.js'), 'utf8');
+  assert.match(client, /pcsx2Present: found\.status\.pcsx2\?\.present === true/);
+});
+
+void test('the runtime protocol itself is written once, not per platform', async () => {
+  // GameCube and PS2 differ in the platform they claim, the emulator they need
+  // and what they fall back to. The frame, the handshake, the message contract
+  // and the timeout are the protocol, and drift between two copies of it is
+  // exactly the failure this repository keeps paying for.
+  const shared = await readFile(path.join(root, 'emulators/adapters/ptc-runtime-adapter.js'), 'utf8');
+  assert.match(shared, /export function createRuntimeAdapter/);
+  assert.match(shared, /export function chooseRuntimeAdapter/);
+  for (const perPlatform of ['ptc-runtime-gamecube-adapter.js', 'ptc-runtime-ps2-adapter.js']) {
+    const source = await readFile(path.join(root, 'emulators/adapters', perPlatform), 'utf8');
+    assert.doesNotMatch(source, /FRAME_MESSAGES\./, `${perPlatform} must not carry its own copy of the message contract`);
+    assert.match(source, /createRuntimeAdapter\(\{/);
+  }
 });

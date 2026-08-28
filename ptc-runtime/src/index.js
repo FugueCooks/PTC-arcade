@@ -5,6 +5,7 @@ import { createInstallSecret } from './security.js';
 import { createRuntimeServer } from './server.js';
 import { DiskLibrary } from './disk-library.js';
 import { DolphinLauncher } from './dolphin-launcher.js';
+import { Pcsx2Launcher } from './pcsx2-launcher.js';
 import { LaunchGuard } from './dolphin.js';
 import { SessionManager } from './session-manager.js';
 import { catalogUrlFor, parseCatalog } from './library.js';
@@ -69,15 +70,25 @@ export async function startRuntime({ origin = ARCADE_ORIGIN, log = consoleLog } 
   if (!discovered.ok) log('dolphin_not_found', { reason: discovered.reason });
   else log('dolphin_found', { path: discovered.path, source: discovered.source });
 
+  // PS2 takes the native path for the same reason GameCube does: the browser
+  // core holds about 40 f/s on the demanding titles, and that is the core's
+  // speed rather than anything caching can reach.
+  const pcsx2 = Pcsx2Launcher.discover({ configuredPath: config.pcsx2Path ?? null, exists: existsSync });
+  if (!pcsx2.ok) log('pcsx2_not_found', { reason: pcsx2.reason });
+  else log('pcsx2_found', { path: pcsx2.path, source: pcsx2.source });
+
   let catalog = await loadCatalog(origin, log);
 
   const sessions = new SessionManager({
     catalog: { get: (gameId) => catalog.get(gameId) },
     library: new DiskLibrary({ root: libraryRoot }),
-    launcher: new DolphinLauncher({
-      dolphinPath: discovered.ok ? discovered.path : null,
-      userDirectory: path.join(home, 'dolphin-user')
-    }),
+    launchers: {
+      gamecube: new DolphinLauncher({
+        dolphinPath: discovered.ok ? discovered.path : null,
+        userDirectory: path.join(home, 'dolphin-user')
+      }),
+      ps2: new Pcsx2Launcher({ pcsx2Path: pcsx2.ok ? pcsx2.path : null })
+    },
     guard: new LaunchGuard(),
     log
   });
@@ -90,6 +101,7 @@ export async function startRuntime({ origin = ARCADE_ORIGIN, log = consoleLog } 
     installSecret: config.installSecret,
     version: VERSION,
     dolphinAvailable: () => discovered.ok,
+    pcsx2Available: () => pcsx2.ok,
     // Printed where only somebody at this machine can read it. That is the
     // entire reason a background page cannot pair itself.
     onPairingCode: (code) => {

@@ -75,6 +75,9 @@ export class RuntimeClient {
       version: found.status.version ?? null,
       platforms: found.status.platforms ?? [],
       dolphinPresent: found.status.dolphin?.present === true,
+      // Named separately from Dolphin: a player can have the runtime and one
+      // emulator but not the other, and the advice differs.
+      pcsx2Present: found.status.pcsx2?.present === true,
       paired: found.status.paired === true && Boolean(this.token)
     };
   }
