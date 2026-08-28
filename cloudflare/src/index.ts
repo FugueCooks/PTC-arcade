@@ -55,7 +55,13 @@ const EAST_WALL_Z: Record<string, number> = { '-16.8': -12, '0': 4.8, '16.8': 21
 // walls between them. The row was shut by the world bound until its barriers
 // came down, so none of this needed enforcing before.
 const TOP_ROW_WALL_Z = -50.4;
-const NORTH_ROOM_X = [-32.4, -10.8];
+const NORTH_ROOM_X = [-10.8];
+// The west end of the top row, plus the same bite of the band, is Silent
+// Hill: fog behind a south wall with one doorway at its centre. Matches
+// arcade.js.
+const SILENT_EAST_X = -21.6;
+const SILENT_SOUTH_Z = -42;
+const SILENT_DOOR_X = -32.4;
 // The east half of the top row, plus a bite of the band, is the Pokemon
 // stadium at 1.5x. Its west wall has no doorway; its south wall has one.
 const POKEMON_WEST_X = 10.8;
@@ -616,10 +622,10 @@ function decodeBase64Url(value: string): Uint8Array {
 }
 function isInsideWorld(x: number, z: number): boolean {
   if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
-  // The Silent Hill room runs deeper than its column, into the west end of the
-  // tournament hall down to its back wall. Matches SILENT_HILL_ANNEX in
-  // arcade.js.
-  return x >= -42.7 && x <= -13.7 && z >= MAX_WORLD_Z && z <= 49.9;
+  // Silent Hill swapped places with Zelda into the top row's west corner, so
+  // the annex it kept in the tournament hall is gone and the world is one
+  // rectangle again. Matches arcade.js.
+  return false;
 }
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
@@ -642,10 +648,6 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inSideColumn) {
     for (const dividerZ of SIDE_ROOM_DIVIDER_Z) {
-      // The west column's end wall is gone: Silent Hill continues into its
-      // annex through where it stood. The Silent Hill annex is wider than the
-      // room now, so the opening spans everything west of its east wall.
-      if (dividerZ === 33.6 && Math.max(fromX, toX) < -13.4) continue;
       // The east column's dividers all stand at their re-planned lines.
       const wallZ = (Math.min(fromX, toX) > 0 && EAST_WALL_Z[String(dividerZ)] !== undefined) ? EAST_WALL_Z[String(dividerZ)] : dividerZ;
       if (Math.abs(toZ - wallZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
@@ -662,11 +664,19 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     && !(inChaoGardenLane(fromX, fromZ) || inChaoGardenLane(toX, toZ))) return true;
   // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
-  if (toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if (toX > SILENT_EAST_X && toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if ((fromZ - TOP_ROW_WALL_Z) * (toZ - TOP_ROW_WALL_Z) < 0) {
     const crossing = (TOP_ROW_WALL_Z - fromZ) / (toZ - fromZ);
     const crossingX = fromX + (toX - fromX) * crossing;
-    if (crossing >= 0 && crossing <= 1 && crossingX < POKEMON_WEST_X && !throughTopRowDoor(crossingX)) return true;
+    if (crossing >= 0 && crossing <= 1 && crossingX > SILENT_EAST_X && crossingX < POKEMON_WEST_X && !throughTopRowDoor(crossingX)) return true;
+  }
+  // Silent Hill's south wall, with the entrance doorway at its centre.
+  const throughSilentDoor = (x: number) => Math.abs(x - SILENT_DOOR_X) < ROOM_DOOR_CLEARANCE;
+  if (toX < SILENT_EAST_X && !throughSilentDoor(toX) && Math.abs(toZ - SILENT_SOUTH_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromZ - SILENT_SOUTH_Z) * (toZ - SILENT_SOUTH_Z) < 0) {
+    const crossing = (SILENT_SOUTH_Z - fromZ) / (toZ - fromZ);
+    const crossingX = fromX + (toX - fromX) * crossing;
+    if (crossing >= 0 && crossing <= 1 && crossingX < SILENT_EAST_X && !throughSilentDoor(crossingX)) return true;
   }
   // The stadium's south wall, with the entrance doorway at its centre.
   const throughStadiumDoor = (x: number) => Math.abs(x - POKEMON_DOOR_X) < ROOM_DOOR_CLEARANCE;
@@ -694,8 +704,9 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
       if (crossing >= 0 && crossing <= 1 && crossingZ < POKEMON_SOUTH_Z) return true;
     }
   }
-  // Inside the top row's west stretch, the wall between its two rooms.
-  if (Math.max(fromZ, toZ) < TOP_ROW_WALL_Z && Math.min(fromX, toX) < POKEMON_WEST_X) {
+  // The wall between Silent Hill and the middle room, running from the back
+  // wall down to Silent Hill's own south wall.
+  if (Math.max(fromZ, toZ) < SILENT_SOUTH_Z && Math.min(fromX, toX) < POKEMON_WEST_X) {
     for (const dividerX of NORTH_ROW_DIVIDER_X) {
       if (Math.abs(toX - dividerX) < PARTITION_COLLISION_HALF_WIDTH) return true;
       if ((fromX - dividerX) * (toX - dividerX) < 0) return true;

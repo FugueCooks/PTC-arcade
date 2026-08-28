@@ -76,9 +76,11 @@ void test('the main room is an open hall beside square console rooms', async () 
   // Four rooms down each side, four across the top, the tournament hall across
   // the bottom: the ring the floorplan draws.
   assert.match(arcade, /const SIDE_ROOM_Z=\[-25\.2,-8\.4,8\.4,25\.2\];/);
-  // Two rooms remain in the top row; the east half of it is the Pokemon
-  // stadium, which has its own south doorway instead of a slot in this list.
-  assert.match(arcade, /const NORTH_ROOM_X=\[-32\.4,-10\.8\];/);
+  // One room remains in the top row: each end of it is a corner block with
+  // its own south doorway instead of a slot in this list — the stadium in
+  // the east, Silent Hill in the west.
+  assert.match(arcade, /const NORTH_ROOM_X=\[-10\.8\];/);
+  assert.match(arcade, /SILENT_EAST_X=-21\.6,SILENT_SOUTH_Z=-42,SILENT_DOOR_X=-32\.4/);
   assert.match(arcade, /POKEMON_WEST_X=10\.8,POKEMON_SOUTH_Z=-42,POKEMON_DOOR_X=27/);
   assert.match(arcade, /MEGAMAN_ROOM_WIDTH=ROOM_SPAN,MEGAMAN_ROOM_DEPTH=ROOM_DEPTH/);
   assert.doesNotMatch(arcade, /MEGAMAN_EXTENSION_WIDTH/);

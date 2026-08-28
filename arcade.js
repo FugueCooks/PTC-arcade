@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=garden-2';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=hill-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -44,18 +44,12 @@ const CABINET_PROMPT_RANGE = 2.25;
 // hall at the bottom and the top row at the top. The rooms off the side walls
 // are gated by their own doorways instead, because three of them are open.
 const WORLD_BOUNDS={minX:-42.7,maxX:42.7,minZ:-66.7,maxZ:33.1};
-// The Silent Hill room runs deeper than its column: it annexes the west end of
-// the tournament hall, so the walkable floor is the main rectangle plus this
-// one. The union is clamped against whichever rectangle the step began in,
-// exactly as the old Mega Man alcove was.
-const SILENT_HILL_ANNEX={minX:-42.7,maxX:-13.7,minZ:33.1,maxZ:49.9};
-function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
-function clampToWorld(previousX,previousZ){
-  const region=insideRegion(SILENT_HILL_ANNEX,previousX,previousZ)?SILENT_HILL_ANNEX:WORLD_BOUNDS;
-  const other=region===SILENT_HILL_ANNEX?WORLD_BOUNDS:SILENT_HILL_ANNEX;
-  if(insideRegion(other,playerPosition.x,playerPosition.z))return;
-  playerPosition.x=Math.max(region.minX,Math.min(region.maxX,playerPosition.x));
-  playerPosition.z=Math.max(region.minZ,Math.min(region.maxZ,playerPosition.z));
+// Silent Hill swapped places with Zelda: it fills the top row's west corner
+// now, mirroring the stadium in the east one, so the annex it kept in the
+// tournament hall is gone and the walkable floor is one rectangle again.
+function clampToWorld(){
+  playerPosition.x=Math.max(WORLD_BOUNDS.minX,Math.min(WORLD_BOUNDS.maxX,playerPosition.x));
+  playerPosition.z=Math.max(WORLD_BOUNDS.minZ,Math.min(WORLD_BOUNDS.maxZ,playerPosition.z));
 }
 const clock = new THREE.Clock(), keys = {}, cabinets = [], cabinetsById = new Map(), raycaster = new THREE.Raycaster(), animatedMixers = [];
 const mobileMove={x:0,y:0};
@@ -171,9 +165,10 @@ const gardenHole=new THREE.Path();
 gardenHole.moveTo(21.6,-25.2);gardenHole.lineTo(43.2,-25.2);gardenHole.lineTo(43.2,-3.6);gardenHole.lineTo(21.6,-3.6);gardenHole.closePath();
 ceilingShape.holes.push(gardenHole);
 // The third hole is Silent Hill's: its facades rise past the ceiling and its
-// sky is the dark the fog fades into. Covers the room and its annex.
+// sky is the dark the fog fades into. The block mirrors the stadium in the
+// top row's west corner, so its hole mirrors the stadium's.
 const silentHillHole=new THREE.Path();
-silentHillHole.moveTo(-43.2,25.2);silentHillHole.lineTo(-21.6,25.2);silentHillHole.lineTo(-21.6,41.8);silentHillHole.lineTo(-13.4,41.8);silentHillHole.lineTo(-13.4,58.6);silentHillHole.lineTo(-43.2,58.6);silentHillHole.closePath();
+silentHillHole.moveTo(-43.2,-58.8);silentHillHole.lineTo(-21.6,-58.8);silentHillHole.lineTo(-21.6,-33.6);silentHillHole.lineTo(-43.2,-33.6);silentHillHole.closePath();
 ceilingShape.holes.push(silentHillHole);
 const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
 ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,5.08,-8.4);scene.add(ceiling);
@@ -282,10 +277,12 @@ const EAST_ROOM_Z=[-22.8,-3.6,13.2,27.6];
 const EAST_WALL_Z={'-16.8':-12,'0':4.8,'16.8':21.6};
 const SIDE_COLUMN_MIN_Z=-33.6,SIDE_COLUMN_MAX_Z=33.6;
 const TOP_BAND_MIN_Z=-50.4,NORTH_ROW_MIN_Z=-67.2;
-// Two rooms remain in the top row's west stretch; the east half of the row,
-// plus a bite of the band below it, is the Pokemon stadium at 1.5x scale.
-const NORTH_ROOM_X=[-32.4,-10.8];
+// One room remains in the top row's middle; each end of the row, plus the
+// same bite of the band below it, is a corner block — the Pokemon stadium at
+// 1.5x in the east, the Silent Hill fog in the west.
+const NORTH_ROOM_X=[-10.8];
 const POKEMON_WEST_X=10.8,POKEMON_SOUTH_Z=-42,POKEMON_DOOR_X=27;
+const SILENT_EAST_X=-21.6,SILENT_SOUTH_Z=-42,SILENT_DOOR_X=-32.4;
 const POKEMON_CENTER_X=27,POKEMON_CENTER_Z=-54.6;
 const TOURNAMENT_MIN_Z=SIDE_COLUMN_MAX_Z,TOURNAMENT_MAX_Z=50.4;
 const MEGAMAN_ROOM_WEST_X=-SHELL_HALF_WIDTH,MEGAMAN_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z=8.4,MEGAMAN_ROOM_WIDTH=ROOM_SPAN,MEGAMAN_ROOM_DEPTH=ROOM_DEPTH,MEGAMAN_ROOM_DOOR_Z=8;
@@ -304,9 +301,13 @@ for(let x=-8;x<=8;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,4.
 box(18,.09,.08,0xd18a52,0,4.78,TOP_BAND_MIN_Z+.23,.85);box(18,.12,.08,0x251447,0,.1,TOP_BAND_MIN_Z+.23,.55);
 // The front wall now ends where the Pokemon room begins; the short closer
 // covers the strip between the counter backdrop and the stadium's west wall.
-for(const [centerX,width] of [[-38.6,9.2],[-21.6,18.4],[10,1.6]])box(width,5,.3,0x15182a,centerX,2.5,TOP_BAND_MIN_Z,.18);
+for(const [centerX,width] of [[-17,9.2],[10,1.6]])box(width,5,.3,0x15182a,centerX,2.5,TOP_BAND_MIN_Z,.18);
 const NORTH_ROW_DIVIDER_X=[-HALL_HALF_WIDTH];
-for(const dividerX of NORTH_ROW_DIVIDER_X)box(.3,5,ROOM_DEPTH,0x11182c,dividerX,2.5,(NORTH_ROW_MIN_Z+TOP_BAND_MIN_Z)/2,.06);
+for(const dividerX of NORTH_ROW_DIVIDER_X)box(.3,5,25.2,0x11182c,dividerX,2.5,-54.6,.06);
+// Silent Hill's own shell, mirroring the stadium's: a south wall into the
+// band with the entrance doorway at its centre.
+box(9.2,5,.3,0x11182c,-38.6,2.5,SILENT_SOUTH_Z,.06);
+box(9.2,5,.3,0x11182c,-26.2,2.5,SILENT_SOUTH_Z,.06);
 // The stadium's own shell: a full-height west wall the length of the room, and
 // a south wall into the band with the entrance doorway at its centre.
 box(.3,5,25.2,0x11182c,POKEMON_WEST_X,2.5,POKEMON_CENTER_Z,.06);
@@ -598,7 +599,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-garden-2');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-hill-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -789,28 +790,29 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=garden-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=hill-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=garden-2',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=hill-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=garden-2',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=hill-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
-// Zelda takes the top row's west room: the Wind Waker ensemble facing the
-// door, Ocarina and Tears back to back on the divider, and the Breath of the
-// Wild vista along the outer shell wall.
+// Zelda swapped places with Silent Hill: it hangs in the west column's bottom
+// room now — the Wind Waker ensemble on the back wall, the vista along the
+// shell, and the divider pair on the north wall at its own width rather than
+// stretched to a wall it was not cut for.
 hangMuralWalls([
-  {file:'zelda-room-mural.webp?v=zelda-1',span:21.3,at:new THREE.Vector3(-32.4,2.5,-66.94),
-    backing:()=>box(21.3,5,.08,0x050711,-32.4,2.5,-67.01,.12),
-    rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:5},
-  {file:'zelda-room-mural-2.webp?v=zelda-1',span:16.4,at:new THREE.Vector3(-21.86,2.5,-58.8),
-    backing:()=>box(.08,5,16.4,0x050711,-21.79,2.5,-58.8,.12),
-    rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-  {file:'zelda-room-mural-3.webp?v=zelda-1',span:16.5,at:new THREE.Vector3(-42.94,2.5,-58.8),
-    backing:()=>box(.08,5,16.5,0x050711,-43.01,2.5,-58.8,.12),
+  {file:'zelda-room-mural.webp?v=zelda-1',span:21.3,at:new THREE.Vector3(-32.4,2.5,33.34),
+    backing:()=>box(21.3,5,.08,0x050711,-32.4,2.5,33.41,.12),
+    rotation:Math.PI,normal:new THREE.Vector3(0,0,-1),along:new THREE.Vector3(-1,0,0),count:5},
+  {file:'zelda-room-mural-2.webp?v=zelda-1',span:16.4,at:new THREE.Vector3(-32.4,2.5,17.12),
+    backing:()=>box(16.4,5,.08,0x050711,-32.4,2.5,16.99,.12),
+    rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:4},
+  {file:'zelda-room-mural-3.webp?v=zelda-1',span:16.5,at:new THREE.Vector3(-42.88,2.5,25.2),
+    backing:()=>box(.08,5,16.5,0x050711,-43.01,2.5,25.2,.12),
     rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
 // Pokemon, in the east column: the bowl itself, not flat murals — the band and
@@ -1089,7 +1091,7 @@ function installChaoGardenProps(){
 /**
  * The Silent Hill room: an empty city block in dense fog.
  *
- * A wet street runs the depth of the room and on into its annex, walled by
+ * A wet street runs the depth of the room, walled by
  * dark brick facades that rise past the building's ceiling through their own
  * hole — above them there is only the dark the fog fades into. An abandoned
  * car sits mid-street, dead streetlamps and poles line the kerbs, and the fog
@@ -1100,7 +1102,7 @@ function installChaoGardenProps(){
  * stand, with the monsters hidden along the way.
  */
 function buildSilentHillBlock(){
-  const CX=-32.4,MIN_Z=17,MAX_Z=49.8,CZ=(MIN_Z+MAX_Z)/2;
+  const CX=-32.4,MIN_Z=-67,MAX_Z=-42.2,CZ=(MIN_Z+MAX_Z)/2;
   // The street: cracked asphalt with a faded double centre line.
   const roadCanvas=document.createElement('canvas');roadCanvas.width=256;roadCanvas.height=512;
   const rc=roadCanvas.getContext('2d');
@@ -1135,11 +1137,11 @@ function buildSilentHillBlock(){
   const brickTexture=new THREE.CanvasTexture(brickCanvas);brickTexture.colorSpace=THREE.SRGBColorSpace;
   const facadeMaterial=new THREE.MeshStandardMaterial({map:brickTexture,roughness:.9,metalness:.05,emissive:0x11130f,emissiveIntensity:.5});
   for(const [x,z,w,h,d] of [
-    [-42.4,21.5,1.6,9.5,8],[-42.4,30,1.6,11,8.5],[-42.4,38,1.6,8.5,6],[-42.4,45.5,1.6,10,7],
-    [-22.5,21,1.6,10.5,7.5],[-22.5,29.5,1.6,8.5,8],
-    [-14.3,37.5,1.6,9.5,6],[-14.3,45.5,1.6,11,7],
-    [-27,49.3,9,10.5,1.2],[-37.5,49.3,9,9,1.2],[-18.5,49.3,7,8.5,1.2],
-    [-20,34.5,3,7.5,1.4]
+    [-42.4,-64.5,1.6,9.5,5],[-42.4,-58,1.6,11,6.5],[-42.4,-51,1.6,8.5,6],[-42.4,-44.8,1.6,10,4.6],
+    [-22.5,-64.5,1.6,10.5,5],[-22.5,-57.5,1.6,8.5,7],
+    [-22.5,-50.5,1.6,9.5,6],[-22.5,-44.8,1.6,11,4.6],
+    [-27,-66.4,9,10.5,1.2],[-37.5,-66.4,9,9,1.2],
+    [-24.6,-53.8,3,7.5,1.4]
   ]){
     const facade=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),facadeMaterial);
     facade.position.set(x,h/2,z);scene.add(facade);
@@ -1155,7 +1157,7 @@ function buildSilentHillBlock(){
   }
   // Dead streetlamps and poles: silhouettes for the fog to swallow.
   const ironwork=new THREE.MeshStandardMaterial({color:0x17191c,roughness:.7,metalness:.5});
-  for(const [x,z,lamp] of [[-41.2,20,true],[-41.2,29,true],[-23.7,25,true],[-41.2,38,true],[-41.2,46,true],[-15.2,40,true],[-15.2,47,true],[-23.7,18.5,false],[-41.2,33.5,false],[-15.2,36,false]]){
+  for(const [x,z,lamp] of [[-41.2,-64,true],[-41.2,-55,true],[-23.7,-61,true],[-41.2,-46,true],[-23.7,-44.5,true],[-23.7,-52,true],[-30.4,-65.8,true],[-23.7,-66,false],[-41.2,-50.5,false],[-34.6,-43.4,false]]){
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,lamp?3.6:4.6,7),ironwork);
     pole.position.set(x,(lamp?3.6:4.6)/2,z);scene.add(pole);
     if(lamp){
@@ -1178,14 +1180,14 @@ function buildSilentHillBlock(){
   const fogGeometry=new THREE.PlaneGeometry(7,4.2);
   for(let i=0;i<40;i++){
     const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
-    sheet.position.set(CX+((i*73)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+1+((i*127)%310)/10);
+    sheet.position.set(CX+((i*73)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+1+((i*127)%230)/10);
     sheet.rotation.y=(i*2.399)%Math.PI;
     sheet.renderOrder=3;scene.add(sheet);
   }
   // The back lot drowns deepest: its own sheets, wider than the street's.
   for(let i=0;i<14;i++){
     const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
-    sheet.position.set(-27+((i*67)%250)/10-6,(i%3)*1.1+1.2,36+((i*113)%130)/10);
+    sheet.position.set(CX+((i*67)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+.6+((i*113)%60)/10);
     sheet.rotation.y=(i*1.93)%Math.PI;
     sheet.renderOrder=3;scene.add(sheet);
   }
@@ -1193,7 +1195,7 @@ function buildSilentHillBlock(){
   for(let i=0;i<16;i++){
     const mist=new THREE.Mesh(mistGeometry,fogMaterial);
     mist.rotation.x=-Math.PI/2;mist.rotation.z=(i*1.7)%Math.PI;
-    mist.position.set(CX+((i*89)%220)/10-8,.5+(i%2)*.35,MIN_Z+2+((i*151)%290)/10);
+    mist.position.set(CX+((i*89)%220)/10-8,.5+(i%2)*.35,MIN_Z+2+((i*151)%220)/10);
     mist.renderOrder=3;scene.add(mist);
   }
   // The red arrows, painted rough on the asphalt: the trail from the doorway
@@ -1208,34 +1210,34 @@ function buildSilentHillBlock(){
   ac.globalCompositeOperation='source-over';ac.globalAlpha=1;
   const arrowTexture=new THREE.CanvasTexture(arrowCanvas);arrowTexture.colorSpace=THREE.SRGBColorSpace;
   const arrowMaterial=new THREE.MeshBasicMaterial({map:arrowTexture,transparent:true,opacity:.85,depthWrite:false});
-  const trail=[[-23.4,25.2],[-26.6,24.4],[-30.2,25.6],[-33.6,27.4],[-35.4,30.4],[-34.2,33.8],[-32.4,36.8],[-30.4,40.4],[-27.2,43.6],[-23.2,45.6],[-19.6,46.9]];
+  const trail=[[-32.4,-43.4],[-33.9,-46.2],[-35.7,-49],[-36.3,-52.2],[-34.9,-55.2],[-32.5,-57.6],[-30,-59.8],[-28.2,-62.2],[-28.8,-64.8]];
   for(let i=0;i<trail.length;i++){
     const [ax,az]=trail[i];
-    const next=trail[i+1]??[-16.8,47.8];
+    const next=trail[i+1]??[-29.2,-66.2];
     const arrow=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.86),arrowMaterial);
     arrow.rotation.x=-Math.PI/2;
     arrow.rotation.z=-Math.atan2(next[1]-az,next[0]-ax);
     arrow.position.set(ax,.045,az);arrow.renderOrder=4;scene.add(arrow);
   }
   // What light there is: two sickly grey-green pools on the managed budget.
-  for(const [x,z] of [[-31,24],[-33.5,35],[-24,45]]){
+  for(const [x,z] of [[-31.5,-45],[-35,-55],[-29,-63]]){
     const pall=new THREE.PointLight(0xaab8a4,2.6,13,2);
     pall.position.set(x,3.2,z);scene.add(pall);managedSceneLights.push(pall);
   }
   // A second car, nose-in at the back lot, and faded parking bays beside it —
   // the lot is where the machines will stand, at the end of the arrow trail.
   const paint2=new THREE.MeshStandardMaterial({color:0x3a3330,roughness:.5,metalness:.4});
-  const body2=new THREE.Mesh(new THREE.BoxGeometry(1.05,.5,2.3),paint2);body2.position.set(-20.6,.42,44.6);body2.rotation.y=-1.2;scene.add(body2);
-  const cabin2=new THREE.Mesh(new THREE.BoxGeometry(.95,.42,1.25),paint2);cabin2.position.set(-20.72,.85,44.55);cabin2.rotation.y=-1.2;scene.add(cabin2);
+  const body2=new THREE.Mesh(new THREE.BoxGeometry(1.05,.5,2.3),paint2);body2.position.set(-29.5,.42,-63.5);body2.rotation.y=-1.2;scene.add(body2);
+  const cabin2=new THREE.Mesh(new THREE.BoxGeometry(.95,.42,1.25),paint2);cabin2.position.set(-29.62,.85,-63.45);cabin2.rotation.y=-1.2;scene.add(cabin2);
   const bay=new THREE.MeshBasicMaterial({color:0x9aa0a4,transparent:true,opacity:.16,depthWrite:false});
   for(let i=0;i<5;i++){
     const line=new THREE.Mesh(new THREE.PlaneGeometry(.1,4.4),bay);
     line.rotation.x=-Math.PI/2;line.rotation.z=1.2;
-    line.position.set(-25+i*2.4,.03,45.6);scene.add(line);
+    line.position.set(-38.5+i*2.4,.03,-63.9);scene.add(line);
   }
   // Sagging wires between the poles, for the fog to hang from.
   const wireMaterial=new THREE.MeshBasicMaterial({color:0x0c0e10});
-  for(const [x1,z1,x2,z2] of [[-41.2,20,-23.7,25],[-41.2,29,-41.2,38],[-15.2,40,-15.2,47]]){
+  for(const [x1,z1,x2,z2] of [[-41.2,-64,-23.7,-61],[-41.2,-55,-41.2,-46],[-23.7,-52,-23.7,-44.5]]){
     const length=Math.hypot(x2-x1,z2-z1);
     const wire=new THREE.Mesh(new THREE.BoxGeometry(.025,.025,length),wireMaterial);
     wire.position.set((x1+x2)/2,3.32,(z1+z2)/2);
@@ -1288,24 +1290,20 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   const west=roomX<0;
   const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,SIDE_COLUMN_DEPTH),expansionFloorMaterial);
   columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,SIDE_COLUMN_CENTER_Z);columnFloor.receiveShadow=true;scene.add(columnFloor);
-  // The west column's ceiling stops at the Silent Hill room, whose facades rise
-  // through the hole cut for them; and that room's end wall is gone, because it
-  // continues into its annex.
-  if(west)box(ROOM_SPAN,.12,50.4,0x090b18,roomX,5.08,-8.4,.08);
+  // Both columns run under a plate again in full: Silent Hill left the west
+  // column for the top row's corner, and Zelda's murals took its old room.
+  if(west)box(ROOM_SPAN,.12,67.2,0x090b18,roomX,5.08,0,.08);
   // The east column's plate stops at the garden too: its sky dome was being
   // sliced at ceiling height by a lid nothing had removed.
   else box(ROOM_SPAN,.12,45.6,0x090b18,roomX,5.08,10.8,.08);
   for(const wallZ of [SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z]){
-    if(west&&wallZ===SIDE_COLUMN_MAX_Z)continue;
     // The east column's dividers all moved with the garden's growth: full
     // rooms follow it, and the bottom room absorbs the squeeze.
     const wallAt=(!west&&EAST_WALL_Z[String(wallZ)]!==undefined)?EAST_WALL_Z[String(wallZ)]:wallZ;
     const wall=box(ROOM_SPAN,5,.3,0x11182c,roomX,2.5,wallAt,.05);wall.receiveShadow=true;
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
-    // Silent Hill and the Chao Garden light themselves — fog and lamps in one,
-    // suns and sky in the other — so neither takes the ring's troffers.
-    if(west&&index===3)return;
+    // The Chao Garden lights itself — suns and sky — so it takes no troffers.
     if(!west&&index===0)return;
     const at=west?centerZ:EAST_ROOM_Z[index];
     for(let z=at-6;z<=at+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
@@ -1316,13 +1314,13 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
 const NORTH_ROW_CENTER_Z=(NORTH_ROW_MIN_Z+TOP_BAND_MIN_Z)/2,TOP_BAND_CENTER_Z=(TOP_BAND_MIN_Z+SIDE_COLUMN_MIN_Z)/2;
 const northRowFloor=new THREE.Mesh(new THREE.PlaneGeometry(SHELL_HALF_WIDTH*2,ROOM_DEPTH),expansionFloorMaterial);
 northRowFloor.rotation.x=-Math.PI/2;northRowFloor.position.set(0,.002,NORTH_ROW_CENTER_Z);northRowFloor.receiveShadow=true;scene.add(northRowFloor);
-box(54,.12,ROOM_DEPTH,0x090b18,-16.2,5.08,NORTH_ROW_CENTER_Z,.08);
-// The west top-row room keeps its size; the middle one absorbed the strip the
-// stadium's wall cut off its neighbour, so its rig is wider. The stadium needs
-// no rig: its bowl carries its own light.
-lightRoom(-32.4,NORTH_ROW_CENTER_Z,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[0]);
+box(32.4,.12,ROOM_DEPTH,0x090b18,-5.4,5.08,NORTH_ROW_CENTER_Z,.08);
+// The middle top-row room absorbed the strip the stadium's wall cut off its
+// neighbour, so its rig is wider. Neither corner needs one — the stadium's
+// bowl carries its own light and Silent Hill is lit by its own palls — and
+// the band's rig stops where the fog begins.
 lightRoom(-5.4,NORTH_ROW_CENTER_Z,32.4,ROOM_DEPTH,SIDE_ROOM_ACCENTS[1]);
-lightRoom(0,TOP_BAND_CENTER_Z,SHELL_HALF_WIDTH*2,ROOM_DEPTH,0xffb066);
+lightRoom(10.8,TOP_BAND_CENTER_Z,64.8,ROOM_DEPTH,0xffb066);
 // The hall. Its ceiling still carried the grid laid for the old 28 x 34 hub,
 // which is a third of the floor it has to light now.
 for(const bandZ of [-25.2,-8.4,8.4,25.2])lightRoom(0,bandZ,HALL_HALF_WIDTH*2,ROOM_DEPTH,bandZ<0?0xffb066:0x4aa8ff);
@@ -1335,20 +1333,15 @@ const GAMECUBE_ROOM_CENTER_X=ANNEX_ROOM_CENTER_X,GAMECUBE_ROOM_CENTER_Z=PS2_ROOM
 const TOURNAMENT_ROOM_WIDTH=SHELL_HALF_WIDTH*2,TOURNAMENT_ROOM_DEPTH=ROOM_DEPTH,TOURNAMENT_ROOM_CENTER_Z=(TOURNAMENT_MIN_Z+TOURNAMENT_MAX_Z)/2,TOURNAMENT_ROOM_BACK_Z=TOURNAMENT_MAX_Z,TOURNAMENT_ROOM_DOOR_Z=TOURNAMENT_MIN_Z;
 const tournamentFloorMaterial=(()=>{const map=floorTextures.map.clone(),roughnessMap=floorTextures.roughnessMap.clone();map.needsUpdate=roughnessMap.needsUpdate=true;map.repeat.set(14,3.5);roughnessMap.repeat.set(14,3.5);return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12})})();
 const tournamentFloor=new THREE.Mesh(new THREE.PlaneGeometry(TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH),tournamentFloorMaterial);tournamentFloor.rotation.x=-Math.PI/2;tournamentFloor.position.set(0,.002,TOURNAMENT_ROOM_CENTER_Z);tournamentFloor.receiveShadow=true;scene.add(tournamentFloor);
-// The hall's ceiling starts east of the Silent Hill annex.
-const tournamentCeiling=box(56.6,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,14.9,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
+// The annex went with Silent Hill, so the hall's ceiling is full width again.
+const tournamentCeiling=box(86.4,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,0,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
 box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,-SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);
 box(TOURNAMENT_ROOM_WIDTH,5,.3,0x11182c,0,2.5,TOURNAMENT_ROOM_BACK_Z,.06);
 // The hub's front wall, either side of the one doorway. It reaches the
 // partition walls rather than stopping short of them, which used to leave a two
 // metre hole at each end that only the old room's narrower side walls covered.
-// West of the Silent Hill annex the front wall is gone — the block runs all
-// the way to the hall's back wall — so the west segment covers only the
-// stretch between the annex and the doorway.
-box(11.8,5,.3,0x11182c,-7.5,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
+box(SHELL_HALF_WIDTH-ROOM_DOOR_HALF_WIDTH,5,.3,0x11182c,-(SHELL_HALF_WIDTH+ROOM_DOOR_HALF_WIDTH)/2,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
 box(SHELL_HALF_WIDTH-ROOM_DOOR_HALF_WIDTH,5,.3,0x11182c,(SHELL_HALF_WIDTH+ROOM_DOOR_HALF_WIDTH)/2,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
-// The wall between the block's back lot and what remains of the hall.
-box(.3,5,16.8,0x11182c,-13.4,2.5,42,.06);
 for(let x=-40;x<=40;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,TOURNAMENT_ROOM_BACK_Z-.19,.75);
 lightRoom(0,TOURNAMENT_ROOM_CENTER_Z,TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH,0xffb066);
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
@@ -1885,6 +1878,7 @@ for(const doorZ of OPEN_DOOR_Z_WEST)lightThreshold(PLAYSTATION_WALL_X,doorZ,fals
 for(const doorZ of OPEN_DOOR_Z_EAST)lightThreshold(N64_WALL_X,doorZ,false);
 for(const doorX of NORTH_ROOM_X)lightThreshold(doorX,TOP_BAND_MIN_Z,true);
 lightThreshold(POKEMON_DOOR_X,POKEMON_SOUTH_Z,true);
+lightThreshold(SILENT_DOOR_X,SILENT_SOUTH_Z,true);
 lightThreshold(0,TOURNAMENT_MIN_Z,true);
 // The hub reads as a very large dark floor with nothing above eye level, so the
 // lounge gets a centrepiece: counter-rotating light rings inside a soft beam
@@ -2327,7 +2321,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=garden-2')
+  import('./emulators/disc-range-cache.js?v=hill-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2347,7 +2341,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=garden-2')
+  import('./emulators/disc-range-cache.js?v=hill-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2567,8 +2561,6 @@ const SIDE_ROOM_DIVIDER_Z=[SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUM
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
   for(const dividerZ of SIDE_ROOM_DIVIDER_Z){
-    // The west column's end wall is gone: Silent Hill continues into its annex.
-    if(dividerZ===SIDE_COLUMN_MAX_Z&&playerPosition.x<-13.4)continue;
     // The east column's dividers all stand at their re-planned lines.
     const wallZ=(playerPosition.x>0&&EAST_WALL_Z[String(dividerZ)]!==undefined)?EAST_WALL_Z[String(dividerZ)]:dividerZ;
     if(wallZ!==dividerZ){
@@ -2656,8 +2648,17 @@ function resolveTopRowCollisions(previousX,previousZ){
       return;
     }
   }
-  // The front wall at z=-50.4 ends where the stadium begins.
-  if(playerPosition.x<POKEMON_WEST_X){
+  // The front wall at z=-50.4 runs between the two corner blocks: Silent Hill
+  // took its west stretch the way the stadium took its east one.
+  if(playerPosition.x<SILENT_EAST_X){
+    // Silent Hill's south wall, with the entrance at its centre.
+    const northFace=SILENT_SOUTH_Z-wallGap,southFace=SILENT_SOUTH_Z+wallGap;
+    if(playerPosition.z>northFace&&playerPosition.z<southFace
+      &&Math.abs(playerPosition.x-SILENT_DOOR_X)>=ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS){
+      if(previousZ<SILENT_SOUTH_Z)playerPosition.z=northFace;else playerPosition.z=southFace;
+      return;
+    }
+  }else if(playerPosition.x<POKEMON_WEST_X){
     const northFace=TOP_BAND_MIN_Z-wallGap,southFace=TOP_BAND_MIN_Z+wallGap;
     if(playerPosition.z>northFace&&playerPosition.z<southFace
       &&!NORTH_ROOM_X.some(doorX=>Math.abs(playerPosition.x-doorX)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS)){
@@ -2682,7 +2683,7 @@ function resolveTopRowCollisions(previousX,previousZ){
       return;
     }
   }
-  if(playerPosition.z>=TOP_BAND_MIN_Z||playerPosition.x>=POKEMON_WEST_X)return;
+  if(playerPosition.z>=SILENT_SOUTH_Z||playerPosition.x>=POKEMON_WEST_X)return;
   for(const dividerX of NORTH_ROW_DIVIDER_X){
     const westFace=dividerX-wallGap,eastFace=dividerX+wallGap;
     if(playerPosition.x<=westFace||playerPosition.x>=eastFace)continue;

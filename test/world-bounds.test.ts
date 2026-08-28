@@ -52,28 +52,20 @@ void test('the server, the worker and the client agree on where the world ends',
   }
 });
 
-void test('the floor is the main rectangle plus the Silent Hill annex, in all three copies', () => {
-  // The Silent Hill room runs deeper than its column, into the west end of the
-  // tournament hall, so the walkable floor is a union of two rectangles again.
-  // A second rectangle that exists in one copy and not another is the exact
-  // drift this file exists to catch: the symptom is not a wall but a player
-  // who simply stops walking, or walks somewhere the server then refuses.
+void test('the floor is one rectangle again, in all three copies', () => {
+  // Silent Hill moved to the top row's west corner, taking with it the annex
+  // it kept in the tournament hall. A region that survives in one copy and
+  // not another is the exact drift this file exists to catch: the symptom is
+  // not a wall but a player who simply stops walking, or walks somewhere the
+  // server then refuses.
   for (const source of [server, worker, client]) {
     assert.ok(!/MEGAMAN_ALCOVE/.test(source), 'the retired alcove must not come back by that name');
+    assert.ok(!/SILENT_HILL_ANNEX/.test(source), 'the retired annex must not come back by that name');
+    assert.ok(!source.includes('z <= 49.9'), 'no copy may still walk into the tournament hall west end');
   }
   assert.equal(clientBounds.minX, -42.7);
   assert.equal(clientBounds.maxX, 42.7);
   assert.equal(clientBounds.minX, -clientBounds.maxX, 'the main rectangle stays symmetric');
-
-  const clientAnnex = clientRegion('SILENT_HILL_ANNEX');
-  assert.deepEqual(clientAnnex, { minX: -42.7, maxX: -13.7, minZ: 33.1, maxZ: 49.9 });
-  // Both authorities carry the same numbers, keyed off the main rectangle's
-  // maxZ so the two regions cannot drift apart at the seam.
-  for (const [name, source] of [['server', server], ['worker', worker]] as const) {
-    assert.ok(source.includes('return x >= -42.7 && x <= -13.7 && z >= MAX_WORLD_Z && z <= 49.9;'),
-      `${name} must enforce the Silent Hill annex`);
-  }
-  assert.equal(clientAnnex.minZ, clientBounds.maxZ, 'the annex must meet the main rectangle');
 });
 
 /** Rooms sealed behind a construction barrier, read from the scene itself. */
