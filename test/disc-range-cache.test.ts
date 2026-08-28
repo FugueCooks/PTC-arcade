@@ -228,7 +228,15 @@ void test('a streaming disc fills itself in while the game is being played', asy
   const cached = frame.slice(frame.indexOf('function cachedChunk(index)'), frame.indexOf('function cachedChunk(index)') + 400);
   assert.doesNotMatch(cached, /lastDemandRead = performance\.now\(\)/, 'a cache hit is not pressure to yield to');
   const load = frame.slice(frame.indexOf('async function loadChunk('), frame.indexOf('function cachedChunk(index)'));
-  assert.match(load, /lastDemandRead = performance\.now\(\);\s*const buffer = await fetchDiscRange/);
+  assert.match(load, /lastDemandRead = performance\.now\(\);/);
+  // A demand read cancels the speculative fetch outright rather than waiting
+  // behind it. Backing off only after one starts is too late: on a 4.5 MB/s
+  // line a 4 MB install chunk is most of a second of the player waiting, and
+  // measured cold, the install eating the link took the core to 14 f/s.
+  assert.match(load, /installFetch\?\.abort\(\);/);
+  assert.match(load, /fetchDiscRange\(source\.url, start, end, \{ priority: 'high' \}\)/);
+  assert.match(install, /priority: 'low'/, 'the install must queue behind the reads a player is waiting on');
+  assert.match(install, /if \(controller\.signal\.aborted\) \{ index -= 1; continue; \}/, 'a cancelled chunk waits, it does not end the install');
 
   // The store has to be able to hold the whole disc, or it evicts the start of
   // the game to make room for the end and never finishes.

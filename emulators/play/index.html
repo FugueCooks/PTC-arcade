@@ -254,7 +254,7 @@
       // install, and pause between chunks so the connection is mostly the
       // game's.
       const INSTALL_HEADROOM_BYTES = 512 * 1024 * 1024;
-      const INSTALL_QUIET_MS = 900;
+      const INSTALL_QUIET_MS = 2500;
       const INSTALL_PAUSE_MS = 400;
       const activeGamepadKeys = new Set();
       const CONTROLLER_IDLE_STATUS = 'CONTROLLER: CONNECT OR PRESS A BUTTON';
@@ -441,6 +441,11 @@
         // the way while that is recent: a background fetch that delays a demand
         // read has made the game worse to play in order to make it faster later.
         let lastDemandRead = 0;
+        // The installer's current fetch, so a read the core is waiting on can
+        // cancel it outright. Backing off only *after* a demand read starts is
+        // too late: on a 4.5 MB/s line a speculative 4 MB chunk is most of a
+        // second, and the read the player is waiting on queues behind it.
+        let installFetch = null;
 
         async function loadChunk(index, start, end) {
           const persistent = await persistentCache;
@@ -451,7 +456,8 @@
           // the whole of a session: during play almost every read is a hit, and
           // it never saw a quiet moment to take a chunk in.
           lastDemandRead = performance.now();
-          const buffer = await fetchDiscRange(source.url, start, end);
+          installFetch?.abort();
+          const buffer = await fetchDiscRange(source.url, start, end, { priority: 'high' });
           if (persistent && !persistentCacheFailed && !persistentWrites.has(index)) {
             persistentWrites.add(index);
             void persistent.put(index, buffer).catch(error => {
@@ -545,12 +551,19 @@
               await new Promise(resolve => setTimeout(resolve, INSTALL_QUIET_MS));
             }
             const start = index * chunkSize, end = Math.min(source.size, start + chunkSize);
+            const controller = new AbortController();
+            installFetch = controller;
             try {
-              await persistent.put(index, await fetchDiscRange(source.url, start, end, { attempts: 2 }));
+              await persistent.put(index, await fetchDiscRange(source.url, start, end, { attempts: 2, signal: controller.signal, priority: 'low' }));
               installed += 1;
             } catch (error) {
+              // Cancelled to get out of the core's way: that chunk simply waits
+              // for the next quiet moment rather than ending the install.
+              if (controller.signal.aborted) { index -= 1; continue; }
               console.warn('Stopped filling the local copy of this disc.', error);
               return;
+            } finally {
+              if (installFetch === controller) installFetch = null;
             }
             await new Promise(resolve => setTimeout(resolve, INSTALL_PAUSE_MS));
           }

@@ -31,7 +31,7 @@ export function discCacheKey(source) {
  * is a failure: a proxy answering with the whole file would otherwise be copied
  * into the cache under a chunk's name and hand the core the wrong sectors.
  */
-export async function fetchDiscRange(url, start, end, { attempts = 5, timeoutMs = 20000, signal } = {}) {
+export async function fetchDiscRange(url, start, end, { attempts = 5, timeoutMs = 20000, signal, priority } = {}) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     if (signal?.aborted) throw signal.reason ?? new Error('Disc range request aborted.');
@@ -43,7 +43,11 @@ export async function fetchDiscRange(url, start, end, { attempts = 5, timeoutMs 
       const response = await fetch(url, {
         headers: { Range: `bytes=${start}-${end - 1}` },
         credentials: 'omit',
-        signal: controller.signal
+        signal: controller.signal,
+        // Chrome schedules a low-priority range behind the ones the core is
+        // waiting on. Ignored where it is not supported, which is fine: the
+        // caller still aborts a speculative read when a demand read arrives.
+        ...(priority ? { priority } : {})
       });
       if (response.status !== 206) throw new Error(`Remote disc range request failed (${response.status}).`);
       const expectedRange = `bytes ${start}-${end - 1}/`;
@@ -172,7 +176,7 @@ export async function openDiscRangeCache(source, maxChunks, { pinnedChunks = 0 }
  * Deliberately quiet: it resolves rather than throwing, because nothing the
  * player asked for has failed if a speculative fetch does.
  */
-export async function prewarmDiscRanges(source, { chunks = 3, chunkList = null, maxChunks = 128, signal } = {}) {
+export async function prewarmDiscRanges(source, { chunks = 3, chunkList = null, maxChunks = 128, signal, priority = 'low' } = {}) {
   if (!source?.url?.startsWith('https://') || !Number.isSafeInteger(source.size) || source.size <= 0) return { warmed: 0, skipped: true };
   const wanted = bootChunkOrder(source, { chunks, chunkList });
   if (!wanted.length) return { warmed: 0, skipped: true };
@@ -185,7 +189,9 @@ export async function prewarmDiscRanges(source, { chunks = 3, chunkList = null, 
     const start = index * RANGE_CHUNK_BYTES;
     const end = Math.min(source.size, start + RANGE_CHUNK_BYTES);
     try {
-      const buffer = await fetchDiscRange(source.url, start, end, { attempts: 2, signal });
+      // Speculative by definition: nobody is waiting on these, so they queue
+      // behind any read the core is actually blocked on.
+      const buffer = await fetchDiscRange(source.url, start, end, { attempts: 2, signal, priority });
       await cache.put(index, buffer);
       warmed += 1;
     } catch (error) {
