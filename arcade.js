@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=wallart-off-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=murals-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -422,25 +422,61 @@ function addMuralMoodLights(texture,{center,normal,along,span,height,count=5}){
   }
 }
 const MEGAMAN_MURAL_SPAN=21.3,MEGAMAN_SIDE_MURAL_SPAN=16.5,MEGAMAN_MURAL_HEIGHT=4.8;
-box(MEGAMAN_MURAL_SPAN,5,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,16.61,.12);
-const megaManMuralTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural.webp?v=megaman-mural-1',texture=>addMuralMoodLights(texture,{center:new THREE.Vector3(MEGAMAN_ROOM_CENTER_X,2.5,16.54),normal:new THREE.Vector3(0,0,-1),along:new THREE.Vector3(-1,0,0),span:MEGAMAN_MURAL_SPAN,height:MEGAMAN_MURAL_HEIGHT}));
-megaManMuralTexture.colorSpace=THREE.SRGBColorSpace;
-megaManMuralTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManMural=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-megaManMural.position.set(MEGAMAN_ROOM_CENTER_X,2.5,16.54);megaManMural.rotation.y=Math.PI;megaManMural.renderOrder=4;scene.add(megaManMural);
-box(.08,5,MEGAMAN_SIDE_MURAL_SPAN,0x050711,-SHELL_HALF_WIDTH+.19,2.5,MEGAMAN_ROOM_CENTER_Z,.12);
-const megaManMuralTwoTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-2.webp?v=megaman-mural-2',texture=>addMuralMoodLights(texture,{center:new THREE.Vector3(-SHELL_HALF_WIDTH+.32,2.5,MEGAMAN_ROOM_CENTER_Z),normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),span:MEGAMAN_SIDE_MURAL_SPAN,height:MEGAMAN_MURAL_HEIGHT,count:4}));
-megaManMuralTwoTexture.colorSpace=THREE.SRGBColorSpace;
-megaManMuralTwoTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManMuralTwo=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_SIDE_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralTwoTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-megaManMuralTwo.position.set(-SHELL_HALF_WIDTH+.32,2.5,MEGAMAN_ROOM_CENTER_Z);megaManMuralTwo.rotation.y=Math.PI/2;megaManMuralTwo.renderOrder=4;scene.add(megaManMuralTwo);
-// The third mural fills the divider wall and faces into the room.
-box(MEGAMAN_MURAL_SPAN,5,.08,0x050711,MEGAMAN_ROOM_CENTER_X,2.5,.19,.12);
-const megaManMuralThreeTexture=new THREE.TextureLoader().load('assets/art/megaman-room-mural-3.webp?v=megaman-mural-3',texture=>addMuralMoodLights(texture,{center:new THREE.Vector3(MEGAMAN_ROOM_CENTER_X,2.5,.32),normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),span:MEGAMAN_MURAL_SPAN,height:MEGAMAN_MURAL_HEIGHT}));
-megaManMuralThreeTexture.colorSpace=THREE.SRGBColorSpace;
-megaManMuralThreeTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const megaManMuralThree=new THREE.Mesh(new THREE.PlaneGeometry(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT),new THREE.MeshBasicMaterial({map:megaManMuralThreeTexture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-megaManMuralThree.position.set(MEGAMAN_ROOM_CENTER_X,2.5,.32);megaManMuralThree.renderOrder=4;scene.add(megaManMuralThree);
+/**
+ * Hangs a side room's three murals and takes its mood lighting from them.
+ *
+ * Every room in the two side columns has the same three solid walls — one
+ * across the far end, one across the near end, and one down the outer side —
+ * so a themed room is three images and nothing else. The fourth wall is the
+ * partition the doorway is cut into.
+ *
+ * This is the Mega Man room's own code with that room's numbers taken out of
+ * it. It was written out by hand three times, which is two rooms' worth of
+ * copying before the second themed room even existed.
+ */
+function themeRoom({centerX,centerZ,far,near,side}){
+  const outward=Math.sign(centerX);
+  const farZ=centerZ+MEGAMAN_ROOM_DEPTH/2,nearZ=centerZ-MEGAMAN_ROOM_DEPTH/2;
+  const walls=[];
+  // The insets differ by a few centimetres per wall because the backing panel
+  // and the mural must not z-fight, and the far wall was tuned first.
+  if(far)walls.push({file:far,span:MEGAMAN_MURAL_SPAN,sideWall:false,
+    at:new THREE.Vector3(centerX,2.5,farZ-.26),backingAt:farZ-.19,rotation:Math.PI,
+    normal:new THREE.Vector3(0,0,-1),along:new THREE.Vector3(-1,0,0),count:5});
+  if(near)walls.push({file:near,span:MEGAMAN_MURAL_SPAN,sideWall:false,
+    at:new THREE.Vector3(centerX,2.5,nearZ+.32),backingAt:nearZ+.19,rotation:0,
+    normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:5});
+  if(side)walls.push({file:side,span:MEGAMAN_SIDE_MURAL_SPAN,sideWall:true,
+    at:new THREE.Vector3(outward*(SHELL_HALF_WIDTH-.32),2.5,centerZ),backingAt:outward*(SHELL_HALF_WIDTH-.19),
+    rotation:outward*-Math.PI/2,normal:new THREE.Vector3(-outward,0,0),along:new THREE.Vector3(0,0,outward),count:4});
+  for(const wall of walls){
+    if(wall.sideWall)box(.08,5,wall.span,0x050711,wall.backingAt,2.5,centerZ,.12);
+    else box(wall.span,5,.08,0x050711,centerX,2.5,wall.backingAt,.12);
+    const texture=new THREE.TextureLoader().load(`assets/art/${wall.file}`,loaded=>addMuralMoodLights(loaded,{
+      center:wall.at,normal:wall.normal,along:wall.along,span:wall.span,height:MEGAMAN_MURAL_HEIGHT,count:wall.count
+    }));
+    texture.colorSpace=THREE.SRGBColorSpace;
+    texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    const mural=new THREE.Mesh(new THREE.PlaneGeometry(wall.span,MEGAMAN_MURAL_HEIGHT),
+      new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+    mural.position.copy(wall.at);mural.rotation.y=wall.rotation;mural.renderOrder=4;scene.add(mural);
+  }
+}
+themeRoom({
+  centerX:MEGAMAN_ROOM_CENTER_X,centerZ:MEGAMAN_ROOM_CENTER_Z,
+  far:'megaman-room-mural.webp?v=megaman-mural-1',
+  near:'megaman-room-mural-3.webp?v=megaman-mural-3',
+  side:'megaman-room-mural-2.webp?v=megaman-mural-2'
+});
+// The second themed room, from art supplied for it. Everything the Mega Man
+// room needed by hand, this room gets in six lines.
+themeRoom({
+  centerX:MEGAMAN_ROOM_CENTER_X,centerZ:-8.4,
+  far:'metal-gear-room-mural.webp?v=mgs-1',
+  near:'metal-gear-room-mural-3.webp?v=mgs-1',
+  side:'metal-gear-room-mural-2.webp?v=mgs-1'
+});
+lightRoom(MEGAMAN_ROOM_CENTER_X,-8.4,MEGAMAN_ROOM_WIDTH,MEGAMAN_ROOM_DEPTH,0x7dff67);
 // The fourth mural is on the outside: the hub-facing span of the partition wall
 // between the Mega Man doorway and the corner. Mega Man occupies the right of
 // the image, and with the plane turned to face the hub its right edge lands
@@ -1480,7 +1516,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=wallart-off-1')
+  import('./emulators/disc-range-cache.js?v=murals-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1500,7 +1536,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=wallart-off-1')
+  import('./emulators/disc-range-cache.js?v=murals-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))

@@ -110,18 +110,18 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
   // at both ends of every one.
   assert.match(arcade, /const MEGAMAN_MURAL_SPAN=21\.3,MEGAMAN_SIDE_MURAL_SPAN=16\.5,MEGAMAN_MURAL_HEIGHT=4\.8/);
 
-  // First mural: full front wall, facing back into the room.
-  assert.match(arcade, /megaman-room-mural\.webp/);
-  assert.match(arcade, /megaManMural\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,16\.54\)/);
-  assert.match(arcade, /megaManMural\.rotation\.y=Math\.PI/);
-
-  // Second mural: full left wall, facing into the room.
-  assert.match(arcade, /megaman-room-mural-2\.webp/);
-  assert.match(arcade, /megaManMuralTwo\.position\.set\(-SHELL_HALF_WIDTH\+\.32,2\.5,MEGAMAN_ROOM_CENTER_Z\)/);
-  assert.match(arcade, /megaManMuralTwo\.rotation\.y=Math\.PI\/2/);
-
-  // Third mural: full rear wall, which needs no rotation to face inward.
-  assert.match(arcade, /megaman-room-mural-3\.webp/);
+  // A themed room is three images against its three solid walls: one across
+  // the far end, one across the near end, one down the outer side. The fourth
+  // wall is the partition its doorway is cut into.
+  assert.match(arcade, /function themeRoom\(\{centerX,centerZ,far,near,side\}\)/);
+  assert.match(arcade, /far:'megaman-room-mural\.webp/);
+  assert.match(arcade, /near:'megaman-room-mural-3\.webp/);
+  assert.match(arcade, /side:'megaman-room-mural-2\.webp/);
+  // The far wall faces back into the room, the near wall needs no rotation, and
+  // the side wall turns to face inward from whichever column it is in.
+  assert.match(arcade, /rotation:Math\.PI,/);
+  assert.match(arcade, /rotation:0,/);
+  assert.match(arcade, /rotation:outward\*-Math\.PI\/2/);
 
   // The hall mural is split by the doorway: Mega Man on the near side of the
   // door, the blue stretched across the span beyond it.
@@ -130,8 +130,13 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
   assert.match(arcade, /MEGAMAN_HALL_FIGURE_CENTER_Z=4\.1/);
   assert.match(arcade, /MEGAMAN_HALL_GLOW_CENTER_Z=13\.25/);
   assert.match(arcade, /mural\.rotation\.y=Math\.PI\/2/);
-  assert.match(arcade, /megaManMuralThree\.position\.set\(MEGAMAN_ROOM_CENTER_X,2\.5,\.32\)/);
-  assert.equal((arcade.match(/new THREE\.PlaneGeometry\(MEGAMAN_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT\)/g) ?? []).length, 2);
-  assert.equal((arcade.match(/new THREE\.PlaneGeometry\(MEGAMAN_SIDE_MURAL_SPAN,MEGAMAN_MURAL_HEIGHT\)/g) ?? []).length, 1);
-  assert.equal((arcade.match(/side:THREE\.DoubleSide/g) ?? []).length >= 3, true);
+  // One geometry, sized per wall from the span the builder was handed.
+  assert.match(arcade, /new THREE\.PlaneGeometry\(wall\.span,MEGAMAN_MURAL_HEIGHT\)/);
+  assert.equal((arcade.match(/side:THREE\.DoubleSide/g) ?? []).length >= 2, true);
+  // A second room is themed the same way, from art supplied for it — the point
+  // of pulling the room's numbers out of the code in the first place.
+  assert.match(arcade, /metal-gear-room-mural\.webp/);
+  // Anchored to the line start, so the builder's own declaration — which opens
+  // the same way — is not counted as one of the rooms.
+  assert.equal((arcade.match(/^themeRoom\(\{/gm) ?? []).length, 2, 'two themed rooms, one builder');
 });

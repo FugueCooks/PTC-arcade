@@ -78,9 +78,11 @@ void test('the statue line loads on approach and is solid to walk into', () => {
 });
 
 void test('the murals light the room from their own bright regions', () => {
-  assert.match(arcade, /addMuralMoodLights\(texture,\{center:/, 'each mural must contribute its own light');
-  // Call sites, not the declaration, which matches the same opening.
-  assert.equal((arcade.match(/addMuralMoodLights\(texture,\{center:/g) ?? []).length, 3, 'all three Mega Man room murals light the room');
+  // Every mural lights its own room, from one call site inside the builder
+  // that hangs them — three murals a room, however many rooms are themed.
+  assert.match(arcade, /addMuralMoodLights\(loaded,\{$/m, 'each mural must contribute its own light');
+  assert.match(arcade, /center:wall\.at,normal:wall\.normal,along:wall\.along,span:wall\.span/);
+  assert.match(arcade, /count:wall\.count/, 'the side wall takes fewer lights than the long walls');
   // Sampled from the image rather than hand-placed, and pulled toward one
   // accent so three different images read as one room.
   assert.match(arcade, /context\.drawImage\(image,0,0,MURAL_MOOD_COLUMNS,MURAL_MOOD_ROWS\)/);
