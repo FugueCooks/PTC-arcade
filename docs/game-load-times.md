@@ -56,6 +56,12 @@ Two refinements are in place beyond the original scheme:
   Paste that array into the game's registry entry. Absent means guess; present
   means measured.
 
+  Kingdom Hearts and DBZ Tenkaichi 3 are measured too, and both make the same
+  point from a different angle. Kingdom Hearts reads chunks 594 and 595 — the
+  very end of a 2.5 GB disc, where CHD keeps its hunk map — within the first
+  handful of reads. DBZ jumps from the opening chunks to 349, then 118, then
+  685. Warming the front of a disc would have caught almost none of it.
+
   Mega Man X7 is measured. It reads **46 chunks — 184 MB — before its title
   screen**, and they are not at the front of the disc: after the opening five it
   jumps to 189, 185-188, 168-172, 34-38, and on. Warming the first three chunks
@@ -191,8 +197,11 @@ TLS handshake at the moment a player is waiting.
 
 In rough order of payoff:
 
-2. Record `bootChunks` for the remaining PS2 titles — Kingdom Hearts, GTA San
-   Andreas, DBZ Tenkaichi 3. Mega Man X7 is done; each is one play session.
+2. Record `bootChunks` for GTA San Andreas. Measured against the live CDN it
+   returned only chunks 0-7, sequential from the front of the disc, which is
+   what the unmeasured guess already fetches — the 45 second window closed
+   before it had booted far enough to be worth recording. It needs a longer
+   session, not a repeat of the same one.
 3. Convert `crash-bandicoot` from pbp to CHD.
 4. Convert the two raw PS2 ISOs to CHD.
 5. Only then, if browser GameCube still matters: a streaming disc reader in
