@@ -6,7 +6,7 @@ import type { PlayerIdentity } from './player-identity.js';
 
 const MIN_WORLD_X = -42.7;
 const MAX_WORLD_X = 42.7;
-const MIN_WORLD_Z = -49.9;
+const MIN_WORLD_Z = -66.7;
 // Stops at the hub's north wall: the GameCube room is sealed behind its
 // construction barrier again, so nothing beyond z 16 is meant to be walked to.
 // This bound is duplicated in the Cloudflare Worker and in arcade.js, and
@@ -34,10 +34,16 @@ const DEFAULT_RECONNECT_GRACE_MS = 10_000;
 const MOVEMENT_TOLERANCE = 0.3;
 const PARTITION_WALL_X = 21.6;
 const PARTITION_COLLISION_HALF_WIDTH = 0.52;
-// Four rooms open off each partition wall. A doorway into a room that is not
-// finished is sealed, so only these three are passable — PS2, PlayStation and
-// Mega Man on the west, Nintendo 64 on the east. arcade.js holds the same table.
-const OPEN_DOOR_Z: Record<'west' | 'east', number[]> = { west: [-25.2, -8, 8], east: [-8] };
+// Four rooms open off each partition wall, and every one of them is walkable.
+// The only room still shut is the Multiplayer / Tournament hall, which is
+// behind the hall's own front wall. arcade.js holds the same table.
+const OPEN_DOOR_Z = [-25.2, -8, 8, 25.2];
+// The top row's front wall, with a doorway into each of its four rooms, and the
+// walls between them. The row was shut by the world bound until its barriers
+// came down, so none of this needed enforcing before.
+const TOP_ROW_WALL_Z = -50.4;
+const NORTH_ROOM_X = [-32.4, -10.8, 10.8, 32.4];
+const NORTH_ROW_DIVIDER_X = [-21.6, 0, 21.6];
 const SIDE_COLUMN_MIN_Z = -33.6;
 const SIDE_COLUMN_MAX_Z = 33.6;
 const SIDE_ROOM_DIVIDER_Z = [-33.6, -16.8, 0, 16.8, 33.6];
@@ -56,8 +62,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     // hall is full width, which is what lets the top row's outer rooms open
     // onto the hall.
     if (Math.max(fromZ, toZ) < SIDE_COLUMN_MIN_Z || Math.min(fromZ, toZ) > SIDE_COLUMN_MAX_Z) continue;
-    const doors = wallX < 0 ? OPEN_DOOR_Z.west : OPEN_DOOR_Z.east;
-    const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE);
+    const throughDoor = (z: number) => OPEN_DOOR_Z.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE);
     if (!throughDoor(toZ) && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
@@ -72,6 +77,21 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     for (const dividerZ of SIDE_ROOM_DIVIDER_Z) {
       if (Math.abs(toZ - dividerZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
       if ((fromZ - dividerZ) * (toZ - dividerZ) < 0) return true;
+    }
+  }
+  // The top row's front wall.
+  const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
+  if (!throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromZ - TOP_ROW_WALL_Z) * (toZ - TOP_ROW_WALL_Z) < 0) {
+    const crossing = (TOP_ROW_WALL_Z - fromZ) / (toZ - fromZ);
+    const crossingX = fromX + (toX - fromX) * crossing;
+    if (crossing >= 0 && crossing <= 1 && !throughTopRowDoor(crossingX)) return true;
+  }
+  // Inside the top row, the walls between its four rooms.
+  if (Math.max(fromZ, toZ) < TOP_ROW_WALL_Z) {
+    for (const dividerX of NORTH_ROW_DIVIDER_X) {
+      if (Math.abs(toX - dividerX) < PARTITION_COLLISION_HALF_WIDTH) return true;
+      if ((fromX - dividerX) * (toX - dividerX) < 0) return true;
     }
   }
   return false;

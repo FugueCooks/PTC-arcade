@@ -106,10 +106,12 @@ void test('the sealed rooms are closed in the scene and in what it enforces', ()
   assert.ok(/for\(const barrier of constructionBarriers\)/.test(client), 'the prompt must read the room off the barrier');
   assert.ok(clientBounds.maxZ < 33.6, 'the world must stop short of the tournament room');
 
-  // GameCube is sealed in its own gallery instead: the world reaches it, so the
-  // doorway itself is what has to be closed.
-  assert.ok(client.includes("sealDoorway('GameCube'"), 'the GameCube barrier must be present');
-
-  assert.ok(/const OPEN_DOOR_Z=\{west:\[-25\.2,-8,8\],east:\[-8\]\}/.test(client),
-    'the doorways that are open must be stated once, per side');
+  // Nothing else is sealed. Every doorway in both partition walls is open, and
+  // the top row is reached through its own front wall rather than being held
+  // out by the world bound, so that wall has to be enforced now.
+  assert.equal((client.match(/sealDoorway\('/g) ?? []).length, 1, 'the tournament hall is the only sealed room');
+  assert.ok(/const OPEN_DOOR_Z=\[-25\.2,-8,8,25\.2\]/.test(client),
+    'the doorways that are open must be stated once');
+  assert.ok(client.includes('resolveTopRowCollisions'), 'the top row needs real walls now that it is open');
+  assert.ok(clientBounds.minZ < -50.4, 'the world must reach into the top row');
 });

@@ -28,14 +28,21 @@ void test('server rejects movement packets that arrive too fast, leave bounds, o
   assert.deepEqual(players.move('socket-a', { p: [0.3, 11], r: 0 }, 1_100)?.p, [0.3, 1.65, 11]);
 });
 
-void test('the temporary construction barrier rejects entry into the Xbox room', () => {
+void test('every room off the hall is walkable, and the tournament hall is not', () => {
+  // The ring came down to one barrier. The four doorways in each partition wall
+  // are open, including the two that used to be taped shut on the east side.
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  const route: Array<[number, number]> = [[3, 11], [6, 11], [9, 11], [12, 11], [15, 11], [18, 11], [19.6, 11], [19.6, 8]];
+  const route: Array<[number, number]> = [[3, 11], [6, 11], [9, 11], [12, 11], [15, 11], [18, 11], [19.6, 11], [19.6, 8], [22.5, 8], [25.5, 8]];
   route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: 0 }, 1_500 + index * 500), `step ${index} was refused`));
-  // The doorway is there, and the barrier in it is not decorative.
-  assert.equal(players.move('socket-a', { p: [22.5, 8], r: 0 }, 5_500), undefined);
-  assert.equal(players.stateFor('socket-a')?.p[0], 19.6);
+  assert.deepEqual(players.stateFor('socket-a')?.p, [25.5, 1.65, 8], 'the Xbox room is open now');
+
+  // The one room still shut is held by the world bound, not by a wall rule.
+  const south = createPlayers();
+  south.join('socket-b', 'main', undefined, identity, 1_000);
+  const toTheDoor: Array<[number, number]> = [[0, 14], [0, 17], [0, 20], [0, 23], [0, 26], [0, 29], [0, 32], [0, 33.1]];
+  toTheDoor.forEach(([x, z], index) => assert.ok(south.move('socket-b', { p: [x, z], r: 0 }, 1_500 + index * 500), `step ${index} was refused`));
+  assert.equal(south.move('socket-b', { p: [0, 36], r: 0 }, 5_500), undefined, 'the tournament hall stays shut');
 });
 
 void test('the MegaMan Room replaces the former front-left construction bay', () => {
