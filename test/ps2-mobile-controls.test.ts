@@ -27,7 +27,7 @@ void test('touch controls use Play upstream key codes and support simultaneous h
 });
 
 void test('the PS2 frame cache key changes with the shared-input release', () => {
-  assert.match(adapter, /index\.html\?v=input-and-loading-1/);
+  assert.match(adapter, /index\.html\?v=ps2-controls-1/);
 });
 
 void test('Play PS2 maps a standard physical gamepad and exposes its controls panel', () => {
