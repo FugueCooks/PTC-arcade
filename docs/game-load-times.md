@@ -68,6 +68,21 @@ Two refinements are in place beyond the original scheme:
   a title and for warming the rest of its list in the background once it starts:
   the stalls are not the emulator being slow, they are the disc arriving late.
 
+- **A disc fills itself in while it is played.** Streaming makes a game start
+  quickly; it does not make it stall-free, because any read that misses is a
+  round trip the player feels. From the moment a disc is handed to the core the
+  frame walks the rest of it in the background, skipping what is already
+  stored, standing aside whenever a read reaches the network, and stopping if
+  storage runs short. Measured on Mega Man X7 while playing it: about 38 chunks
+  a minute — 150 MB — with the core holding 55-56 f/s, so a 761 MB disc is
+  wholly local after roughly four minutes of play. After that the game never
+  touches the network again.
+
+  This is why the hosting is not the lever. A 4 MB range from the CDN takes
+  0.94 s at 4.5 MB/s, which is the line rather than the origin; the same disc
+  served from anywhere else on the same connection costs the same. What removes
+  the wait is already having the bytes.
+
 ### GameCube — blocked, and mostly by design
 
 Gecko's `DiscBuffer.append()` then `.start()` needs the whole image resident in

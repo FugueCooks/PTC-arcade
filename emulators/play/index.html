@@ -249,6 +249,13 @@
       const activeTouchKeys = new Map();
       const bootChunks = bootChunkRecorder();
       const BOOT_RECORD_MS = 45000;
+      // Leave the browser room to breathe rather than filling its quota, wait
+      // this long after a read the core wanted before taking one for the
+      // install, and pause between chunks so the connection is mostly the
+      // game's.
+      const INSTALL_HEADROOM_BYTES = 512 * 1024 * 1024;
+      const INSTALL_QUIET_MS = 900;
+      const INSTALL_PAUSE_MS = 400;
       const activeGamepadKeys = new Set();
       const CONTROLLER_IDLE_STATUS = 'CONTROLLER: CONNECT OR PRESS A BUTTON';
       const GAMEPAD_KEY_BINDINGS = Object.freeze([
@@ -421,16 +428,29 @@
         const chunkSize = RANGE_CHUNK_BYTES;
         const maxCachedChunks = 40;
         const readAheadChunks = navigator.connection?.saveData ? 0 : (navigator.connection?.downlink >= 10 ? 4 : 2);
-        const maxPersistentChunks = navigator.deviceMemory && navigator.deviceMemory <= 4 ? 32 : 128;
+        const totalChunks = Math.ceil(source.size / chunkSize);
+        // Room for the whole disc where the install can run, because a store
+        // capped below the disc would evict the front of the game to hold the
+        // end of it and never finish.
+        const maxPersistentChunks = navigator.deviceMemory && navigator.deviceMemory <= 4 ? 32 : Math.max(128, totalChunks);
         const chunks = new Map();
         const persistentCache = openDiscRangeCache(source, maxPersistentChunks);
         const persistentWrites = new Set();
         let persistentCacheFailed = false;
+        // When the core last had to wait on a read. The installer stays out of
+        // the way while that is recent: a background fetch that delays a demand
+        // read has made the game worse to play in order to make it faster later.
+        let lastDemandRead = 0;
 
         async function loadChunk(index, start, end) {
           const persistent = await persistentCache;
           const cached = await persistent?.get(index, end - start);
           if (cached) return cached;
+          // Only a read that reaches the network is pressure worth yielding
+          // to. Counting cache hits as well meant the installer stood aside for
+          // the whole of a session: during play almost every read is a hit, and
+          // it never saw a quiet moment to take a chunk in.
+          lastDemandRead = performance.now();
           const buffer = await fetchDiscRange(source.url, start, end);
           if (persistent && !persistentCacheFailed && !persistentWrites.has(index)) {
             persistentWrites.add(index);
@@ -494,6 +514,50 @@
           }
           return output.buffer;
         }
+
+        /**
+         * Pulls the rest of the disc down while the game is being played, so a
+         * session that starts by streaming ends with the game on disk and every
+         * later read local. This is the difference between fast and instant: a
+         * demand read that misses costs the player a visible stall, and the only
+         * way to never miss is to already have it.
+         *
+         * Deliberately unhurried. It yields to the core's own reads, walks the
+         * disc in order, and stops the moment storage says no.
+         */
+        async function installDisc() {
+          if (navigator.connection?.saveData) return;
+          const persistent = await persistentCache;
+          if (!persistent) return;
+          const estimate = await navigator.storage?.estimate?.().catch(() => null);
+          if (estimate && Number.isFinite(estimate.quota) && Number.isFinite(estimate.usage)
+            && estimate.quota - estimate.usage < source.size + INSTALL_HEADROOM_BYTES) {
+            console.info('Not enough room to keep this disc locally; it will keep streaming.');
+            return;
+          }
+          let installed = 0, missing = 0;
+          for (let index = 0; index < totalChunks; index += 1) {
+            if (persistentCacheFailed) return;
+            if (persistent.has(index)) continue;
+            missing += 1;
+            // Wait out any read the core is waiting on, then take one chunk.
+            while (performance.now() - lastDemandRead < INSTALL_QUIET_MS) {
+              await new Promise(resolve => setTimeout(resolve, INSTALL_QUIET_MS));
+            }
+            const start = index * chunkSize, end = Math.min(source.size, start + chunkSize);
+            try {
+              await persistent.put(index, await fetchDiscRange(source.url, start, end, { attempts: 2 }));
+              installed += 1;
+            } catch (error) {
+              console.warn('Stopped filling the local copy of this disc.', error);
+              return;
+            }
+            await new Promise(resolve => setTimeout(resolve, INSTALL_PAUSE_MS));
+          }
+          if (installed) console.info(`${source.name} is now held locally (${installed} of ${missing} remaining ranges fetched).`);
+          parent.postMessage({ type: 'arcade:ps2-disc-installed', core: 'ps2-play', name: source.name }, location.origin);
+        }
+        void installDisc().catch(error => console.warn('The local copy of this disc could not be completed.', error));
 
         return Object.freeze({
           name: source.name,

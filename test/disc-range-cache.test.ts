@@ -202,3 +202,35 @@ async function openStubCache(options: { maxChunks: number; pinnedChunks: number 
     Object.defineProperty(globalThis, 'navigator', { value: original, configurable: true });
   }
 }
+
+void test('a streaming disc fills itself in while the game is being played', async () => {
+  const frame = await readFile(path.resolve(process.cwd(), 'emulators/play/index.html'), 'utf8');
+  const install = frame.slice(frame.indexOf('async function installDisc()'), frame.indexOf('void installDisc()'));
+  assert.ok(install.length > 0, 'the frame must fill in the rest of the disc it is streaming');
+
+  // Storage first: never fill a browser's quota on a speculative copy, and
+  // never do it on a metered connection.
+  assert.match(install, /navigator\.connection\?\.saveData/);
+  assert.match(install, /estimate\.quota - estimate\.usage < source\.size \+ INSTALL_HEADROOM_BYTES/);
+  // What is already there is skipped, so this resumes across sessions.
+  assert.match(install, /if \(persistent\.has\(index\)\) continue;/);
+  // And it gives up rather than hammering a store that has started refusing.
+  assert.match(install, /if \(persistentCacheFailed\) return;/);
+
+  // It yields to the core. A background fetch that delays a read the player is
+  // waiting on has made the game worse now to make it better later.
+  assert.match(install, /performance\.now\(\) - lastDemandRead < INSTALL_QUIET_MS/);
+  assert.match(install, /INSTALL_PAUSE_MS/);
+
+  // Yielding is triggered by reads that reach the network, not by cache hits.
+  // Counting hits stalled the install at eight chunks: during play almost every
+  // read is a hit, so the quiet window never came.
+  const cached = frame.slice(frame.indexOf('function cachedChunk(index)'), frame.indexOf('function cachedChunk(index)') + 400);
+  assert.doesNotMatch(cached, /lastDemandRead = performance\.now\(\)/, 'a cache hit is not pressure to yield to');
+  const load = frame.slice(frame.indexOf('async function loadChunk('), frame.indexOf('function cachedChunk(index)'));
+  assert.match(load, /lastDemandRead = performance\.now\(\);\s*const buffer = await fetchDiscRange/);
+
+  // The store has to be able to hold the whole disc, or it evicts the start of
+  // the game to make room for the end and never finishes.
+  assert.match(frame, /Math\.max\(128, totalChunks\)/);
+});
