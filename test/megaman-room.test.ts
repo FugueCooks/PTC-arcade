@@ -144,3 +144,43 @@ void test('a title known to run below full speed says so before it is started', 
   assert.match(arcade, /const performanceNote=c\.performanceNote\?/);
   assert.match(arcade, /machine-type'\)\.textContent=\(/);
 });
+
+void test('a statue never pushes a player into the wall behind it', () => {
+  // It did. The statues stand 1.6m from the south wall with a push radius up to
+  // 1.15m, and a radial push put a player into that gap — where the statue then
+  // pushed them back every time they tried to leave. A player trapped in
+  // scenery is worse than one walking through it.
+  const resolver = arcade.slice(arcade.indexOf('function resolveStatueCollisions('), arcade.indexOf('const n64CabinetLayout'));
+  assert.match(resolver, /const north=mount\.position\.z\+radius-playerPosition\.z/);
+  assert.match(resolver, /const west=playerPosition\.x-\(mount\.position\.x-radius\)/);
+  assert.match(resolver, /const east=mount\.position\.x\+radius-playerPosition\.x/);
+  // Three ways out, all of them back into the room. South is not one of them.
+  assert.doesNotMatch(resolver, /playerPosition\.z=mount\.position\.z-radius/, 'nothing may push a player toward the wall');
+  assert.doesNotMatch(resolver, /dz\/distance\*radius/, 'the radial push is what put players in the gap');
+
+  // And the same rule, exercised: no standing position in front of the line
+  // resolves to somewhere behind it.
+  const statueZ = 1.62;
+  const wallFace = 0.53;
+  const statues = [[-17.8, 0.92], [-19.8, 2.33], [-22.9, 3.13], [-26.5, 3.28], [-30.9, 4.59]]
+    .map(([x, width]) => ({ x, z: statueZ, r: Math.min(1.15, Math.max(0.66, width * 0.34)) }));
+  const resolve = (px: number, pz: number) => {
+    for (const statue of statues) {
+      if (Math.hypot(px - statue.x, pz - statue.z) >= statue.r) continue;
+      const north = statue.z + statue.r - pz;
+      const west = px - (statue.x - statue.r);
+      const east = statue.x + statue.r - px;
+      if (north <= west && north <= east) pz = statue.z + statue.r;
+      else if (west <= east) px = statue.x - statue.r;
+      else px = statue.x + statue.r;
+      break;
+    }
+    return { px, pz };
+  };
+  for (let x = -34; x <= -16; x += 0.1) {
+    for (let z = 0.6; z <= 5; z += 0.1) {
+      const out = resolve(x, z);
+      assert.ok(out.pz >= wallFace, `(${x.toFixed(1)}, ${z.toFixed(1)}) resolved to z=${out.pz.toFixed(2)}, behind the wall`);
+    }
+  }
+});

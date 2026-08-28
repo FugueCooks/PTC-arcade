@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=ps2-compositing-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=statue-collision-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -844,8 +844,20 @@ function resolveStatueCollisions(previousX,previousZ){
   for(const {mount,radius} of megaManStatueMounts){
     const dx=playerPosition.x-mount.position.x,dz=playerPosition.z-mount.position.z,distance=Math.hypot(dx,dz);
     if(distance>=radius)continue;
-    if(distance>.001){playerPosition.x=mount.position.x+dx/distance*radius;playerPosition.z=mount.position.z+dz/distance*radius}
-    else{playerPosition.x=previousX;playerPosition.z=previousZ}
+    // Never south. These stand against the south wall with barely a metre
+    // behind them, and pushing radially put a player into that gap — where the
+    // statue then pushed them back every time they tried to walk out of it. A
+    // player trapped in scenery is worse than a player walking through it, so
+    // the only ways out are the three that lead back into the room.
+    const north=mount.position.z+radius-playerPosition.z;
+    const west=playerPosition.x-(mount.position.x-radius);
+    const east=mount.position.x+radius-playerPosition.x;
+    if(north<=west&&north<=east)playerPosition.z=mount.position.z+radius;
+    else if(west<=east)playerPosition.x=mount.position.x-radius;
+    else playerPosition.x=mount.position.x+radius;
+    // A player already wedged somewhere the push cannot resolve keeps the step
+    // they came from rather than being moved somewhere they never chose.
+    if(!Number.isFinite(playerPosition.x)||!Number.isFinite(playerPosition.z)){playerPosition.x=previousX;playerPosition.z=previousZ}
     return;
   }
 }
@@ -1275,7 +1287,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ps2-compositing-1')
+  import('./emulators/disc-range-cache.js?v=statue-collision-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1295,7 +1307,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ps2-compositing-1')
+  import('./emulators/disc-range-cache.js?v=statue-collision-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
