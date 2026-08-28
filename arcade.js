@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=runtime-visible-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=native-line-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -1198,6 +1198,8 @@ function openMachine(c){
   const romInput=document.querySelector('#rom-file');romInput.value='';romLoaded=false;
   // A title that is known to run below full speed says so on the way in.
   const performanceNote=c.performanceNote?` · ${c.performanceNote.toUpperCase()}`:'';
+  const nativeState=document.querySelector('#native-runtime-state');
+  if(nativeState)nativeState.hidden=true;
   document.querySelector('#machine-type').textContent=(c.system==='psx'?'PLAYSTATION // CABINET':(c.system==='n64'?'NINTENDO 64 // CABINET':(c.system==='snes'?'SUPER NINTENDO // CABINET':(c.system==='ps2'?'PLAYSTATION 2 // EXPERIMENTAL CABINET':(c.system==='gamecube'?'GAMECUBE // EXPERIMENTAL GECKO':c.type)))))+performanceNote;
   document.querySelector('#machine-name').textContent=c.name;
   const controls=document.querySelector('#emulator-controls');
@@ -1223,14 +1225,22 @@ function openMachine(c){
     // Whether a cabinet is about to run natively is the single most useful
     // thing to say here, and it was previously invisible: a runtime that was
     // installed, running and refused looked exactly like no runtime at all.
-    const nativeLine=document.querySelector('#emulator-controls');
+    const nativeLine=document.querySelector('#native-runtime-state');
     const describe=detection=>{
       if(!nativeLine)return;
       const emulator=c.system==='ps2'?'PCSX2':'DOLPHIN';
       const missing=c.system==='ps2'?detection?.pcsx2Present===false:detection?.dolphinPresent===false;
-      if(detection?.usable&&!missing)nativeLine.textContent=`NATIVE RUNTIME READY · ${emulator} WILL RUN THIS CABINET`;
-      else if(detection?.usable&&missing)nativeLine.textContent=`ARCADE RUNTIME FOUND, BUT ${emulator} IS NOT INSTALLED · PLAYING IN THE BROWSER`;
-      else nativeLine.textContent='NO ARCADE RUNTIME · PLAYING IN THE BROWSER';
+      const native=Boolean(detection?.usable)&&!missing;
+      // The reason travels with the verdict. Without it a player who cannot run
+      // natively has to open a browser console to find out why, which is the
+      // same dead end as saying nothing at all.
+      const why=detection?.reason?` (${String(detection.reason).toUpperCase().replace(/[_-]/g,' ')})`:'';
+      if(native)nativeLine.textContent=`NATIVE RUNTIME READY · ${emulator} WILL RUN THIS CABINET`;
+      else if(detection?.usable)nativeLine.textContent=`ARCADE RUNTIME FOUND, BUT ${emulator} IS NOT INSTALLED · PLAYING IN THE BROWSER`;
+      else if(detection?.pending)nativeLine.textContent='LOOKING FOR THE ARCADE RUNTIME…';
+      else nativeLine.textContent=`NO ARCADE RUNTIME${why} · PLAYING IN THE BROWSER`;
+      nativeLine.dataset.native=String(native);
+      nativeLine.hidden=false;
     };
     describe(window.ARCADE_RUNTIME_DETECTION);
     window.ARCADE_ENSURE_RUNTIME_DETECTION?.()?.then?.(describe);
@@ -1302,7 +1312,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=runtime-visible-1')
+  import('./emulators/disc-range-cache.js?v=native-line-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1322,7 +1332,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=runtime-visible-1')
+  import('./emulators/disc-range-cache.js?v=native-line-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))

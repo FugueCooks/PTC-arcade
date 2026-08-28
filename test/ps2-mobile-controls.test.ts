@@ -26,8 +26,15 @@ void test('touch controls use Play upstream key codes and support simultaneous h
   assert.match(frame, /for \(const code of active\.codes\) dispatchPs2Key\(code, false\)/);
 });
 
-void test('the PS2 frame cache key changes with the shared-input release', () => {
-  assert.match(adapter, /index\.html\?v=runtime-visible-1/);
+void test('the PS2 frame is versioned with the rest of the release', () => {
+  // The invariant is that a player never runs a new adapter against a frame
+  // their browser cached last week. Pinning the literal token here instead
+  // meant every unrelated release had to edit this line to re-state the same
+  // thing, which is how tokens drift apart in the first place.
+  const shipped = /app-bootstrap\.js\?v=([A-Za-z0-9-]+)/.exec(readFileSync(resolve('index.html'), 'utf8'))?.[1];
+  const frameToken = /play\/index\.html\?v=([A-Za-z0-9-]+)/.exec(adapter)?.[1];
+  assert.ok(shipped, 'index.html must version the bootstrap it loads');
+  assert.equal(frameToken, shipped, 'the PS2 frame must move with the release');
 });
 
 void test('Play PS2 maps a standard physical gamepad and exposes its controls panel', () => {

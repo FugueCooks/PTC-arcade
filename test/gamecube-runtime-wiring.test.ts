@@ -37,6 +37,11 @@ void test('the probe starts when a player reaches a natively-runnable cabinet', 
   // the runtime exists and would always fall back to the browser core.
   assert.match(arcade, /c\.system==='gamecube'\|\|c\.system==='ps2'\)\{/);
   assert.match(arcade, /window\.ARCADE_ENSURE_RUNTIME_DETECTION\?\.\(\)\?\.then\?\.\(describe\)/, 'the cabinet waits for the answer and then says what it was');
+  // The verdict must sit above the screen. It was written into
+  // #emulator-controls first, which sits below the screen and below the fold
+  // of a scrolling panel, so a player at a PS2 cabinet never saw a word of it.
+  assert.match(arcade, /querySelector\('#native-runtime-state'\)/);
+  assert.doesNotMatch(arcade, /nativeLine=document\.querySelector\('#emulator-controls'\)/);
 });
 
 void test('GameCube asks who should run it; other platforms are untouched', () => {
