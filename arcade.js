@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=stadium15-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=tunnel-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -147,7 +147,16 @@ function box(w,h,d,color,x,y,z,emissive=0){const m=new THREE.Mesh(new THREE.BoxG
 // troffers, so the room reads as a low-lit game centre rather than an arena.
 // Every fixture here is emissive geometry only: none of it adds a real light,
 // so the ceiling costs nothing against the per-frame light budget.
-const ceiling=new THREE.Mesh(new THREE.PlaneGeometry(86.4,117.6),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06}));
+// One plane with a rectangular hole over the Pokemon stadium: its dome rises
+// well past the building's ceiling height, and a lid across the room would cut
+// the dome off at the knees. The plane is rotated +x, so local y maps to world
+// z plus the plane's own offset.
+const ceilingShape=new THREE.Shape();
+ceilingShape.moveTo(-43.2,-58.8);ceilingShape.lineTo(43.2,-58.8);ceilingShape.lineTo(43.2,58.8);ceilingShape.lineTo(-43.2,58.8);ceilingShape.closePath();
+const stadiumHole=new THREE.Path();
+stadiumHole.moveTo(10.8,-58.8);stadiumHole.lineTo(43.2,-58.8);stadiumHole.lineTo(43.2,-33.6);stadiumHole.lineTo(10.8,-33.6);stadiumHole.closePath();
+ceilingShape.holes.push(stadiumHole);
+const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
 ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,5.08,-8.4);scene.add(ceiling);
 const ceilingBeamMaterial=new THREE.MeshStandardMaterial({color:0x14111f,roughness:.7,metalness:.5});
 const ceilingHousingMaterial=new THREE.MeshStandardMaterial({color:0x1b1730,roughness:.82,metalness:.3});
@@ -555,7 +564,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-stadium15-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-tunnel-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -586,19 +595,31 @@ function buildPokemonStadium(centerX,centerZ){
   // The roof: a shallow dome from the band's rim to just under the ceiling,
   // drawn as a night sky with a lit rim so the bowl reads as open to the dark
   // rather than shut by a lid.
+  // The sphere's v axis runs pole to rim, so the sky is painted as a vertical
+  // gradient — a radial one lands as a dark blob on the apex, which is exactly
+  // what it looked like. Zenith deep, horizon lifting toward the rim, and a
+  // faint ring of roof lights where the dome meets the stands.
   const domeCanvas=document.createElement('canvas');domeCanvas.width=512;domeCanvas.height=512;
   const dc=domeCanvas.getContext('2d');
-  const sky=dc.createRadialGradient(256,256,40,256,256,256);
-  sky.addColorStop(0,'#0a1026');sky.addColorStop(.72,'#070b1c');sky.addColorStop(.94,'#2b3f66');sky.addColorStop(1,'#8fb6e0');
+  const sky=dc.createLinearGradient(0,0,0,512);
+  sky.addColorStop(0,'#0a1233');sky.addColorStop(.55,'#0d1a3f');sky.addColorStop(.86,'#1d3a66');sky.addColorStop(1,'#38609a');
   dc.fillStyle=sky;dc.fillRect(0,0,512,512);
-  for(let i=0;i<170;i++){const a=i*2.399,r=20+(i*97)%216;dc.fillStyle=i%3?'#c9d6ee':'#ffffff';
-    dc.globalAlpha=.25+(i%5)*.12;dc.fillRect(256+Math.cos(a)*r,256+Math.sin(a)*r,1.6,1.6)}
+  for(let i=0;i<240;i++){
+    const x=(i*197)%512,y=((i*89)%460)*.92;
+    dc.fillStyle=i%3?'#c9d6ee':'#ffffff';dc.globalAlpha=.2+(i%5)*.13;
+    dc.fillRect(x,y,1.7,1.7);
+  }
+  dc.globalAlpha=1;
+  dc.fillStyle='#ffe9b8';
+  for(let i=0;i<64;i++){dc.globalAlpha=.5+(i%3)*.2;dc.fillRect(i*8+2,494,3,2.2)}
   dc.globalAlpha=1;
   const domeTexture=new THREE.CanvasTexture(domeCanvas);domeTexture.colorSpace=THREE.SRGBColorSpace;
+  // A true dome: the apex sits more than seven metres over the stands' rim,
+  // through the hole cut in the building's ceiling for it.
   const dome=new THREE.Mesh(
-    new THREE.SphereGeometry(1,48,20,0,Math.PI*2,0,Math.PI/2),
+    new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI/2),
     new THREE.MeshBasicMaterial({map:domeTexture,side:THREE.BackSide}));
-  dome.scale.set(RX,.85,RZ);
+  dome.scale.set(RX,7.4,RZ);
   dome.position.set(centerX,BAND_TOP,centerZ);
   scene.add(dome);
   // Below the band, a dark skirt down to the floor, so no sightline under the
@@ -616,15 +637,65 @@ function buildPokemonStadium(centerX,centerZ){
   // there is nothing to see, so the bowl never visibly breaks.
   const tunnelMaterial=new THREE.MeshStandardMaterial({color:0x0a0f1a,roughness:.7,metalness:.25,side:THREE.DoubleSide});
   const tunnelTrim=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.2,metalness:.4,roughness:.3});
-  const TUNNEL_LENGTH=3.4,TUNNEL_HALF_W=1.7,tunnelZ=centerZ+RZ-TUNNEL_LENGTH/2+.6;
+  /**
+   * The vomitory: a real walk through the stands, not a box on a doorway.
+   *
+   * It runs from a portal frame on the band side of the wall down to the edge
+   * of the field, so a player is inside it for six metres and comes out at
+   * pitch level between two flared wing walls — the way a stadium actually
+   * lets you in. Everything in it is emissive or unlit-dark geometry, so the
+   * tunnel costs nothing against the light budget.
+   */
+  const TUNNEL_HALF_W=1.7;
+  const TUNNEL_MOUTH_Z=centerZ+RZ+.45;             // portal, just south of the wall
+  const TUNNEL_EXIT_Z=centerZ+RZ/2+1.2;            // opens at the field's edge
+  const TUNNEL_LENGTH=TUNNEL_MOUTH_Z-TUNNEL_EXIT_Z,tunnelZ=(TUNNEL_MOUTH_Z+TUNNEL_EXIT_Z)/2;
   for(const side of [-1,1]){
     const wall=new THREE.Mesh(new THREE.BoxGeometry(.24,2.7,TUNNEL_LENGTH),tunnelMaterial);
     wall.position.set(centerX+side*TUNNEL_HALF_W,1.35,tunnelZ);scene.add(wall);
+    // A lit handrail line down each wall, the strip every stadium tunnel has.
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(.05,.07,TUNNEL_LENGTH-.4),tunnelTrim);
+    rail.position.set(centerX+side*(TUNNEL_HALF_W-.14),1.05,tunnelZ);scene.add(rail);
   }
   const roof=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2+.48,.24,TUNNEL_LENGTH),tunnelMaterial);
   roof.position.set(centerX,2.82,tunnelZ);scene.add(roof);
-  const lintel=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2,.1,.14),tunnelTrim);
-  lintel.position.set(centerX,2.7,tunnelZ-TUNNEL_LENGTH/2);scene.add(lintel);
+  // Recessed ceiling panels down the run, so the tunnel reads lit from inside
+  // and throws a little light on whoever is walking it.
+  const tunnelPanelMaterial=new THREE.MeshBasicMaterial({color:0xd9ecff});
+  for(let z=TUNNEL_EXIT_Z+1;z<TUNNEL_MOUTH_Z-1;z+=1.9){
+    const panel=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.4),tunnelPanelMaterial);
+    panel.rotation.x=Math.PI/2;panel.position.set(centerX,2.69,z);scene.add(panel);
+  }
+  // Floor guide strips through the run and out onto the grass, picking up the
+  // lit-threshold language used at every other doorway in the building.
+  const guideMaterial=new THREE.MeshBasicMaterial({color:0x8ff0ff,transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending});
+  for(const side of [-1,1]){
+    const guide=new THREE.Mesh(new THREE.PlaneGeometry(.09,TUNNEL_LENGTH+1.6),guideMaterial);
+    guide.rotation.x=-Math.PI/2;guide.position.set(centerX+side*1.15,.028,tunnelZ-.5);scene.add(guide);
+  }
+  // The portal on the band side: two pylons and a header over the doorway, so
+  // the way in reads as a gate from across the hall.
+  const portalMaterial=new THREE.MeshStandardMaterial({color:0x121a2a,emissive:0x0d1f38,emissiveIntensity:.55,metalness:.6,roughness:.35});
+  for(const side of [-1,1]){
+    const pylon=new THREE.Mesh(new THREE.BoxGeometry(.55,3.4,.55),portalMaterial);
+    pylon.position.set(centerX+side*(TUNNEL_HALF_W+.45),1.7,TUNNEL_MOUTH_Z);scene.add(pylon);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(.55,.12,.55),tunnelTrim);
+    cap.position.set(centerX+side*(TUNNEL_HALF_W+.45),3.46,TUNNEL_MOUTH_Z);scene.add(cap);
+  }
+  const header=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2+1.45,.55,.55),portalMaterial);
+  header.position.set(centerX,3.15,TUNNEL_MOUTH_Z);scene.add(header);
+  const headerTrim=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2+1.3,.09,.12),tunnelTrim);
+  headerTrim.position.set(centerX,2.85,TUNNEL_MOUTH_Z-.24);scene.add(headerTrim);
+  // Where the tunnel meets the field: wing walls flaring out with lit caps, the
+  // emergence of a vomitory rather than a bare open end.
+  for(const side of [-1,1]){
+    const wing=new THREE.Mesh(new THREE.BoxGeometry(.24,1.15,2.6),tunnelMaterial);
+    wing.position.set(centerX+side*(TUNNEL_HALF_W+.85),.57,TUNNEL_EXIT_Z-.55);
+    wing.rotation.y=side*.55;scene.add(wing);
+    const wingCap=new THREE.Mesh(new THREE.BoxGeometry(.3,.08,2.6),tunnelTrim);
+    wingCap.position.set(centerX+side*(TUNNEL_HALF_W+.85),1.18,TUNNEL_EXIT_Z-.55);
+    wingCap.rotation.y=side*.55;scene.add(wingCap);
+  }
   // Above and beside the tunnel, the mouth is closed off. Without this the
   // opening in the band was taller and wider than the tunnel, and the bowl's
   // inside was visible over the tunnel roof from the doorway.
@@ -731,7 +802,7 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
 const NORTH_ROW_CENTER_Z=(NORTH_ROW_MIN_Z+TOP_BAND_MIN_Z)/2,TOP_BAND_CENTER_Z=(TOP_BAND_MIN_Z+SIDE_COLUMN_MIN_Z)/2;
 const northRowFloor=new THREE.Mesh(new THREE.PlaneGeometry(SHELL_HALF_WIDTH*2,ROOM_DEPTH),expansionFloorMaterial);
 northRowFloor.rotation.x=-Math.PI/2;northRowFloor.position.set(0,.002,NORTH_ROW_CENTER_Z);northRowFloor.receiveShadow=true;scene.add(northRowFloor);
-box(SHELL_HALF_WIDTH*2,.12,ROOM_DEPTH,0x090b18,0,5.08,NORTH_ROW_CENTER_Z,.08);
+box(54,.12,ROOM_DEPTH,0x090b18,-16.2,5.08,NORTH_ROW_CENTER_Z,.08);
 // The west top-row room keeps its size; the middle one absorbed the strip the
 // stadium's wall cut off its neighbour, so its rig is wider. The stadium needs
 // no rig: its bowl carries its own light.
@@ -1721,7 +1792,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=stadium15-1')
+  import('./emulators/disc-range-cache.js?v=tunnel-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1741,7 +1812,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=stadium15-1')
+  import('./emulators/disc-range-cache.js?v=tunnel-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
