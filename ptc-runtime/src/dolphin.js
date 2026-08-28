@@ -12,10 +12,22 @@
  * means a crash in the emulator cannot take the runtime with it.
  */
 
-/** Where Dolphin usually lives, in probe order. Windows first; this ships there first. */
+/**
+ * Where Dolphin usually lives, in probe order. Windows first; this ships there
+ * first.
+ *
+ * The installer's own default is "Dolphin Emulator" and the release zips unpack
+ * to "Dolphin-x64", so a bare "Dolphin" folder is the one shape a player is
+ * least likely to end up with. All three are probed rather than assumed, and a
+ * build living anywhere else is what the config's dolphinPath is for.
+ */
 export const DOLPHIN_CANDIDATES = Object.freeze({
   win32: [
+    'C:\\Program Files\\Dolphin Emulator\\Dolphin.exe',
+    'C:\\Program Files\\Dolphin-x64\\Dolphin.exe',
     'C:\\Program Files\\Dolphin\\Dolphin.exe',
+    'C:\\Program Files (x86)\\Dolphin Emulator\\Dolphin.exe',
+    'C:\\Program Files (x86)\\Dolphin-x64\\Dolphin.exe',
     'C:\\Program Files (x86)\\Dolphin\\Dolphin.exe'
   ],
   darwin: ['/Applications/Dolphin.app/Contents/MacOS/Dolphin'],

@@ -45,6 +45,15 @@ export function createRuntimeServer({
       response.setHeader('Access-Control-Allow-Headers', 'content-type, x-ptc-runtime-token');
       response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       response.setHeader('Access-Control-Max-Age', '600');
+      // Chrome treats a page on the public internet reaching 127.0.0.1 as a
+      // private-network request and blocks it unless the preflight is answered
+      // with this. Without it the arcade probe fails before it is even sent,
+      // the runtime looks absent, and the player is quietly given the browser
+      // core with nothing anywhere saying why. Only ever sent to an origin
+      // already on the allow-list.
+      if (request.headers['access-control-request-private-network'] === 'true') {
+        response.setHeader('Access-Control-Allow-Private-Network', 'true');
+      }
     }
     // Never: a credentialed cross-origin request would carry the browser's
     // cookies into a local process, and the token already identifies the page.

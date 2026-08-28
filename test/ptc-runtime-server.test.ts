@@ -216,3 +216,27 @@ void test('an installed runtime with no Dolphin says so rather than failing at l
     assert.equal((await (await runtime.call('/v1/status')).json()).dolphin.present, false);
   } finally { await runtime.close(); }
 });
+
+void test('a preflight from the arcade to loopback is allowed through', async () => {
+  // Chrome treats an https page reaching 127.0.0.1 as a private-network request
+  // and blocks it unless the preflight says otherwise. Without this the probe
+  // never leaves the browser, the runtime looks absent, and the player is
+  // quietly handed the browser core with nothing saying why — which is exactly
+  // what happened: the cabinet offered no pairing at all.
+  const runtime = await boot();
+  try {
+    const response = await runtime.call('/v1/status', {
+      method: 'OPTIONS',
+      // The helper already sends the arcade's origin; setting it again here
+      // produces a doubled header value that matches no allow-list entry.
+      headers: {
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Private-Network': 'true'
+      }
+    });
+    assert.equal(response.status, 204);
+    assert.equal(response.headers.get('access-control-allow-private-network'), 'true');
+  } finally {
+    await runtime.close();
+  }
+});
