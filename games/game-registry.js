@@ -1,5 +1,5 @@
 export async function loadGameRegistry() {
-  const response = await fetch('assets/games/registry.json?v=ps2-present-1', { cache: 'no-cache' });
+  const response = await fetch('assets/games/registry.json?v=perf-notes-1', { cache: 'no-cache' });
   if (!response.ok) throw new Error(`Game registry failed to load (${response.status}).`);
   const payload = await response.json();
   if (![1, 2].includes(payload?.version) || !Array.isArray(payload.games)) throw new Error('Unsupported game registry.');
@@ -36,7 +36,19 @@ function isValidGame(game) {
     && Number.isSafeInteger(game.sizeBytes) && game.sizeBytes > 0
     && validDiscs(game)
     && validBootChunks(game)
+    && validPerformanceNote(game)
     && typeof game.enabled === 'boolean';
+}
+
+/**
+ * Optional. What a player should know about this title's performance before
+ * they start it, measured rather than guessed. Mega Man X7 holds a median of
+ * 40 f/s in the browser PS2 core with dips into the twenties; saying so is
+ * better than letting someone conclude the arcade is broken.
+ */
+function validPerformanceNote(game) {
+  return game.performanceNote === undefined
+    || (typeof game.performanceNote === 'string' && game.performanceNote.length > 0 && game.performanceNote.length <= 96);
 }
 
 /**

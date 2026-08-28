@@ -127,3 +127,20 @@ void test('the Mega Man room models ship with the Pages bundle', async () => {
   const build = await readFile(path.resolve(root, 'tools/build-pages.mjs'), 'utf8');
   assert.match(build, /normalized\.startsWith\('assets\/models\/megaman\/'\)\) return true/);
 });
+
+void test('a title known to run below full speed says so before it is started', async () => {
+  // Measured, not guessed: Mega Man X7 holds a median of 40 f/s in the browser
+  // PS2 core with dips into the twenties. Letting a player start it with no
+  // warning invites the conclusion that the arcade is broken.
+  const registry = JSON.parse(await readFile(path.resolve(root, 'assets/games/registry.json'), 'utf8')) as
+    { games: Array<{ id: string; performanceNote?: string }> };
+  const noted = registry.games.filter((game) => game.performanceNote);
+  assert.ok(noted.some((game) => game.id === 'mega-man-x7'), 'the slowest measured title must carry a note');
+  for (const game of noted) {
+    assert.ok(game.performanceNote!.length <= 96, `${game.id}: the note has to fit the cabinet header`);
+  }
+  // Carried onto the cabinet and shown where the player reads the game name.
+  assert.match(arcade, /performanceNote:game\.performanceNote\?\?null/);
+  assert.match(arcade, /const performanceNote=c\.performanceNote\?/);
+  assert.match(arcade, /machine-type'\)\.textContent=\(/);
+});

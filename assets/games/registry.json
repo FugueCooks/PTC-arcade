@@ -465,7 +465,8 @@
           "required": true,
           "label": null
         }
-      ]
+      ],
+      "performanceNote": "Runs below full speed"
     },
     {
       "id": "dbz-tenkaichi-3",
@@ -928,7 +929,8 @@
         114,
         69,
         26
-      ]
+      ],
+      "performanceNote": "Runs below full speed · about 40 f/s"
     }
   ]
 }

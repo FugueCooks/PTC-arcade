@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=ps2-present-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=perf-notes-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -660,7 +660,7 @@ function applyCabinetArt(cabinet,slug){
 // Milestone 11.15: every cabinet the scene creates is registered with the
 // spatial index, which the render loop queries instead of scanning.
 function indexCabinet(cabinet){window.ARCADE_CABINET_SPATIAL_INDEX?.insert(cabinet.id,cabinet.g.position.x,cabinet.g.position.z,cabinet)}
-function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{artSlug:game.id,system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,bootChunks:game.bootChunks??null,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
+function configureHostedCabinet(cabinetId){const game=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);if(!game)return;const hostedDiscs=game.discs?.map(disc=>({...disc,url:gameAssetUrl(disc.file)}));Object.assign(cabinets[cabinets.length-1],{artSlug:game.id,system:game.system,gameName:game.name,gameId:game.emulatorId,gameRegistryId:game.id,gameFileName:game.file,gameSizeBytes:game.sizeBytes,bootChunks:game.bootChunks??null,performanceNote:game.performanceNote??null,hostedGame:gameAssetUrl(game.file),hostedDiscs})}
 // Classic arcade layout: one unbroken row facing into the room, backs against
 // the wall that carries the PlayStation logo. This is the arrangement every
 // room moves to, so the spacing constant is shared rather than repeated — 2.3 m
@@ -1184,7 +1184,9 @@ function openMachine(c){
   activeCabinet=c;
   document.body.classList.add('cabinet-open');resetMobileMove();
   const romInput=document.querySelector('#rom-file');romInput.value='';romLoaded=false;
-  document.querySelector('#machine-type').textContent=c.system==='psx'?'PLAYSTATION // CABINET':(c.system==='n64'?'NINTENDO 64 // CABINET':(c.system==='snes'?'SUPER NINTENDO // CABINET':(c.system==='ps2'?'PLAYSTATION 2 // EXPERIMENTAL CABINET':(c.system==='gamecube'?'GAMECUBE // EXPERIMENTAL GECKO':c.type))));
+  // A title that is known to run below full speed says so on the way in.
+  const performanceNote=c.performanceNote?` · ${c.performanceNote.toUpperCase()}`:'';
+  document.querySelector('#machine-type').textContent=(c.system==='psx'?'PLAYSTATION // CABINET':(c.system==='n64'?'NINTENDO 64 // CABINET':(c.system==='snes'?'SUPER NINTENDO // CABINET':(c.system==='ps2'?'PLAYSTATION 2 // EXPERIMENTAL CABINET':(c.system==='gamecube'?'GAMECUBE // EXPERIMENTAL GECKO':c.type)))))+performanceNote;
   document.querySelector('#machine-name').textContent=c.name;
   const controls=document.querySelector('#emulator-controls');
   if(controls)controls.textContent=window.arcadeAvatarIdentity?.walletAuthenticated
@@ -1273,7 +1275,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ps2-present-1')
+  import('./emulators/disc-range-cache.js?v=perf-notes-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1293,7 +1295,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ps2-present-1')
+  import('./emulators/disc-range-cache.js?v=perf-notes-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
