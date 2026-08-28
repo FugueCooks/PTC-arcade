@@ -26,6 +26,18 @@ void test('no art the scene loads is excluded from the deployed build', async ()
   );
 });
 
+void test('every root client module directory needed at startup ships with Pages', async () => {
+  // multiplayer-client.js imports the match panel directly. Omitting this
+  // existing directory lets unit tests pass but makes a fresh static deploy
+  // stop at its first dynamic import before the arcade can render.
+  const pagesBuild = await readFile(path.resolve(process.cwd(), 'tools', 'build-pages.mjs'), 'utf8');
+  assert.match(
+    pagesBuild,
+    /sourceDirectories\s*=\s*\[[^\]]*['"]matches['"][^\]]*\]/,
+    'the Pages bundle must include the matches client module directory'
+  );
+});
+
 // The avatar model directory is an allow-list in .dockerignore, because it also
 // holds ~115 MB of iteration files no avatar references. An allow-list fails
 // unsafe: add an avatar, forget the entry, and its model 404s in production

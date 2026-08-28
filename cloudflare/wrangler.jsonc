@@ -13,7 +13,7 @@
   // Keeps the free-plan origin from idling: it spins down after 15 minutes
   // without traffic and then takes about a minute to wake, which is the delay
   // players actually notice. Ten minutes leaves margin for a late run.
-  "triggers": { "crons": ["*/10 * * * *"] },
+  "triggers": { "crons": ["*/5 * * * *"] },
   "vars": { "ORIGIN_HEALTH_URL": "https://retro-arcade-multiplayer.onrender.com/healthz" },
   "observability": { "enabled": true },
   "durable_objects": {

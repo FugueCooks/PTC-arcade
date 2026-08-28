@@ -622,10 +622,10 @@ function decodeBase64Url(value: string): Uint8Array {
 }
 function isInsideWorld(x: number, z: number): boolean {
   if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
-  // Silent Hill swapped places with Zelda into the top row's west corner, so
-  // the annex it kept in the tournament hall is gone and the world is one
-  // rectangle again. Matches arcade.js.
-  return false;
+  // Silent Hill doubled sideways: its annex is bolted onto the OUTSIDE of
+  // the building's west wall, over ground nothing else uses. Matches
+  // SILENT_HILL_EXPANSE in arcade.js.
+  return x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5;
 }
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {

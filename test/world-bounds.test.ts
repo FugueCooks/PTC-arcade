@@ -52,20 +52,30 @@ void test('the server, the worker and the client agree on where the world ends',
   }
 });
 
-void test('the floor is one rectangle again, in all three copies', () => {
-  // Silent Hill moved to the top row's west corner, taking with it the annex
-  // it kept in the tournament hall. A region that survives in one copy and
-  // not another is the exact drift this file exists to catch: the symptom is
-  // not a wall but a player who simply stops walking, or walks somewhere the
-  // server then refuses.
+void test('the floor is the main rectangle plus the Silent Hill expanse, in all three copies', () => {
+  // Silent Hill sits in the top row's west corner and is doubled sideways:
+  // its annex is bolted onto the OUTSIDE of the building's west wall. A
+  // region that survives in one copy and not another is the exact drift this
+  // file exists to catch: the symptom is not a wall but a player who simply
+  // stops walking, or walks somewhere the server then refuses.
   for (const source of [server, worker, client]) {
     assert.ok(!/MEGAMAN_ALCOVE/.test(source), 'the retired alcove must not come back by that name');
-    assert.ok(!/SILENT_HILL_ANNEX/.test(source), 'the retired annex must not come back by that name');
+    assert.ok(!/SILENT_HILL_ANNEX/.test(source), 'the retired tournament-hall annex must not come back by that name');
     assert.ok(!source.includes('z <= 49.9'), 'no copy may still walk into the tournament hall west end');
   }
   assert.equal(clientBounds.minX, -42.7);
   assert.equal(clientBounds.maxX, 42.7);
   assert.equal(clientBounds.minX, -clientBounds.maxX, 'the main rectangle stays symmetric');
+
+  const expanse = clientRegion('SILENT_HILL_EXPANSE');
+  assert.deepEqual(expanse, { minX: -64.3, maxX: -42.7, minZ: -66.7, maxZ: -42.5 });
+  assert.equal(expanse.maxX, clientBounds.minX, 'the expanse must meet the main rectangle');
+  // Both authorities carry the same numbers, keyed off the main rectangle's
+  // minX so the two regions cannot drift apart at the seam.
+  for (const [name, source] of [['server', server], ['worker', worker]] as const) {
+    assert.ok(source.includes('return x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5;'),
+      `${name} must enforce the Silent Hill expanse`);
+  }
 });
 
 /** Rooms sealed behind a construction barrier, read from the scene itself. */

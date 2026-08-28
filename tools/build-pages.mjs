@@ -8,7 +8,7 @@ const rootFiles = [
   'index.html', 'player.html', 'style.css', 'app-bootstrap.js', 'arcade.js',
   'avatar-selection.js', 'multiplayer-client.js'
 ];
-const sourceDirectories = ['avatars', 'cabinets', 'emulators', 'games', 'rooms', 'social', 'world', 'realtime', 'wallet'];
+const sourceDirectories = ['avatars', 'cabinets', 'emulators', 'games', 'matches', 'rooms', 'social', 'world', 'realtime', 'wallet'];
 const requiredPrizeModels = new Set([
   'enterprise.optimized.glb',
   'furthermore.optimized.glb',
