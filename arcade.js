@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=stadium-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=dome-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -520,38 +520,96 @@ function pokemonFieldTexture(){
   texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   return texture;
 }
+/**
+ * The stands as a bowl rather than four flat walls.
+ *
+ * One elliptical band carries the whole panorama — jumbotron end, one long
+ * side, the opposite tiers, the long side mirrored so the loop closes — and a
+ * shallow dome caps it, so looking around or up never finds a corner. A real
+ * stadium has no corners, and the corners were what kept this reading as a
+ * decorated room.
+ *
+ * The band's ellipse touches the room's walls at their midpoints and pulls
+ * inside them toward the corners. There is deliberately no collision on it:
+ * its radii leave every doorway usable, and a player who walks behind it in a
+ * corner sees the mirrored outside of the bowl, not a void, because the band
+ * is double-sided.
+ */
 function buildPokemonStadium(centerX,centerZ){
-  const field=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN-1.4,ROOM_DEPTH-1.4),
+  const RX=10.5,RZ=8.1,BAND_BASE=.6,BAND_TOP=4.2;
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-dome-1');
+  bandTexture.colorSpace=THREE.SRGBColorSpace;
+  bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  const band=new THREE.Mesh(
+    new THREE.CylinderGeometry(1,1,BAND_TOP-BAND_BASE,72,1,true),
+    new THREE.MeshBasicMaterial({map:bandTexture,side:THREE.DoubleSide}));
+  band.scale.set(RX,1,RZ);
+  band.position.set(centerX,(BAND_BASE+BAND_TOP)/2,centerZ);
+  // Rotating the mesh a quarter turn would swing the 10.5 m axis across the
+  // room's 8.4 m half-depth and push the band through both neighbouring
+  // rooms — and out of line with the dome. The jumbotron is aimed by sliding
+  // the texture around the loop instead: its panel is the first 25.4% of the
+  // strip, so this offset centres it on the wall a player faces walking in.
+  bandTexture.wrapS=THREE.RepeatWrapping;
+  bandTexture.offset.x=.123;
+  scene.add(band);
+  // The roof: a shallow dome from the band's rim to just under the ceiling,
+  // drawn as a night sky with a lit rim so the bowl reads as open to the dark
+  // rather than shut by a lid.
+  const domeCanvas=document.createElement('canvas');domeCanvas.width=512;domeCanvas.height=512;
+  const dc=domeCanvas.getContext('2d');
+  const sky=dc.createRadialGradient(256,256,40,256,256,256);
+  sky.addColorStop(0,'#0a1026');sky.addColorStop(.72,'#070b1c');sky.addColorStop(.94,'#2b3f66');sky.addColorStop(1,'#8fb6e0');
+  dc.fillStyle=sky;dc.fillRect(0,0,512,512);
+  for(let i=0;i<170;i++){const a=i*2.399,r=20+(i*97)%216;dc.fillStyle=i%3?'#c9d6ee':'#ffffff';
+    dc.globalAlpha=.25+(i%5)*.12;dc.fillRect(256+Math.cos(a)*r,256+Math.sin(a)*r,1.6,1.6)}
+  dc.globalAlpha=1;
+  const domeTexture=new THREE.CanvasTexture(domeCanvas);domeTexture.colorSpace=THREE.SRGBColorSpace;
+  const dome=new THREE.Mesh(
+    new THREE.SphereGeometry(1,48,20,0,Math.PI*2,0,Math.PI/2),
+    new THREE.MeshBasicMaterial({map:domeTexture,side:THREE.BackSide}));
+  dome.scale.set(RX,.85,RZ);
+  dome.position.set(centerX,BAND_TOP,centerZ);
+  scene.add(dome);
+  // The field sits inscribed in the ellipse rather than filling the rectangle,
+  // so it never runs behind the stands.
+  const field=new THREE.Mesh(new THREE.PlaneGeometry(12.6,9.4),
     new THREE.MeshStandardMaterial({map:pokemonFieldTexture(),roughness:.82,metalness:.05,emissive:0x0d2a12,emissiveIntensity:.35}));
   field.rotation.x=-Math.PI/2;field.position.set(centerX,.014,centerZ);field.receiveShadow=true;scene.add(field);
-  // The barrier between the field and the stands, low enough to see over from
-  // the field and bright enough to read as the edge of the play area.
+  // The barrier follows the bowl: a ring of segments on the same ellipse,
+  // standing where the stands meet the field.
   const rail=new THREE.MeshStandardMaterial({color:0xd8e2ea,emissive:0x35506b,emissiveIntensity:.5,metalness:.55,roughness:.35});
   const trim=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.5,metalness:.4,roughness:.3});
-  const halfX=(ROOM_SPAN-1.4)/2,halfZ=(ROOM_DEPTH-1.4)/2;
-  for(const [w,d,x,z] of [[ROOM_SPAN-1.4,.34,0,-halfZ],[ROOM_SPAN-1.4,.34,0,halfZ],[.34,ROOM_DEPTH-1.4,-halfX,0],[.34,ROOM_DEPTH-1.4,halfX,0]]){
-    const barrier=new THREE.Mesh(new THREE.BoxGeometry(w,.62,d),rail);
-    barrier.position.set(centerX+x,.31,centerZ+z);scene.add(barrier);
-    const strip=new THREE.Mesh(new THREE.BoxGeometry(w*.995,.05,d*.995),trim);
-    strip.position.set(centerX+x,.64,centerZ+z);scene.add(strip);
+  const SEGMENTS=26,BRX=7.4,BRZ=5.6;
+  const segmentLength=2*Math.PI*Math.sqrt((BRX*BRX+BRZ*BRZ)/2)/SEGMENTS;
+  for(let i=0;i<SEGMENTS;i++){
+    const a=i/SEGMENTS*Math.PI*2,x=Math.cos(a)*BRX,z=Math.sin(a)*BRZ;
+    const heading=Math.atan2(Math.cos(a)*BRZ,-Math.sin(a)*BRX);
+    const barrier=new THREE.Mesh(new THREE.BoxGeometry(segmentLength*1.04,.62,.3),rail);
+    barrier.position.set(centerX+x,.31,centerZ+z);barrier.rotation.y=heading;scene.add(barrier);
+    const strip=new THREE.Mesh(new THREE.BoxGeometry(segmentLength*1.04,.05,.28),trim);
+    strip.position.set(centerX+x,.64,centerZ+z);strip.rotation.y=heading;scene.add(strip);
   }
-  // Floodlight banks high on the two long walls, aimed in. Emissive housings
-  // plus one managed light a side: the banks are the look, the light is the
-  // proof, and two more lights is what the budget can carry.
+  // Floodlight rigs on the dome rim, leaning in over the field, with one
+  // managed light per side as before: the rigs are the look, the two lights
+  // are the proof, and two is what the budget carries.
   const housing=new THREE.MeshStandardMaterial({color:0x161b24,metalness:.7,roughness:.35});
   const lamp=new THREE.MeshBasicMaterial({color:0xfff6dc});
-  for(const side of [-1,1]){
-    for(const offset of [-6.2,0,6.2]){
-      const bank=new THREE.Mesh(new THREE.BoxGeometry(2.4,.5,.36),housing);
-      bank.position.set(centerX+offset,4.1,centerZ+side*(ROOM_DEPTH/2-.5));scene.add(bank);
-      for(const cell of [-.8,0,.8]){
-        const face=new THREE.Mesh(new THREE.PlaneGeometry(.62,.34),lamp);
-        face.position.set(centerX+offset+cell,4.1,centerZ+side*(ROOM_DEPTH/2-.72));
-        face.rotation.y=side<0?0:Math.PI;scene.add(face);
-      }
+  for(let i=0;i<6;i++){
+    const a=(i+.5)/6*Math.PI*2,x=Math.cos(a)*(RX-.9),z=Math.sin(a)*(RZ-.9);
+    const rig=new THREE.Group();
+    rig.position.set(centerX+x,BAND_TOP-.25,centerZ+z);
+    rig.lookAt(centerX,1.2,centerZ);
+    const bank=new THREE.Mesh(new THREE.BoxGeometry(1.9,.42,.3),housing);rig.add(bank);
+    for(const cell of [-.62,0,.62]){
+      const face=new THREE.Mesh(new THREE.PlaneGeometry(.5,.28),lamp);
+      face.position.set(cell,0,.17);rig.add(face);
     }
+    scene.add(rig);
+  }
+  for(const side of [-1,1]){
     const flood=new THREE.PointLight(0xfff2d6,4.6,15,2);
-    flood.position.set(centerX,3.9,centerZ+side*5.4);
+    flood.position.set(centerX,3.6,centerZ+side*4.6);
     scene.add(flood);managedSceneLights.push(flood);
   }
 }
@@ -562,14 +620,8 @@ themeRoom({
   near:'mario-room-mural-3.webp?v=mario-1',
   side:'mario-room-mural-2.webp?v=mario-1'
 });
-// Pokemon, in the east column. The walls are the bowl; the field, its barrier
-// and the floodlights are built underneath them.
-themeRoom({
-  centerX:ANNEX_ROOM_CENTER_X,centerZ:-25.2,
-  far:'pokemon-room-mural.webp?v=pokemon-1',
-  near:'pokemon-room-mural-3.webp?v=pokemon-1',
-  side:'pokemon-room-mural-2.webp?v=pokemon-1'
-});
+// Pokemon, in the east column: the bowl itself, not flat murals — the band and
+// dome carry the stands, so this room does not go through themeRoom at all.
 buildPokemonStadium(ANNEX_ROOM_CENTER_X,-25.2);
 // No light rig added per room: the ring already lays one into every side room,
 // and a second in the same room is two rigs competing for the same light
@@ -1613,7 +1665,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=stadium-1')
+  import('./emulators/disc-range-cache.js?v=dome-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1633,7 +1685,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=stadium-1')
+  import('./emulators/disc-range-cache.js?v=dome-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
