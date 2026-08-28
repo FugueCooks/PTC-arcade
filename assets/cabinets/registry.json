@@ -134,16 +134,16 @@
     "gameId": "metal-gear-solid",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -32.4,
       "y": 1.65,
-      "z": 1.15
+      "z": -3.8
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -32.4,
       "y": 1.65,
-      "z": 1.15
+      "z": -4.15
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 3.141592653589793,
     "defaultGameId": "metal-gear-solid"
   },
   {
@@ -343,27 +343,6 @@
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "mega-man-64",
     "system": "n64"
-  },
-  {
-    "id": "megaman-cabinet-10",
-    "name": "MegaMan Room PlayStation Cabinet 10",
-    "sceneKey": "PLAYSTATION // READY 10",
-    "cabinetType": "psx-upright",
-    "zoneId": "megaman-room",
-    "gameId": null,
-    "enabled": true,
-    "interactionPosition": {
-      "x": -39.6,
-      "y": 1.65,
-      "z": 12.2
-    },
-    "playerPosition": {
-      "x": -39.25,
-      "y": 1.65,
-      "z": 12.2
-    },
-    "playerRotationY": 1.5707963267948966,
-    "system": "psx"
   },
   {
     "id": "n64-cabinet-01",
@@ -585,20 +564,20 @@
     "name": "Super Smash Bros. Melee",
     "sceneKey": "SUPER SMASH BROS. MELEE",
     "cabinetType": "gamecube-kiosk",
-    "zoneId": "gamecube-room",
+    "zoneId": "multiplayer-hall",
     "gameId": "super-smash-bros-melee",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
+      "x": -13,
       "y": 1.65,
-      "z": 10.35
+      "z": 42
     },
     "playerPosition": {
-      "x": 9.15,
+      "x": -12.65,
       "y": 1.65,
-      "z": 10.35
+      "z": 42
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "super-smash-bros-melee",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -693,20 +672,20 @@
     "name": "Dragon Ball Z: Budokai Tenkaichi 3 (PS2)",
     "sceneKey": "DBZ TENKAICHI 3",
     "cabinetType": "ps2-kiosk",
-    "zoneId": "psx-back-gallery",
+    "zoneId": "multiplayer-hall",
     "gameId": "dbz-tenkaichi-3",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": 13,
       "y": 1.65,
-      "z": 10.35
+      "z": 42
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": 12.65,
       "y": 1.65,
-      "z": 10.35
+      "z": 42
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "dbz-tenkaichi-3"
   },
   {
@@ -734,78 +713,78 @@
     "name": "Xbox Cabinet 1",
     "sceneKey": "XBOX // READY 01",
     "cabinetType": "xbox-display",
-    "zoneId": "xbox-gallery",
+    "zoneId": "multiplayer-hall",
     "gameId": null,
     "enabled": false,
     "interactionPosition": {
-      "x": 39.4,
+      "x": -8,
       "y": 1.65,
-      "z": 3
+      "z": 46.4
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": -8,
       "y": 1.65,
-      "z": 3
+      "z": 46.05
     },
-    "playerRotationY": -1.5707963267948966
+    "playerRotationY": 3.141592653589793
   },
   {
     "id": "xbox-cabinet-02",
     "name": "Xbox Cabinet 2",
     "sceneKey": "XBOX // READY 02",
     "cabinetType": "xbox-display",
-    "zoneId": "xbox-gallery",
+    "zoneId": "multiplayer-hall",
     "gameId": null,
     "enabled": false,
     "interactionPosition": {
-      "x": 39.4,
+      "x": -4,
       "y": 1.65,
-      "z": 8
+      "z": 46.4
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": -4,
       "y": 1.65,
-      "z": 8
+      "z": 46.05
     },
-    "playerRotationY": -1.5707963267948966
+    "playerRotationY": 3.141592653589793
   },
   {
     "id": "xbox-cabinet-03",
     "name": "Xbox Cabinet 3",
     "sceneKey": "XBOX // READY 03",
     "cabinetType": "xbox-display",
-    "zoneId": "xbox-gallery",
+    "zoneId": "multiplayer-hall",
     "gameId": null,
     "enabled": false,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 0,
       "y": 1.65,
-      "z": 13
+      "z": 46.4
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 0,
       "y": 1.65,
-      "z": 13
+      "z": 46.05
     },
-    "playerRotationY": -1.5707963267948966
+    "playerRotationY": 3.141592653589793
   },
   {
     "id": "xbox-cabinet-04",
     "name": "Xbox Cabinet 4",
     "sceneKey": "XBOX // READY 04",
     "cabinetType": "xbox-display",
-    "zoneId": "xbox-gallery",
+    "zoneId": "multiplayer-hall",
     "gameId": null,
     "enabled": false,
     "interactionPosition": {
-      "x": 29.4,
+      "x": 4,
       "y": 1.65,
-      "z": 13.2
+      "z": 46.4
     },
     "playerPosition": {
-      "x": 29.4,
+      "x": 4,
       "y": 1.65,
-      "z": 12.85
+      "z": 46.05
     },
     "playerRotationY": 3.141592653589793
   },
@@ -814,18 +793,18 @@
     "name": "Xbox Cabinet 5",
     "sceneKey": "XBOX // READY 05",
     "cabinetType": "xbox-display",
-    "zoneId": "xbox-gallery",
+    "zoneId": "multiplayer-hall",
     "gameId": null,
     "enabled": false,
     "interactionPosition": {
-      "x": 35.4,
+      "x": 8,
       "y": 1.65,
-      "z": 13.2
+      "z": 46.4
     },
     "playerPosition": {
-      "x": 35.4,
+      "x": 8,
       "y": 1.65,
-      "z": 12.85
+      "z": 46.05
     },
     "playerRotationY": 3.141592653589793
   }

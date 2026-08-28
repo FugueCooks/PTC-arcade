@@ -26,9 +26,9 @@ export function syntheticRegistry(count: number, zones = 20): CabinetDefinition[
 
 void test('the shipped registry indexes by ID, zone, game, and type', () => {
   const index = new CabinetIndex(CABINET_REGISTRY);
-  assert.equal(index.size, 39);
+  assert.equal(index.size, 38);
   assert.equal(index.zoneCount, 6);
-  assert.equal(index.forZone('megaman-room').length, 10);
+  assert.equal(index.forZone('megaman-room').length, 9);
   assert.equal(index.forZone('no-such-zone').length, 0);
   assert.equal(index.forGame('crash-bandicoot').length, 1);
   assert.equal(index.forType('xbox-display').length, 5);
@@ -102,7 +102,7 @@ void test('zones derive bounds from their cabinets and know their neighbours', (
 
   const megaman = zones.get('megaman-room');
   assert.ok(megaman);
-  assert.equal(megaman.cabinetIds.length, 10);
+  assert.equal(megaman.cabinetIds.length, 9);
   assert.ok(megaman.bounds.minX < megaman.bounds.maxX);
   assert.equal(zones.zoneIdForCabinet('megaman-cabinet-01'), 'megaman-room');
   assert.equal(zones.zoneIdForCabinet('nope'), undefined);

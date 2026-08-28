@@ -62,9 +62,11 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // Tournament room, which runs the full width of the building.
   // Out in the foyer with the other console games: the back five of the east
   // hall row, all facing the centre aisle.
+  // Cabinet 04 — Super Smash Bros. Melee — stands in the tournament hall with
+  // the other headline multiplayer games; the rest hold their foyer slots.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
     { x: 9.5, y: 1.65, z: 3.45 }, { x: 9.5, y: 1.65, z: 5.75 },
-    { x: 9.5, y: 1.65, z: 8.05 }, { x: 9.5, y: 1.65, z: 10.35 },
+    { x: 9.5, y: 1.65, z: 8.05 }, { x: -13, y: 1.65, z: 42 },
     { x: 9.5, y: 1.65, z: 12.65 }
   ]);
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [
@@ -89,13 +91,15 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   const megaManCabinets = [...byId]
     .filter(([id]) => id.startsWith('megaman-cabinet-'))
     .map(([, cabinet]) => cabinet);
-  assert.equal(megaManCabinets.length, 10);
+  // Nine cabinets, nine games: the tenth was an empty shell holding a seat for
+  // a game that never came, and it is gone.
+  assert.equal(megaManCabinets.length, 9);
   assert.ok(megaManCabinets.every((cabinet) => cabinet.enabled));
   // Cabinet 08 is held for a PS2 title and stands between X6 and Mega Man 8 in
   // the row; the ids stay in their original order, which is why the odd one out
   // is eighth here and seventh on the wall.
   assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.system), [
-    'snes', 'snes', 'snes', 'psx', 'psx', 'psx', 'psx', 'ps2', 'n64', 'psx'
+    'snes', 'snes', 'snes', 'psx', 'psx', 'psx', 'psx', 'ps2', 'n64'
   ]);
   assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.defaultGameId), [
     'mega-man-x',
@@ -106,8 +110,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
     'mega-man-x6',
     'mega-man-8',
     'mega-man-x7',
-    'mega-man-64',
-    undefined
+    'mega-man-64'
   ]);
 });
 

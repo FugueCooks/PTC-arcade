@@ -46,7 +46,10 @@ void test('an unassigned cabinet resolves no game and fails safely', () => {
   // Milestone 11.40 test 4: unknown game fails safely.
   const { registry } = loadGameRegistry();
   const placeholders = CABINET_REGISTRY.filter(({ gameId }) => gameId === null);
-  assert.equal(placeholders.length, 9);
+  // The empty Mega Man shell is gone; the five Halo stations are the
+  // placeholders now, plus N64 07, PS2 05 and GameCube... the count is what
+  // matters: cabinets with no game assigned.
+  assert.equal(placeholders.length, 8);
   assert.equal(registry.get('no-such-game'), undefined);
   assert.equal(registry.forCabinet('xbox-cabinet-01'), undefined);
   assert.equal(registry.has('no-such-game'), false);

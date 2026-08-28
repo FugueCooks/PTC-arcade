@@ -31,7 +31,7 @@ void test('a room join receives only the zones around the player', () => {
   // Milestone 11.14: never send every cabinet on the platform.
   const { cabinets } = setup();
   const megaman = cabinets.zoneSnapshot('main', ['megaman-room']);
-  assert.equal(megaman.cabinets.length, 10);
+  assert.equal(megaman.cabinets.length, 9);
   assert.deepEqual(megaman.zoneIds, ['megaman-room']);
   assert.ok(megaman.cabinets.length < cabinets.index.size);
   assert.ok(megaman.cabinets.every(({ status }) => status === 'available'));
@@ -42,7 +42,9 @@ void test('overlapping zones never duplicate a cabinet in one snapshot', () => {
   const snapshot = cabinets.zoneSnapshot('main', ['megaman-room', 'megaman-room', 'main-floor-west']);
   const ids = snapshot.cabinets.map(({ cabinetId }) => cabinetId);
   assert.equal(new Set(ids).size, ids.length);
-  assert.equal(snapshot.cabinets.length, 17);
+  // Nine Mega Man cabinets, seven PlayStation-row cabinets in main-floor-west,
+  // and Metal Gear Solid keeps that zone from its themed room.
+  assert.equal(snapshot.cabinets.length, 16);
 });
 
 void test('state changes publish monotonic revisions', () => {

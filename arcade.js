@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=tunnel-3';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=tourney-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -564,7 +564,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-tunnel-3');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-tourney-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -1083,7 +1083,10 @@ const playstationRow=[
   ['metal-gear-solid','METAL GEAR SOLID',0x5d75d9,false,false]
 ];
 playstationRow.forEach(([id,label,hue,isCrash,isGex],index)=>{
-  const slot=FOYER_WEST[index];
+  // Metal Gear Solid stands in its own themed room, in front of the far
+  // mural, the way the Mega Man room fronts its cabinets with its art. The
+  // rest hold their foyer slots.
+  const slot=id==='metal-gear-solid'?{x:-32.4,z:-1.8,rotation:Math.PI}:FOYER_WEST[index];
   makeCabinet(id,label,slot.x,slot.z,hue,isCrash,isGex,'psx');
   cabinets[cabinets.length-1].g.rotation.y=slot.rotation;configureHostedCabinet(id);
 });
@@ -1123,7 +1126,8 @@ const MEGAMAN_SEAT_RUNS=[
 // The ids are stable identities rather than positions, which is why 8 sits
 // between 6 and 7: renumbering to match the order would move every hosted game
 // to a different cabinet for no gain.
-const MEGAMAN_CABINET_ORDER=[1,2,3,4,5,6,8,7,9,10];
+// Cabinet 10 was an empty shell holding a seat for a game that never came.
+const MEGAMAN_CABINET_ORDER=[1,2,3,4,5,6,8,7,9];
 function megaManSeat(seat){
   let remaining=seat;
   for(const run of MEGAMAN_SEAT_RUNS){
@@ -1273,7 +1277,12 @@ for(const [index,x,z,rotation,hue] of n64CabinetLayout){const cabinetId=`n64-cab
 // the cabinets cannot be reached while the room is blocked.
 const gamecubeTitles=['THE LEGEND OF ZELDA: THE WIND WAKER','THE LEGEND OF ZELDA: TWILIGHT PRINCESS','PIKMIN','SUPER SMASH BROS. MELEE','SUPER MARIO SUNSHINE'];
 const GAMECUBE_HUES=[0x8b5cf6,0x36f9f6,0xff4da6,0x7dff67,0xffb42e];
-const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>[index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
+// Cabinet 04 — Super Smash Bros. Melee — stands in the tournament hall with
+// the other headline multiplayer games; the rest hold their foyer slots, so a
+// missing cabinet reads as a gap in the row rather than a renumbering.
+const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>index===3
+  ?[4,-15,42,Math.PI/2,hue]
+  :[index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
   const cabinetId=`gamecube-cabinet-0${index}`;
   makeCabinet(cabinetId,gamecubeTitles[index-1],x,z,hue,false,false,'gamecube');
@@ -1281,16 +1290,23 @@ for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
 }
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
-const ps2CabinetLayout=Array.from({length:5},(_,index)=>[index+1,FOYER_WEST[7+index].x,FOYER_WEST[7+index].z,FOYER_WEST[7+index].rotation]);
+// Cabinet 04 — DBZ Budokai Tenkaichi 3 — faces Melee across the tournament
+// hall; the rest hold their foyer slots.
+const ps2CabinetLayout=Array.from({length:5},(_,index)=>index===3
+  ?[4,15,42,-Math.PI/2]
+  :[index+1,FOYER_WEST[7+index].x,FOYER_WEST[7+index].z,FOYER_WEST[7+index].rotation]);
 for(const [index,x,z,rotation] of ps2CabinetLayout){
   const cabinetId=`psx-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
   makeCabinet(cabinetId,ps2RoomTitles[index-1],x,z,expansionCabinetColors[index-1],false,false,'ps2');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'ps2',gameName:hosted?.name||ps2RoomTitles[index-1],gameId:hosted?.emulatorId||26000+index,enabled:Boolean(hosted),status:hosted?'available':'disabled'});configureHostedCabinet(cabinetId);
 }
-const xboxCabinetLayout=[[1,41.4,3,-Math.PI/2],[2,41.4,8,-Math.PI/2],[3,41.4,13,-Math.PI/2],[4,29.4,15.2,Math.PI],[5,35.4,15.2,Math.PI]];
+// The five Xbox placeholders are the Halo LAN row along the tournament hall's
+// back wall, facing the floor. Still disabled: the room is sealed and no Halo
+// image is hosted yet, so the stations stand ready rather than pretend to run.
+const xboxCabinetLayout=[[1,-8,48.4,Math.PI],[2,-4,48.4,Math.PI],[3,0,48.4,Math.PI],[4,4,48.4,Math.PI],[5,8,48.4,Math.PI]];
 for(const [index,x,z,rotation] of xboxCabinetLayout){
   const cabinetId=`xbox-cabinet-0${index}`;
-  makeCabinet(cabinetId,`XBOX // READY 0${index}`,x,z,expansionCabinetColors[5-index],false,false,'xbox');
+  makeCabinet(cabinetId,`HALO LAN // STATION 0${index}`,x,z,expansionCabinetColors[5-index],false,false,'xbox');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'xbox',gameName:`Xbox Cabinet ${index}`,enabled:false,status:'disabled'});
 }
 // The centre of the hall is deliberately empty. The couch ring and the round
@@ -1784,7 +1800,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=tunnel-3')
+  import('./emulators/disc-range-cache.js?v=tourney-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1804,7 +1820,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=tunnel-3')
+  import('./emulators/disc-range-cache.js?v=tourney-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))

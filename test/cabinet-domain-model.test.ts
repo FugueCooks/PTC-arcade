@@ -13,9 +13,9 @@ const validRow = {
 void test('the shipped registry maps onto the domain model with zones and types', () => {
   const { definitions, issues } = readCabinetRegistry();
   assert.deepEqual(issues, []);
-  assert.equal(definitions.length, 39);
+  assert.equal(definitions.length, 38);
   assert.equal(new Set(definitions.map(({ zoneId }) => zoneId)).size, 6);
-  assert.equal(definitions.filter(({ zoneId }) => zoneId === 'megaman-room').length, 10);
+  assert.equal(definitions.filter(({ zoneId }) => zoneId === 'megaman-room').length, 9);
   assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 30);
   assert.ok(definitions.every(({ cabinetType }) => cabinetType.length > 0));
   assert.ok(definitions.every(({ interactionPolicy }) => interactionPolicy.interactionDistance > 0));
@@ -27,7 +27,7 @@ void test('every cabinet ID survives the Phase 11 migration unchanged', () => {
   for (const id of ['pixel-rally', 'silent-hill', 'metal-gear-solid', 'n64-cabinet-07', 'psx-back-cabinet-05', 'xbox-cabinet-05', 'gamecube-cabinet-05']) {
     assert.ok(ids.has(id), `${id} must still exist`);
   }
-  assert.equal([...ids].filter((id) => id.startsWith('megaman-cabinet-')).length, 10);
+  assert.equal([...ids].filter((id) => id.startsWith('megaman-cabinet-')).length, 9);
 });
 
 void test('a cabinet definition carries no rendering, emulator, or socket state', () => {

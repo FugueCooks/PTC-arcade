@@ -21,7 +21,7 @@ function setup(options = {}) {
 void test('the approved registry exposes consolidated console rooms and the MegaMan PlayStation cabinets', () => {
   const { cabinets } = setup();
   const snapshot = cabinets.snapshot('main');
-  assert.equal(snapshot.length, 39);
+  assert.equal(snapshot.length, 38);
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'pixel-rally'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'silent-hill'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'metal-gear-solid'));
@@ -29,7 +29,7 @@ void test('the approved registry exposes consolidated console rooms and the Mega
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'psx-back-cabinet-05'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'xbox-cabinet-05'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'gamecube-cabinet-05'));
-  assert.equal(snapshot.filter(({ cabinetId }) => cabinetId.startsWith('megaman-cabinet-')).length, 10);
+  assert.equal(snapshot.filter(({ cabinetId }) => cabinetId.startsWith('megaman-cabinet-')).length, 9);
   assert.ok(!snapshot.some(({ cabinetId }) => cabinetId.startsWith('n64-back-cabinet-')));
   assert.ok(snapshot.every(({ status }) => status === 'available'));
 });
