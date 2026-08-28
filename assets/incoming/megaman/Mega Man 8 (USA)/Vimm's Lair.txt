@@ -1,0 +1,24 @@
+Thanks for visiting The Vault at Vimm's Lair.
+
+	vimm.net
+
+This PlayStation media is verified by Redump.
+
+Mega Man 8 (USA) (Track 1).bin
+CRC:   3a90c786
+MD5:   4e9e6dcf27ea0e15c5f4d1f93c800378
+SHA-1: 21616c788d6bfc4a16c944a4cda1a1862b8bcda8
+Mega Man 8 (USA) (Track 2).bin
+CRC:   9bf32be4
+MD5:   a75dcbb5c831a966c47563e7ea4150c9
+SHA-1: 70e4bddd2a67ab7e2ccea0c836c7e9190f307241
+Mega Man 8 (USA) (Track 3).bin
+CRC:   7976083e
+MD5:   2d7b5e8e94a91bf5423b2356f6a34863
+SHA-1: d9f92af296360772e62caa4cb276de3fa74f5538
+Mega Man 8 (USA).cue
+CRC:   7d2dc696
+MD5:   0ee27bb92ce2cd8ccd69ca46e80234f7
+SHA-1: 2fbc5d7fa78ea63fdadfbb470678a37ac7232232
+
+Date:  2025-05-29 00:33:06

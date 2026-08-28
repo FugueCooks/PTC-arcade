@@ -1,0 +1,16 @@
+Thanks for visiting The Vault at Vimm's Lair.
+
+	vimm.net
+
+This PlayStation media is verified by Redump.
+
+Mega Man X6 (USA) (Rev 1).bin
+CRC:   8e6d014d
+MD5:   237b6feddd1a88e86ab1cddc8822f03f
+SHA-1: d4f7e08371027a87a3bf13311db5a4c56733f4ea
+Mega Man X6 (USA) (Rev 1).cue
+CRC:   f4c37bb8
+MD5:   2d10920370cf1d884a6149567728e988
+SHA-1: 7b30c65b01032b999995bca0f114eb69c9275394
+
+Date:  2025-05-29 00:33:06
