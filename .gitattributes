@@ -1,1 +1,6 @@
+# Every tracked text file is stored LF and checked out per platform. The
+# index is already LF throughout, so this records the existing state rather
+# than renormalising anything.
+* text=auto
+
 wallet/wallet-standard-bundle.js -whitespace

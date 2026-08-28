@@ -26,6 +26,15 @@ assets/bios/
 *.z64
 *.n64
 *.v64
+*.sfc
+*.smc
+*.nes
+*.gba
+*.gbc
+*.gcm
+*.rvz
+*.wbfs
+*.nds
 Crash Bandicoot \[U\] \[SCUS-94900\]/
 
 # Keep only the avatar models referenced by the approved registry. Animation
