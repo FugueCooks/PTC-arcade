@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=tunnel-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=tunnel-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -564,7 +564,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-tunnel-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-tunnel-2');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -686,16 +686,8 @@ function buildPokemonStadium(centerX,centerZ){
   header.position.set(centerX,3.15,TUNNEL_MOUTH_Z);scene.add(header);
   const headerTrim=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2+1.3,.09,.12),tunnelTrim);
   headerTrim.position.set(centerX,2.85,TUNNEL_MOUTH_Z-.24);scene.add(headerTrim);
-  // Where the tunnel meets the field: wing walls flaring out with lit caps, the
-  // emergence of a vomitory rather than a bare open end.
-  for(const side of [-1,1]){
-    const wing=new THREE.Mesh(new THREE.BoxGeometry(.24,1.15,2.6),tunnelMaterial);
-    wing.position.set(centerX+side*(TUNNEL_HALF_W+.85),.57,TUNNEL_EXIT_Z-.55);
-    wing.rotation.y=side*.55;scene.add(wing);
-    const wingCap=new THREE.Mesh(new THREE.BoxGeometry(.3,.08,2.6),tunnelTrim);
-    wingCap.position.set(centerX+side*(TUNNEL_HALF_W+.85),1.18,TUNNEL_EXIT_Z-.55);
-    wingCap.rotation.y=side*.55;scene.add(wingCap);
-  }
+  // The exit opens straight onto the grass: wing walls stood here and read as
+  // loose blocks on the field, so the run ends clean.
   // Above and beside the tunnel, the mouth is closed off. Without this the
   // opening in the band was taller and wider than the tunnel, and the bowl's
   // inside was visible over the tunnel roof from the doorway.
@@ -1792,7 +1784,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=tunnel-1')
+  import('./emulators/disc-range-cache.js?v=tunnel-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1812,7 +1804,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=tunnel-1')
+  import('./emulators/disc-range-cache.js?v=tunnel-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
