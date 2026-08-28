@@ -30,7 +30,7 @@ const ROOM_ID = 'main';
 const PROTOCOL_VERSION = 1;
 const PLAYER_HEIGHT = 1.65;
 const RECONNECT_GRACE_MS = 10_000;
-const MAX_SPEED_PER_SECOND = 7;
+const MAX_SPEED_PER_SECOND = 10.5;
 const MOVEMENT_PACKET_MS = 50;
 const MOVEMENT_TOLERANCE = 0.3;
 const MIN_WORLD_X = -42.7;
@@ -50,18 +50,23 @@ const OPEN_DOOR_Z = [-25.2, -8, 8, 25.2];
 // walls between them. The row was shut by the world bound until its barriers
 // came down, so none of this needed enforcing before.
 const TOP_ROW_WALL_Z = -50.4;
-const NORTH_ROOM_X = [-32.4, -10.8, 10.8, 32.4];
-const NORTH_ROW_DIVIDER_X = [-21.6, 0, 21.6];
+const NORTH_ROOM_X = [-32.4, -10.8];
+// The east half of the top row, plus a bite of the band, is the Pokemon
+// stadium at 1.5x. Its west wall has no doorway; its south wall has one.
+const POKEMON_WEST_X = 10.8;
+const POKEMON_SOUTH_Z = -42;
+const POKEMON_DOOR_X = 27;
+const NORTH_ROW_DIVIDER_X = [-21.6];
 // The Pokemon bowl: the stands are solid, and the only way through them is the
 // entrance lane on the doorway side. Matches POKEBOWL in arcade.js.
-const POKEBOWL = { cx: 32.4, cz: -25.2, ax: 10.1, az: 7.7, laneHalfWidth: 1.5 };
+const POKEBOWL = { cx: 27, cz: -54.6, ax: 15.35, az: 11.75, laneHalfWidth: 1.5 };
 function insidePokemonBowl(x: number, z: number): boolean {
   const dx = (x - POKEBOWL.cx) / POKEBOWL.ax;
   const dz = (z - POKEBOWL.cz) / POKEBOWL.az;
   return dx * dx + dz * dz <= 1;
 }
 function inPokemonTunnelLane(x: number, z: number): boolean {
-  return Math.abs(z - POKEBOWL.cz) < POKEBOWL.laneHalfWidth && x < POKEBOWL.cx - POKEBOWL.ax * 0.5;
+  return Math.abs(x - POKEBOWL.cx) < POKEBOWL.laneHalfWidth && z > POKEBOWL.cz + POKEBOWL.az * 0.5;
 }
 const SIDE_COLUMN_MIN_Z = -33.6;
 const SIDE_COLUMN_MAX_Z = 33.6;
@@ -625,16 +630,33 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // jumbotron, and there is no way through a jumbotron.
   if (insidePokemonBowl(fromX, fromZ) !== insidePokemonBowl(toX, toZ)
     && !(inPokemonTunnelLane(fromX, fromZ) || inPokemonTunnelLane(toX, toZ))) return true;
-  // The top row's front wall.
+  // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
-  if (!throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if (toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if ((fromZ - TOP_ROW_WALL_Z) * (toZ - TOP_ROW_WALL_Z) < 0) {
     const crossing = (TOP_ROW_WALL_Z - fromZ) / (toZ - fromZ);
     const crossingX = fromX + (toX - fromX) * crossing;
-    if (crossing >= 0 && crossing <= 1 && !throughTopRowDoor(crossingX)) return true;
+    if (crossing >= 0 && crossing <= 1 && crossingX < POKEMON_WEST_X && !throughTopRowDoor(crossingX)) return true;
   }
-  // Inside the top row, the walls between its four rooms.
-  if (Math.max(fromZ, toZ) < TOP_ROW_WALL_Z) {
+  // The stadium's south wall, with the entrance doorway at its centre.
+  const throughStadiumDoor = (x: number) => Math.abs(x - POKEMON_DOOR_X) < ROOM_DOOR_CLEARANCE;
+  if (toX > POKEMON_WEST_X && !throughStadiumDoor(toX) && Math.abs(toZ - POKEMON_SOUTH_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromZ - POKEMON_SOUTH_Z) * (toZ - POKEMON_SOUTH_Z) < 0) {
+    const crossing = (POKEMON_SOUTH_Z - fromZ) / (toZ - fromZ);
+    const crossingX = fromX + (toX - fromX) * crossing;
+    if (crossing >= 0 && crossing <= 1 && crossingX > POKEMON_WEST_X && !throughStadiumDoor(crossingX)) return true;
+  }
+  // The stadium's west wall: full depth, no doorway.
+  if (Math.min(fromZ, toZ) < POKEMON_SOUTH_Z) {
+    if (toZ < POKEMON_SOUTH_Z && Math.abs(toX - POKEMON_WEST_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
+    if ((fromX - POKEMON_WEST_X) * (toX - POKEMON_WEST_X) < 0) {
+      const crossing = (POKEMON_WEST_X - fromX) / (toX - fromX);
+      const crossingZ = fromZ + (toZ - fromZ) * crossing;
+      if (crossing >= 0 && crossing <= 1 && crossingZ < POKEMON_SOUTH_Z) return true;
+    }
+  }
+  // Inside the top row's west stretch, the wall between its two rooms.
+  if (Math.max(fromZ, toZ) < TOP_ROW_WALL_Z && Math.min(fromX, toX) < POKEMON_WEST_X) {
     for (const dividerX of NORTH_ROW_DIVIDER_X) {
       if (Math.abs(toX - dividerX) < PARTITION_COLLISION_HALF_WIDTH) return true;
       if ((fromX - dividerX) * (toX - dividerX) < 0) return true;

@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=dome-3';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=stadium15-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -64,7 +64,12 @@ const gameAssetUrl=fileName=>`${gameAssetBaseUrl}/${fileName}`;
 const biosAssetUrl=window.ARCADE_RUNTIME?.biosAssetUrl||'assets/bios/SCPH1001.BIN';
 const gameCubeDspAssetUrl=window.ARCADE_RUNTIME?.gameCubeDspAssetUrl||gameAssetBaseUrl.replace(/\/games$/,'/bios/dsp_rom.bin');
 let yaw=0,pitch=0, locked=false, activeCabinet=null, localAnimationState='idle', cameraMode='third-person', socialFollowProvider=null, emulatorRuntimeActive=false;
-scene.add(new THREE.HemisphereLight(0x2b2440,0x0a0810,1.2));
+// The base wash the whole building sits in. The old values left everything
+// outside a managed light's radius near-black; this is a soft violet sky over
+// a warm floor bounce plus a low lavender ambient — colour without glare, and
+// none of it counts against the per-frame light budget.
+scene.add(new THREE.HemisphereLight(0x6a5fc9,0x2a1e14,1.55));
+scene.add(new THREE.AmbientLight(0x8a7fb8,.4));
 const managedSceneLights=[];
 // Callbacks run after movement resolves and before the draw call. Declared up
 // here so scenery built anywhere in the file can register an animation.
@@ -238,7 +243,11 @@ const SIDE_ROOM_Z=[-25.2,-8.4,8.4,25.2];
 const OPEN_DOOR_Z=[-25.2,-8,8,25.2];
 const SIDE_COLUMN_MIN_Z=-33.6,SIDE_COLUMN_MAX_Z=33.6;
 const TOP_BAND_MIN_Z=-50.4,NORTH_ROW_MIN_Z=-67.2;
-const NORTH_ROOM_X=[-32.4,-10.8,10.8,32.4];
+// Two rooms remain in the top row's west stretch; the east half of the row,
+// plus a bite of the band below it, is the Pokemon stadium at 1.5x scale.
+const NORTH_ROOM_X=[-32.4,-10.8];
+const POKEMON_WEST_X=10.8,POKEMON_SOUTH_Z=-42,POKEMON_DOOR_X=27;
+const POKEMON_CENTER_X=27,POKEMON_CENTER_Z=-54.6;
 const TOURNAMENT_MIN_Z=SIDE_COLUMN_MAX_Z,TOURNAMENT_MAX_Z=50.4;
 const MEGAMAN_ROOM_WEST_X=-SHELL_HALF_WIDTH,MEGAMAN_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z=8.4,MEGAMAN_ROOM_WIDTH=ROOM_SPAN,MEGAMAN_ROOM_DEPTH=ROOM_DEPTH,MEGAMAN_ROOM_DOOR_Z=8;
 // The outer wall runs the whole depth of the building on both sides.
@@ -254,9 +263,16 @@ const rearPanelMaterial=new THREE.MeshStandardMaterial({color:0x17233a,emissive:
 const rearWall=box(18.4,5,.3,0x15182a,0,2.5,TOP_BAND_MIN_Z,.18);rearWall.receiveShadow=true;
 for(let x=-8;x<=8;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,4.62,.055),rearPanelMaterial);panel.position.set(x,2.42,TOP_BAND_MIN_Z+.18);panel.receiveShadow=true;scene.add(panel)}
 box(18,.09,.08,0xd18a52,0,4.78,TOP_BAND_MIN_Z+.23,.85);box(18,.12,.08,0x251447,0,.1,TOP_BAND_MIN_Z+.23,.55);
-for(const [centerX,width] of [[-38.6,9.2],[-21.6,18.4],[21.6,18.4],[38.6,9.2]])box(width,5,.3,0x15182a,centerX,2.5,TOP_BAND_MIN_Z,.18);
-const NORTH_ROW_DIVIDER_X=[-HALL_HALF_WIDTH,0,HALL_HALF_WIDTH];
+// The front wall now ends where the Pokemon room begins; the short closer
+// covers the strip between the counter backdrop and the stadium's west wall.
+for(const [centerX,width] of [[-38.6,9.2],[-21.6,18.4],[10,1.6]])box(width,5,.3,0x15182a,centerX,2.5,TOP_BAND_MIN_Z,.18);
+const NORTH_ROW_DIVIDER_X=[-HALL_HALF_WIDTH];
 for(const dividerX of NORTH_ROW_DIVIDER_X)box(.3,5,ROOM_DEPTH,0x11182c,dividerX,2.5,(NORTH_ROW_MIN_Z+TOP_BAND_MIN_Z)/2,.06);
+// The stadium's own shell: a full-height west wall the length of the room, and
+// a south wall into the band with the entrance doorway at its centre.
+box(.3,5,25.2,0x11182c,POKEMON_WEST_X,2.5,POKEMON_CENTER_Z,.06);
+box(14.6,5,.3,0x11182c,18.1,2.5,POKEMON_SOUTH_Z,.06);
+box(14.6,5,.3,0x11182c,35.9,2.5,POKEMON_SOUTH_Z,.06);
 const gangsterPepeMount=new THREE.Group();
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);
 const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34;
@@ -536,8 +552,10 @@ function pokemonFieldTexture(){
  * is double-sided.
  */
 function buildPokemonStadium(centerX,centerZ){
-  const RX=10.5,RZ=8.1,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-dome-3');
+  // 1.5x the original bowl. The heights stay: the building's ceiling did not
+  // grow, and the dome still tops out three centimetres under it.
+  const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-stadium15-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -545,8 +563,10 @@ function buildPokemonStadium(centerX,centerZ){
   // through the image. The arc faces the doorway (local theta 3pi/2 is -x),
   // and its width is the tunnel plus a shoulder, measured along the ellipse
   // where dz/dtheta is RZ.
-  const MOUTH_ARC=3.8/RZ;
-  const BAND_THETA_START=Math.PI*1.5+MOUTH_ARC/2,BAND_THETA_LENGTH=Math.PI*2-MOUTH_ARC;
+  // The mouth faces +z now — the doorway is in the room's south wall — and at
+  // theta 0 the tangent runs along x at rate RX.
+  const MOUTH_ARC=4.2/RX;
+  const BAND_THETA_START=MOUTH_ARC/2,BAND_THETA_LENGTH=Math.PI*2-MOUTH_ARC;
   const band=new THREE.Mesh(
     new THREE.CylinderGeometry(1,1,BAND_TOP-BAND_BASE,72,1,true,BAND_THETA_START,BAND_THETA_LENGTH),
     new THREE.MeshBasicMaterial({map:bandTexture,side:THREE.DoubleSide}));
@@ -596,18 +616,27 @@ function buildPokemonStadium(centerX,centerZ){
   // there is nothing to see, so the bowl never visibly breaks.
   const tunnelMaterial=new THREE.MeshStandardMaterial({color:0x0a0f1a,roughness:.7,metalness:.25,side:THREE.DoubleSide});
   const tunnelTrim=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.2,metalness:.4,roughness:.3});
-  const TUNNEL_LENGTH=3.4,TUNNEL_HALF_W=1.7,tunnelX=centerX-RX+TUNNEL_LENGTH/2-.6;
+  const TUNNEL_LENGTH=3.4,TUNNEL_HALF_W=1.7,tunnelZ=centerZ+RZ-TUNNEL_LENGTH/2+.6;
   for(const side of [-1,1]){
-    const wall=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_LENGTH,2.7,.24),tunnelMaterial);
-    wall.position.set(tunnelX,1.35,centerZ+side*TUNNEL_HALF_W);scene.add(wall);
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(.24,2.7,TUNNEL_LENGTH),tunnelMaterial);
+    wall.position.set(centerX+side*TUNNEL_HALF_W,1.35,tunnelZ);scene.add(wall);
   }
-  const roof=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_LENGTH,.24,TUNNEL_HALF_W*2+.48),tunnelMaterial);
-  roof.position.set(tunnelX,2.82,centerZ);scene.add(roof);
-  const lintel=new THREE.Mesh(new THREE.BoxGeometry(.14,.1,TUNNEL_HALF_W*2),tunnelTrim);
-  lintel.position.set(tunnelX+TUNNEL_LENGTH/2,2.7,centerZ);scene.add(lintel);
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2+.48,.24,TUNNEL_LENGTH),tunnelMaterial);
+  roof.position.set(centerX,2.82,tunnelZ);scene.add(roof);
+  const lintel=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2,.1,.14),tunnelTrim);
+  lintel.position.set(centerX,2.7,tunnelZ-TUNNEL_LENGTH/2);scene.add(lintel);
+  // Above and beside the tunnel, the mouth is closed off. Without this the
+  // opening in the band was taller and wider than the tunnel, and the bowl's
+  // inside was visible over the tunnel roof from the doorway.
+  const headwall=new THREE.Mesh(new THREE.BoxGeometry(4.8,BAND_TOP-2.55,.16),tunnelMaterial);
+  headwall.position.set(centerX,(BAND_TOP+2.55)/2,centerZ+RZ-.35);scene.add(headwall);
+  for(const side of [-1,1]){
+    const cheek=new THREE.Mesh(new THREE.BoxGeometry(.6,2.7,.16),tunnelMaterial);
+    cheek.position.set(centerX+side*(TUNNEL_HALF_W+.42),1.35,centerZ+RZ-.35);scene.add(cheek);
+  }
   // The field sits inscribed in the ellipse rather than filling the rectangle,
   // so it never runs behind the stands.
-  const field=new THREE.Mesh(new THREE.PlaneGeometry(12.6,9.4),
+  const field=new THREE.Mesh(new THREE.PlaneGeometry(18.9,14.1),
     new THREE.MeshStandardMaterial({map:pokemonFieldTexture(),roughness:.82,metalness:.05,emissive:0x0d2a12,emissiveIntensity:.35}));
   field.rotation.x=-Math.PI/2;field.position.set(centerX,.014,centerZ);field.receiveShadow=true;scene.add(field);
   // No barrier ring: the field runs open to the foot of the stands, which is
@@ -630,8 +659,8 @@ function buildPokemonStadium(centerX,centerZ){
     scene.add(rig);
   }
   for(const side of [-1,1]){
-    const flood=new THREE.PointLight(0xfff2d6,4.6,15,2);
-    flood.position.set(centerX,3.6,centerZ+side*4.6);
+    const flood=new THREE.PointLight(0xfff2d6,5.2,22,2);
+    flood.position.set(centerX,3.6,centerZ+side*7);
     scene.add(flood);managedSceneLights.push(flood);
   }
 }
@@ -644,7 +673,7 @@ themeRoom({
 });
 // Pokemon, in the east column: the bowl itself, not flat murals — the band and
 // dome carry the stands, so this room does not go through themeRoom at all.
-buildPokemonStadium(ANNEX_ROOM_CENTER_X,-25.2);
+buildPokemonStadium(POKEMON_CENTER_X,POKEMON_CENTER_Z);
 // No light rig added per room: the ring already lays one into every side room,
 // and a second in the same room is two rigs competing for the same light
 // budget. The stadium's floodlights are the exception, and they are its point.
@@ -703,7 +732,11 @@ const NORTH_ROW_CENTER_Z=(NORTH_ROW_MIN_Z+TOP_BAND_MIN_Z)/2,TOP_BAND_CENTER_Z=(T
 const northRowFloor=new THREE.Mesh(new THREE.PlaneGeometry(SHELL_HALF_WIDTH*2,ROOM_DEPTH),expansionFloorMaterial);
 northRowFloor.rotation.x=-Math.PI/2;northRowFloor.position.set(0,.002,NORTH_ROW_CENTER_Z);northRowFloor.receiveShadow=true;scene.add(northRowFloor);
 box(SHELL_HALF_WIDTH*2,.12,ROOM_DEPTH,0x090b18,0,5.08,NORTH_ROW_CENTER_Z,.08);
-NORTH_ROOM_X.forEach((centerX,index)=>lightRoom(centerX,NORTH_ROW_CENTER_Z,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]));
+// The west top-row room keeps its size; the middle one absorbed the strip the
+// stadium's wall cut off its neighbour, so its rig is wider. The stadium needs
+// no rig: its bowl carries its own light.
+lightRoom(-32.4,NORTH_ROW_CENTER_Z,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[0]);
+lightRoom(-5.4,NORTH_ROW_CENTER_Z,32.4,ROOM_DEPTH,SIDE_ROOM_ACCENTS[1]);
 lightRoom(0,TOP_BAND_CENTER_Z,SHELL_HALF_WIDTH*2,ROOM_DEPTH,0xffb066);
 // The hall. Its ceiling still carried the grid laid for the old 28 x 34 hub,
 // which is a third of the floor it has to light now.
@@ -1245,6 +1278,7 @@ for(const doorZ of OPEN_DOOR_Z){
   lightThreshold(N64_WALL_X,doorZ,false);
 }
 for(const doorX of NORTH_ROOM_X)lightThreshold(doorX,TOP_BAND_MIN_Z,true);
+lightThreshold(POKEMON_DOOR_X,POKEMON_SOUTH_Z,true);
 lightThreshold(0,TOURNAMENT_MIN_Z,true);
 // The hub reads as a very large dark floor with nothing above eye level, so the
 // lounge gets a centrepiece: counter-rotating light rings inside a soft beam
@@ -1687,7 +1721,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=dome-3')
+  import('./emulators/disc-range-cache.js?v=stadium15-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1707,7 +1741,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=dome-3')
+  import('./emulators/disc-range-cache.js?v=stadium15-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -1945,12 +1979,12 @@ function resolveRearGalleryCollision(){}
  * else — outward from the field or inward from a room corner — puts the player
  * back on the boundary. The same rule runs on both authoritative paths.
  */
-const POKEBOWL={cx:ANNEX_ROOM_CENTER_X,cz:-25.2,ax:10.1,az:7.7,laneHalfWidth:1.5};
+const POKEBOWL={cx:POKEMON_CENTER_X,cz:POKEMON_CENTER_Z,ax:15.35,az:11.75,laneHalfWidth:1.5};
 function resolvePokemonBowlCollisions(previousX,previousZ){
-  if(playerPosition.x<21.6||playerPosition.z<-33.6||playerPosition.z>-16.8)return;
+  if(playerPosition.x<POKEMON_WEST_X||playerPosition.z>-40)return;
   // The tunnel lane, on the doorway side only: the matching band of ellipse on
   // the far side is the jumbotron, and there is no way through a jumbotron.
-  if(Math.abs(playerPosition.z-POKEBOWL.cz)<POKEBOWL.laneHalfWidth&&playerPosition.x<POKEBOWL.cx-POKEBOWL.ax*.5)return;
+  if(Math.abs(playerPosition.x-POKEBOWL.cx)<POKEBOWL.laneHalfWidth&&playerPosition.z>POKEBOWL.cz+POKEBOWL.az*.5)return;
   const dx=(playerPosition.x-POKEBOWL.cx)/POKEBOWL.ax,dz=(playerPosition.z-POKEBOWL.cz)/POKEBOWL.az;
   const now=dx*dx+dz*dz;
   const pdx=(previousX-POKEBOWL.cx)/POKEBOWL.ax,pdz=(previousZ-POKEBOWL.cz)/POKEBOWL.az;
@@ -1971,17 +2005,36 @@ function resolvePokemonBowlCollisions(previousX,previousZ){
  * enforces is a wall players walk through.
  */
 function resolveTopRowCollisions(previousX,previousZ){
-  const northFace=TOP_BAND_MIN_Z-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
-  const southFace=TOP_BAND_MIN_Z+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
-  if(playerPosition.z>northFace&&playerPosition.z<southFace
-    &&!NORTH_ROOM_X.some(doorX=>Math.abs(playerPosition.x-doorX)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS)){
-    if(previousZ<TOP_BAND_MIN_Z)playerPosition.z=northFace;else playerPosition.z=southFace;
-    return;
+  const wallGap=PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
+  // The front wall at z=-50.4 ends where the stadium begins.
+  if(playerPosition.x<POKEMON_WEST_X){
+    const northFace=TOP_BAND_MIN_Z-wallGap,southFace=TOP_BAND_MIN_Z+wallGap;
+    if(playerPosition.z>northFace&&playerPosition.z<southFace
+      &&!NORTH_ROOM_X.some(doorX=>Math.abs(playerPosition.x-doorX)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS)){
+      if(previousZ<TOP_BAND_MIN_Z)playerPosition.z=northFace;else playerPosition.z=southFace;
+      return;
+    }
+  }else{
+    // The stadium's south wall, with the entrance at its centre.
+    const northFace=POKEMON_SOUTH_Z-wallGap,southFace=POKEMON_SOUTH_Z+wallGap;
+    if(playerPosition.z>northFace&&playerPosition.z<southFace
+      &&Math.abs(playerPosition.x-POKEMON_DOOR_X)>=ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS){
+      if(previousZ<POKEMON_SOUTH_Z)playerPosition.z=northFace;else playerPosition.z=southFace;
+      return;
+    }
   }
-  if(playerPosition.z>=TOP_BAND_MIN_Z)return;
+  // The stadium's west wall runs the whole depth of the room; there is no
+  // doorway in it.
+  if(playerPosition.z<POKEMON_SOUTH_Z+PLAYER_COLLISION_RADIUS){
+    const westFace=POKEMON_WEST_X-wallGap,eastFace=POKEMON_WEST_X+wallGap;
+    if(playerPosition.x>westFace&&playerPosition.x<eastFace){
+      if(previousX<POKEMON_WEST_X)playerPosition.x=westFace;else playerPosition.x=eastFace;
+      return;
+    }
+  }
+  if(playerPosition.z>=TOP_BAND_MIN_Z||playerPosition.x>=POKEMON_WEST_X)return;
   for(const dividerX of NORTH_ROW_DIVIDER_X){
-    const westFace=dividerX-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
-    const eastFace=dividerX+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
+    const westFace=dividerX-wallGap,eastFace=dividerX+wallGap;
     if(playerPosition.x<=westFace||playerPosition.x>=eastFace)continue;
     if(previousX<dividerX)playerPosition.x=westFace;else playerPosition.x=eastFace;
     return;
@@ -2017,6 +2070,6 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld()}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*7.5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld()}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
