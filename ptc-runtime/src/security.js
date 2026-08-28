@@ -34,9 +34,13 @@ export function isAllowedOrigin(origin, allowed = ALLOWED_ORIGINS) {
 export function checkRequest(request, { allowedOrigins = ALLOWED_ORIGINS } = {}) {
   const origin = request.headers?.origin;
   if (!isAllowedOrigin(origin, allowedOrigins)) return { ok: false, reason: 'origin-refused' };
-  // A browser fetch from our own page always sends this; its absence means the
-  // caller is not the page it claims to be.
-  if (request.headers?.['sec-fetch-site'] === 'cross-site') return { ok: false, reason: 'cross-site' };
+  // Not gated on sec-fetch-site. A page on the arcade reaching a runtime on
+  // 127.0.0.1 is cross-site by definition, so refusing that value refused the
+  // only caller this server exists for — every request from the deployed site,
+  // which is why a cabinet never offered to pair with a runtime that was
+  // running and healthy. The origin allow-list above is the real gate: a
+  // browser sets Origin itself and a page cannot forge it, and anything that
+  // is not a browser sends none at all and is refused there.
   return { ok: true, origin };
 }
 

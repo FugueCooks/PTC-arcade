@@ -37,10 +37,21 @@ void test('a request from another site is refused before its body matters', () =
   const noOrigin = security.checkRequest({ headers: {} });
   assert.equal(noOrigin.ok, false, 'a request with no Origin is not the page');
 
-  const crossSite = security.checkRequest({
+  // The arcade reaching a runtime on 127.0.0.1 is cross-site by definition, so
+  // this is the shape of every legitimate request this server ever receives.
+  // Refusing it refused the deployed site outright: the cabinet offered no
+  // pairing at all while a healthy runtime sat there answering nothing.
+  const arcadeToLoopback = security.checkRequest({
     headers: { origin: 'https://ptcarcade.fun', 'sec-fetch-site': 'cross-site' }
   });
-  assert.equal(crossSite.ok, false, 'the browser calling it cross-site outranks a matching Origin');
+  assert.equal(arcadeToLoopback.ok, true, 'the arcade must be able to reach the runtime');
+
+  // What still holds: a browser sets Origin itself and a page cannot forge it,
+  // so another site is refused whatever it claims about the fetch.
+  const otherSiteCrossSite = security.checkRequest({
+    headers: { origin: 'https://evil.example', 'sec-fetch-site': 'cross-site' }
+  });
+  assert.equal(otherSiteCrossSite.reason, 'origin-refused');
 });
 
 void test('pairing cannot be completed without seeing the runtime window', () => {
