@@ -372,3 +372,38 @@ void test('both emulators spawn without a shell', async () => {
   assert.equal(calls[0].binary, '/usr/bin/pcsx2-qt');
   assert.equal(calls[0].options.shell, false, 'a shell here would put quoting back in the attack surface');
 });
+
+void test('the runtime starts when it is run, on Windows too', async () => {
+  // It did not. The entry guard compared import.meta.url against a hand-built
+  // `file://` + process.argv[1], and on Windows argv[1] is a backslash path
+  // while import.meta.url is file:///C:/... — so the two never matched and the
+  // program the player runs silently did nothing, on the platform it ships for
+  // first. Nothing failed; it simply exited.
+  const { readFile } = await import('node:fs/promises');
+  const path = await import('node:path');
+  const source = await readFile(path.resolve(process.cwd(), 'ptc-runtime/src/index.js'), 'utf8');
+  assert.match(source, /import\.meta\.url === pathToFileURL\(process\.argv\[1\]\)\.href/);
+  assert.doesNotMatch(source, /import\.meta\.url === `file:\/\/\$\{process\.argv\[1\]\}`/);
+  assert.match(source, /import \{ pathToFileURL \} from 'node:url'/);
+});
+
+void test('the image ships every directory the server reads at startup', async () => {
+  // The runtime catalogue is built at startup from the digests in deploy/, and
+  // deploy/ was never copied into the image. The build threw, the catch served
+  // an empty catalogue, and the native runtime could launch nothing — in
+  // production, for GameCube as well, with the only evidence in a server log.
+  const { readFile } = await import('node:fs/promises');
+  const path = await import('node:path');
+  const dockerfile = await readFile(path.resolve(process.cwd(), 'Dockerfile'), 'utf8');
+  const server = await readFile(path.resolve(process.cwd(), 'server/src/index.ts'), 'utf8');
+
+  const read = [...server.matchAll(/path\.resolve\(projectRoot,\s*'([^']+)'/g)].map((match) => match[1]);
+  assert.ok(read.length > 0, 'the server must read something at startup for this to check');
+  for (const directory of new Set(read)) {
+    assert.match(
+      dockerfile,
+      new RegExp(`COPY --from=build /app/${directory}`),
+      `the server reads ${directory}/ at startup but the image never copies it`
+    );
+  }
+});

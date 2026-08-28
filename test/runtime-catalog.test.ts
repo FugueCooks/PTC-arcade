@@ -77,7 +77,7 @@ void test('every shipped GameCube game can actually be published', async () => {
   // runtime cannot run it, and this is where that shows up — not at a cabinet.
   const root = process.cwd();
   const registry = JSON.parse(await readFile(path.join(root, 'assets/games/registry.json'), 'utf8'));
-  const manifest = JSON.parse(await readFile(path.join(root, 'deploy/remote-gamecube-assets.json'), 'utf8'));
+  const manifest = JSON.parse(await readFile(path.join(root, 'assets/runtime/gamecube-digests.json'), 'utf8'));
 
   const { entries, omitted } = buildRuntimeCatalog({
     games: registry.games, manifest, assetBaseUrl: BASE, platforms: ['gamecube']

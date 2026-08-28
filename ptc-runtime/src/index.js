@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createInstallSecret } from './security.js';
 import { createRuntimeServer } from './server.js';
 import { DiskLibrary } from './disk-library.js';
@@ -129,8 +130,12 @@ function consoleLog(event, details = {}) {
   process.stdout.write(`${JSON.stringify({ timestamp: new Date().toISOString(), event, ...details })}\n`);
 }
 
-// Started directly rather than imported: this is the program the player runs.
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+// Started directly rather than imported. Comparing against a hand-built
+// `file://` string never matched on Windows: argv[1] is a backslash path and
+// import.meta.url is file:///C:/..., so the runtime silently did nothing on
+// the platform it ships for first. pathToFileURL is what makes the two
+// comparable.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const started = await startRuntime();
   if (!started.ok) process.exitCode = 1;
 }

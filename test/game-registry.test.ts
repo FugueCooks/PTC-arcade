@@ -142,7 +142,7 @@ void test('every supplied Mega Man game has its own cabinet and supported image'
 void test('GameCube RVZ images are registered for the validated Gecko runtime', async () => {
   const games = (await loadJson<{ games: GameDefinition[] }>('assets/games/registry.json')).games;
   const gamecubeGames = games.filter((game) => game.system === 'gamecube');
-  const remoteAssets = await loadJson<Array<{ file: string; bytes: number; sha256: string; system: string }>>('deploy/remote-gamecube-assets.json');
+  const remoteAssets = await loadJson<Array<{ file: string; bytes: number; sha256: string; system: string }>>('assets/runtime/gamecube-digests.json');
   assert.equal(gamecubeGames.length, 5);
   assert.ok(gamecubeGames.every((game) => game.enabled && game.file.endsWith('.rvz')));
   assert.equal(remoteAssets.length, gamecubeGames.length);

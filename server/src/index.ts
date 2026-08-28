@@ -753,8 +753,8 @@ const runtimeCatalog = (() => {
     const registry = JSON.parse(readFileSync(path.resolve(projectRoot, 'assets', 'games', 'registry.json'), 'utf8'));
     // Both native platforms, from the two manifests that carry their digests.
     const manifest = [
-      ...JSON.parse(readFileSync(path.resolve(projectRoot, 'deploy', 'remote-gamecube-assets.json'), 'utf8')),
-      ...JSON.parse(readFileSync(path.resolve(projectRoot, 'deploy', 'remote-ps2-assets.json'), 'utf8'))
+      ...JSON.parse(readFileSync(path.resolve(projectRoot, 'assets', 'runtime', 'gamecube-digests.json'), 'utf8')),
+      ...JSON.parse(readFileSync(path.resolve(projectRoot, 'assets', 'runtime', 'ps2-digests.json'), 'utf8'))
     ];
     const built = buildRuntimeCatalog({
       games: registry.games,
