@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=murals-3';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=murals-4';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -476,7 +476,16 @@ themeRoom({
   near:'metal-gear-room-mural-3.webp?v=mgs-3',
   side:'metal-gear-room-mural-2.webp?v=mgs-3'
 });
-lightRoom(MEGAMAN_ROOM_CENTER_X,-8.4,MEGAMAN_ROOM_WIDTH,MEGAMAN_ROOM_DEPTH,0x7dff67);
+// Metroid, across the hall in the east column. Each wall is a band from one of
+// the three images supplied for it, cut to that wall's own aspect.
+themeRoom({
+  centerX:ANNEX_ROOM_CENTER_X,centerZ:-8.4,
+  far:'metroid-room-mural.webp?v=metroid-1',
+  near:'metroid-room-mural-3.webp?v=metroid-1',
+  side:'metroid-room-mural-2.webp?v=metroid-1'
+});
+// No light rig here: the ring already lays one into every side room, and a
+// second in the same room is two rigs competing for the same light budget.
 // The fourth mural is on the outside: the hub-facing span of the partition wall
 // between the Mega Man doorway and the corner. Mega Man occupies the right of
 // the image, and with the plane turned to face the hub its right edge lands
@@ -1516,7 +1525,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=murals-3')
+  import('./emulators/disc-range-cache.js?v=murals-4')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1536,7 +1545,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=murals-3')
+  import('./emulators/disc-range-cache.js?v=murals-4')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))

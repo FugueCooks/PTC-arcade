@@ -137,6 +137,10 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
   // of pulling the room's numbers out of the code in the first place.
   assert.match(arcade, /metal-gear-room-mural\.webp/);
   // Anchored to the line start, so the builder's own declaration — which opens
-  // the same way — is not counted as one of the rooms.
-  assert.equal((arcade.match(/^themeRoom\(\{/gm) ?? []).length, 2, 'two themed rooms, one builder');
+  // the same way — is not counted as one of the rooms. The count is a floor,
+  // not a fixture: rooms are themed as their art arrives, and a test that
+  // pinned the exact number would fail on every one of them.
+  const themed = (arcade.match(/^themeRoom\(\{/gm) ?? []).length;
+  assert.ok(themed >= 3, `every themed room goes through the one builder, found ${themed}`);
+  assert.match(arcade, /metroid-room-mural\.webp/);
 });
