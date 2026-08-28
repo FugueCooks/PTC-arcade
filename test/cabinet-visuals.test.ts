@@ -65,10 +65,11 @@ void test('the main room is an open hall beside square console rooms', async () 
 
   // Room signage was removed on purpose: the wall logos identify each room,
   // so asserting the old text plates would pin behaviour that is now gone.
-  // The wall graphics hang at their room's centre, so they moved outward with
-  // it rather than being repositioned by hand.
-  assert.match(arcade, /playstationWall\.position\.set\(MEGAMAN_ROOM_CENTER_X\+2\.3,2\.5,-\.16\)/);
-  assert.match(arcade, /n64WallGraphic\.position\.set\(ANNEX_ROOM_CENTER_X-2\.3,2\.5,-\.16\)/);
+  // The console logos are off the divider walls. Rooms are themed by title now,
+  // so a PlayStation mark on a room that holds no PlayStation games named the
+  // wrong thing — and the rooms it named are empty besides.
+  assert.doesNotMatch(arcade, /playstationWall|n64WallGraphic/);
+  assert.doesNotMatch(arcade, /playstation-wall\.webp|nintendo64-wall\.webp/);
   // Every room in the building is one size, and the plan is stated once.
   assert.match(arcade, /const ROOM_SPAN=21\.6,ROOM_DEPTH=16\.8;/);
   assert.match(arcade, /SHELL_HALF_WIDTH=43\.2,HALL_HALF_WIDTH=21\.6,ANNEX_ROOM_CENTER_X=32\.4/);

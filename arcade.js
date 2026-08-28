@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=foyer-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=wallart-off-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -267,17 +267,11 @@ function buildPartitionWall(wallX,accent){
     box(.42,.08,depth,accent,wallX,4.86,centerZ,.9);box(.42,.1,depth,0x251447,wallX,.08,centerZ,.45);
   }
 }
+// The console logos that hung on the two divider walls are gone: the rooms are
+// being re-themed by title rather than by machine, so a PlayStation mark on the
+// wall of a room that no longer holds PlayStation games named the wrong thing.
 buildPartitionWall(PLAYSTATION_WALL_X,0xd18a52);
-const playstationWallTexture=new THREE.TextureLoader().load('assets/art/playstation-wall.webp?v=webp-2');
-playstationWallTexture.colorSpace=THREE.SRGBColorSpace;
-playstationWallTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const playstationWall=new THREE.Mesh(new THREE.PlaneGeometry(12.4,4.7),new THREE.MeshBasicMaterial({map:playstationWallTexture}));playstationWall.position.set(MEGAMAN_ROOM_CENTER_X+2.3,2.5,-.16);playstationWall.rotation.y=Math.PI;scene.add(playstationWall);
 buildPartitionWall(N64_WALL_X,0x36f9f6);
-const n64WallTexture=new THREE.TextureLoader().load('assets/art/nintendo64-wall.webp?v=webp-2');
-n64WallTexture.colorSpace=THREE.SRGBColorSpace;
-n64WallTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-const n64WallGraphic=new THREE.Mesh(new THREE.PlaneGeometry(6.34,4.7),new THREE.MeshBasicMaterial({map:n64WallTexture}));
-n64WallGraphic.position.set(ANNEX_ROOM_CENTER_X-2.3,2.5,-.16);n64WallGraphic.rotation.y=Math.PI;scene.add(n64WallGraphic);
 // The old front-left expansion is now the MegaMan Room. Xbox remains behind
 // its original barrier while PS2 keeps its dedicated rear gallery.
 // Hazard signage, but lit rather than painted. The yellow and black tape read
@@ -1486,7 +1480,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=foyer-1')
+  import('./emulators/disc-range-cache.js?v=wallart-off-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1506,7 +1500,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=foyer-1')
+  import('./emulators/disc-range-cache.js?v=wallart-off-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
