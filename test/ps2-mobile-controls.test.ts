@@ -81,3 +81,30 @@ void test('a frame without threads says so instead of quietly crawling', () => {
   assert.match(frame, /RUNNING WITHOUT THREADS/);
   assert.match(frame, /arcade:ps2-degraded/);
 });
+
+void test('the PS2 pad can be remapped, and the layout survives a reload', () => {
+  // Remapping never reaches the core: every control here ends up as one of the
+  // keys Play! already listens for, so this rebinds which physical button
+  // produces that key and nothing more.
+  assert.match(frame, /id="ps2-remap"/);
+  assert.match(frame, /const GAMEPAD_BINDING_STORAGE = 'ps2-gamepad-bindings-v1'/);
+  assert.match(frame, /localStorage\.setItem\(GAMEPAD_BINDING_STORAGE/);
+  for (const label of ['CROSS', 'CIRCLE', 'SQUARE', 'TRIANGLE', 'SELECT', 'START']) {
+    assert.match(frame, new RegExp(`'${label}'`), `the remap panel must name ${label}`);
+  }
+
+  // A saved layout is merged over the defaults per control, so a binding added
+  // to the core later still appears for someone who customised theirs first,
+  // and a stored entry for a control that no longer exists is ignored.
+  assert.match(frame, /const bindings = DEFAULT_GAMEPAD_KEY_BINDINGS\.map\(binding => \(\{ \.\.\.binding \}\)\)/);
+  assert.match(frame, /Number\.isSafeInteger\(button\) && button >= 0 && button < 32/);
+
+  // One physical button drives one control, and an unbound control never fires
+  // from button 0 by accident.
+  assert.match(frame, /if \(binding\.button === button && binding\.code !== code\) binding\.button = -1/);
+  assert.match(frame, /binding\.button >= 0 && buttonPressed\(gamepad, binding\.button\)/);
+
+  // And the press that binds a control is not also played into the game.
+  assert.match(frame, /if \(listeningFor\) \{/);
+  assert.match(frame, /releaseGamepadKeys\(\);/);
+});

@@ -75,6 +75,14 @@
         line-height:1.55;
       }
       #ps2-controller-help[hidden] { display:none; }
+      #ps2-remap { width:min(19rem,calc(100vw - 1.3rem)); max-height:min(26rem,calc(100vh - 12rem)); overflow-y:auto; padding:.55rem .7rem; color:#d9d2e6; background:#050510f2; border:1px solid #543386; box-shadow:0 0 1.3rem #36f9f633; }
+      #ps2-remap[hidden] { display:none; }
+      #ps2-remap h2 { margin:0 0 .45rem; color:#36f9f6; font-size:.62rem; letter-spacing:.06em; }
+      .ps2-remap-row { display:flex; align-items:center; justify-content:space-between; gap:.4rem; padding:.12rem 0; }
+      .ps2-remap-row span { color:#a99abe; }
+      .ps2-remap-row button { min-width:5.2rem; padding:.2rem .35rem; color:#36f9f6; background:#100b22; border:1px solid #36f9f644; border-radius:.2rem; font:700 .58rem "Courier New",monospace; cursor:pointer; }
+      .ps2-remap-row button.is-listening { color:#071018; background:#ffb000; border-color:#ffb000; }
+      #ps2-remap-reset { width:100%; margin-top:.45rem; padding:.3rem; color:#ff9db1; background:transparent; border:1px solid #ff9db155; border-radius:.2rem; font:700 .58rem "Courier New",monospace; cursor:pointer; }
       #ps2-controller-status { color:#fff4a8; }
       #ps2-controller-help strong { color:#36f9f6; }
       #ps2-touch-controls { display:none; }
@@ -209,6 +217,12 @@
           <div><strong>A / B / X / Y</strong> × / ○ / □ / △</div>
           <div><strong>LB / LT / RB / RT</strong> L1 / L2 / R1 / R2</div>
           <div><strong>MENU / VIEW</strong> START / SELECT</div>
+          <button id="ps2-remap-open" type="button" style="margin-top:.5rem;width:100%;padding:.3rem;color:#36f9f6;background:#100b22;border:1px solid #36f9f6;border-radius:.2rem;font:700 .58rem 'Courier New',monospace;cursor:pointer;">REMAP BUTTONS</button>
+        </div>
+        <div id="ps2-remap" hidden>
+          <h2>PRESS A BUTTON TO BIND IT</h2>
+          <div id="ps2-remap-rows"></div>
+          <button id="ps2-remap-reset" type="button">RESTORE DEFAULTS</button>
         </div>
       </aside>
       <section id="ps2-touch-controls" aria-label="PlayStation 2 touch controller">
@@ -306,7 +320,17 @@
       const INSTALL_PAUSE_MS = 400;
       const activeGamepadKeys = new Set();
       const CONTROLLER_IDLE_STATUS = 'CONTROLLER: CONNECT OR PRESS A BUTTON';
-      const GAMEPAD_KEY_BINDINGS = Object.freeze([
+      const GAMEPAD_BINDING_STORAGE = 'ps2-gamepad-bindings-v1';
+      // What each PS2 control is called, in the order the panel lists them. The
+      // key code is the core's own: everything here ends up as one of the keys
+      // Play! already listens for, so remapping never reaches the core.
+      const PS2_CONTROL_LABELS = Object.freeze({
+        KeyZ: 'CROSS', KeyX: 'CIRCLE', KeyA: 'SQUARE', KeyS: 'TRIANGLE',
+        Key1: 'L1', Key2: 'L2', Key8: 'R1', Key9: 'R2',
+        Backspace: 'SELECT', Enter: 'START',
+        ArrowUp: 'D-PAD UP', ArrowDown: 'D-PAD DOWN', ArrowLeft: 'D-PAD LEFT', ArrowRight: 'D-PAD RIGHT'
+      });
+      const DEFAULT_GAMEPAD_KEY_BINDINGS = Object.freeze([
         { code: 'KeyZ', button: GAMEPAD_BUTTONS.SOUTH },
         { code: 'KeyX', button: GAMEPAD_BUTTONS.EAST },
         { code: 'KeyA', button: GAMEPAD_BUTTONS.WEST },
@@ -322,6 +346,34 @@
         { code: 'ArrowLeft', button: GAMEPAD_BUTTONS.DPAD_LEFT },
         { code: 'ArrowRight', button: GAMEPAD_BUTTONS.DPAD_RIGHT }
       ]);
+      /**
+       * The bindings in force. A saved layout is merged over the defaults by
+       * control rather than replacing the list, so a binding added to the core
+       * later still appears for a player who customised theirs before it
+       * existed, and a stored entry naming a control that no longer exists is
+       * dropped instead of breaking the pad.
+       */
+      function loadGamepadBindings() {
+        const bindings = DEFAULT_GAMEPAD_KEY_BINDINGS.map(binding => ({ ...binding }));
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(GAMEPAD_BINDING_STORAGE) ?? 'null'); }
+        catch (error) { console.warn('Saved controller layout could not be read.', error); }
+        if (saved && typeof saved === 'object') {
+          for (const binding of bindings) {
+            const button = saved[binding.code];
+            if (Number.isSafeInteger(button) && button >= 0 && button < 32) binding.button = button;
+          }
+        }
+        return bindings;
+      }
+      function saveGamepadBindings(bindings) {
+        try {
+          localStorage.setItem(GAMEPAD_BINDING_STORAGE, JSON.stringify(Object.fromEntries(bindings.map(b => [b.code, b.button]))));
+        } catch (error) {
+          console.warn('Controller layout could not be saved.', error);
+        }
+      }
+      let GAMEPAD_KEY_BINDINGS = loadGamepadBindings();
       const GAMEPAD_AXIS_BINDINGS = Object.freeze([
         { negative: 'KeyF', positive: 'KeyH', axis: GAMEPAD_AXES.LEFT_X },
         { negative: 'KeyT', positive: 'KeyG', axis: GAMEPAD_AXES.LEFT_Y },
@@ -347,6 +399,7 @@
       }
 
       function setGamepadKey(code, pressed) {
+        if (code === null) return;
         const active = activeGamepadKeys.has(code);
         if (pressed === active) return;
         if (pressed) activeGamepadKeys.add(code);
@@ -379,7 +432,19 @@
         }
         activeGamepadIndex = gamepad.index;
         setControllerStatus(`CONTROLLER: ${gamepad.id || 'STANDARD GAMEPAD'} READY`);
-        for (const binding of GAMEPAD_KEY_BINDINGS) setGamepadKey(binding.code, buttonPressed(gamepad, binding.button));
+        if (listeningFor) {
+          // Nothing reaches the game while a control is being bound, or the
+          // press that chooses Cross is also a press of Cross.
+          releaseGamepadKeys();
+          for (let index = 0; index < (gamepad.buttons?.length ?? 0); index += 1) {
+            if (!buttonPressed(gamepad, index)) continue;
+            bindControl(listeningFor, index);
+            break;
+          }
+          scheduleGamepadPoll();
+          return;
+        }
+        for (const binding of GAMEPAD_KEY_BINDINGS) setGamepadKey(binding.code, binding.button >= 0 && buttonPressed(gamepad, binding.button));
         for (const binding of GAMEPAD_AXIS_BINDINGS) {
           const value = gamepad.axes?.[binding.axis] ?? 0;
           setGamepadKey(binding.negative, value < -DEFAULT_DEAD_ZONE);
@@ -419,6 +484,63 @@
       // The ranges it reads are on disk by now, so this is quick.
       toolbar.restart.addEventListener('click', () => location.reload());
       toolbar.exit.addEventListener('click', () => parent.postMessage({ type: 'arcade:emulator-closed', core: 'ps2-play' }, location.origin));
+
+      const remapPanel = document.querySelector('#ps2-remap');
+      const remapRows = document.querySelector('#ps2-remap-rows');
+      let listeningFor = null;
+
+      const buttonName = index => {
+        const named = Object.entries(GAMEPAD_BUTTONS).find(([, value]) => value === index);
+        return named ? named[0].replace(/_/g, ' ') : `BUTTON ${index}`;
+      };
+
+      function renderRemapRows() {
+        remapRows.textContent = '';
+        for (const binding of GAMEPAD_KEY_BINDINGS) {
+          const label = PS2_CONTROL_LABELS[binding.code];
+          if (!label) continue;
+          const row = document.createElement('div');
+          row.className = 'ps2-remap-row';
+          const name = document.createElement('span');
+          name.textContent = label;
+          const choose = document.createElement('button');
+          choose.type = 'button';
+          choose.textContent = listeningFor === binding.code ? 'PRESS…' : buttonName(binding.button);
+          if (listeningFor === binding.code) choose.classList.add('is-listening');
+          choose.addEventListener('click', () => {
+            listeningFor = listeningFor === binding.code ? null : binding.code;
+            renderRemapRows();
+            scheduleGamepadPoll();
+          });
+          row.append(name, choose);
+          remapRows.append(row);
+        }
+      }
+
+      function bindControl(code, button) {
+        // One physical button drives one control: whatever held it before gives
+        // it up, rather than leaving two controls firing from one press.
+        for (const binding of GAMEPAD_KEY_BINDINGS) {
+          if (binding.button === button && binding.code !== code) binding.button = -1;
+          if (binding.code === code) binding.button = button;
+        }
+        listeningFor = null;
+        saveGamepadBindings(GAMEPAD_KEY_BINDINGS);
+        renderRemapRows();
+      }
+
+      document.querySelector('#ps2-remap-open').addEventListener('click', () => {
+        remapPanel.hidden = !remapPanel.hidden;
+        listeningFor = null;
+        if (!remapPanel.hidden) { renderRemapRows(); scheduleGamepadPoll(); }
+      });
+      document.querySelector('#ps2-remap-reset').addEventListener('click', () => {
+        GAMEPAD_KEY_BINDINGS = DEFAULT_GAMEPAD_KEY_BINDINGS.map(binding => ({ ...binding }));
+        listeningFor = null;
+        saveGamepadBindings(GAMEPAD_KEY_BINDINGS);
+        renderRemapRows();
+      });
+      renderRemapRows();
 
       const controllerToggle = document.querySelector('#ps2-controller-toggle');
       const controllerHelp = document.querySelector('#ps2-controller-help');
