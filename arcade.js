@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=murals-5';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=stadium-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -484,6 +484,77 @@ themeRoom({
   near:'metroid-room-mural-3.webp?v=metroid-1',
   side:'metroid-room-mural-2.webp?v=metroid-1'
 });
+/**
+ * The Pokemon room is the inside of the stadium rather than a room with
+ * stadium pictures in it.
+ *
+ * Its three walls carry the bowl — the jumbotron end, the far tiers, the long
+ * side — and this is everything below them: the field the player is standing
+ * on, the barrier that separates it from the stands, and the floodlight banks
+ * that light it. The field is drawn rather than loaded, so it costs one canvas
+ * and no download.
+ */
+function pokemonFieldTexture(){
+  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=840;
+  const c=canvas.getContext('2d');
+  c.fillStyle='#2f7a3a';c.fillRect(0,0,1080,840);
+  // Mown stripes, the width a roller leaves rather than a stripe per metre.
+  for(let x=0;x<1080;x+=108){c.fillStyle=(x/108)%2?'#357f40':'#2b7435';c.fillRect(x,0,108,840)}
+  // The painted boundary: an octagon, as the stage in the reference is.
+  const inset=54,cut=132;
+  c.strokeStyle='#eef3ee';c.lineWidth=9;c.lineJoin='round';
+  c.beginPath();
+  c.moveTo(inset+cut,inset);c.lineTo(1080-inset-cut,inset);c.lineTo(1080-inset,inset+cut);
+  c.lineTo(1080-inset,840-inset-cut);c.lineTo(1080-inset-cut,840-inset);c.lineTo(inset+cut,840-inset);
+  c.lineTo(inset,840-inset-cut);c.lineTo(inset,inset+cut);c.closePath();c.stroke();
+  // The ball at the centre spot, in the field's muted paint rather than in the
+  // colours of a toy: it is a marking, not a decal.
+  const cx=540,cy=420,r=186;
+  c.fillStyle='#b8574f';c.beginPath();c.arc(cx,cy,r,Math.PI,0);c.closePath();c.fill();
+  c.fillStyle='#dfe4de';c.beginPath();c.arc(cx,cy,r,0,Math.PI);c.closePath();c.fill();
+  c.fillStyle='#20241f';c.fillRect(cx-r,cy-r*.085,r*2,r*.17);
+  c.beginPath();c.arc(cx,cy,r*.32,0,Math.PI*2);c.fill();
+  c.fillStyle='#dfe4de';c.beginPath();c.arc(cx,cy,r*.23,0,Math.PI*2);c.fill();
+  c.strokeStyle='#20241f';c.lineWidth=r*.055;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  return texture;
+}
+function buildPokemonStadium(centerX,centerZ){
+  const field=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN-1.4,ROOM_DEPTH-1.4),
+    new THREE.MeshStandardMaterial({map:pokemonFieldTexture(),roughness:.82,metalness:.05,emissive:0x0d2a12,emissiveIntensity:.35}));
+  field.rotation.x=-Math.PI/2;field.position.set(centerX,.014,centerZ);field.receiveShadow=true;scene.add(field);
+  // The barrier between the field and the stands, low enough to see over from
+  // the field and bright enough to read as the edge of the play area.
+  const rail=new THREE.MeshStandardMaterial({color:0xd8e2ea,emissive:0x35506b,emissiveIntensity:.5,metalness:.55,roughness:.35});
+  const trim=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.5,metalness:.4,roughness:.3});
+  const halfX=(ROOM_SPAN-1.4)/2,halfZ=(ROOM_DEPTH-1.4)/2;
+  for(const [w,d,x,z] of [[ROOM_SPAN-1.4,.34,0,-halfZ],[ROOM_SPAN-1.4,.34,0,halfZ],[.34,ROOM_DEPTH-1.4,-halfX,0],[.34,ROOM_DEPTH-1.4,halfX,0]]){
+    const barrier=new THREE.Mesh(new THREE.BoxGeometry(w,.62,d),rail);
+    barrier.position.set(centerX+x,.31,centerZ+z);scene.add(barrier);
+    const strip=new THREE.Mesh(new THREE.BoxGeometry(w*.995,.05,d*.995),trim);
+    strip.position.set(centerX+x,.64,centerZ+z);scene.add(strip);
+  }
+  // Floodlight banks high on the two long walls, aimed in. Emissive housings
+  // plus one managed light a side: the banks are the look, the light is the
+  // proof, and two more lights is what the budget can carry.
+  const housing=new THREE.MeshStandardMaterial({color:0x161b24,metalness:.7,roughness:.35});
+  const lamp=new THREE.MeshBasicMaterial({color:0xfff6dc});
+  for(const side of [-1,1]){
+    for(const offset of [-6.2,0,6.2]){
+      const bank=new THREE.Mesh(new THREE.BoxGeometry(2.4,.5,.36),housing);
+      bank.position.set(centerX+offset,4.1,centerZ+side*(ROOM_DEPTH/2-.5));scene.add(bank);
+      for(const cell of [-.8,0,.8]){
+        const face=new THREE.Mesh(new THREE.PlaneGeometry(.62,.34),lamp);
+        face.position.set(centerX+offset+cell,4.1,centerZ+side*(ROOM_DEPTH/2-.72));
+        face.rotation.y=side<0?0:Math.PI;scene.add(face);
+      }
+    }
+    const flood=new THREE.PointLight(0xfff2d6,4.6,15,2);
+    flood.position.set(centerX,3.9,centerZ+side*5.4);
+    scene.add(flood);managedSceneLights.push(flood);
+  }
+}
 // Super Mario, in the west column behind Metal Gear.
 themeRoom({
   centerX:MEGAMAN_ROOM_CENTER_X,centerZ:-25.2,
@@ -491,8 +562,18 @@ themeRoom({
   near:'mario-room-mural-3.webp?v=mario-1',
   side:'mario-room-mural-2.webp?v=mario-1'
 });
-// No light rig here: the ring already lays one into every side room, and a
-// second in the same room is two rigs competing for the same light budget.
+// Pokemon, in the east column. The walls are the bowl; the field, its barrier
+// and the floodlights are built underneath them.
+themeRoom({
+  centerX:ANNEX_ROOM_CENTER_X,centerZ:-25.2,
+  far:'pokemon-room-mural.webp?v=pokemon-1',
+  near:'pokemon-room-mural-3.webp?v=pokemon-1',
+  side:'pokemon-room-mural-2.webp?v=pokemon-1'
+});
+buildPokemonStadium(ANNEX_ROOM_CENTER_X,-25.2);
+// No light rig added per room: the ring already lays one into every side room,
+// and a second in the same room is two rigs competing for the same light
+// budget. The stadium's floodlights are the exception, and they are its point.
 // The fourth mural is on the outside: the hub-facing span of the partition wall
 // between the Mega Man doorway and the corner. Mega Man occupies the right of
 // the image, and with the plane turned to face the hub its right edge lands
@@ -1532,7 +1613,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=murals-5')
+  import('./emulators/disc-range-cache.js?v=stadium-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1552,7 +1633,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=murals-5')
+  import('./emulators/disc-range-cache.js?v=stadium-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
