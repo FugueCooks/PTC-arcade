@@ -1136,6 +1136,57 @@ buildChaoGarden(ANNEX_ROOM_CENTER_X,-22.8);
  * each entry is that box placed by eye: backs buried in outer walls only,
  * never poking into a neighbouring room, never crossing a street.
  */
+/**
+ * The Pokemon Center, filling the dead band in front of the stadium: a
+ * supplied interior model at 0.66 scale, a kiosk under the arcade's ceiling.
+ * The player walks in through a doorway cut in its west wall, crosses the
+ * lobby, and leaves through the slot where the bookshelf beside the counter
+ * stood — that cut lands exactly on the stadium wall's existing door gap, so
+ * the bookshelf's place in the wall IS the vomitory entrance, framed by the
+ * portal pylons already standing behind it.
+ *
+ * The model ships one merged unlit mesh, so the bookshelf and both openings
+ * are cut by dropping triangles inside world-space boxes after placement:
+ * unlit means it glows in the dark pocket without costing a single light,
+ * and it sits 4 cm above the arcade slab so the two floors never z-fight.
+ */
+function installPokemonCenter(){
+  void (async()=>{try{
+    const loader=await getOptimizedGltfLoader();
+    loader.load('assets/models/pokemon/pokemon-center.glb?v=pokecenter-1',gltf=>{
+      const mount=new THREE.Group();
+      mount.add(gltf.scene);
+      mount.position.set(31.1,.04,-37.53);
+      mount.scale.setScalar(.66);
+      scene.add(mount);
+      mount.updateWorldMatrix(true,true);
+      // The bookshelf and the wall behind it, aligned on the stadium's door
+      // gap; and the entry doorway in the west wall, facing the walkway.
+      const OPENINGS=[
+        {minX:25.29,maxX:28.9,minY:-.2,maxY:3.25,minZ:-42.4,maxZ:-38.6},
+        {minX:24.1,maxX:25.1,minY:-.3,maxY:3.4,minZ:-37.6,maxZ:-33.0}
+      ];
+      const vertex=new THREE.Vector3();
+      mount.traverse(o=>{
+        if(!o.isMesh)return;
+        o.castShadow=false;o.receiveShadow=false;
+        const geometry=o.geometry,position=geometry.attributes.position;
+        const inOpening=index=>{
+          vertex.fromBufferAttribute(position,index).applyMatrix4(o.matrixWorld);
+          return OPENINGS.some(h=>vertex.x>=h.minX&&vertex.x<=h.maxX&&vertex.y>=h.minY&&vertex.y<=h.maxY&&vertex.z>=h.minZ&&vertex.z<=h.maxZ);
+        };
+        const oldIndex=geometry.index,kept=[];
+        const count=oldIndex?oldIndex.count:position.count;
+        for(let i=0;i<count;i+=3){
+          const a=oldIndex?oldIndex.getX(i):i,b=oldIndex?oldIndex.getX(i+1):i+1,c=oldIndex?oldIndex.getX(i+2):i+2;
+          if(inOpening(a)&&inOpening(b)&&inOpening(c))continue;
+          kept.push(a,b,c);
+        }
+        geometry.setIndex(kept);
+      });
+    },undefined,error=>console.warn('The Pokemon Center could not load.',error));
+  }catch(error){console.warn('The Pokemon Center loader could not initialize.',error)}})();
+}
 function installSilentHillBuildings(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
@@ -2118,7 +2169,7 @@ async function installFurthermoreModel(){try{const loader=await getOptimizedGltf
 async function installEnterpriseModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/enterprise.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('enterprise-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.76/Math.max(size.x,size.y,size.z));model.rotation.y=Math.PI/2;model.position.y=.02;slot.add(model);},undefined,error=>console.warn('Enterprise model could not load.',error));}catch(error){console.warn('Enterprise model loader could not initialize.',error)}}
 async function installKurackModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/kurack.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('kurack-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.72/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.rotation.y=Math.PI*1.5;model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y=-scaledBounds.min.y-.18;slot.add(model);},undefined,error=>console.warn('Kurack model could not load.',error));}catch(error){console.warn('Kurack model loader could not initialize.',error)}}
 async function installGangsterPepe(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-gangster-animated.optimized.glb?v=meshopt-1',gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.016/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;gangsterPepeMount.add(model);if(gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());animatedMixers.push(mixer);}},undefined,error=>console.warn('Animated gangster Pepe model could not load.',error));}catch(error){console.warn('Animated gangster Pepe loader could not initialize.',error)}}
-let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenPropsStarted=false,silentHillBuildingsStarted=false,nextHeavyAssetCheck=0;
+let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenPropsStarted=false,silentHillBuildingsStarted=false,pokemonCenterStarted=false,nextHeavyAssetCheck=0;
 // Real controllers on the deck instead of a generic stick and four buttons.
 // Each model loads once per system and is cloned onto every cabinet of that
 // system; clones share geometry and materials, so the cost is one upload each.
@@ -2179,7 +2230,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenPropsStarted&&playerPosition.x>14&&playerPosition.z>-36&&playerPosition.z<-8){chaoGardenPropsStarted=true;installChaoGardenProps();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenPropsStarted&&playerPosition.x>14&&playerPosition.z>-36&&playerPosition.z<-8){chaoGardenPropsStarted=true;installChaoGardenProps();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-26){pokemonCenterStarted=true;installPokemonCenter();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually

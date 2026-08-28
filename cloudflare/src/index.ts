@@ -111,9 +111,23 @@ const spawnPoints = [
   [-1.1, PLAYER_HEIGHT, 8.8, 0], [1.1, PLAYER_HEIGHT, 8.8, 0]
 ] as const;
 
+// The cron trigger registers at every deploy and then never fires — four
+// consecutive slots were watched with a tail and produced nothing, while
+// Durable Object alarms fired on time. So the keepalive rides an alarm
+// instead: one request to the worker, ever, arms a dedicated instance whose
+// alarm re-schedules itself forever. Alarms persist across deploys and are
+// retried by the platform when an invocation fails.
+const KEEPALIVE_INSTANCE = '##origin-keepalive##';
+let keepaliveArmed = false;
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    if (!keepaliveArmed) {
+      keepaliveArmed = true;
+      ctx.waitUntil(env.ARCADE_ROOMS.getByName(KEEPALIVE_INSTANCE)
+        .fetch('https://keepalive.internal/keepalive').catch(() => {}));
+    }
     if (url.hostname === 'assets.ptcarcade.fun') return serveAsset(request, env, ctx);
     if (url.pathname === '/healthz') return json({ ok: true, service: 'retro-arcade-realtime', edge: request.cf?.colo ?? null });
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') return json({ ok: false, message: 'WebSocket upgrade required.' }, 426);
@@ -267,9 +281,12 @@ export class ArcadeRoom implements DurableObject {
   private reactionTimes = new Map<string, number>();
   private movementBroadcastTimes = new Map<string, number>();
 
+  private originHealthUrl?: string;
+
   constructor(ctx: DurableObjectState, env: Env) {
     this.ctx = ctx;
     this.ticketSecret = env.MULTIPLAYER_TICKET_SECRET;
+    this.originHealthUrl = env.ORIGIN_HEALTH_URL;
     ctx.blockConcurrencyWhile(async () => {
       this.roomId = (await ctx.storage.get<string>('roomId')) ?? ROOM_ID;
       this.cabinetStates = new Map((await ctx.storage.get<Array<[string, CabinetState]>>('cabinets')) ?? cabinetRegistry.map(({ id }) => [id, availableCabinet(id)]));
@@ -283,6 +300,13 @@ export class ArcadeRoom implements DurableObject {
   }
 
   async fetch(request: Request): Promise<Response> {
+    // The keepalive instance is not a room: it holds no sockets and its alarm
+    // does nothing but ping the origin. Arming is idempotent.
+    if (new URL(request.url).pathname === '/keepalive') {
+      await this.ctx.storage.put('keepalive', true);
+      if (await this.ctx.storage.getAlarm() === null) await this.ctx.storage.setAlarm(Date.now() + 1000);
+      return json({ ok: true, keepalive: true });
+    }
     if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') return json({ ok: false }, 426);
     const url = new URL(request.url);
     this.roomId = normalizeRoomId(url.searchParams.get('room'));
@@ -320,6 +344,23 @@ export class ArcadeRoom implements DurableObject {
   async webSocketError(socket: WebSocket): Promise<void> { await this.disconnect(socket); }
 
   async alarm(): Promise<void> {
+    if (await this.ctx.storage.get('keepalive')) {
+      try {
+        const target = this.originHealthUrl;
+        if (target) {
+          const response = await fetch(target, {
+            method: 'GET',
+            headers: { 'user-agent': 'retro-arcade-keepalive' },
+            signal: AbortSignal.timeout(20_000)
+          });
+          console.log(`keepalive ${target} -> ${response.status}`);
+        }
+      } catch (error) {
+        console.log(`keepalive failed: ${error instanceof Error ? error.message : 'unknown'}`);
+      }
+      await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);
+      return;
+    }
     const now = Date.now();
     let changed = false;
     for (const [token, record] of this.resumes) {
