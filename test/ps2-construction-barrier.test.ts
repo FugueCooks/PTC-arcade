@@ -12,32 +12,27 @@ void test('PS2 is open; Xbox and GameCube keep their barriers', async () => {
 
   assert.match(arcade, /constructionTapeTexture/);
   assert.doesNotMatch(arcade, /futureConstructionBarrier|Future Console Room Under Construction/);
-  assert.match(arcade, /xboxConstructionBarrier\.userData\.roomName='Xbox'/);
   assert.doesNotMatch(arcade, /ps2ConstructionBarrier|PS2 Room Under Construction/);
-  assert.match(arcade, /xboxConstructionPanel\.rotation\.y=-Math\.PI\/2/);
-  assert.match(arcade, /gamecubeConstructionBarrier\.userData\.roomName='GameCube'/);
-  // GameCube changed room, not status: the barrier moved into the doorway of
-  // the gallery behind Nintendo 64, and the Multiplayer / Tournament room took
-  // the doorway it used to stand in.
-  assert.match(arcade, /gamecubeConstructionBarrier\.position\.set\(ANNEX_ROOM_CENTER_X,0,PS2_ROOM_DOOR_Z\)/);
-  assert.match(arcade, /tournamentConstructionBarrier\.userData\.roomName='Multiplayer \/ Tournament'/);
-  assert.match(arcade, /tournamentConstructionBarrier\.position\.set\(0,0,16\.55\)/);
-  assert.doesNotMatch(arcade, /ConstructionPanel=new THREE\.Mesh\([^\n]+side:THREE\.DoubleSide/);
-  assert.match(arcade, /const ps2CabinetLayout=\[\[1,-33\.8,-30/);
-  // Room signage was removed on purpose: the wall logos identify each room,
-  // so asserting the old text plates would pin behaviour that is now gone.
-  // The GameCube doorway reports the room as closed, because it is.
-  assert.match(arcade, /playerPosition\.z>13\.2&&Math\.abs\(playerPosition\.x\)<2\.5/);
-  assert.match(arcade, /Math\.abs\(playerPosition\.x-PS2_ROOM_CENTER_X\)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS/);
+  // Every sealed doorway in the ring is one call against one builder. Nine of
+  // them are sealed, and three hand-written copies of the same six lines was
+  // already two too many.
+  assert.match(arcade, /function sealDoorway\(roomName,x,z,facing\)/);
+  assert.match(arcade, /sealDoorway\('Xbox',N64_WALL_X,CONSTRUCTION_ROOM_DOOR_Z,-Math\.PI\/2\)/);
+  assert.match(arcade, /sealDoorway\('GameCube',N64_WALL_X,-25\.2,-Math\.PI\/2\)/);
+  assert.match(arcade, /sealDoorway\('Multiplayer \/ Tournament',0,TOURNAMENT_MIN_Z-\.25,Math\.PI\)/);
+  assert.match(arcade, /for\(const roomX of NORTH_ROOM_X\)sealDoorway\('Console Row'/);
+  assert.match(arcade, /const ps2CabinetLayout=\[\[1,-41\.4,-30/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
-  assert.match(arcade, /nearbyConstructionRoom\(\)/);
   assert.match(arcade, /Room Under Construction\./);
-  // Both partition walls run the full depth now: each side has a rear gallery
-  // behind it, so neither stops at the back of the playable rooms.
-  assert.match(arcade, /const minimumZ=PS2_ROOM_BACK_Z;/);
-  assert.match(edge, /PARTITION_WALL_X = 14/);
-  assert.match(edge, /PLAYABLE_ROOM_DOOR_Z = -8/);
-  assert.match(edge, /PS2_ROOM_DOOR_Z = -16\.8/);
-  assert.match(edge, /Math\.abs\(crossingZ - PLAYABLE_ROOM_DOOR_Z\)/);
-  assert.match(edge, /throughRearDoor\(crossingX\)/);
+
+  // The doorways that are open are stated once, per side, and the same table is
+  // stated again on the authoritative path. A room whose doorway is not listed
+  // is shut, which is what makes the barrier standing in it true.
+  assert.match(arcade, /const OPEN_DOOR_Z=\{west:\[-25\.2,-8,8\],east:\[-8\]\};/);
+  assert.match(edge, /west: \[-25\.2, -8, 8\], east: \[-8\]/);
+  assert.match(edge, /PARTITION_WALL_X = 21\.6/);
+
+  // The prompt reads the room off the barrier the player is standing at, so a
+  // room added to the table cannot arrive without one.
+  assert.match(arcade, /for\(const barrier of constructionBarriers\)/);
 });

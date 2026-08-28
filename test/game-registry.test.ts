@@ -61,9 +61,9 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // room behind PlayStation. The room it used to occupy is the Multiplayer /
   // Tournament room, which runs the full width of the building.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
-    { x: 31.8, y: 1.65, z: -30 }, { x: 31.8, y: 1.65, z: -25 },
-    { x: 31.8, y: 1.65, z: -20 }, { x: 27.8, y: 1.65, z: -30 },
-    { x: 21.8, y: 1.65, z: -30 }
+    { x: 39.4, y: 1.65, z: -30 }, { x: 39.4, y: 1.65, z: -25 },
+    { x: 39.4, y: 1.65, z: -20 }, { x: 35.4, y: 1.65, z: -30 },
+    { x: 29.4, y: 1.65, z: -30 }
   ]);
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [
     'wind-waker',

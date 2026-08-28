@@ -31,89 +31,72 @@ void test('server rejects movement packets that arrive too fast, leave bounds, o
 void test('the temporary construction barrier rejects entry into the Xbox room', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  assert.deepEqual(players.move('socket-a', { p: [3, 11], r: 0 }, 1_500)?.p, [3, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [6, 11], r: 0 }, 2_000)?.p, [6, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [9, 11], r: 0 }, 2_500)?.p, [9, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [12, 11], r: 0 }, 3_000)?.p, [12, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [12, 8], r: 0 }, 3_500)?.p, [12, 1.65, 8]);
-  assert.equal(players.move('socket-a', { p: [14.2, 8], r: 0 }, 4_000), undefined);
-  assert.equal(players.stateFor('socket-a')?.p[0], 12);
+  const route: Array<[number, number]> = [[3, 11], [6, 11], [9, 11], [12, 11], [15, 11], [18, 11], [19.6, 11], [19.6, 8]];
+  route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: 0 }, 1_500 + index * 500), `step ${index} was refused`));
+  // The doorway is there, and the barrier in it is not decorative.
+  assert.equal(players.move('socket-a', { p: [22.5, 8], r: 0 }, 5_500), undefined);
+  assert.equal(players.stateFor('socket-a')?.p[0], 19.6);
 });
 
 void test('the MegaMan Room replaces the former front-left construction bay', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  assert.deepEqual(players.move('socket-a', { p: [-3, 11], r: 0 }, 1_500)?.p, [-3, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [-6, 11], r: 0 }, 2_000)?.p, [-6, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [-9, 11], r: 0 }, 2_500)?.p, [-9, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [-12, 11], r: 0 }, 3_000)?.p, [-12, 1.65, 11]);
-  assert.deepEqual(players.move('socket-a', { p: [-12, 8], r: 0 }, 3_500)?.p, [-12, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [-14.5, 8], r: -Math.PI / 2 }, 4_000)?.p, [-14.5, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [-17.5, 8], r: -Math.PI / 2 }, 4_500)?.p, [-17.5, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [-20.5, 8], r: -Math.PI / 2 }, 5_000)?.p, [-20.5, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [-23.5, 8], r: -Math.PI / 2 }, 5_500)?.p, [-23.5, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [-23.5, 5], r: Math.PI }, 6_000)?.p, [-23.5, 1.65, 5]);
-  assert.deepEqual(players.move('socket-a', { p: [-23.5, 2], r: Math.PI }, 6_500)?.p, [-23.5, 1.65, 2]);
-  assert.equal(players.move('socket-a', { p: [-23.5, -1], r: Math.PI }, 7_000), undefined,
-    'the divider must still separate MegaMan from PlayStation');
+  const route: Array<[number, number]> = [
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-15, 11], [-18, 11], [-19.6, 11], [-19.6, 8],
+    [-22.5, 8], [-25.5, 8], [-28.5, 8], [-28.5, 5], [-28.5, 2]
+  ];
+  route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500), `step ${index} was refused`));
+  // Each room in a column is closed off from the one next to it: every room is
+  // entered from the hall, and none of these walls has a doorway.
+  assert.equal(players.move('socket-a', { p: [-28.5, -1], r: Math.PI }, 8_500), undefined,
+    'the divider must still separate Mega Man from PlayStation');
 });
 
-void test('the new PS2 room is accessible only through its PlayStation doorway', () => {
-  const players = createPlayers();
-  players.join('socket-a', 'main', undefined, identity, 1_000);
-  const steps: Array<[number, number]> = [
-    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
-    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-24.8, -11], [-24.8, -14]
-  ];
-  steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: Math.PI }, 1_500 + index * 500), `step ${index} was refused`));
-  assert.ok(players.move('socket-a', { p: [-24.8, -17], r: Math.PI }, 9_500));
-  assert.ok(players.move('socket-a', { p: [-24.8, -20], r: Math.PI }, 10_000));
-  assert.equal(players.stateFor('socket-a')?.p[2], -20);
-
-  const blocked = createPlayers();
-  blocked.join('socket-b', 'main', undefined, identity, 1_000);
-  const blockedRoute: Array<[number, number]> = [
-    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
-    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-26.5, -8], [-26.5, -11], [-26.5, -14]
-  ];
-  blockedRoute.forEach(([x, z], index) => assert.ok(blocked.move('socket-b', { p: [x, z], r: Math.PI }, 1_500 + index * 500)));
-  assert.equal(blocked.move('socket-b', { p: [-26.5, -17], r: Math.PI }, 10_000), undefined,
-    'the solid rear wall must still reject movement outside the doorway');
-});
-
-void test('the solid section of the PlayStation outer wall remains authoritative', () => {
+void test('the PS2 room is reached through its own doorway off the hall', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
   const route: Array<[number, number]> = [
-    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
-    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-26.5, -8], [-29, -10]
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-15, 11], [-18, 11], [-19.6, 11], [-19.6, 8],
+    [-19.6, 5], [-19.6, 2], [-19.6, -1], [-19.6, -4], [-19.6, -7], [-19.6, -10], [-19.6, -13],
+    [-19.6, -16], [-19.6, -19], [-19.6, -22], [-19.6, -25.2]
   ];
-  route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
-  // The outer wall moved out with the room: -31.5 is inside the building now.
-  assert.ok(players.move('socket-a', { p: [-32, -10], r: -Math.PI / 2 }, 9_500));
-  assert.equal(players.move('socket-a', { p: [-35.5, -10], r: -Math.PI / 2 }, 10_000), undefined);
-  assert.deepEqual(players.stateFor('socket-a')?.p, [-32, 1.65, -10]);
+  route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: Math.PI }, 1_500 + index * 500), `step ${index} was refused`));
+  assert.ok(players.move('socket-a', { p: [-22.5, -25.2], r: -Math.PI / 2 }, 11_500));
+  assert.deepEqual(players.stateFor('socket-a')?.p, [-22.5, 1.65, -25.2]);
+
+  // A metre either side of the doorway is wall.
+  const blocked = createPlayers();
+  blocked.join('socket-b', 'main', undefined, identity, 1_000);
+  const blockedRoute: Array<[number, number]> = [
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-15, 11], [-18, 11], [-19.6, 11], [-19.6, 8],
+    [-19.6, 5], [-19.6, 2], [-19.6, -1], [-19.6, -4], [-19.6, -7], [-19.6, -10], [-19.6, -13],
+    [-19.6, -16], [-19.6, -19], [-19.6, -20]
+  ];
+  blockedRoute.forEach(([x, z], index) => assert.ok(blocked.move('socket-b', { p: [x, z], r: Math.PI }, 1_500 + index * 500), `blocked step ${index} was refused`));
+  assert.equal(blocked.move('socket-b', { p: [-22.5, -20], r: -Math.PI / 2 }, 11_000), undefined,
+    'the wall either side of the doorway must still reject movement');
 });
 
-void test('room walls, rear doorway, and annex divider are authoritative', () => {
+void test('the outer wall of the building remains authoritative', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  assert.deepEqual(players.move('socket-a', { p: [0, 8], r: Math.PI }, 1_500)?.p, [0, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [3, 8], r: -Math.PI / 2 }, 2_500)?.p, [3, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [6, 8], r: -Math.PI / 2 }, 3_000)?.p, [6, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [9, 8], r: Math.PI }, 3_500)?.p, [9, 1.65, 8]);
-  assert.deepEqual(players.move('socket-a', { p: [9, 5], r: Math.PI }, 4_000)?.p, [9, 1.65, 5]);
-  assert.deepEqual(players.move('socket-a', { p: [12, 5], r: -Math.PI / 2 }, 4_500)?.p, [12, 1.65, 5]);
-  assert.equal(players.move('socket-a', { p: [14.2, 5], r: -Math.PI / 2 }, 5_000), undefined);
-  assert.deepEqual(players.move('socket-a', { p: [12, 2], r: Math.PI }, 5_500)?.p, [12, 1.65, 2]);
-  assert.deepEqual(players.move('socket-a', { p: [12, -1], r: Math.PI }, 6_000)?.p, [12, 1.65, -1]);
-  assert.deepEqual(players.move('socket-a', { p: [12, -4], r: Math.PI }, 6_500)?.p, [12, 1.65, -4]);
-  assert.deepEqual(players.move('socket-a', { p: [12, -7], r: Math.PI }, 7_000)?.p, [12, 1.65, -7]);
-  assert.deepEqual(players.move('socket-a', { p: [14.5, -8], r: -Math.PI / 2 }, 7_500)?.p, [14.5, 1.65, -8]);
-  assert.deepEqual(players.move('socket-a', { p: [17.5, -8], r: -Math.PI / 2 }, 8_000)?.p, [17.5, 1.65, -8]);
-  assert.deepEqual(players.move('socket-a', { p: [17.5, -4.5], r: 0 }, 8_500)?.p, [17.5, 1.65, -4.5]);
-  assert.deepEqual(players.move('socket-a', { p: [17.5, -1], r: 0 }, 9_000)?.p, [17.5, 1.65, -1]);
-  assert.equal(players.move('socket-a', { p: [17.5, 1], r: 0 }, 9_500), undefined);
+  const route: Array<[number, number]> = [
+    [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-15, 11], [-18, 11], [-19.6, 11], [-19.6, 8],
+    [-22.5, 8], [-25.5, 8], [-28.5, 8], [-31.5, 8], [-34.5, 8], [-37.5, 8], [-40.5, 8], [-42.7, 8]
+  ];
+  route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500), `step ${index} was refused`));
+  assert.equal(players.move('socket-a', { p: [-44, 8], r: -Math.PI / 2 }, 9_500), undefined);
+  assert.deepEqual(players.stateFor('socket-a')?.p, [-42.7, 1.65, 8]);
+});
+
+void test('the partition wall is solid everywhere it has no doorway', () => {
+  const players = createPlayers();
+  players.join('socket-a', 'main', undefined, identity, 1_000);
+  const route: Array<[number, number]> = [[0, 8], [3, 8], [6, 8], [9, 8], [12, 8], [15, 8], [18, 8], [19.6, 8], [19.6, 5], [19.6, 2], [19.6, 0]];
+  route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500), `step ${index} was refused`));
+  // z = 0 is the middle of a wall segment on both sides of the hall.
+  assert.equal(players.move('socket-a', { p: [22.5, 0], r: -Math.PI / 2 }, 7_000), undefined);
+  assert.equal(players.stateFor('socket-a')?.p[0], 19.6);
 });
 
 void test('the middle of the hall can be walked straight through', () => {

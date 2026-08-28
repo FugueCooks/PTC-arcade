@@ -60,13 +60,13 @@ void test('the floor is one rectangle, and it holds every room', () => {
     assert.ok(!/MEGAMAN_ALCOVE/.test(source), 'the second rectangle must be gone from every copy');
   }
   // The side rooms reach the outer wall on both sides, half a metre inside it.
-  assert.equal(clientBounds.minX, -35.1);
-  assert.equal(clientBounds.maxX, 35.1);
+  assert.equal(clientBounds.minX, -42.7);
+  assert.equal(clientBounds.maxX, 42.7);
   assert.equal(clientBounds.minX, -clientBounds.maxX, 'the building is symmetric now');
 });
 
 /** Rooms sealed behind a construction barrier, read from the scene itself. */
-const blockedRooms = [...client.matchAll(/userData\.roomName='([^']+)'/g)]
+const blockedRooms = [...client.matchAll(/sealDoorway\('([^']+)'/g)]
   .map((match) => match[1].toLowerCase().split(' ')[0]);
 
 void test('the world reaches every cabinet a player is meant to stand at', () => {
@@ -102,14 +102,14 @@ void test('the sealed rooms are closed in the scene and in what it enforces', ()
 
   // The Multiplayer / Tournament room is beyond the hub, and the world stops
   // short of the doorway into it.
-  assert.ok(client.includes('tournamentConstructionBarrier'), 'the tournament barrier must be present');
-  assert.ok(prompt.includes("'Multiplayer / Tournament'"), 'its doorway must report the room as closed');
-  assert.ok(clientBounds.maxZ < 16.8, 'the world must stop short of the tournament room');
+  assert.ok(client.includes("sealDoorway('Multiplayer / Tournament'"), 'the tournament barrier must be present');
+  assert.ok(/for\(const barrier of constructionBarriers\)/.test(client), 'the prompt must read the room off the barrier');
+  assert.ok(clientBounds.maxZ < 33.6, 'the world must stop short of the tournament room');
 
   // GameCube is sealed in its own gallery instead: the world reaches it, so the
   // doorway itself is what has to be closed.
-  assert.ok(client.includes('gamecubeConstructionBarrier'), 'the GameCube barrier must be present');
-  assert.ok(prompt.includes("'GameCube'"), 'its doorway must report the room as closed');
-  assert.ok(/playerPosition\.x<0&&Math\.abs\(playerPosition\.x-PS2_ROOM_CENTER_X\)/.test(client),
-    'only the PlayStation-side doorway in the rear wall may be passable');
+  assert.ok(client.includes("sealDoorway('GameCube'"), 'the GameCube barrier must be present');
+
+  assert.ok(/const OPEN_DOOR_Z=\{west:\[-25\.2,-8,8\],east:\[-8\]\}/.test(client),
+    'the doorways that are open must be stated once, per side');
 });

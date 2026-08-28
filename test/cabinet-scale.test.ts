@@ -117,18 +117,18 @@ void test('zone activation follows the player and never leaves nothing loaded', 
   // The room's cabinets stand in one row along its north wall, so the zone its
   // bounds describe is a band in front of that wall rather than the whole floor.
   // Streaming still follows the player through preloadDistance.
-  const inMegaman = zones.activeZoneIds(-22.5, 12);
+  const inMegaman = zones.activeZoneIds(-30.1, 12);
   assert.ok(inMegaman.includes('megaman-room'));
   assert.ok(!inMegaman.includes('xbox-gallery'), 'a distant zone must not be activated');
 
   // The GameCube zone moved with its cabinets, into the gallery behind
   // Nintendo 64. The room it left is the Multiplayer / Tournament room.
-  const inGamecube = zones.activeZoneIds(27.8, -30);
+  const inGamecube = zones.activeZoneIds(35.4, -30);
   assert.ok(inGamecube.includes('gamecube-room'));
 
   // Standing between zones still resolves to the nearby ones by distance.
-  assert.ok(zones.activeZoneIds(-30, -14).length > 0);
-  assert.equal(zones.zoneAt(-22.5, 12)?.id, 'megaman-room');
+  assert.ok(zones.activeZoneIds(-37.6, -14).length > 0);
+  assert.equal(zones.zoneAt(-30.1, 12)?.id, 'megaman-room');
 });
 
 void test('zone activation cost does not grow with cabinet count', () => {

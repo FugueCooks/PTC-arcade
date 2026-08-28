@@ -4,16 +4,16 @@ import type { Room } from '../rooms/room.js';
 import type { RoomManager } from '../rooms/room-manager.js';
 import type { PlayerIdentity } from './player-identity.js';
 
-const MIN_WORLD_X = -35.1;
-const MAX_WORLD_X = 35.1;
-const MIN_WORLD_Z = -33.2;
+const MIN_WORLD_X = -42.7;
+const MAX_WORLD_X = 42.7;
+const MIN_WORLD_Z = -49.9;
 // Stops at the hub's north wall: the GameCube room is sealed behind its
 // construction barrier again, so nothing beyond z 16 is meant to be walked to.
 // This bound is duplicated in the Cloudflare Worker and in arcade.js, and
 // test/world-bounds.test.ts holds the three to the same numbers: a player who
 // can walk somewhere the server will not accept gets snapped back on every
 // step, which reads as lag rather than as a wall.
-const MAX_WORLD_Z = 16;
+const MAX_WORLD_Z = 33.1;
 // The world is not one rectangle. The Mega Man room reaches 4.6 m further west
 // than the rest of the building, so ten cabinets stand in a single row against
 // the wall carrying the PlayStation logo. That strip is out of bounds
@@ -32,11 +32,15 @@ const MAX_SPEED_PER_SECOND = 7;
 const MAX_PACKET_RATE_MS = 50;
 const DEFAULT_RECONNECT_GRACE_MS = 10_000;
 const MOVEMENT_TOLERANCE = 0.3;
-const PARTITION_WALL_X = 14;
+const PARTITION_WALL_X = 21.6;
 const PARTITION_COLLISION_HALF_WIDTH = 0.52;
-const PLAYABLE_ROOM_DOOR_Z = -8;
-const PS2_ROOM_CENTER_X = -24.8;
-const PS2_ROOM_DOOR_Z = -16.8;
+// Four rooms open off each partition wall. A doorway into a room that is not
+// finished is sealed, so only these three are passable — PS2, PlayStation and
+// Mega Man on the west, Nintendo 64 on the east. arcade.js holds the same table.
+const OPEN_DOOR_Z: Record<'west' | 'east', number[]> = { west: [-25.2, -8, 8], east: [-8] };
+const SIDE_COLUMN_MIN_Z = -33.6;
+const SIDE_COLUMN_MAX_Z = 33.6;
+const SIDE_ROOM_DIVIDER_Z = [-33.6, -16.8, 0, 16.8, 33.6];
 const ROOM_DOOR_CLEARANCE = 1.26;
 // The couch ring and the round display case that used to stand at the origin
 // are gone, so the middle of the hall is open floor and nothing here refuses a
@@ -45,38 +49,30 @@ const ROOM_DOOR_CLEARANCE = 1.26;
 // Scopes the checks below to the side rooms; a player west of it is outside the
 // building entirely and has already been refused by the world bounds.
 const ANNEX_MIN_X = MIN_WORLD_X;
-const MEGAMAN_ROOM_DOOR_Z = 8;
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
   for (const wallX of [-PARTITION_WALL_X, PARTITION_WALL_X]) {
-    const targetInDoor = Math.abs(toZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
-    const targetInMegaManDoor = wallX === -PARTITION_WALL_X
-      && Math.abs(toZ - MEGAMAN_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
-    if (!targetInDoor && !targetInMegaManDoor && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
+    // The wall runs the length of its column and no further: north of it the
+    // hall is full width, which is what lets the top row's outer rooms open
+    // onto the hall.
+    if (Math.max(fromZ, toZ) < SIDE_COLUMN_MIN_Z || Math.min(fromZ, toZ) > SIDE_COLUMN_MAX_Z) continue;
+    const doors = wallX < 0 ? OPEN_DOOR_Z.west : OPEN_DOOR_Z.east;
+    const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE);
+    if (!throughDoor(toZ) && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
     const crossingZ = fromZ + (toZ - fromZ) * crossing;
-    const crossingInPlayableDoor = Math.abs(crossingZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
-    const crossingInMegaManDoor = wallX === -PARTITION_WALL_X
-      && Math.abs(crossingZ - MEGAMAN_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
-    if (crossing >= 0 && crossing <= 1 && !crossingInPlayableDoor && !crossingInMegaManDoor) return true;
+    if (crossing >= 0 && crossing <= 1 && !throughDoor(crossingZ)) return true;
   }
-  const inSideAnnex = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
+  // The walls between the rooms in a column. None of them has a doorway: every
+  // room is entered from the hall.
+  const inSideColumn = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
     && Math.min(fromX, toX) >= ANNEX_MIN_X;
-  if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
-  if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
-  // The back wall of the building, which runs the whole width behind the hub
-  // and both side galleries. There is exactly one doorway in it, into the PS2
-  // room; the matching doorway on the Nintendo 64 side leads to the GameCube
-  // gallery and is sealed, and behind the hub there is no doorway at all. It
-  // used to be enforced only along the PlayStation stretch, which left the
-  // stretch behind the prize counter open to anyone who walked into it.
-  const throughRearDoor = (x: number) => Math.abs(x - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
-  if (!throughRearDoor(toX) && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
-  if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) {
-    const crossing = (PS2_ROOM_DOOR_Z - fromZ) / (toZ - fromZ);
-    const crossingX = fromX + (toX - fromX) * crossing;
-    if (crossing >= 0 && crossing <= 1 && !throughRearDoor(crossingX)) return true;
+  if (inSideColumn) {
+    for (const dividerZ of SIDE_ROOM_DIVIDER_Z) {
+      if (Math.abs(toZ - dividerZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
+      if ((fromZ - dividerZ) * (toZ - dividerZ) < 0) return true;
+    }
   }
   return false;
 }

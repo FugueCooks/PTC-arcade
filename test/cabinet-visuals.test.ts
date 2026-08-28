@@ -65,12 +65,18 @@ void test('the main room is an open hall beside square console rooms', async () 
 
   // Room signage was removed on purpose: the wall logos identify each room,
   // so asserting the old text plates would pin behaviour that is now gone.
-  assert.match(arcade, /playstationWall\.position\.set\(-22\.5,2\.5,-\.16\)/);
-  assert.match(arcade, /n64WallGraphic\.position\.set\(22\.5,2\.5,-\.16\)/);
-  // Every room in the building is one size: the annexes are as wide as the Mega
-  // Man room, which used to be the one that stepped out past the outer wall.
-  assert.match(arcade, /ANNEX_ROOM_WIDTH=21\.6,ANNEX_ROOM_CENTER_X=24\.8/);
-  assert.match(arcade, /const MEGAMAN_ROOM_WIDTH=21\.6|MEGAMAN_ROOM_WIDTH=21\.6/);
+  // The wall graphics hang at their room's centre, so they moved outward with
+  // it rather than being repositioned by hand.
+  assert.match(arcade, /playstationWall\.position\.set\(MEGAMAN_ROOM_CENTER_X\+2\.3,2\.5,-\.16\)/);
+  assert.match(arcade, /n64WallGraphic\.position\.set\(ANNEX_ROOM_CENTER_X-2\.3,2\.5,-\.16\)/);
+  // Every room in the building is one size, and the plan is stated once.
+  assert.match(arcade, /const ROOM_SPAN=21\.6,ROOM_DEPTH=16\.8;/);
+  assert.match(arcade, /SHELL_HALF_WIDTH=43\.2,HALL_HALF_WIDTH=21\.6,ANNEX_ROOM_CENTER_X=32\.4/);
+  // Four rooms down each side, four across the top, the tournament hall across
+  // the bottom: the ring the floorplan draws.
+  assert.match(arcade, /const SIDE_ROOM_Z=\[-25\.2,-8\.4,8\.4,25\.2\];/);
+  assert.match(arcade, /const NORTH_ROOM_X=\[-32\.4,-10\.8,10\.8,32\.4\];/);
+  assert.match(arcade, /MEGAMAN_ROOM_WIDTH=ROOM_SPAN,MEGAMAN_ROOM_DEPTH=ROOM_DEPTH/);
   assert.doesNotMatch(arcade, /MEGAMAN_EXTENSION_WIDTH/);
   assert.match(arcade, /PS2_ROOM_CENTER_Z=-25\.2/);
   assert.match(arcade, /PS2_ROOM_BACK_Z=-33\.6/);
@@ -84,7 +90,7 @@ void test('the main room is an open hall beside square console rooms', async () 
   assert.doesNotMatch(edge, /SOCIAL_COUCH_/);
   // Trench Pepe moved out of that case and onto the prize counter.
   assert.match(arcade, /gangsterPepeMount\.position\.set\(0,1\.265,0\);prizeDisplay\.add\(gangsterPepeMount\)/);
-  assert.match(arcade, /new THREE\.PlaneGeometry\(ANNEX_ROOM_WIDTH,34\)/);
+  assert.match(arcade, /new THREE\.PlaneGeometry\(ROOM_SPAN,SIDE_COLUMN_DEPTH\)/);
   // The room beyond the hub is the Multiplayer / Tournament room now, and it
   // runs the full width of the building rather than the old 24 m square.
   assert.match(arcade, /TOURNAMENT_ROOM_WIDTH=SHELL_HALF_WIDTH\*2/);
@@ -110,7 +116,7 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
 
   // Second mural: full left wall, facing into the room.
   assert.match(arcade, /megaman-room-mural-2\.webp/);
-  assert.match(arcade, /megaManMuralTwo\.position\.set\(-35\.28,2\.5,MEGAMAN_ROOM_CENTER_Z\)/);
+  assert.match(arcade, /megaManMuralTwo\.position\.set\(-SHELL_HALF_WIDTH\+\.32,2\.5,MEGAMAN_ROOM_CENTER_Z\)/);
   assert.match(arcade, /megaManMuralTwo\.rotation\.y=Math\.PI\/2/);
 
   // Third mural: full rear wall, which needs no rotation to face inward.

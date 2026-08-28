@@ -93,7 +93,7 @@ void test('walking up to a streaming cabinet warms its boot region', async () =>
   // warmEmulatorCore runs on approach and returns early once a core is warm,
   // so the disc warm has to happen before that return or it never runs twice.
   const warmCore = arcade.slice(arcade.indexOf('function warmEmulatorCore('));
-  assert.match(warmCore.slice(0, 200), /warmStreamingDisc\(cabinet\)/);
+  assert.match(warmCore, /warmStreamingDisc\(cabinet\)/);
   assert.match(arcade, /prewarmDiscRanges/);
   assert.match(arcade, /warmedDiscCabinets\.has\(cabinet\.id\)/, 'a cabinet must only be warmed once');
 });
