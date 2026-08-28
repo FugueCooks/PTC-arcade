@@ -52,17 +52,28 @@ void test('the server, the worker and the client agree on where the world ends',
   }
 });
 
-void test('the floor is one rectangle, and it holds every room', () => {
-  // The second rectangle is gone. Nothing may reintroduce one quietly: a room
-  // that does not fit inside these bounds is a room a player cannot reach, and
-  // the symptom is not a wall but a player who simply stops walking.
+void test('the floor is the main rectangle plus the Silent Hill annex, in all three copies', () => {
+  // The Silent Hill room runs deeper than its column, into the west end of the
+  // tournament hall, so the walkable floor is a union of two rectangles again.
+  // A second rectangle that exists in one copy and not another is the exact
+  // drift this file exists to catch: the symptom is not a wall but a player
+  // who simply stops walking, or walks somewhere the server then refuses.
   for (const source of [server, worker, client]) {
-    assert.ok(!/MEGAMAN_ALCOVE/.test(source), 'the second rectangle must be gone from every copy');
+    assert.ok(!/MEGAMAN_ALCOVE/.test(source), 'the retired alcove must not come back by that name');
   }
-  // The side rooms reach the outer wall on both sides, half a metre inside it.
   assert.equal(clientBounds.minX, -42.7);
   assert.equal(clientBounds.maxX, 42.7);
-  assert.equal(clientBounds.minX, -clientBounds.maxX, 'the building is symmetric now');
+  assert.equal(clientBounds.minX, -clientBounds.maxX, 'the main rectangle stays symmetric');
+
+  const clientAnnex = clientRegion('SILENT_HILL_ANNEX');
+  assert.deepEqual(clientAnnex, { minX: -42.7, maxX: -22.1, minZ: 33.1, maxZ: 39.9 });
+  // Both authorities carry the same numbers, keyed off the main rectangle's
+  // maxZ so the two regions cannot drift apart at the seam.
+  for (const [name, source] of [['server', server], ['worker', worker]] as const) {
+    assert.ok(source.includes('return x >= -42.7 && x <= -22.1 && z >= MAX_WORLD_Z && z <= 39.9;'),
+      `${name} must enforce the Silent Hill annex`);
+  }
+  assert.equal(clientAnnex.minZ, clientBounds.maxZ, 'the annex must meet the main rectangle');
 });
 
 /** Rooms sealed behind a construction barrier, read from the scene itself. */

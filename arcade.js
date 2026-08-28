@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=chao-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=sh-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -44,9 +44,18 @@ const CABINET_PROMPT_RANGE = 2.25;
 // hall at the bottom and the top row at the top. The rooms off the side walls
 // are gated by their own doorways instead, because three of them are open.
 const WORLD_BOUNDS={minX:-42.7,maxX:42.7,minZ:-66.7,maxZ:33.1};
-function clampToWorld(){
-  playerPosition.x=Math.max(WORLD_BOUNDS.minX,Math.min(WORLD_BOUNDS.maxX,playerPosition.x));
-  playerPosition.z=Math.max(WORLD_BOUNDS.minZ,Math.min(WORLD_BOUNDS.maxZ,playerPosition.z));
+// The Silent Hill room runs deeper than its column: it annexes the west end of
+// the tournament hall, so the walkable floor is the main rectangle plus this
+// one. The union is clamped against whichever rectangle the step began in,
+// exactly as the old Mega Man alcove was.
+const SILENT_HILL_ANNEX={minX:-42.7,maxX:-22.1,minZ:33.1,maxZ:39.9};
+function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
+function clampToWorld(previousX,previousZ){
+  const region=insideRegion(SILENT_HILL_ANNEX,previousX,previousZ)?SILENT_HILL_ANNEX:WORLD_BOUNDS;
+  const other=region===SILENT_HILL_ANNEX?WORLD_BOUNDS:SILENT_HILL_ANNEX;
+  if(insideRegion(other,playerPosition.x,playerPosition.z))return;
+  playerPosition.x=Math.max(region.minX,Math.min(region.maxX,playerPosition.x));
+  playerPosition.z=Math.max(region.minZ,Math.min(region.maxZ,playerPosition.z));
 }
 const clock = new THREE.Clock(), keys = {}, cabinets = [], cabinetsById = new Map(), raycaster = new THREE.Raycaster(), animatedMixers = [];
 const mobileMove={x:0,y:0};
@@ -161,6 +170,11 @@ ceilingShape.holes.push(stadiumHole);
 const gardenHole=new THREE.Path();
 gardenHole.moveTo(21.6,-25.2);gardenHole.lineTo(43.2,-25.2);gardenHole.lineTo(43.2,-8.4);gardenHole.lineTo(21.6,-8.4);gardenHole.closePath();
 ceilingShape.holes.push(gardenHole);
+// The third hole is Silent Hill's: its facades rise past the ceiling and its
+// sky is the dark the fog fades into. Covers the room and its annex.
+const silentHillHole=new THREE.Path();
+silentHillHole.moveTo(-43.2,25.2);silentHillHole.lineTo(-21.6,25.2);silentHillHole.lineTo(-21.6,48.8);silentHillHole.lineTo(-43.2,48.8);silentHillHole.closePath();
+ceilingShape.holes.push(silentHillHole);
 const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
 ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,5.08,-8.4);scene.add(ceiling);
 const ceilingBeamMaterial=new THREE.MeshStandardMaterial({color:0x14111f,roughness:.7,metalness:.5});
@@ -569,7 +583,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-chao-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-sh-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -760,13 +774,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=chao-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=sh-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=chao-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=sh-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=chao-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=sh-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -930,6 +944,135 @@ function buildChaoGarden(centerX,centerZ){
   }
 }
 buildChaoGarden(ANNEX_ROOM_CENTER_X,-25.2);
+/**
+ * The Silent Hill room: an empty city block in dense fog.
+ *
+ * A wet street runs the depth of the room and on into its annex, walled by
+ * dark brick facades that rise past the building's ceiling through their own
+ * hole — above them there is only the dark the fog fades into. An abandoned
+ * car sits mid-street, dead streetlamps and poles line the kerbs, and the fog
+ * itself is layered billboards, so it costs geometry rather than lights.
+ *
+ * Cryptic red arrows are painted on the asphalt, leading from the doorway
+ * through the fog toward the back of the block — where the game machines will
+ * stand, with the monsters hidden along the way.
+ */
+function buildSilentHillBlock(){
+  const CX=-32.4,MIN_Z=17,MAX_Z=40.2,CZ=(MIN_Z+MAX_Z)/2;
+  // The street: cracked asphalt with a faded double centre line.
+  const roadCanvas=document.createElement('canvas');roadCanvas.width=256;roadCanvas.height=512;
+  const rc=roadCanvas.getContext('2d');
+  rc.fillStyle='#1e2124';rc.fillRect(0,0,256,512);
+  for(let i=0;i<700;i++){const x=(i*37)%256,y=(i*91)%512;rc.fillStyle=i%2?'#24282c':'#191c1f';rc.globalAlpha=.5;rc.fillRect(x,y,2,2)}
+  rc.globalAlpha=1;rc.strokeStyle='#141619';rc.lineWidth=1.6;
+  for(let i=0;i<7;i++){rc.beginPath();rc.moveTo((i*67)%256,0);
+    for(let y=0;y<512;y+=52){rc.lineTo(((i*67)%256)+((y*13+i*29)%34)-17,y)}rc.stroke()}
+  rc.fillStyle='#8f8348';rc.globalAlpha=.55;
+  for(let y=6;y<512;y+=44){rc.fillRect(120,y,5,26);rc.fillRect(131,y,5,26)}
+  rc.globalAlpha=1;
+  const roadTexture=new THREE.CanvasTexture(roadCanvas);roadTexture.colorSpace=THREE.SRGBColorSpace;
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(21.2,MAX_Z-MIN_Z),
+    new THREE.MeshStandardMaterial({map:roadTexture,roughness:.55,metalness:.25}));
+  road.rotation.x=-Math.PI/2;road.position.set(CX,.025,CZ);road.receiveShadow=true;scene.add(road);
+  // Kerbs along both sides.
+  const kerb=new THREE.MeshStandardMaterial({color:0x2c3034,roughness:.85});
+  for(const side of [-1,1]){
+    const walk=new THREE.Mesh(new THREE.BoxGeometry(1.7,.14,MAX_Z-MIN_Z),kerb);
+    walk.position.set(CX+side*9.6,.07,CZ);scene.add(walk);
+  }
+  // Facades: dark brick with sparse dim windows, rising past the old ceiling.
+  const brickCanvas=document.createElement('canvas');brickCanvas.width=256;brickCanvas.height=512;
+  const bk=brickCanvas.getContext('2d');
+  bk.fillStyle='#2a2320';bk.fillRect(0,0,256,512);
+  for(let y=0;y<512;y+=14){for(let x=(y/14)%2?0:9;x<256;x+=18){bk.fillStyle=(x*7+y*13)%5?'#332a25':'#241e1b';bk.fillRect(x,y,16,12)}}
+  for(let wy=26;wy<512;wy+=64){for(let wx=20;wx<256;wx+=48){
+    const lit=(wx*13+wy*7)%17===0;
+    bk.fillStyle=lit?'#4a4f3d':'#15171a';bk.fillRect(wx,wy,20,30);
+    bk.strokeStyle='#0e0f11';bk.lineWidth=2;bk.strokeRect(wx,wy,20,30);
+  }}
+  const brickTexture=new THREE.CanvasTexture(brickCanvas);brickTexture.colorSpace=THREE.SRGBColorSpace;
+  const facadeMaterial=new THREE.MeshStandardMaterial({map:brickTexture,roughness:.9,metalness:.05,emissive:0x11130f,emissiveIntensity:.5});
+  for(const [x,z,w,h,d] of [
+    [-42.4,21.5,1.6,9.5,8],[-42.4,30,1.6,11,8.5],[-42.4,37.5,1.6,8.5,6],
+    [-22.5,21,1.6,10.5,7.5],[-22.5,29.5,1.6,8.5,8],[-22.5,37,1.6,11.5,6.5],
+    [-27,39.7,9,9,1.2],[-37.5,39.7,9,10.5,1.2]
+  ]){
+    const facade=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),facadeMaterial);
+    facade.position.set(x,h/2,z);scene.add(facade);
+  }
+  // The abandoned car, mid-street where the reference parks it.
+  const paint=new THREE.MeshStandardMaterial({color:0x24333a,roughness:.4,metalness:.5});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(1.05,.5,2.3),paint);body.position.set(CX+.9,.42,CZ+1.2);body.rotation.y=.09;scene.add(body);
+  const cabin=new THREE.Mesh(new THREE.BoxGeometry(.95,.42,1.25),paint);cabin.position.set(CX+.9,.85,CZ+1.05);cabin.rotation.y=.09;scene.add(cabin);
+  const tyre=new THREE.MeshStandardMaterial({color:0x0d0f11,roughness:.95});
+  for(const [dx,dz] of [[-.5,-.75],[.5,-.75],[-.5,.8],[.5,.8]]){
+    const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.19,.19,.14,10),tyre);
+    wheel.rotation.z=Math.PI/2;wheel.position.set(CX+.9+dx,.19,CZ+1.2+dz);scene.add(wheel);
+  }
+  // Dead streetlamps and poles: silhouettes for the fog to swallow.
+  const ironwork=new THREE.MeshStandardMaterial({color:0x17191c,roughness:.7,metalness:.5});
+  for(const [x,z,lamp] of [[-41.2,20,true],[-41.2,29,true],[-23.7,25,true],[-23.7,34,true],[-41.2,37,false],[-23.7,18.5,false]]){
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,lamp?3.6:4.6,7),ironwork);
+    pole.position.set(x,(lamp?3.6:4.6)/2,z);scene.add(pole);
+    if(lamp){
+      const head=new THREE.Mesh(new THREE.BoxGeometry(.34,.16,.2),ironwork);
+      head.position.set(x+(x<CX?.24:-.24),3.62,z);scene.add(head);
+      const glow=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),
+        new THREE.MeshBasicMaterial({color:0xd9dcc4,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}));
+      glow.position.copy(head.position);glow.position.y-=.12;scene.add(glow);
+    }
+  }
+  // The fog: a soft radial billboard, layered standing and lying down. Static,
+  // unlit, additive-free — grey on grey is what makes it read as weather.
+  const fogCanvas=document.createElement('canvas');fogCanvas.width=128;fogCanvas.height=128;
+  const fg=fogCanvas.getContext('2d');
+  const puff=fg.createRadialGradient(64,64,8,64,64,64);
+  puff.addColorStop(0,'rgba(168,175,178,.75)');puff.addColorStop(.6,'rgba(160,168,172,.35)');puff.addColorStop(1,'rgba(160,168,172,0)');
+  fg.fillStyle=puff;fg.fillRect(0,0,128,128);
+  const fogTexture=new THREE.CanvasTexture(fogCanvas);fogTexture.colorSpace=THREE.SRGBColorSpace;
+  const fogMaterial=new THREE.MeshBasicMaterial({map:fogTexture,transparent:true,opacity:.34,depthWrite:false,side:THREE.DoubleSide});
+  const fogGeometry=new THREE.PlaneGeometry(7,4.2);
+  for(let i=0;i<26;i++){
+    const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
+    sheet.position.set(CX+((i*73)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+1+((i*127)%210)/10);
+    sheet.rotation.y=(i*2.399)%Math.PI;
+    sheet.renderOrder=3;scene.add(sheet);
+  }
+  const mistGeometry=new THREE.PlaneGeometry(9,6.5);
+  for(let i=0;i<10;i++){
+    const mist=new THREE.Mesh(mistGeometry,fogMaterial);
+    mist.rotation.x=-Math.PI/2;mist.rotation.z=(i*1.7)%Math.PI;
+    mist.position.set(CX+((i*89)%160)/10-8,.5+(i%2)*.35,MIN_Z+2+((i*151)%190)/10);
+    mist.renderOrder=3;scene.add(mist);
+  }
+  // The red arrows, painted rough on the asphalt: the trail from the doorway
+  // into the fog, toward where the machines will stand.
+  const arrowCanvas=document.createElement('canvas');arrowCanvas.width=128;arrowCanvas.height=96;
+  const ac=arrowCanvas.getContext('2d');
+  ac.fillStyle='#7d100c';
+  ac.beginPath();ac.moveTo(10,38);ac.lineTo(78,38);ac.lineTo(78,16);ac.lineTo(120,48);ac.lineTo(78,80);ac.lineTo(78,58);ac.lineTo(10,58);ac.closePath();ac.fill();
+  // Worn through: speckle holes so it reads painted long ago, not signage.
+  ac.globalCompositeOperation='destination-out';
+  for(let i=0;i<90;i++){ac.globalAlpha=.5;ac.beginPath();ac.arc((i*37)%128,(i*53)%96,1.6+(i%4),0,Math.PI*2);ac.fill()}
+  ac.globalCompositeOperation='source-over';ac.globalAlpha=1;
+  const arrowTexture=new THREE.CanvasTexture(arrowCanvas);arrowTexture.colorSpace=THREE.SRGBColorSpace;
+  const arrowMaterial=new THREE.MeshBasicMaterial({map:arrowTexture,transparent:true,opacity:.85,depthWrite:false});
+  const trail=[[-23.4,25.2],[-26.6,24.4],[-30.2,25.6],[-33.6,27.4],[-35.4,30.4],[-34.2,33.8],[-32.4,36.8]];
+  for(let i=0;i<trail.length;i++){
+    const [ax,az]=trail[i];
+    const next=trail[i+1]??[-32.4,39];
+    const arrow=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.86),arrowMaterial);
+    arrow.rotation.x=-Math.PI/2;
+    arrow.rotation.z=-Math.atan2(next[1]-az,next[0]-ax);
+    arrow.position.set(ax,.045,az);arrow.renderOrder=4;scene.add(arrow);
+  }
+  // What light there is: two sickly grey-green pools on the managed budget.
+  for(const [x,z] of [[-31,24],[-33.5,35]]){
+    const pall=new THREE.PointLight(0xaab8a4,2.6,13,2);
+    pall.position.set(x,3.2,z);scene.add(pall);managedSceneLights.push(pall);
+  }
+}
+buildSilentHillBlock();
 // No light rig added per room: the ring already lays one into every side room,
 // and a second in the same room is two rigs competing for the same light
 // budget. The stadium's floodlights are the exception, and they are its point.
@@ -972,13 +1115,21 @@ lightRoom(MEGAMAN_ROOM_CENTER_X,MEGAMAN_ROOM_CENTER_Z,MEGAMAN_ROOM_WIDTH,MEGAMAN
 const SIDE_COLUMN_DEPTH=SIDE_COLUMN_MAX_Z-SIDE_COLUMN_MIN_Z,SIDE_COLUMN_CENTER_Z=(SIDE_COLUMN_MAX_Z+SIDE_COLUMN_MIN_Z)/2;
 const SIDE_ROOM_ACCENTS=[0xff5fae,0xd18a52,0x4aa8ff,0x7dff67];
 for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
+  const west=roomX<0;
   const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,SIDE_COLUMN_DEPTH),expansionFloorMaterial);
   columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,SIDE_COLUMN_CENTER_Z);columnFloor.receiveShadow=true;scene.add(columnFloor);
-  box(ROOM_SPAN,.12,SIDE_COLUMN_DEPTH,0x090b18,roomX,5.08,SIDE_COLUMN_CENTER_Z,.08);
+  // The west column's ceiling stops at the Silent Hill room, whose facades rise
+  // through the hole cut for them; and that room's end wall is gone, because it
+  // continues into its annex.
+  if(west)box(ROOM_SPAN,.12,50.4,0x090b18,roomX,5.08,-8.4,.08);
+  else box(ROOM_SPAN,.12,SIDE_COLUMN_DEPTH,0x090b18,roomX,5.08,SIDE_COLUMN_CENTER_Z,.08);
   for(const wallZ of [SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z]){
+    if(west&&wallZ===SIDE_COLUMN_MAX_Z)continue;
     const wall=box(ROOM_SPAN,5,.3,0x11182c,roomX,2.5,wallZ,.05);wall.receiveShadow=true;
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
+    // Silent Hill lights itself: fog, lamps and a car, not troffers.
+    if(west&&index===3)return;
     for(let z=centerZ-6;z<=centerZ+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
     lightRoom(roomX,centerZ,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
   });
@@ -1006,13 +1157,21 @@ const GAMECUBE_ROOM_CENTER_X=ANNEX_ROOM_CENTER_X,GAMECUBE_ROOM_CENTER_Z=PS2_ROOM
 const TOURNAMENT_ROOM_WIDTH=SHELL_HALF_WIDTH*2,TOURNAMENT_ROOM_DEPTH=ROOM_DEPTH,TOURNAMENT_ROOM_CENTER_Z=(TOURNAMENT_MIN_Z+TOURNAMENT_MAX_Z)/2,TOURNAMENT_ROOM_BACK_Z=TOURNAMENT_MAX_Z,TOURNAMENT_ROOM_DOOR_Z=TOURNAMENT_MIN_Z;
 const tournamentFloorMaterial=(()=>{const map=floorTextures.map.clone(),roughnessMap=floorTextures.roughnessMap.clone();map.needsUpdate=roughnessMap.needsUpdate=true;map.repeat.set(14,3.5);roughnessMap.repeat.set(14,3.5);return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12})})();
 const tournamentFloor=new THREE.Mesh(new THREE.PlaneGeometry(TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH),tournamentFloorMaterial);tournamentFloor.rotation.x=-Math.PI/2;tournamentFloor.position.set(0,.002,TOURNAMENT_ROOM_CENTER_Z);tournamentFloor.receiveShadow=true;scene.add(tournamentFloor);
-const tournamentCeiling=box(TOURNAMENT_ROOM_WIDTH,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,0,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
+// The hall's ceiling starts east of the Silent Hill annex.
+const tournamentCeiling=box(64.8,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,10.8,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
 box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,-SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);
 box(TOURNAMENT_ROOM_WIDTH,5,.3,0x11182c,0,2.5,TOURNAMENT_ROOM_BACK_Z,.06);
 // The hub's front wall, either side of the one doorway. It reaches the
 // partition walls rather than stopping short of them, which used to leave a two
 // metre hole at each end that only the old room's narrower side walls covered.
-for(const side of [-1,1])box(SHELL_HALF_WIDTH-ROOM_DOOR_HALF_WIDTH,5,.3,0x11182c,side*(SHELL_HALF_WIDTH+ROOM_DOOR_HALF_WIDTH)/2,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
+// West of the Silent Hill room the front wall is gone — the room flows into
+// its annex there — so the west segment runs only from the room's edge to the
+// hall's doorway.
+box(20,5,.3,0x11182c,-11.6,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
+box(SHELL_HALF_WIDTH-ROOM_DOOR_HALF_WIDTH,5,.3,0x11182c,(SHELL_HALF_WIDTH+ROOM_DOOR_HALF_WIDTH)/2,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
+// The annex's own shell: its south wall, and the wall between it and the hall.
+box(21.6,5,.3,0x11182c,-32.4,2.5,40.4,.06);
+box(.3,5,6.8,0x11182c,-21.6,2.5,37,.06);
 for(let x=-40;x<=40;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,TOURNAMENT_ROOM_BACK_Z-.19,.75);
 lightRoom(0,TOURNAMENT_ROOM_CENTER_Z,TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH,0xffb066);
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
@@ -1993,7 +2152,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=chao-1')
+  import('./emulators/disc-range-cache.js?v=sh-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2013,7 +2172,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=chao-1')
+  import('./emulators/disc-range-cache.js?v=sh-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2232,6 +2391,8 @@ const SIDE_ROOM_DIVIDER_Z=[SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUM
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
   for(const dividerZ of SIDE_ROOM_DIVIDER_Z){
+    // The west column's end wall is gone: Silent Hill continues into its annex.
+    if(dividerZ===SIDE_COLUMN_MAX_Z&&playerPosition.x<0)continue;
     const northFace=dividerZ-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
     const southFace=dividerZ+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
     if(playerPosition.z<=northFace||playerPosition.z>=southFace)continue;
@@ -2371,6 +2532,6 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*7.5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld()}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*7.5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});

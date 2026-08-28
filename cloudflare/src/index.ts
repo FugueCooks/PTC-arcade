@@ -610,7 +610,10 @@ function decodeBase64Url(value: string): Uint8Array {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 function isInsideWorld(x: number, z: number): boolean {
-  return x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z;
+  if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
+  // The Silent Hill room runs deeper than its column, into the west end of the
+  // tournament hall. Matches SILENT_HILL_ANNEX in arcade.js.
+  return x >= -42.7 && x <= -22.1 && z >= MAX_WORLD_Z && z <= 39.9;
 }
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
@@ -632,6 +635,9 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inSideColumn) {
     for (const dividerZ of SIDE_ROOM_DIVIDER_Z) {
+      // The west column's end wall is gone: Silent Hill continues into its
+      // annex through where it stood.
+      if (dividerZ === 33.6 && Math.max(fromX, toX) < 0) continue;
       if (Math.abs(toZ - dividerZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
       if ((fromZ - dividerZ) * (toZ - dividerZ) < 0) return true;
     }
