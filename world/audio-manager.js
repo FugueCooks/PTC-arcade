@@ -1,7 +1,7 @@
 export class AudioManager {
   constructor(arcade, config) {
-    this.arcade = arcade; this.config = config; this.context = null; this.master = null; this.ambience = null; this.effects = null;
-    this.sources = []; this.muted = false;
+    this.arcade = arcade; this.config = config; this.context = null; this.master = null; this.effects = null;
+    this.muted = false;
     this.toggle = document.querySelector('#audio-toggle');
     this.toggle.addEventListener('click', () => this.setMuted(!this.muted));
     const unlock = () => void this.unlock();
@@ -14,42 +14,27 @@ export class AudioManager {
     if (this.context.state === 'suspended') await this.context.resume();
   }
 
+  /**
+   * There is no background bed any more.
+   *
+   * The arcade used to run three panned sine oscillators and a band-passed
+   * noise loop from the moment audio unlocked, and nothing ever stopped them.
+   * Only the interaction sounds are left, and they are silent until something
+   * is clicked or announced.
+   */
   initialize() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
     this.context = new AudioContext(); this.master = this.context.createGain(); this.master.gain.value = .38; this.master.connect(this.context.destination);
-    this.ambience = this.context.createGain(); this.ambience.gain.value = .7; this.ambience.connect(this.master);
     this.effects = this.context.createGain(); this.effects.gain.value = .24; this.effects.connect(this.master);
-    this.addHum('left-cabinets', [-10, 1.2, 0], 58, .045);
-    this.addHum('right-cabinets', [10, 1.2, 0], 63, .04);
-    this.addHum('air-conditioning', [0, 4.6, -11], 42, .035);
-    this.noise = this.createNoiseBuffer(2);
-    this.crowdGain = this.context.createGain(); this.crowdGain.gain.value = .012;
-    const crowd = this.context.createBufferSource(); crowd.buffer = this.noise; crowd.loop = true;
-    const filter = this.context.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 620; filter.Q.value = .55;
-    crowd.connect(filter).connect(this.crowdGain).connect(this.ambience); crowd.start();
   }
 
-  addHum(id, position, frequency, volume) {
-    const oscillator = this.context.createOscillator(); oscillator.type = 'sine'; oscillator.frequency.value = frequency;
-    const gain = this.context.createGain(); gain.gain.value = volume; const panner = this.context.createPanner();
-    panner.panningModel = 'HRTF'; panner.distanceModel = 'inverse'; panner.refDistance = 2; panner.maxDistance = 18; panner.rolloffFactor = 1.5;
-    panner.positionX.value = position[0]; panner.positionY.value = position[1]; panner.positionZ.value = position[2];
-    oscillator.connect(gain).connect(panner).connect(this.ambience); oscillator.start(); this.sources.push({ id, oscillator, gain, panner });
-  }
-
-  createNoiseBuffer(seconds) {
-    const buffer = this.context.createBuffer(1, this.context.sampleRate * seconds, this.context.sampleRate); const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
-    return buffer;
-  }
-
-  setActivity(level) {
-    if (!this.context) return;
-    const target = level === 'busy' ? .055 : level === 'active' ? .03 : .012;
-    this.crowdGain.gain.setTargetAtTime(target, this.context.currentTime, .8);
-    this.ambience.gain.setTargetAtTime(level === 'quiet' ? .52 : level === 'busy' ? .86 : .7, this.context.currentTime, .8);
-  }
+  /**
+   * How busy the room is used to set the volume of the crowd loop. It has no
+   * sound to reach now, and it is kept as a no-op because the world state that
+   * calls it is authoritative and unrelated to audio.
+   */
+  setActivity() {}
 
   playNote(midi, duration, volume) {
     const now = this.context.currentTime, oscillator = this.context.createOscillator(), gain = this.context.createGain();
@@ -72,5 +57,5 @@ export class AudioManager {
   }
 
   setMuted(muted) { this.muted = muted; if (this.master) this.master.gain.setTargetAtTime(muted ? 0 : .38, this.context.currentTime, .05); this.toggle.textContent = muted ? 'AUDIO OFF' : 'AUDIO ON'; this.toggle.setAttribute('aria-pressed', String(!muted)); }
-  dispose() { this.sources.forEach(({ oscillator }) => oscillator.stop()); void this.context?.close(); }
+  dispose() { void this.context?.close(); }
 }

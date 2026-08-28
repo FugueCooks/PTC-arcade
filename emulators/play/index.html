@@ -17,7 +17,21 @@
          differently each frame, which reads as the whole image shimmering. The
          size is snapped to a whole multiple below, so a source pixel is always
          the same block of screen pixels. */
+      #ps2-video-stage {
+        width:100%;
+        height:100%;
+        min-width:0;
+        min-height:0;
+        display:grid;
+        place-items:center;
+        overflow:hidden;
+        background:#000;
+        contain:layout paint;
+      }
       #outputCanvas {
+        display:block;
+        width:auto;
+        height:auto;
         max-width:100%;
         max-height:100%;
         min-height:0;
@@ -215,7 +229,9 @@
   <body>
     <main id="ps2-shell">
       <div id="ps2-status">PLAY! WEBASSEMBLY // INITIALIZING EXPERIMENTAL PS2 CORE…</div>
-      <canvas id="outputCanvas" width="640" height="480" tabindex="0"></canvas>
+       <div id="ps2-video-stage">
+         <canvas id="outputCanvas" width="640" height="480" tabindex="0"></canvas>
+       </div>
       <div id="root"></div>
       <nav id="ps2-toolbar" aria-label="Emulator controls">
         <button id="ps2-mute" type="button" aria-pressed="false" title="Mute and unmute">SOUND</button>
@@ -611,27 +627,41 @@
        * frame. Below one whole multiple there is nothing to snap to, so it
        * falls back to fitting the box.
        */
+      const outputStage = document.querySelector('#ps2-video-stage');
+      let presentationFrame = null;
+      let presentedWidth = 0, presentedHeight = 0;
       function presentAtWholeScale() {
-        const stage = outputCanvas.parentElement;
-        if (!stage) return;
-        const box = stage.getBoundingClientRect();
+        presentationFrame = null;
+        if (!outputStage) return;
+        const box = outputStage.getBoundingClientRect();
         const width = outputCanvas.width || 640, height = outputCanvas.height || 480;
         if (!box.width || !box.height || !width || !height) return;
         const fitted = Math.min(box.width / width, box.height / height);
-        // Snap to a whole multiple only when that costs almost nothing. A panel
-        // that fits 1.9 times would drop to 1 and show the game at half the
-        // size it could be, which is a worse trade than the scaling it avoids.
+        // Upscaling must be integral. At 1.9x, nearest-neighbour presentation
+        // creates alternating one- and two-pixel source columns; motion makes
+        // those uneven columns crawl even though the canvas itself is stable.
+        // A display smaller than the native buffer still has to fit fractionally.
         const whole = Math.floor(fitted);
-        const scale = whole >= 1 && whole / fitted >= .85 ? whole : fitted;
-        outputCanvas.style.width = `${Math.round(width * scale)}px`;
-        outputCanvas.style.height = `${Math.round(height * scale)}px`;
+        const scale = whole >= 1 ? whole : fitted;
+        const cssWidth = Math.max(1, Math.round(width * scale));
+        const cssHeight = Math.max(1, Math.round(height * scale));
+        if (cssWidth === presentedWidth && cssHeight === presentedHeight) return;
+        presentedWidth = cssWidth;
+        presentedHeight = cssHeight;
+        outputCanvas.style.width = `${cssWidth}px`;
+        outputCanvas.style.height = `${cssHeight}px`;
+      }
+      function schedulePresentation() {
+        if (presentationFrame === null) presentationFrame = requestAnimationFrame(presentAtWholeScale);
       }
       // The core changes the buffer when a game switches video mode, and the
-      // panel changes when the window does, so both are watched.
-      new ResizeObserver(presentAtWholeScale).observe(outputCanvas.parentElement ?? document.body);
-      new MutationObserver(presentAtWholeScale).observe(outputCanvas, { attributes: true, attributeFilter: ['width', 'height'] });
-      addEventListener('resize', presentAtWholeScale);
-      presentAtWholeScale();
+      // video row changes when the window does, so both are watched. Coalescing
+      // the observers prevents a video-mode switch from applying two CSS sizes
+      // in the same display frame.
+      new ResizeObserver(schedulePresentation).observe(outputStage ?? document.body);
+      new MutationObserver(schedulePresentation).observe(outputCanvas, { attributes: true, attributeFilter: ['width', 'height'] });
+      addEventListener('resize', schedulePresentation);
+      schedulePresentation();
       let gamepadPollHandle = null;
       let activeGamepadIndex = null;
       controllerToggle.addEventListener('click', () => {

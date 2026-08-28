@@ -88,10 +88,20 @@ export function planLaunch({ entry, cached }) {
  * GameCube image runs to well over a gigabyte, and reading it twice doubles the
  * slowest part of a first launch.
  */
-export async function downloadAndDigest({ source, sink, expectedBytes, onProgress, signal }) {
-  const hash = createHash('sha256');
-  let received = 0;
-  let lastReported = 0;
+export async function downloadAndDigest({
+  source, sink, expectedBytes, onProgress, signal,
+  initialHash = null, initialBytes = 0
+}) {
+  if (!Number.isSafeInteger(initialBytes) || initialBytes < 0 || initialBytes > expectedBytes) {
+    throw new DownloadError('size-mismatch', 'The resumable prefix has an invalid size.');
+  }
+  // A resumed transfer first hashes the partial file already on disk, then
+  // supplies that live hash here. Node does not expose a portable serialized
+  // SHA-256 state, so reading the prefix once is the safe alternative to
+  // downloading several gigabytes again.
+  const hash = initialHash ?? createHash('sha256');
+  let received = initialBytes;
+  let lastReported = Math.floor((received / expectedBytes) * 100);
 
   for await (const chunk of source) {
     if (signal?.aborted) throw new DownloadError('aborted', 'The download was cancelled.');

@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=ringplan-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=ringplan-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -970,27 +970,6 @@ for(const [angle,length] of [[0,9.5],[Math.PI,9.5],[Math.PI/2,10.5],[-Math.PI/2,
     scene.add(strip);
   }
 }
-// Long unbroken wall slabs are what make the hall read as a box. Slim vertical
-// fins with a lit inner edge give the walls a rhythm and catch the room colour
-// without adding a single light.
-const wallFinBody=new THREE.MeshStandardMaterial({color:0x141020,roughness:.34,metalness:.72});
-const wallFinGeometry=roundedSlab(.16,4.5,.42,.07);
-const finGlowGeometry=new THREE.BoxGeometry(.05,4.1,.03);
-for(const [finX,direction,glowColor] of [[-13.72,1,0xd18a52],[13.72,-1,0x36f9f6]]){
-  const glowMaterial=new THREE.MeshStandardMaterial({color:glowColor,emissive:glowColor,emissiveIntensity:1.15,roughness:.3,metalness:.4});
-  for(let z=-15;z<=15;z+=3.75){
-    if(Math.abs(z-PLAYABLE_ROOM_DOOR_Z)<2.4||Math.abs(z-CONSTRUCTION_ROOM_DOOR_Z)<2.4)continue;
-    // The fins stand 0.42 m proud of the wall, so two of them would cut the hall
-    // mural into three panels. The mural is the feature on that span; the fins
-    // resume either side of it.
-    if(finX<0&&[[MEGAMAN_HALL_FIGURE_CENTER_Z,MEGAMAN_HALL_FIGURE_SPAN],[MEGAMAN_HALL_GLOW_CENTER_Z,MEGAMAN_HALL_GLOW_SPAN]]
-      .some(([centerZ,span])=>Math.abs(z-centerZ)<span/2))continue;
-    const fin=new THREE.Mesh(wallFinGeometry,wallFinBody);
-    fin.position.set(finX+direction*.2,2.32,z);fin.rotation.y=Math.PI/2;scene.add(fin);
-    const glow=new THREE.Mesh(finGlowGeometry,glowMaterial);
-    glow.position.set(finX+direction*.42,2.32,z);scene.add(glow);
-  }
-}
 // The hub reads as a very large dark floor with nothing above eye level, so the
 // lounge gets a centrepiece: counter-rotating light rings inside a soft beam
 // dropping onto the display. All of it is emissive or additive geometry, so it
@@ -1430,7 +1409,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ringplan-1')
+  import('./emulators/disc-range-cache.js?v=ringplan-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1450,7 +1429,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ringplan-1')
+  import('./emulators/disc-range-cache.js?v=ringplan-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))

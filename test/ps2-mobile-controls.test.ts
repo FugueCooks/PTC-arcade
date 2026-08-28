@@ -124,13 +124,17 @@ void test('the PS2 output is presented on a stable pixel grid', () => {
   // Every other emulator screen in the arcade already draws pixelated.
   assert.match(frame, /image-rendering:pixelated/);
   assert.doesNotMatch(frame, /#outputCanvas \{ width:100%; height:100%; min-height:0; object-fit:contain/, 'the stretched canvas is what caused the resampling');
+  assert.match(frame, /id="ps2-video-stage"/, 'the scaler needs the bounded video row, not the status and controls around it');
+  assert.match(frame, /const outputStage = document\.querySelector\('#ps2-video-stage'\)/);
   assert.match(frame, /function presentAtWholeScale\(\)/);
-  // Snapped only when it is nearly free: a panel that fits 1.9 times would drop
-  // to 1 and show the game at half the size it could be.
-  assert.match(frame, /whole >= 1 && whole \/ fitted >= \.85 \? whole : fitted/);
+  // Any fractional upscale produces uneven source-pixel columns under nearest
+  // neighbour presentation. Downscaling remains fractional because it must fit.
+  assert.match(frame, /whole >= 1 \? whole : fitted/);
   // Re-measured when the panel changes and when the core switches video mode.
-  assert.match(frame, /new ResizeObserver\(presentAtWholeScale\)/);
+  assert.match(frame, /new ResizeObserver\(schedulePresentation\)/);
   assert.match(frame, /attributeFilter: \['width', 'height'\]/);
+  assert.match(frame, /presentationFrame === null\) presentationFrame = requestAnimationFrame\(presentAtWholeScale\)/);
+  assert.match(frame, /cssWidth === presentedWidth && cssHeight === presentedHeight/, 'unchanged bounds must not churn canvas presentation');
 });
 
 void test('the arcade stops compositing itself while a game runs', async () => {
