@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { loadGameRegistry } from './games/game-registry.js?v=ps2-controls-1';
+import { loadGameRegistry } from './games/game-registry.js?v=ps2-present-1';
 import { Ps2GameCache } from './games/ps2-game-cache.js?v=ps2-local-cache-1';
 import { loadRoomRegistry } from './rooms/room-registry.js?v=10-rooms-1';
-import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=ps2-controls-1';
+import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=ps2-present-1';
 import { CabinetSpatialIndex } from './cabinets/cabinet-spatial-index.js?v=spatial-1';
 import { createPtcRuntimeGameCubeAdapter, chooseGameCubeAdapter } from './emulators/adapters/ptc-runtime-gamecube-adapter.js?v=runtime-1';
 import { RuntimeClient } from './emulators/ptc-runtime/runtime-client.js?v=runtime-1';
@@ -50,6 +50,6 @@ window.ARCADE_ENSURE_RUNTIME_DETECTION = () => {
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=ps2-controls-1');
+await import('./arcade.js?v=ps2-present-1');
 await import('./avatar-selection.js?v=triple-t-label-2');
 await import('./multiplayer-client.js?v=arcade-rows-5');

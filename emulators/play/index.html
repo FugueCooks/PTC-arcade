@@ -11,7 +11,21 @@
       body { font-family:"Courier New",monospace; }
       #ps2-shell { width:100%; height:100%; display:grid; grid-template-rows:auto minmax(0,1fr) auto; place-items:center; }
       #ps2-status { width:100%; box-sizing:border-box; padding:.55rem .8rem; color:#36f9f6; background:#080719; border-bottom:1px solid #543386; font-size:.72rem; letter-spacing:.08em; }
-      #outputCanvas { width:100%; height:100%; min-height:0; object-fit:contain; background:#000; outline:none; }
+      /* The rest of the arcade draws its emulator output pixelated; this frame
+         was smoothing a 640x480 buffer up to whatever fractional size the panel
+         happened to be. On a moving camera that resamples every pixel slightly
+         differently each frame, which reads as the whole image shimmering. The
+         size is snapped to a whole multiple below, so a source pixel is always
+         the same block of screen pixels. */
+      #outputCanvas {
+        max-width:100%;
+        max-height:100%;
+        min-height:0;
+        margin:auto;
+        background:#000;
+        outline:none;
+        image-rendering:pixelated;
+      }
       #root { width:100%; box-sizing:border-box; padding:.45rem .8rem; background:#080719; border-top:1px solid #543386; }
       #root input[type="file"] { max-width:100%; color:#fff; }
       #root button, #root input::file-selector-button { padding:.45rem .7rem; color:#36f9f6; background:#100b22; border:1px solid #36f9f6; font:inherit; cursor:pointer; }
@@ -259,8 +273,8 @@
       </section>
     </main>
     <script type="module">
-      import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=ps2-controls-1';
-      import { RANGE_CHUNK_BYTES, bootChunkRecorder, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=ps2-controls-1';
+      import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=ps2-present-1';
+      import { RANGE_CHUNK_BYTES, bootChunkRecorder, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=ps2-present-1';
 
       const statusElement = document.querySelector('#ps2-status');
       let pendingFile = null;
@@ -546,6 +560,38 @@
       const controllerHelp = document.querySelector('#ps2-controller-help');
       const controllerStatusElement = document.querySelector('#ps2-controller-status');
       const outputCanvas = document.querySelector('#outputCanvas');
+      /**
+       * Presents the core's output at a whole-number scale.
+       *
+       * Letting the canvas stretch to the panel put 640 buffer pixels across,
+       * say, 672.5 screen pixels: a fractional ratio, so each frame lands on a
+       * slightly different pixel grid and the picture crawls even while the
+       * emulator holds 55 f/s. Snapping to the largest integer multiple that
+       * fits keeps every source pixel on the same screen pixels frame after
+       * frame. Below one whole multiple there is nothing to snap to, so it
+       * falls back to fitting the box.
+       */
+      function presentAtWholeScale() {
+        const stage = outputCanvas.parentElement;
+        if (!stage) return;
+        const box = stage.getBoundingClientRect();
+        const width = outputCanvas.width || 640, height = outputCanvas.height || 480;
+        if (!box.width || !box.height || !width || !height) return;
+        const fitted = Math.min(box.width / width, box.height / height);
+        // Snap to a whole multiple only when that costs almost nothing. A panel
+        // that fits 1.9 times would drop to 1 and show the game at half the
+        // size it could be, which is a worse trade than the scaling it avoids.
+        const whole = Math.floor(fitted);
+        const scale = whole >= 1 && whole / fitted >= .85 ? whole : fitted;
+        outputCanvas.style.width = `${Math.round(width * scale)}px`;
+        outputCanvas.style.height = `${Math.round(height * scale)}px`;
+      }
+      // The core changes the buffer when a game switches video mode, and the
+      // panel changes when the window does, so both are watched.
+      new ResizeObserver(presentAtWholeScale).observe(outputCanvas.parentElement ?? document.body);
+      new MutationObserver(presentAtWholeScale).observe(outputCanvas, { attributes: true, attributeFilter: ['width', 'height'] });
+      addEventListener('resize', presentAtWholeScale);
+      presentAtWholeScale();
       let gamepadPollHandle = null;
       let activeGamepadIndex = null;
       controllerToggle.addEventListener('click', () => {

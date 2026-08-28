@@ -27,7 +27,7 @@ void test('touch controls use Play upstream key codes and support simultaneous h
 });
 
 void test('the PS2 frame cache key changes with the shared-input release', () => {
-  assert.match(adapter, /index\.html\?v=ps2-controls-1/);
+  assert.match(adapter, /index\.html\?v=ps2-present-1/);
 });
 
 void test('Play PS2 maps a standard physical gamepad and exposes its controls panel', () => {
@@ -107,4 +107,21 @@ void test('the PS2 pad can be remapped, and the layout survives a reload', () =>
   // And the press that binds a control is not also played into the game.
   assert.match(frame, /if \(listeningFor\) \{/);
   assert.match(frame, /releaseGamepadKeys\(\);/);
+});
+
+void test('the PS2 output is presented on a stable pixel grid', () => {
+  // The core held 55 f/s while the picture still shimmered, which puts the
+  // fault in presentation rather than emulation: a 640x480 buffer was being
+  // smoothed onto a fractional number of screen pixels, so every frame landed
+  // on a slightly different grid and the image crawled under a moving camera.
+  // Every other emulator screen in the arcade already draws pixelated.
+  assert.match(frame, /image-rendering:pixelated/);
+  assert.doesNotMatch(frame, /#outputCanvas \{ width:100%; height:100%; min-height:0; object-fit:contain/, 'the stretched canvas is what caused the resampling');
+  assert.match(frame, /function presentAtWholeScale\(\)/);
+  // Snapped only when it is nearly free: a panel that fits 1.9 times would drop
+  // to 1 and show the game at half the size it could be.
+  assert.match(frame, /whole >= 1 && whole \/ fitted >= \.85 \? whole : fitted/);
+  // Re-measured when the panel changes and when the core switches video mode.
+  assert.match(frame, /new ResizeObserver\(presentAtWholeScale\)/);
+  assert.match(frame, /attributeFilter: \['width', 'height'\]/);
 });
