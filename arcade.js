@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=ff-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=rooms-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -564,7 +564,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-ff-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-rooms-2');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -738,19 +738,11 @@ themeRoom({
 // back wall and two 16.4 m sides, with the doorway wall left bare — so its
 // murals are hung directly rather than through themeRoom, with the same
 // backing panels, planes and sampled mood lighting.
-{
-  const FF_WALLS=[
-    {file:'ff-room-mural.webp?v=ff-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
-      backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
-      rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=ff-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
-      backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
-      rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=ff-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
-      backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
-      rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
-  ];
-  for(const wall of FF_WALLS){
+// Hangs murals on walls whose geometry themeRoom does not fit — the top-row
+// rooms have their own shapes. Same backing panels, planes and sampled mood
+// lighting as everywhere else.
+function hangMuralWalls(walls){
+  for(const wall of walls){
     wall.backing();
     const texture=new THREE.TextureLoader().load(`assets/art/${wall.file}`,loaded=>addMuralMoodLights(loaded,{
       center:wall.at,normal:wall.normal,along:wall.along,span:wall.span,height:MEGAMAN_MURAL_HEIGHT,count:wall.count
@@ -762,6 +754,31 @@ themeRoom({
     mural.position.copy(wall.at);mural.rotation.y=wall.rotation;mural.renderOrder=4;scene.add(mural);
   }
 }
+hangMuralWalls([
+    {file:'ff-room-mural.webp?v=rooms-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+      backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
+      rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
+    {file:'ff-room-mural-2.webp?v=rooms-2',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+      backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
+      rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
+    {file:'ff-room-mural-3.webp?v=rooms-2',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+      backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
+      rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
+]);
+// Zelda takes the top row's west room: the Wind Waker ensemble facing the
+// door, Ocarina and Tears back to back on the divider, and the Breath of the
+// Wild vista along the outer shell wall.
+hangMuralWalls([
+  {file:'zelda-room-mural.webp?v=zelda-1',span:21.3,at:new THREE.Vector3(-32.4,2.5,-66.94),
+    backing:()=>box(21.3,5,.08,0x050711,-32.4,2.5,-67.01,.12),
+    rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:5},
+  {file:'zelda-room-mural-2.webp?v=zelda-1',span:16.4,at:new THREE.Vector3(-21.86,2.5,-58.8),
+    backing:()=>box(.08,5,16.4,0x050711,-21.79,2.5,-58.8,.12),
+    rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
+  {file:'zelda-room-mural-3.webp?v=zelda-1',span:16.5,at:new THREE.Vector3(-42.94,2.5,-58.8),
+    backing:()=>box(.08,5,16.5,0x050711,-43.01,2.5,-58.8,.12),
+    rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
+]);
 // Pokemon, in the east column: the bowl itself, not flat murals — the band and
 // dome carry the stands, so this room does not go through themeRoom at all.
 buildPokemonStadium(POKEMON_CENTER_X,POKEMON_CENTER_Z);
@@ -1828,7 +1845,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ff-1')
+  import('./emulators/disc-range-cache.js?v=rooms-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1848,7 +1865,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=ff-1')
+  import('./emulators/disc-range-cache.js?v=rooms-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
