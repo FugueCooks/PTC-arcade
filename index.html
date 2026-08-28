@@ -111,6 +111,25 @@
       { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/" } }
     </script>
     <script src="runtime-config.js"></script>
+    <script>
+      // The asset host above is a literal, and the deployment may be pointed at
+      // a different one. The first disc range then pays for DNS and a TLS
+      // handshake at the exact moment a player is waiting on a game, so open
+      // those connections against whatever this deployment is actually
+      // configured with, as soon as the configuration is known.
+      for (const value of [window.ARCADE_RUNTIME?.gameAssetBaseUrl, window.ARCADE_RUNTIME?.biosAssetUrl, window.ARCADE_RUNTIME?.gameCubeDspAssetUrl]) {
+        if (typeof value !== 'string' || value === '') continue;
+        try {
+          const origin = new URL(value, location.href).origin;
+          if (origin === location.origin || document.querySelector(`link[rel="preconnect"][href="${origin}"]`)) continue;
+          const link = document.createElement('link');
+          link.rel = 'preconnect';
+          link.href = origin;
+          link.crossOrigin = 'anonymous';
+          document.head.appendChild(link);
+        } catch { /* A malformed base URL fails later, with a message. */ }
+      }
+    </script>
     <script src="realtime/realtime-socket.js?v=cloudflare-1"></script>
     <script type="module" src="app-bootstrap.js?v=input-and-loading-1"></script>
     <script>

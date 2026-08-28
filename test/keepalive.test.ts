@@ -68,7 +68,10 @@ void test('a dead module graph reports itself instead of looking slow', async ()
   assert.ok(guard, 'index.html must carry a startup guard');
 
   // It has to survive whatever killed the module graph, so it must not be one.
-  const scriptTag = /<script>[\s\S]*?setTimeout/.exec(index)?.[0] ?? '';
+  // The guard's own tag is the last one opened before it, not the first one on
+  // the page: scanning from the top swept up every script tag in between.
+  const guardAt = index.indexOf('setTimeout(function ()');
+  const scriptTag = index.slice(index.lastIndexOf('<script', guardAt), guardAt);
   assert.doesNotMatch(scriptTag, /type="module"/, 'the guard cannot be a module');
 
   for (const probe of ['ARCADE_RUNTIME', 'THREE', 'ARCADE_GAME_REGISTRY']) {
