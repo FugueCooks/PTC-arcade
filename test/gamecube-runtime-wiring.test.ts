@@ -35,7 +35,8 @@ void test('the probe starts when a player reaches a natively-runnable cabinet', 
   // enough that a player who touches neither native platform never pays for it.
   // PS2 joined GameCube here: without the probe a PS2 cabinet would never learn
   // the runtime exists and would always fall back to the browser core.
-  assert.match(arcade, /system==='gamecube'\|\|c\.system==='ps2'\)\s*window\.ARCADE_ENSURE_RUNTIME_DETECTION\?\.\(\)/);
+  assert.match(arcade, /c\.system==='gamecube'\|\|c\.system==='ps2'\)\{/);
+  assert.match(arcade, /window\.ARCADE_ENSURE_RUNTIME_DETECTION\?\.\(\)\?\.then\?\.\(describe\)/, 'the cabinet waits for the answer and then says what it was');
 });
 
 void test('GameCube asks who should run it; other platforms are untouched', () => {
@@ -91,7 +92,7 @@ void test('PlayStation 2 takes the native path the same way GameCube does', asyn
   assert.match(bootstrap, /register\(createPtcRuntimePs2Adapter\(\)\)/);
   assert.match(bootstrap, /window\.ARCADE_CHOOSE_PS2_ADAPTER = choosePs2Adapter/);
   const arcadeSource = await readFile(path.join(root, 'arcade.js'), 'utf8');
-  assert.match(arcadeSource, /c\.system==='gamecube'\|\|c\.system==='ps2'\) window\.ARCADE_ENSURE_RUNTIME_DETECTION/);
+  assert.match(arcadeSource, /c\.system==='gamecube'\|\|c\.system==='ps2'\)\{/);
   assert.match(arcadeSource, /cabinet\?\.system==='ps2'&&window\.ARCADE_CHOOSE_PS2_ADAPTER/);
 
   // And the two emulators are reported separately, because having the runtime

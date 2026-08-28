@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=statue-collision-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=runtime-visible-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -1219,7 +1219,22 @@ function openMachine(c){
   if(c.system==='ps2') document.querySelector('#rom-name').textContent='EXPERIMENTAL PLAY! CORE READY — LOAD A LOCAL .ISO, .CHD, .CSO, .ISZ, .BIN, OR .ELF FILE';
   // Walking up to the cabinet is the first moment the answer could matter, and
   // the player has a modal to read before they press anything.
-  if(c.system==='gamecube'||c.system==='ps2') window.ARCADE_ENSURE_RUNTIME_DETECTION?.();
+  if(c.system==='gamecube'||c.system==='ps2'){
+    // Whether a cabinet is about to run natively is the single most useful
+    // thing to say here, and it was previously invisible: a runtime that was
+    // installed, running and refused looked exactly like no runtime at all.
+    const nativeLine=document.querySelector('#emulator-controls');
+    const describe=detection=>{
+      if(!nativeLine)return;
+      const emulator=c.system==='ps2'?'PCSX2':'DOLPHIN';
+      const missing=c.system==='ps2'?detection?.pcsx2Present===false:detection?.dolphinPresent===false;
+      if(detection?.usable&&!missing)nativeLine.textContent=`NATIVE RUNTIME READY · ${emulator} WILL RUN THIS CABINET`;
+      else if(detection?.usable&&missing)nativeLine.textContent=`ARCADE RUNTIME FOUND, BUT ${emulator} IS NOT INSTALLED · PLAYING IN THE BROWSER`;
+      else nativeLine.textContent='NO ARCADE RUNTIME · PLAYING IN THE BROWSER';
+    };
+    describe(window.ARCADE_RUNTIME_DETECTION);
+    window.ARCADE_ENSURE_RUNTIME_DETECTION?.()?.then?.(describe);
+  }
   if(c.system==='gamecube') document.querySelector('#rom-name').textContent=c.disabledReason==='desktop-only'
     ?'GAMECUBE GAMES ARE DESKTOP ONLY — ABOUT 1 GB EACH'
     :(c.hostedGame?'EXPERIMENTAL GAMECUBE IMAGE READY — PRESS PLAY':'GECKO READY — LOAD A LOCAL .RVZ, .ISO, OR .GCM IMAGE');
@@ -1287,7 +1302,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=statue-collision-1')
+  import('./emulators/disc-range-cache.js?v=runtime-visible-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1307,7 +1322,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=statue-collision-1')
+  import('./emulators/disc-range-cache.js?v=runtime-visible-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { loadGameRegistry } from './games/game-registry.js?v=statue-collision-1';
+import { loadGameRegistry } from './games/game-registry.js?v=runtime-visible-1';
 import { Ps2GameCache } from './games/ps2-game-cache.js?v=ps2-local-cache-1';
 import { loadRoomRegistry } from './rooms/room-registry.js?v=10-rooms-1';
-import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=statue-collision-1';
+import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=runtime-visible-1';
 import { CabinetSpatialIndex } from './cabinets/cabinet-spatial-index.js?v=spatial-1';
 import { createPtcRuntimeGameCubeAdapter, chooseGameCubeAdapter } from './emulators/adapters/ptc-runtime-gamecube-adapter.js?v=runtime-1';
 import { createPtcRuntimePs2Adapter, choosePs2Adapter } from './emulators/adapters/ptc-runtime-ps2-adapter.js?v=runtime-1';
@@ -46,16 +46,24 @@ window.ARCADE_RUNTIME_DETECTION = null;
  */
 window.ARCADE_ENSURE_RUNTIME_DETECTION = () => {
   window.ARCADE_RUNTIME_DETECTION ??= { present: false, pending: true };
-  return window.ARCADE_RUNTIME_CLIENT.detect().then((detection) => {
+  // Kept as a promise too. The choice of adapter reads the resolved value, and
+  // a player who presses play before the probe answers would otherwise be given
+  // the browser core on the grounds that nothing had replied yet.
+  window.ARCADE_RUNTIME_DETECTION_PROMISE ??= window.ARCADE_RUNTIME_CLIENT.detect().then((detection) => {
     window.ARCADE_RUNTIME_DETECTION = detection;
-    if (detection?.usable) console.info('[arcade] PTC Arcade Runtime detected; GameCube runs natively.');
+    if (detection?.usable) console.info('[arcade] PTC Arcade Runtime detected.', detection);
+    else console.info('[arcade] No PTC Arcade Runtime; games run in the browser.', detection);
     return detection;
-  }).catch(() => (window.ARCADE_RUNTIME_DETECTION = { present: false }));
+  }).catch((error) => {
+    console.info('[arcade] The runtime probe failed; games run in the browser.', error);
+    return (window.ARCADE_RUNTIME_DETECTION = { present: false, reason: String(error?.message ?? error) });
+  });
+  return window.ARCADE_RUNTIME_DETECTION_PROMISE;
 };
 // Milestone 11.15: the render loop queries this instead of measuring the
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=statue-collision-1');
+await import('./arcade.js?v=runtime-visible-1');
 await import('./avatar-selection.js?v=triple-t-label-2');
 await import('./multiplayer-client.js?v=arcade-rows-5');
