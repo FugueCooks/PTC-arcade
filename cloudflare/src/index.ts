@@ -33,27 +33,24 @@ const RECONNECT_GRACE_MS = 10_000;
 const MAX_SPEED_PER_SECOND = 7;
 const MOVEMENT_PACKET_MS = 50;
 const MOVEMENT_TOLERANCE = 0.3;
-const MIN_WORLD_X = -30.5;
-const MAX_WORLD_X = 30.5;
+const MIN_WORLD_X = -35.1;
+const MAX_WORLD_X = 35.1;
 const MIN_WORLD_Z = -33.2;
 const MAX_WORLD_Z = 16;   // Must match server/src/players/player-manager.ts.
 // The Mega Man room's western extension. A second region rather than a wider
 // MIN_WORLD_X, for the reason spelled out in player-manager.ts.
-const MEGAMAN_ALCOVE_MIN_X = -35.1;
-const MEGAMAN_ALCOVE_MAX_X = -30.5;
-const MEGAMAN_ALCOVE_MIN_Z = 0.6;
-const MEGAMAN_ALCOVE_MAX_Z = 16;
+// One rectangle: see player-manager.ts.
 const PARTITION_WALL_X = 14;
 const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 const PLAYABLE_ROOM_DOOR_Z = -8;
-const PS2_ROOM_CENTER_X = -22.5;
+const PS2_ROOM_CENTER_X = -24.8;
 const PS2_ROOM_DOOR_Z = -16.8;
 const ROOM_DOOR_CLEARANCE = 1.26;
 // The couch ring and the round display case that used to stand at the origin
 // are gone, so the middle of the hall is open floor and nothing here refuses a
 // step into it. What remains in this function is the partition walls.
 // The westernmost wall any annex reaches. Must match player-manager.ts.
-const ANNEX_MIN_X = MEGAMAN_ALCOVE_MIN_X;
+const ANNEX_MIN_X = MIN_WORLD_X;
 const MEGAMAN_ROOM_DOOR_Z = 8;
 const CABINET_DISTANCE = 2.6;
 const CABINET_TIMEOUT_MS = 5_000;
@@ -577,9 +574,7 @@ function decodeBase64Url(value: string): Uint8Array {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 function isInsideWorld(x: number, z: number): boolean {
-  if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
-  return x >= MEGAMAN_ALCOVE_MIN_X && x <= MEGAMAN_ALCOVE_MAX_X
-    && z >= MEGAMAN_ALCOVE_MIN_Z && z <= MEGAMAN_ALCOVE_MAX_Z;
+  return x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z;
 }
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
@@ -600,16 +595,18 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
-  const inPlayStationRearGallery = Math.max(fromX, toX) <= -PARTITION_WALL_X - PARTITION_COLLISION_HALF_WIDTH
-    && Math.min(fromX, toX) >= ANNEX_MIN_X;
-  if (inPlayStationRearGallery) {
-    const targetInPs2Door = Math.abs(toX - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
-    if (!targetInPs2Door && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
-    if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) {
-      const crossing = (PS2_ROOM_DOOR_Z - fromZ) / (toZ - fromZ);
-      const crossingX = fromX + (toX - fromX) * crossing;
-      if (crossing >= 0 && crossing <= 1 && Math.abs(crossingX - PS2_ROOM_CENTER_X) >= ROOM_DOOR_CLEARANCE) return true;
-    }
+  // The back wall of the building, which runs the whole width behind the hub
+  // and both side galleries. There is exactly one doorway in it, into the PS2
+  // room; the matching doorway on the Nintendo 64 side leads to the GameCube
+  // gallery and is sealed, and behind the hub there is no doorway at all. It
+  // used to be enforced only along the PlayStation stretch, which left the
+  // stretch behind the prize counter open to anyone who walked into it.
+  const throughRearDoor = (x: number) => Math.abs(x - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
+  if (!throughRearDoor(toX) && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) {
+    const crossing = (PS2_ROOM_DOOR_Z - fromZ) / (toZ - fromZ);
+    const crossingX = fromX + (toX - fromX) * crossing;
+    if (crossing >= 0 && crossing <= 1 && !throughRearDoor(crossingX)) return true;
   }
   return false;
 }

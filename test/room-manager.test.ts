@@ -63,11 +63,11 @@ void test('the new PS2 room is accessible only through its PlayStation doorway',
   players.join('socket-a', 'main', undefined, identity, 1_000);
   const steps: Array<[number, number]> = [
     [-3, 11], [-6, 11], [-9, 11], [-12, 11], [-12, 8], [-12, 5], [-12, 2], [-12, -1], [-12, -4], [-12, -7],
-    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-22.5, -8], [-22.5, -11], [-22.5, -14]
+    [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-24.8, -11], [-24.8, -14]
   ];
-  steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: Math.PI }, 1_500 + index * 500)));
-  assert.ok(players.move('socket-a', { p: [-22.5, -17], r: Math.PI }, 9_500));
-  assert.ok(players.move('socket-a', { p: [-22.5, -20], r: Math.PI }, 10_000));
+  steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: Math.PI }, 1_500 + index * 500), `step ${index} was refused`));
+  assert.ok(players.move('socket-a', { p: [-24.8, -17], r: Math.PI }, 9_500));
+  assert.ok(players.move('socket-a', { p: [-24.8, -20], r: Math.PI }, 10_000));
   assert.equal(players.stateFor('socket-a')?.p[2], -20);
 
   const blocked = createPlayers();
@@ -89,8 +89,10 @@ void test('the solid section of the PlayStation outer wall remains authoritative
     [-14.5, -8], [-17.5, -8], [-20.5, -8], [-23.5, -8], [-26.5, -8], [-29, -10]
   ];
   route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
-  assert.equal(players.move('socket-a', { p: [-31.5, -10], r: -Math.PI / 2 }, 9_500), undefined);
-  assert.deepEqual(players.stateFor('socket-a')?.p, [-29, 1.65, -10]);
+  // The outer wall moved out with the room: -31.5 is inside the building now.
+  assert.ok(players.move('socket-a', { p: [-32, -10], r: -Math.PI / 2 }, 9_500));
+  assert.equal(players.move('socket-a', { p: [-35.5, -10], r: -Math.PI / 2 }, 10_000), undefined);
+  assert.deepEqual(players.stateFor('socket-a')?.p, [-32, 1.65, -10]);
 });
 
 void test('room walls, rear doorway, and annex divider are authoritative', () => {

@@ -57,10 +57,13 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(gamecubeCabinets.length, 5);
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.enabled));
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.system === 'gamecube' && cabinet.emulatorId === 'gecko'));
+  // GameCube moved into the rear gallery behind Nintendo 64, mirroring the PS2
+  // room behind PlayStation. The room it used to occupy is the Multiplayer /
+  // Tournament room, which runs the full width of the building.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
-    { x: -8.2, y: 1.65, z: 23 }, { x: -8.2, y: 1.65, z: 31 },
-    { x: 8.2, y: 1.65, z: 23 }, { x: 8.2, y: 1.65, z: 31 },
-    { x: 0, y: 1.65, z: 37.2 }
+    { x: 31.8, y: 1.65, z: -30 }, { x: 31.8, y: 1.65, z: -25 },
+    { x: 31.8, y: 1.65, z: -20 }, { x: 27.8, y: 1.65, z: -30 },
+    { x: 21.8, y: 1.65, z: -30 }
   ]);
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [
     'wind-waker',

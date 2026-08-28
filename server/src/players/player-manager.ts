@@ -4,8 +4,8 @@ import type { Room } from '../rooms/room.js';
 import type { RoomManager } from '../rooms/room-manager.js';
 import type { PlayerIdentity } from './player-identity.js';
 
-const MIN_WORLD_X = -30.5;
-const MAX_WORLD_X = 30.5;
+const MIN_WORLD_X = -35.1;
+const MAX_WORLD_X = 35.1;
 const MIN_WORLD_Z = -33.2;
 // Stops at the hub's north wall: the GameCube room is sealed behind its
 // construction barrier again, so nothing beyond z 16 is meant to be walked to.
@@ -20,15 +20,12 @@ const MAX_WORLD_Z = 16;
 // everywhere else, which is why it is a second region rather than a wider
 // MIN_WORLD_X: widening the box would open the west wall of the PlayStation
 // gallery and the PS2 room behind it.
-const MEGAMAN_ALCOVE_MIN_X = -35.1;
-const MEGAMAN_ALCOVE_MAX_X = -30.5;
-const MEGAMAN_ALCOVE_MIN_Z = 0.6;
-const MEGAMAN_ALCOVE_MAX_Z = 16;
+// The world used to be two rectangles, because the Mega Man room reached
+// further west than the rest of the building. Every side room is that width
+// now, so the outer wall is a straight run and one rectangle states it.
 
 function isInsideWorld(x: number, z: number): boolean {
-  if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
-  return x >= MEGAMAN_ALCOVE_MIN_X && x <= MEGAMAN_ALCOVE_MAX_X
-    && z >= MEGAMAN_ALCOVE_MIN_Z && z <= MEGAMAN_ALCOVE_MAX_Z;
+  return x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z;
 }
 const PLAYER_HEIGHT = 1.65;
 const MAX_SPEED_PER_SECOND = 7;
@@ -38,7 +35,7 @@ const MOVEMENT_TOLERANCE = 0.3;
 const PARTITION_WALL_X = 14;
 const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 const PLAYABLE_ROOM_DOOR_Z = -8;
-const PS2_ROOM_CENTER_X = -22.5;
+const PS2_ROOM_CENTER_X = -24.8;
 const PS2_ROOM_DOOR_Z = -16.8;
 const ROOM_DOOR_CLEARANCE = 1.26;
 // The couch ring and the round display case that used to stand at the origin
@@ -47,7 +44,7 @@ const ROOM_DOOR_CLEARANCE = 1.26;
 // The westernmost wall any annex reaches, which is now the Mega Man room's.
 // Scopes the checks below to the side rooms; a player west of it is outside the
 // building entirely and has already been refused by the world bounds.
-const ANNEX_MIN_X = MEGAMAN_ALCOVE_MIN_X;
+const ANNEX_MIN_X = MIN_WORLD_X;
 const MEGAMAN_ROOM_DOOR_Z = 8;
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
@@ -68,16 +65,18 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     && Math.min(fromX, toX) >= ANNEX_MIN_X;
   if (inSideAnnex && Math.abs(toZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if (inSideAnnex && fromZ * toZ <= 0 && fromZ !== toZ) return true;
-  const inPlayStationRearGallery = Math.max(fromX, toX) <= -PARTITION_WALL_X - PARTITION_COLLISION_HALF_WIDTH
-    && Math.min(fromX, toX) >= ANNEX_MIN_X;
-  if (inPlayStationRearGallery) {
-    const targetInPs2Door = Math.abs(toX - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
-    if (!targetInPs2Door && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
-    if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) {
-      const crossing = (PS2_ROOM_DOOR_Z - fromZ) / (toZ - fromZ);
-      const crossingX = fromX + (toX - fromX) * crossing;
-      if (crossing >= 0 && crossing <= 1 && Math.abs(crossingX - PS2_ROOM_CENTER_X) >= ROOM_DOOR_CLEARANCE) return true;
-    }
+  // The back wall of the building, which runs the whole width behind the hub
+  // and both side galleries. There is exactly one doorway in it, into the PS2
+  // room; the matching doorway on the Nintendo 64 side leads to the GameCube
+  // gallery and is sealed, and behind the hub there is no doorway at all. It
+  // used to be enforced only along the PlayStation stretch, which left the
+  // stretch behind the prize counter open to anyone who walked into it.
+  const throughRearDoor = (x: number) => Math.abs(x - PS2_ROOM_CENTER_X) < ROOM_DOOR_CLEARANCE;
+  if (!throughRearDoor(toX) && Math.abs(toZ - PS2_ROOM_DOOR_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromZ - PS2_ROOM_DOOR_Z) * (toZ - PS2_ROOM_DOOR_Z) <= 0 && fromZ !== toZ) {
+    const crossing = (PS2_ROOM_DOOR_Z - fromZ) / (toZ - fromZ);
+    const crossingX = fromX + (toX - fromX) * crossing;
+    if (crossing >= 0 && crossing <= 1 && !throughRearDoor(crossingX)) return true;
   }
   return false;
 }

@@ -67,7 +67,11 @@ void test('the main room is an open hall beside square console rooms', async () 
   // so asserting the old text plates would pin behaviour that is now gone.
   assert.match(arcade, /playstationWall\.position\.set\(-22\.5,2\.5,-\.16\)/);
   assert.match(arcade, /n64WallGraphic\.position\.set\(22\.5,2\.5,-\.16\)/);
-  assert.match(arcade, /new THREE\.PlaneGeometry\(17,16\.8\)/);
+  // Every room in the building is one size: the annexes are as wide as the Mega
+  // Man room, which used to be the one that stepped out past the outer wall.
+  assert.match(arcade, /ANNEX_ROOM_WIDTH=21\.6,ANNEX_ROOM_CENTER_X=24\.8/);
+  assert.match(arcade, /const MEGAMAN_ROOM_WIDTH=21\.6|MEGAMAN_ROOM_WIDTH=21\.6/);
+  assert.doesNotMatch(arcade, /MEGAMAN_EXTENSION_WIDTH/);
   assert.match(arcade, /PS2_ROOM_CENTER_Z=-25\.2/);
   assert.match(arcade, /PS2_ROOM_BACK_Z=-33\.6/);
   // The middle of the hall is open floor. The couch ring and the round glass
@@ -80,8 +84,11 @@ void test('the main room is an open hall beside square console rooms', async () 
   assert.doesNotMatch(edge, /SOCIAL_COUCH_/);
   // Trench Pepe moved out of that case and onto the prize counter.
   assert.match(arcade, /gangsterPepeMount\.position\.set\(0,1\.265,0\);prizeDisplay\.add\(gangsterPepeMount\)/);
-  assert.match(arcade, /new THREE\.PlaneGeometry\(17,34\)/);
-  assert.match(arcade, /new THREE\.PlaneGeometry\(24,24\)/);
+  assert.match(arcade, /new THREE\.PlaneGeometry\(ANNEX_ROOM_WIDTH,34\)/);
+  // The room beyond the hub is the Multiplayer / Tournament room now, and it
+  // runs the full width of the building rather than the old 24 m square.
+  assert.match(arcade, /TOURNAMENT_ROOM_WIDTH=SHELL_HALF_WIDTH\*2/);
+  assert.match(arcade, /new THREE\.PlaneGeometry\(TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH\)/);
   assert.match(arcade, /const n64CabinetLayout=/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /resolveSocialLayoutCollisions\(previousX,previousZ\)/);

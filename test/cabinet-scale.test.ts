@@ -121,7 +121,9 @@ void test('zone activation follows the player and never leaves nothing loaded', 
   assert.ok(inMegaman.includes('megaman-room'));
   assert.ok(!inMegaman.includes('xbox-gallery'), 'a distant zone must not be activated');
 
-  const inGamecube = zones.activeZoneIds(0, 37.2);
+  // The GameCube zone moved with its cabinets, into the gallery behind
+  // Nintendo 64. The room it left is the Multiplayer / Tournament room.
+  const inGamecube = zones.activeZoneIds(27.8, -30);
   assert.ok(inGamecube.includes('gamecube-room'));
 
   // Standing between zones still resolves to the nearby ones by distance.

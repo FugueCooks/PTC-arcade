@@ -147,7 +147,9 @@ void test('a disconnect releases the held cabinet without scanning the room', ()
 
 void test('nearby lookup goes through the spatial index', () => {
   const { cabinets } = setup();
-  const near = cabinets.nearestCabinet(-22.5, -3.7);
+  // Crash sits at the middle of the PlayStation row, which recentred when the
+  // room widened to match every other room in the building.
+  const near = cabinets.nearestCabinet(-24.8, -3.7);
   assert.equal(near?.definition.id, 'crash-bandicoot');
   assert.equal(cabinets.nearestCabinet(9_999, 9_999), undefined);
 });

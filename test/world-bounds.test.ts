@@ -14,8 +14,9 @@ import path from 'node:path';
  * the network.
  *
  * This session has already lost time to two copies of one value drifting. These
- * are three, and since the Mega Man room was lengthened westward there are two
- * rectangles in each copy rather than one.
+ * are three. They were two rectangles each while the Mega Man room reached past
+ * the building's west wall; every side room is that width now, so the outer wall
+ * is a straight run and one rectangle describes the whole floor again.
  */
 const root = process.cwd();
 
@@ -36,7 +37,6 @@ function clientRegion(name: string) {
 }
 
 const clientBounds = clientRegion('WORLD_BOUNDS');
-const clientAlcove = clientRegion('MEGAMAN_ALCOVE');
 
 void test('the server, the worker and the client agree on where the world ends', () => {
   for (const [name, pattern] of [
@@ -52,29 +52,22 @@ void test('the server, the worker and the client agree on where the world ends',
   }
 });
 
-void test('all three agree on the Mega Man room’s western extension too', () => {
-  // The second rectangle is the newer of the two and the easier to forget: the
-  // room reaches past the building's west wall, and only there.
-  for (const [name, pattern] of [
-    ['minX', /const MEGAMAN_ALCOVE_MIN_X = (-?[\d.]+);/],
-    ['maxX', /const MEGAMAN_ALCOVE_MAX_X = (-?[\d.]+);/],
-    ['minZ', /const MEGAMAN_ALCOVE_MIN_Z = (-?[\d.]+);/],
-    ['maxZ', /const MEGAMAN_ALCOVE_MAX_Z = (-?[\d.]+);/]
-  ] as Array<[keyof typeof clientAlcove, RegExp]>) {
-    const onServer = readNumber(server, pattern, `alcove ${name} in player-manager`);
-    const onWorker = readNumber(worker, pattern, `alcove ${name} in the worker`);
-    assert.equal(onWorker, onServer, `alcove ${name}: the worker disagrees with the server`);
-    assert.equal(clientAlcove[name], onServer, `alcove ${name}: arcade.js disagrees with the server`);
+void test('the floor is one rectangle, and it holds every room', () => {
+  // The second rectangle is gone. Nothing may reintroduce one quietly: a room
+  // that does not fit inside these bounds is a room a player cannot reach, and
+  // the symptom is not a wall but a player who simply stops walking.
+  for (const source of [server, worker, client]) {
+    assert.ok(!/MEGAMAN_ALCOVE/.test(source), 'the second rectangle must be gone from every copy');
   }
-
-  // The two rectangles must touch along a shared edge, or the extension is an
-  // island the player can see and never reach.
-  assert.equal(clientAlcove.maxX, clientBounds.minX, 'the alcove must meet the main rectangle');
-  assert.ok(clientAlcove.minZ > 0 && clientAlcove.maxZ <= clientBounds.maxZ, 'the alcove must sit inside the Mega Man room');
+  // The side rooms reach the outer wall on both sides, half a metre inside it.
+  assert.equal(clientBounds.minX, -35.1);
+  assert.equal(clientBounds.maxX, 35.1);
+  assert.equal(clientBounds.minX, -clientBounds.maxX, 'the building is symmetric now');
 });
 
 /** Rooms sealed behind a construction barrier, read from the scene itself. */
-const blockedRooms = [...client.matchAll(/userData\.roomName='(\w+)'/g)].map((match) => match[1].toLowerCase());
+const blockedRooms = [...client.matchAll(/userData\.roomName='([^']+)'/g)]
+  .map((match) => match[1].toLowerCase().split(' ')[0]);
 
 void test('the world reaches every cabinet a player is meant to stand at', () => {
   // A cabinet outside the bounds is unreachable, and nothing says so — the
@@ -88,8 +81,7 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
     assert.ok(cabinets.length > 0, 'the cabinet registry must not be empty');
 
     const reachable = (x: number, z: number) =>
-      (x >= clientBounds.minX && x <= clientBounds.maxX && z >= clientBounds.minZ && z <= clientBounds.maxZ)
-      || (x >= clientAlcove.minX && x <= clientAlcove.maxX && z >= clientAlcove.minZ && z <= clientAlcove.maxZ);
+      x >= clientBounds.minX && x <= clientBounds.maxX && z >= clientBounds.minZ && z <= clientBounds.maxZ;
 
     const unreachable = cabinets.filter((cabinet) => {
       if (cabinet.enabled === false) return false;
@@ -103,11 +95,21 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
   });
 });
 
-void test('the GameCube room is closed, and closed in both places', () => {
-  // The barrier and the world bound behind it have to move together. Either one
-  // alone tells the player the opposite of what the other enforces.
-  assert.ok(client.includes('gamecubeConstructionBarrier'), 'the tape barrier must be present');
-  const prompt = /function nearbyConstructionRoom\(\)\{[\s\S]*?\n/.exec(client)?.[0] ?? '';
-  assert.ok(prompt.includes("'GameCube'"), 'the doorway must report the room as under construction');
-  assert.ok(clientBounds.maxZ < 23, 'the world must stop short of the GameCube room');
+void test('the sealed rooms are closed in the scene and in what it enforces', () => {
+  // A barrier and the rule behind it have to move together. Either one alone
+  // tells the player the opposite of what the other enforces.
+  const prompt = /function nearbyConstructionRoom\(\)\{[\s\S]*?\n\}/.exec(client)?.[0] ?? '';
+
+  // The Multiplayer / Tournament room is beyond the hub, and the world stops
+  // short of the doorway into it.
+  assert.ok(client.includes('tournamentConstructionBarrier'), 'the tournament barrier must be present');
+  assert.ok(prompt.includes("'Multiplayer / Tournament'"), 'its doorway must report the room as closed');
+  assert.ok(clientBounds.maxZ < 16.8, 'the world must stop short of the tournament room');
+
+  // GameCube is sealed in its own gallery instead: the world reaches it, so the
+  // doorway itself is what has to be closed.
+  assert.ok(client.includes('gamecubeConstructionBarrier'), 'the GameCube barrier must be present');
+  assert.ok(prompt.includes("'GameCube'"), 'its doorway must report the room as closed');
+  assert.ok(/playerPosition\.x<0&&Math\.abs\(playerPosition\.x-PS2_ROOM_CENTER_X\)/.test(client),
+    'only the PlayStation-side doorway in the rear wall may be passable');
 });
