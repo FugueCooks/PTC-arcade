@@ -36,6 +36,21 @@ for (const asset of manifest) {
     console.log(`SKIP ${key} (remote checksum metadata matches)`);
     continue;
   }
+  // Overwriting a key that already holds different bytes does not reach
+  // players. These objects are served `max-age=31536000, immutable`, so the
+  // edge keeps the old copy for a year under the same URL, and a browser or an
+  // OPFS chunk store that already has it never asks again. Re-encoding the
+  // GameCube images this way put new sizes in the registry against old bytes on
+  // the CDN — new metadata, old content — which is why the registry carries
+  // names like `kingdom-hearts-v1.chd`. Give the changed file a new name.
+  if (!forceUpload) {
+    const existing = await remoteObject(key);
+    if (existing && existing.sha256 && existing.sha256 !== asset.sha256) {
+      throw new Error(`${key} already holds different content (remote ${existing.sha256.slice(0, 12)}…, local ${asset.sha256.slice(0, 12)}…).\n`
+        + `It is served immutable for a year, so overwriting it would leave players on the old copy.\n`
+        + `Rename ${asset.file} with a new version suffix and update the registry and manifest, or set STORAGE_FORCE_UPLOAD=1 if you are certain the cache does not matter.`);
+    }
+  }
   console.log(`UPLOAD ${key} (${details.size} bytes)`);
   const upload = new Upload({
     client,
@@ -81,6 +96,18 @@ async function alreadyUploaded(key, asset) {
   } catch (error) {
     const status = error?.$metadata?.httpStatusCode;
     if (status === 404 || error?.name === 'NotFound' || error?.name === 'NoSuchKey') return false;
+    throw error;
+  }
+}
+
+/** What is under a key already, or null where nothing is. */
+async function remoteObject(key) {
+  try {
+    const remote = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return { bytes: Number(remote.ContentLength), sha256: remote.Metadata?.sha256 ?? null };
+  } catch (error) {
+    const status = error?.$metadata?.httpStatusCode;
+    if (status === 404 || error?.name === 'NotFound' || error?.name === 'NoSuchKey') return null;
     throw error;
   }
 }

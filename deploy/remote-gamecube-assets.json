@@ -1,7 +1,37 @@
 [
-  {"kind":"game","system":"gamecube","file":"wind-waker.rvz","bytes":1084862396,"sha256":"cf08e5f28a61b620ffa6d547f70c0b8f219e1f478ba7df12b89b7cd7540b61b0"},
-  {"kind":"game","system":"gamecube","file":"zelda-twilight-princess.rvz","bytes":1027348044,"sha256":"a6f4c709a898b69e262fc21a84a322774f968826890d347f5c151cf88147241b"},
-  {"kind":"game","system":"gamecube","file":"pikmin.rvz","bytes":660192112,"sha256":"7285c5ba785d33c62142932a28fb3b9e3fca350b3410979c68aa0c62ace8614e"},
-  {"kind":"game","system":"gamecube","file":"super-smash-bros-melee.rvz","bytes":1426853848,"sha256":"bcb0bc67c771e2dd0964cdf92bda44d42eb2b05a821f5181b91abd48611e4997"},
-  {"kind":"game","system":"gamecube","file":"super-mario-sunshine.rvz","bytes":1176265108,"sha256":"52b3d2a8ef570c1e5dd5fc4b7a03968e700b85f37057c4bdb87ea782c53b9323"}
+  {
+    "kind": "game",
+    "system": "gamecube",
+    "file": "wind-waker-v2.rvz",
+    "bytes": 881846208,
+    "sha256": "ccce321d8b491c858d0d629dfbb54e35536afd0dd22ff690ac8221224781106e"
+  },
+  {
+    "kind": "game",
+    "system": "gamecube",
+    "file": "zelda-twilight-princess-v2.rvz",
+    "bytes": 944862016,
+    "sha256": "b8c65b974f6d14806b2157f977176bd67491cf2fa734b2215921ccacd77597ce"
+  },
+  {
+    "kind": "game",
+    "system": "gamecube",
+    "file": "pikmin-v2.rvz",
+    "bytes": 565447936,
+    "sha256": "54cc2c8ff5b8db446f943dd3bbaca1b67f0472f7eb2fca0e2f1c2ca08faacd50"
+  },
+  {
+    "kind": "game",
+    "system": "gamecube",
+    "file": "super-smash-bros-melee-v2.rvz",
+    "bytes": 1161177684,
+    "sha256": "480dbe040f07eacc55439ce085aad98e33e38ca81b93647b0f51d4a7ed48db23"
+  },
+  {
+    "kind": "game",
+    "system": "gamecube",
+    "file": "super-mario-sunshine-v2.rvz",
+    "bytes": 1073698636,
+    "sha256": "85b20aea95fddf549e1e1486b2cce87c0c39c5dc30a2a98403d7af1dc224489f"
+  }
 ]

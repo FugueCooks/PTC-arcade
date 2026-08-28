@@ -10,6 +10,10 @@ npm-debug.log*
 .wrangler/
 .pages-dist/
 
+# Import drops: source images and unconverted model iterations. What the
+# arcade actually loads is committed under assets/models and assets/art.
+assets/incoming/
+
 # Licensed game/BIOS dumps stay local and are never published to GitHub.
 assets/games/*
 !assets/games/registry.json

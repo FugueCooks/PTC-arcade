@@ -83,7 +83,41 @@ Two refinements are in place beyond the original scheme:
   served from anywhere else on the same connection costs the same. What removes
   the wait is already having the bytes.
 
-### GameCube — blocked, and mostly by design
+### GameCube — re-encoded
+
+All five images were stored with compression NONE. RVZ strips a disc's junk data
+whether or not it compresses, which is why the sizes looked plausible while Melee
+sat at 97.7% of a raw disc. Re-encoded with zstd on 2026-08-27, each verified by
+reading it back:
+
+| Game | Was | Now | Saved |
+|---|---|---|---|
+| Super Smash Bros. Melee | 1361 MB | 1107 MB | 253 MB |
+| The Wind Waker | 1035 MB | 841 MB | 194 MB |
+| Super Mario Sunshine | 1122 MB | 1024 MB | 98 MB |
+| Pikmin | 630 MB | 539 MB | 90 MB |
+| Twilight Princess | 980 MB | 901 MB | 79 MB |
+
+714 MB off a sweep of the room — less than the 30-50% a generic RVZ figure
+suggests, because junk removal had already done half the work and what remains is
+mostly pre-compressed audio and texture data. A higher compression level is not
+worth it either: zstd 19 beat zstd 5 by under 2% on Pikmin.
+
+`npm run games:recompress-gamecube` does this. It matches sources to hosted
+images by exact byte size rather than by name: these titles arrive as (USA),
+(Rev 1), (60 FPS), and converting the wrong build would replace a live game with
+a different one.
+
+**A changed image must be published under a new name.** The first upload went
+over the existing keys and reached nobody. These objects are served
+`max-age=31536000, immutable`, so the edge kept serving the old bytes at the
+same URL — one probe returned new metadata with old content, which would have a
+player fetching 630 MB against a registry expecting 539 MB, and the frame checks
+that size before it will trust an image. The re-encodes are published as `-v2`,
+matching the convention already visible in `kingdom-hearts-v1.chd`, and
+`npm run storage:upload` now refuses to overwrite a key whose contents changed.
+
+### GameCube streaming — still blocked, and mostly by design
 
 Gecko's `DiscBuffer.append()` then `.start()` needs the whole image resident in
 WebAssembly memory before a frame renders. Streaming it means changing the disc
@@ -157,7 +191,6 @@ TLS handshake at the moment a player is waiting.
 
 In rough order of payoff:
 
-1. Re-encode the five GameCube images with zstd. Free, halves that queue.
 2. Record `bootChunks` for the remaining PS2 titles — Kingdom Hearts, GTA San
    Andreas, DBZ Tenkaichi 3. Mega Man X7 is done; each is one play session.
 3. Convert `crash-bandicoot` from pbp to CHD.

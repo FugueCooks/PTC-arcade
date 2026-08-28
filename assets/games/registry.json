@@ -465,9 +465,9 @@
       "cabinetId": "gamecube-cabinet-01",
       "name": "The Legend of Zelda: The Wind Waker",
       "system": "gamecube",
-      "file": "wind-waker.rvz",
+      "file": "wind-waker-v2.rvz",
       "emulatorId": 32001,
-      "sizeBytes": 1084862396,
+      "sizeBytes": 881846208,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "gecko-gamecube",
@@ -476,8 +476,8 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "wind-waker.rvz",
-          "sizeBytes": 1084862396,
+          "assetId": "wind-waker-v2.rvz",
+          "sizeBytes": 881846208,
           "required": true,
           "label": null
         },
@@ -495,9 +495,9 @@
       "cabinetId": "gamecube-cabinet-02",
       "name": "The Legend of Zelda: Twilight Princess",
       "system": "gamecube",
-      "file": "zelda-twilight-princess.rvz",
+      "file": "zelda-twilight-princess-v2.rvz",
       "emulatorId": 32002,
-      "sizeBytes": 1027348044,
+      "sizeBytes": 944862016,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "gecko-gamecube",
@@ -506,8 +506,8 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "zelda-twilight-princess.rvz",
-          "sizeBytes": 1027348044,
+          "assetId": "zelda-twilight-princess-v2.rvz",
+          "sizeBytes": 944862016,
           "required": true,
           "label": null
         },
@@ -525,9 +525,9 @@
       "cabinetId": "gamecube-cabinet-03",
       "name": "Pikmin",
       "system": "gamecube",
-      "file": "pikmin.rvz",
+      "file": "pikmin-v2.rvz",
       "emulatorId": 32003,
-      "sizeBytes": 660192112,
+      "sizeBytes": 565447936,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "gecko-gamecube",
@@ -536,8 +536,8 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "pikmin.rvz",
-          "sizeBytes": 660192112,
+          "assetId": "pikmin-v2.rvz",
+          "sizeBytes": 565447936,
           "required": true,
           "label": null
         },
@@ -555,9 +555,9 @@
       "cabinetId": "gamecube-cabinet-04",
       "name": "Super Smash Bros. Melee",
       "system": "gamecube",
-      "file": "super-smash-bros-melee.rvz",
+      "file": "super-smash-bros-melee-v2.rvz",
       "emulatorId": 32004,
-      "sizeBytes": 1426853848,
+      "sizeBytes": 1161177684,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "gecko-gamecube",
@@ -566,8 +566,8 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "super-smash-bros-melee.rvz",
-          "sizeBytes": 1426853848,
+          "assetId": "super-smash-bros-melee-v2.rvz",
+          "sizeBytes": 1161177684,
           "required": true,
           "label": null
         },
@@ -587,9 +587,9 @@
       "cabinetId": "gamecube-cabinet-05",
       "name": "Super Mario Sunshine",
       "system": "gamecube",
-      "file": "super-mario-sunshine.rvz",
+      "file": "super-mario-sunshine-v2.rvz",
       "emulatorId": 32005,
-      "sizeBytes": 1176265108,
+      "sizeBytes": 1073698636,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "gecko-gamecube",
@@ -598,8 +598,8 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "super-mario-sunshine.rvz",
-          "sizeBytes": 1176265108,
+          "assetId": "super-mario-sunshine-v2.rvz",
+          "sizeBytes": 1073698636,
           "required": true,
           "label": null
         },

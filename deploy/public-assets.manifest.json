@@ -142,5 +142,35 @@
     "file": "zelda-ocarina-of-time.z64",
     "bytes": 33554432,
     "sha256": "49acd3885f13b0730119b78fb970911cc8aba614fe383368015c21565983368d"
+  },
+  {
+    "kind": "game",
+    "file": "wind-waker-v2.rvz",
+    "bytes": 881846208,
+    "sha256": "ccce321d8b491c858d0d629dfbb54e35536afd0dd22ff690ac8221224781106e"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-twilight-princess-v2.rvz",
+    "bytes": 944862016,
+    "sha256": "b8c65b974f6d14806b2157f977176bd67491cf2fa734b2215921ccacd77597ce"
+  },
+  {
+    "kind": "game",
+    "file": "pikmin-v2.rvz",
+    "bytes": 565447936,
+    "sha256": "54cc2c8ff5b8db446f943dd3bbaca1b67f0472f7eb2fca0e2f1c2ca08faacd50"
+  },
+  {
+    "kind": "game",
+    "file": "super-smash-bros-melee-v2.rvz",
+    "bytes": 1161177684,
+    "sha256": "480dbe040f07eacc55439ce085aad98e33e38ca81b93647b0f51d4a7ed48db23"
+  },
+  {
+    "kind": "game",
+    "file": "super-mario-sunshine-v2.rvz",
+    "bytes": 1073698636,
+    "sha256": "85b20aea95fddf549e1e1486b2cce87c0c39c5dc30a2a98403d7af1dc224489f"
   }
 ]
