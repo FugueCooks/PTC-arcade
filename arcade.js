@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=east-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=garden-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -192,7 +192,11 @@ const haloTexture=(()=>{
 })();
 const warmHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xffb877,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending});
 const coolHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xff4fa8,transparent:true,opacity:.34,depthWrite:false,blending:THREE.AdditiveBlending});
-for(let z=-15;z<=15;z+=5)box(56,.26,.34,0x14111f,0,4.9,z,.04);
+// The ceiling beams stop where the carved-out rooms begin: a beam crossing
+// the Chao Garden hung in its sky as a floating black slab. West of the
+// garden the run is unchanged; the beams never reached Silent Hill or the
+// stadium.
+for(let z=-15;z<=15;z+=5)box(z<-12?49.6:56,.26,.34,0x14111f,z<-12?-3.2:0,4.9,z,.04);
 for(const [row,z] of [-12.5,-7.5,-2.5,2.5,7.5,12.5].entries()){
   const cool=row%3===1;
   for(const x of [-21,-9,0,9,21]){
@@ -594,7 +598,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-east-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-garden-2');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -785,13 +789,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=east-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=garden-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=east-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=garden-2',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=east-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=garden-2',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -828,7 +832,9 @@ function buildChaoGarden(centerX,centerZ){
   // A circle in a square room, which is what the reference is: a round cove.
   // The mouth is aimed at the doorway rather than at a compass point, since
   // the room's centre no longer lines up with it.
-  const R=10.35,RX=R,RZ=R,BAND_BASE=.4,BAND_TOP=4.4;
+  // Tall enough to swallow the tops of the room's five-metre walls, which
+  // were poking into the sky as floating black slabs.
+  const R=10.35,RX=R,RZ=R,BAND_BASE=.4,BAND_TOP=5.3;
   const MOUTH_ARC=3.6/R;
   const MOUTH_THETA=Math.atan2(21.6-centerX,-25.2-centerZ);
   const THETA_START=MOUTH_THETA+MOUTH_ARC/2,THETA_LENGTH=Math.PI*2-MOUTH_ARC;
@@ -838,33 +844,53 @@ function buildChaoGarden(centerX,centerZ){
   const bandCanvas=document.createElement('canvas');bandCanvas.width=2048;bandCanvas.height=256;
   const bc=bandCanvas.getContext('2d');
   const sky=bc.createLinearGradient(0,0,0,150);
-  sky.addColorStop(0,'#a7dcf2');sky.addColorStop(1,'#d9f0f8');
+  sky.addColorStop(0,'#9fd4ee');sky.addColorStop(1,'#dff2f9');
   bc.fillStyle=sky;bc.fillRect(0,0,2048,150);
   const sea=bc.createLinearGradient(0,150,0,256);
-  sea.addColorStop(0,'#3f7fc4');sea.addColorStop(1,'#274f9e');
+  sea.addColorStop(0,'#3f7fc4');sea.addColorStop(.6,'#2e63ad');sea.addColorStop(1,'#20447e');
   bc.fillStyle=sea;bc.fillRect(0,150,2048,106);
+  // Haze where sea meets sky, and whitecaps thinning with distance.
+  bc.fillStyle='#cfe8f4';bc.globalAlpha=.55;bc.fillRect(0,146,2048,9);bc.globalAlpha=1;
   bc.fillStyle='#ffffff';
-  for(let i=0;i<70;i++){const x=(i*211)%2048,y=156+(i*67)%90;bc.globalAlpha=.12+(i%4)*.05;bc.fillRect(x,y,26+(i%5)*8,2)}
+  for(let i=0;i<90;i++){const x=(i*211)%2048,y=158+(i*67)%92;
+    bc.globalAlpha=(.2-((y-158)/92)*.12)+(i%4)*.04;bc.fillRect(x,y,20+(i%5)*10,2)}
   bc.globalAlpha=1;
-  // Clouds sit on the horizon like the reference's.
-  for(let i=0;i<9;i++){const x=(i*479)%2048,y=108+(i*37)%34;bc.globalAlpha=.5;bc.fillStyle='#ffffff';
-    bc.beginPath();bc.ellipse(x,y,60+(i%3)*24,13,0,0,Math.PI*2);bc.fill()}
+  // A distant island out in the open water, and clouds on the horizon.
+  bc.fillStyle='#7fa3bd';bc.beginPath();bc.ellipse(980,150,84,17,0,Math.PI,0);bc.fill();
+  bc.fillStyle='#93b78f';bc.beginPath();bc.ellipse(966,146,32,9,0,Math.PI,0);bc.fill();
+  for(let i=0;i<9;i++){const x=(i*479)%2048,y=104+(i*37)%36;bc.globalAlpha=.55;bc.fillStyle='#ffffff';
+    bc.beginPath();bc.ellipse(x,y,60+(i%3)*24,12,0,0,Math.PI*2);bc.fill();
+    bc.beginPath();bc.ellipse(x+42,y+7,36,9,0,0,Math.PI*2);bc.fill()}
   bc.globalAlpha=1;
-  // Two cliff headlands: jagged-topped rock over the band, one each side of the
-  // mouth (u 0 and u 1), leaving open sea across the middle of the loop.
-  // The reference's stone is blocky and columnar, pale beige-grey, each column
-  // its own flat facet with a stepped top — not noisy rock. Drawn as columns.
+  /**
+   * The cliffs, drawn as a solid rock face rather than the fence the first
+   * pass produced: that version stepped its columns with gaps, so the sea
+   * gradient showed through between every one and the wall read as pickets.
+   * Now a dark backfill goes down first, the columns overlap it, each carries
+   * strata, a shadow seam and a mossy cap, and nothing behind shows through.
+   */
   function cliffs(u0,u1){
     const x0=u0*2048,x1=u1*2048;
-    for(let x=x0;x<x1;x+=34){
-      const top=22+((x*13)%48),shade=((x*7)%3);
-      bc.fillStyle=shade===0?'#cfc6ae':shade===1?'#bdb29a':'#a89e88';
-      bc.fillRect(x,top,32,256-top);
-      bc.fillStyle='#8d8371';bc.fillRect(x,top,32,6);
-      bc.fillStyle='#e4dcc6';bc.fillRect(x,top+6,4,256-top-6);
+    bc.fillStyle='#6f6754';bc.fillRect(x0,8,x1-x0,248);
+    for(let x=x0;x<x1;x+=30){
+      const top=14+((x*13)%44),shade=((x*7)%3);
+      bc.fillStyle=shade===0?'#c4b99e':shade===1?'#b0a58b':'#9a8f77';
+      bc.fillRect(x,top,31,256-top);
+      for(let y=top+18;y<250;y+=26){bc.fillStyle='rgba(90,82,66,.45)';bc.fillRect(x,y,31,3)}
+      bc.fillStyle='#7b7260';bc.fillRect(x+29,top,3,256-top);
+      bc.fillStyle='#e0d7bd';bc.fillRect(x+2,top+8,3,246-top);
+      bc.fillStyle='#3f9e47';bc.fillRect(x,top,31,7);
+      bc.fillStyle='#57c25f';bc.fillRect(x+((x*11)%14),top,9,10);
     }
   }
   cliffs(0,.34);cliffs(.62,1);
+  // A rock arch caps the mouth, so the opening in the cliffs is door-height:
+  // without it the arcade hall showed through the gap above the doorway,
+  // ceiling fixtures floating in the garden sky.
+  const archMaterial=new THREE.MeshStandardMaterial({color:0x9a8f77,roughness:.92,metalness:.03});
+  const arch=new THREE.Mesh(new THREE.BoxGeometry(1.4,BAND_TOP-2.7,5),archMaterial);
+  arch.position.set(centerX+Math.sin(MOUTH_THETA)*(R-.3),(BAND_TOP+2.7)/2,centerZ+Math.cos(MOUTH_THETA)*(R-.3));
+  arch.rotation.y=MOUTH_THETA+Math.PI/2;scene.add(arch);
   const bandTexture=new THREE.CanvasTexture(bandCanvas);bandTexture.colorSpace=THREE.SRGBColorSpace;
   const band=new THREE.Mesh(
     new THREE.CylinderGeometry(1,1,BAND_TOP-BAND_BASE,72,1,true,THETA_START,THETA_LENGTH),
@@ -903,10 +929,69 @@ function buildChaoGarden(centerX,centerZ){
   rim.addColorStop(0,'rgba(20,80,28,0)');rim.addColorStop(1,'rgba(20,80,28,.55)');
   gc.fillStyle=rim;gc.fillRect(0,0,512,512);
   const grassTexture=new THREE.CanvasTexture(grassCanvas);grassTexture.colorSpace=THREE.SRGBColorSpace;
-  const meadow=new THREE.Mesh(new THREE.CircleGeometry(1,56),
-    new THREE.MeshStandardMaterial({map:grassTexture,roughness:.85,metalness:.02,emissive:0x1c6b24,emissiveIntensity:.5}));
-  meadow.rotation.x=-Math.PI/2;meadow.scale.set(RX-.15,RZ-.15,1);
+  grassTexture.wrapS=grassTexture.wrapT=THREE.RepeatWrapping;
+  /**
+   * The meadow rolls. A flat disc read as a billiard table; this one is a
+   * radial mesh with gentle mounds and a rise toward the cliff base, flattened
+   * across the mouth so the way in stays level ground. The texture repeats at
+   * a quarter of its old scale, so the mottle survives being seen from a
+   * standing eye instead of blurring across twenty metres.
+   */
+  const meadowRadius=R-.15,RINGS=9,SECTORS=48;
+  const meadowGeometry=new THREE.BufferGeometry();
+  const positions=[],uvs=[],indices=[];
+  for(let ring=0;ring<=RINGS;ring++){
+    const fraction=ring/RINGS,radius=fraction*meadowRadius;
+    for(let sector=0;sector<=SECTORS;sector++){
+      const angle=sector/SECTORS*Math.PI*2;
+      const x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
+      const mouthGap=Math.abs(Math.atan2(Math.sin(angle-MOUTH_THETA+Math.PI/2),Math.cos(angle-MOUTH_THETA+Math.PI/2)));
+      const flatten=Math.min(1,mouthGap/.8);
+      const rim=Math.max(0,(fraction-.72)/.28);
+      const height=(rim*rim*.5+Math.sin(angle*3+radius*1.2)*.07+Math.sin(angle*5-radius*.8)*.05)*flatten;
+      positions.push(x,Math.max(0,height),z);
+      uvs.push((x+meadowRadius)/5,(z+meadowRadius)/5);
+    }
+  }
+  for(let ring=0;ring<RINGS;ring++)for(let sector=0;sector<SECTORS;sector++){
+    const a=ring*(SECTORS+1)+sector,b=a+SECTORS+1;
+    // Wound so the faces look up: the first cut faced the floor, and the
+    // meadow simply did not render from above.
+    indices.push(a,a+1,b,b,a+1,b+1);
+  }
+  meadowGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  meadowGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+  meadowGeometry.setIndex(indices);meadowGeometry.computeVertexNormals();
+  const meadow=new THREE.Mesh(meadowGeometry,
+    new THREE.MeshStandardMaterial({map:grassTexture,roughness:.85,metalness:.02,emissive:0x1c6b24,emissiveIntensity:.42}));
   meadow.position.set(centerX,.02,centerZ);meadow.receiveShadow=true;scene.add(meadow);
+  // A worn sandy path from the mouth toward the middle of the garden.
+  const sandCanvas=document.createElement('canvas');sandCanvas.width=128;sandCanvas.height=128;
+  const sn=sandCanvas.getContext('2d');
+  sn.fillStyle='#d9c391';sn.fillRect(0,0,128,128);
+  for(let i=0;i<160;i++){sn.fillStyle=i%2?'#cbb27b':'#e6d4a6';sn.globalAlpha=.5;
+    sn.fillRect((i*37)%128,(i*53)%128,3,2)}
+  sn.globalAlpha=1;
+  const sandTexture=new THREE.CanvasTexture(sandCanvas);sandTexture.colorSpace=THREE.SRGBColorSpace;
+  const path=new THREE.Mesh(new THREE.PlaneGeometry(6.5,2.6),
+    new THREE.MeshBasicMaterial({map:sandTexture,transparent:true,opacity:.9,depthWrite:false}));
+  path.rotation.x=-Math.PI/2;
+  path.rotation.z=-MOUTH_THETA+Math.PI/2;
+  path.position.set(centerX+Math.sin(MOUTH_THETA)*(R-3.6),.045,centerZ+Math.cos(MOUTH_THETA)*(R-3.6));
+  scene.add(path);
+  // Flowers in the grass, one instanced mesh so ninety of them cost one call.
+  const flowerColours=[0xffffff,0xffe36b,0xff9ad5];
+  const flowers=new THREE.InstancedMesh(new THREE.PlaneGeometry(.09,.09),
+    new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}),90);
+  const flowerMatrix=new THREE.Matrix4(),flowerColour=new THREE.Color();
+  for(let i=0;i<90;i++){
+    const angle=i*2.399,radius=1.2+((i*53)%80)/10;
+    flowerMatrix.makeRotationX(-Math.PI/2);
+    flowerMatrix.setPosition(centerX+Math.cos(angle)*radius,.09,centerZ+Math.sin(angle)*radius*.96);
+    flowers.setMatrixAt(i,flowerMatrix);
+    flowers.setColorAt(i,flowerColour.setHex(flowerColours[i%3]));
+  }
+  scene.add(flowers);
   // The pool and its waterfall, tucked against the north-east cliffs.
   const poolX=centerX+5.2,poolZ=centerZ-3.9;
   const poolRim=new THREE.Mesh(new THREE.CircleGeometry(1,36),new THREE.MeshBasicMaterial({color:0x9fd4ea}));
@@ -923,8 +1008,24 @@ function buildChaoGarden(centerX,centerZ){
     fc.beginPath();fc.moveTo(x,0);fc.lineTo(x-4,256);fc.stroke()}
   fc.globalAlpha=1;
   const fallTexture=new THREE.CanvasTexture(fallCanvas);fallTexture.colorSpace=THREE.SRGBColorSpace;
-  const fall=new THREE.Mesh(new THREE.PlaneGeometry(2.1,3.3),new THREE.MeshBasicMaterial({map:fallTexture}));
-  fall.position.set(poolX+1.6,1.68,poolZ-1.35);fall.lookAt(centerX,1.4,centerZ);scene.add(fall);
+  fallTexture.wrapT=THREE.RepeatWrapping;
+  // Two sheets, offset and out of phase, falling from the band's own height —
+  // and actually falling: the texture scrolls whenever anyone is in the room.
+  const fallSheets=[];
+  for(const [off,width,opacity] of [[0,2.3,1],[.16,1.7,.55]]){
+    const sheet=new THREE.Mesh(new THREE.PlaneGeometry(width,BAND_TOP-.5),
+      new THREE.MeshBasicMaterial({map:off?fallTexture.clone():fallTexture,transparent:off>0,opacity,depthWrite:!off}));
+    sheet.material.map.wrapT=THREE.RepeatWrapping;
+    sheet.position.set(poolX+1.6+off,(BAND_TOP-.5)/2+.35,poolZ-1.35+off);
+    sheet.lookAt(centerX,1.2,centerZ);scene.add(sheet);
+    fallSheets.push(sheet);
+  }
+  beforeRenderCallbacks.push((now,delta)=>{
+    const dx=playerPosition.x-centerX,dz=playerPosition.z-centerZ;
+    if(dx*dx+dz*dz>240)return;
+    fallSheets[0].material.map.offset.y-=delta*.9;
+    fallSheets[1].material.map.offset.y-=delta*1.25;
+  });
   const foam=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0xeaf7fc,transparent:true,opacity:.85}));
   foam.rotation.x=-Math.PI/2;foam.scale.set(1.15,.6,1);foam.position.set(poolX+1.35,.06,poolZ-1.1);scene.add(foam);
   // The palms, boulders and cliff columns are real models now, generated in
@@ -956,7 +1057,7 @@ buildChaoGarden(ANNEX_ROOM_CENTER_X,-22.8);
 function installChaoGardenProps(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-props.glb?v=chao-props-1',gltf=>{
+    loader.load('assets/models/chao-garden-props.glb?v=chao-props-2',gltf=>{
       const source=gltf.scene;
       const take=name=>{const found=source.getObjectByName(name);if(found)found.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});return found};
       const palm=take('Palm'),rocks=[take('RockA'),take('RockB'),take('RockC')],column=take('CliffColumn');
@@ -2226,7 +2327,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=east-1')
+  import('./emulators/disc-range-cache.js?v=garden-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2246,7 +2347,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=east-1')
+  import('./emulators/disc-range-cache.js?v=garden-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
