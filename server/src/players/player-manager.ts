@@ -44,6 +44,17 @@ const OPEN_DOOR_Z = [-25.2, -8, 8, 25.2];
 const TOP_ROW_WALL_Z = -50.4;
 const NORTH_ROOM_X = [-32.4, -10.8, 10.8, 32.4];
 const NORTH_ROW_DIVIDER_X = [-21.6, 0, 21.6];
+// The Pokemon bowl: the stands are solid, and the only way through them is the
+// entrance lane on the doorway side. Matches POKEBOWL in arcade.js.
+const POKEBOWL = { cx: 32.4, cz: -25.2, ax: 10.1, az: 7.7, laneHalfWidth: 1.5 };
+function insidePokemonBowl(x: number, z: number): boolean {
+  const dx = (x - POKEBOWL.cx) / POKEBOWL.ax;
+  const dz = (z - POKEBOWL.cz) / POKEBOWL.az;
+  return dx * dx + dz * dz <= 1;
+}
+function inPokemonTunnelLane(x: number, z: number): boolean {
+  return Math.abs(z - POKEBOWL.cz) < POKEBOWL.laneHalfWidth && x < POKEBOWL.cx - POKEBOWL.ax * 0.5;
+}
 const SIDE_COLUMN_MIN_Z = -33.6;
 const SIDE_COLUMN_MAX_Z = 33.6;
 const SIDE_ROOM_DIVIDER_Z = [-33.6, -16.8, 0, 16.8, 33.6];
@@ -79,6 +90,11 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
       if ((fromZ - dividerZ) * (toZ - dividerZ) < 0) return true;
     }
   }
+  // The Pokemon bowl's stands. A step that crosses the ellipse is refused
+  // unless it goes through the entrance lane; the far side of that lane is the
+  // jumbotron, and there is no way through a jumbotron.
+  if (insidePokemonBowl(fromX, fromZ) !== insidePokemonBowl(toX, toZ)
+    && !(inPokemonTunnelLane(fromX, fromZ) || inPokemonTunnelLane(toX, toZ))) return true;
   // The top row's front wall.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
   if (!throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;

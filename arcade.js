@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=dome-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=dome-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -537,7 +537,7 @@ function pokemonFieldTexture(){
  */
 function buildPokemonStadium(centerX,centerZ){
   const RX=10.5,RZ=8.1,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-dome-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-dome-2');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   const band=new THREE.Mesh(
@@ -571,6 +571,28 @@ function buildPokemonStadium(centerX,centerZ){
   dome.scale.set(RX,.85,RZ);
   dome.position.set(centerX,BAND_TOP,centerZ);
   scene.add(dome);
+  // Below the band, a dark skirt down to the floor, so no sightline under the
+  // stands reaches the room outside. It is the wall the stands sit on.
+  const skirt=new THREE.Mesh(
+    new THREE.CylinderGeometry(1,1,BAND_BASE,72,1,true),
+    new THREE.MeshStandardMaterial({color:0x0c1220,emissive:0x0a1425,emissiveIntensity:.4,roughness:.6,metalness:.3,side:THREE.DoubleSide}));
+  skirt.scale.set(RX,1,RZ);
+  skirt.position.set(centerX,BAND_BASE/2,centerZ);
+  scene.add(skirt);
+  // The way in is a stadium tunnel: a dark vomitory from the room's doorway
+  // through the stands. The player crosses the band's image inside it, where
+  // there is nothing to see, so the bowl never visibly breaks.
+  const tunnelMaterial=new THREE.MeshStandardMaterial({color:0x0a0f1a,roughness:.7,metalness:.25,side:THREE.DoubleSide});
+  const tunnelTrim=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.2,metalness:.4,roughness:.3});
+  const TUNNEL_LENGTH=3.4,TUNNEL_HALF_W=1.7,tunnelX=centerX-RX+TUNNEL_LENGTH/2-.6;
+  for(const side of [-1,1]){
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_LENGTH,2.7,.24),tunnelMaterial);
+    wall.position.set(tunnelX,1.35,centerZ+side*TUNNEL_HALF_W);scene.add(wall);
+  }
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_LENGTH,.24,TUNNEL_HALF_W*2+.48),tunnelMaterial);
+  roof.position.set(tunnelX,2.82,centerZ);scene.add(roof);
+  const lintel=new THREE.Mesh(new THREE.BoxGeometry(.14,.1,TUNNEL_HALF_W*2),tunnelTrim);
+  lintel.position.set(tunnelX+TUNNEL_LENGTH/2,2.7,centerZ);scene.add(lintel);
   // The field sits inscribed in the ellipse rather than filling the rectangle,
   // so it never runs behind the stands.
   const field=new THREE.Mesh(new THREE.PlaneGeometry(12.6,9.4),
@@ -1665,7 +1687,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=dome-1')
+  import('./emulators/disc-range-cache.js?v=dome-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1685,7 +1707,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=dome-1')
+  import('./emulators/disc-range-cache.js?v=dome-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -1916,6 +1938,31 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
 // now, and the rooms behind it are entered from the hall like every other room.
 function resolveRearGalleryCollision(){}
 /**
+ * The Pokemon bowl is solid.
+ *
+ * The stands are an ellipse just inside the drawn band, and the only way
+ * through them is the entrance tunnel on the doorway side. Crossing anywhere
+ * else — outward from the field or inward from a room corner — puts the player
+ * back on the boundary. The same rule runs on both authoritative paths.
+ */
+const POKEBOWL={cx:ANNEX_ROOM_CENTER_X,cz:-25.2,ax:10.1,az:7.7,laneHalfWidth:1.5};
+function resolvePokemonBowlCollisions(previousX,previousZ){
+  if(playerPosition.x<21.6||playerPosition.z<-33.6||playerPosition.z>-16.8)return;
+  // The tunnel lane, on the doorway side only: the matching band of ellipse on
+  // the far side is the jumbotron, and there is no way through a jumbotron.
+  if(Math.abs(playerPosition.z-POKEBOWL.cz)<POKEBOWL.laneHalfWidth&&playerPosition.x<POKEBOWL.cx-POKEBOWL.ax*.5)return;
+  const dx=(playerPosition.x-POKEBOWL.cx)/POKEBOWL.ax,dz=(playerPosition.z-POKEBOWL.cz)/POKEBOWL.az;
+  const now=dx*dx+dz*dz;
+  const pdx=(previousX-POKEBOWL.cx)/POKEBOWL.ax,pdz=(previousZ-POKEBOWL.cz)/POKEBOWL.az;
+  const before=pdx*pdx+pdz*pdz;
+  if((before<=1)===(now<=1))return;
+  // Projected to the side the step began on, a hair short of the boundary so
+  // the next frame does not re-detect a crossing.
+  const scale=(before<=1?.995:1.005)/Math.sqrt(now);
+  playerPosition.x=POKEBOWL.cx+(playerPosition.x-POKEBOWL.cx)*scale;
+  playerPosition.z=POKEBOWL.cz+(playerPosition.z-POKEBOWL.cz)*scale;
+}
+/**
  * The top row: its front wall, with a doorway into each of its four rooms, and
  * the walls between them.
  *
@@ -1970,6 +2017,6 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolveTopRowCollisions(previousX,previousZ);clampToWorld()}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld()}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
