@@ -66,7 +66,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // the other headline multiplayer games; the rest hold their foyer slots.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
     { x: 9.5, y: 1.65, z: 3.45 }, { x: 9.5, y: 1.65, z: 5.75 },
-    { x: 9.5, y: 1.65, z: 8.05 }, { x: -13, y: 1.65, z: 42 },
+    { x: 9.5, y: 1.65, z: 8.05 }, { x: -7, y: 1.65, z: 42 },
     { x: 9.5, y: 1.65, z: 12.65 }
   ]);
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [

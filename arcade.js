@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=sh-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=big-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -48,7 +48,7 @@ const WORLD_BOUNDS={minX:-42.7,maxX:42.7,minZ:-66.7,maxZ:33.1};
 // the tournament hall, so the walkable floor is the main rectangle plus this
 // one. The union is clamped against whichever rectangle the step began in,
 // exactly as the old Mega Man alcove was.
-const SILENT_HILL_ANNEX={minX:-42.7,maxX:-22.1,minZ:33.1,maxZ:39.9};
+const SILENT_HILL_ANNEX={minX:-42.7,maxX:-13.7,minZ:33.1,maxZ:49.9};
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
   const region=insideRegion(SILENT_HILL_ANNEX,previousX,previousZ)?SILENT_HILL_ANNEX:WORLD_BOUNDS;
@@ -168,12 +168,12 @@ ceilingShape.holes.push(stadiumHole);
 // And a second over the Chao Garden, whose sky dome also rises past the
 // building's ceiling. Local y is world z plus the plane's offset, as above.
 const gardenHole=new THREE.Path();
-gardenHole.moveTo(21.6,-25.2);gardenHole.lineTo(43.2,-25.2);gardenHole.lineTo(43.2,-8.4);gardenHole.lineTo(21.6,-8.4);gardenHole.closePath();
+gardenHole.moveTo(21.6,-25.2);gardenHole.lineTo(43.2,-25.2);gardenHole.lineTo(43.2,-3.6);gardenHole.lineTo(21.6,-3.6);gardenHole.closePath();
 ceilingShape.holes.push(gardenHole);
 // The third hole is Silent Hill's: its facades rise past the ceiling and its
 // sky is the dark the fog fades into. Covers the room and its annex.
 const silentHillHole=new THREE.Path();
-silentHillHole.moveTo(-43.2,25.2);silentHillHole.lineTo(-21.6,25.2);silentHillHole.lineTo(-21.6,48.8);silentHillHole.lineTo(-43.2,48.8);silentHillHole.closePath();
+silentHillHole.moveTo(-43.2,25.2);silentHillHole.lineTo(-21.6,25.2);silentHillHole.lineTo(-21.6,41.8);silentHillHole.lineTo(-13.4,41.8);silentHillHole.lineTo(-13.4,58.6);silentHillHole.lineTo(-43.2,58.6);silentHillHole.closePath();
 ceilingShape.holes.push(silentHillHole);
 const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
 ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,5.08,-8.4);scene.add(ceiling);
@@ -583,7 +583,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-sh-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-big-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -774,13 +774,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=sh-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=big-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=sh-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=big-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=sh-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=big-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -814,9 +814,13 @@ buildPokemonStadium(POKEMON_CENTER_X,POKEMON_CENTER_Z);
  * The space under the sky is left clear for the Chao when their models arrive.
  */
 function buildChaoGarden(centerX,centerZ){
-  const RX=10.5,RZ=8.1,BAND_BASE=.4,BAND_TOP=4;
-  const MOUTH_ARC=3.6/RZ;
-  const THETA_START=Math.PI*1.5+MOUTH_ARC/2,THETA_LENGTH=Math.PI*2-MOUTH_ARC;
+  // A circle in a square room, which is what the reference is: a round cove.
+  // The mouth is aimed at the doorway rather than at a compass point, since
+  // the room's centre no longer lines up with it.
+  const R=10.35,RX=R,RZ=R,BAND_BASE=.4,BAND_TOP=4.4;
+  const MOUTH_ARC=3.6/R;
+  const MOUTH_THETA=Math.atan2(21.6-centerX,-25.2-centerZ);
+  const THETA_START=MOUTH_THETA+MOUTH_ARC/2,THETA_LENGTH=Math.PI*2-MOUTH_ARC;
   // The horizon band: sky over sea all the way round, with two headlands of
   // cliff painted on top so the garden reads as a cove. The mouth faces the
   // doorway, and the cliffs stand either side of it.
@@ -837,16 +841,17 @@ function buildChaoGarden(centerX,centerZ){
   bc.globalAlpha=1;
   // Two cliff headlands: jagged-topped rock over the band, one each side of the
   // mouth (u 0 and u 1), leaving open sea across the middle of the loop.
+  // The reference's stone is blocky and columnar, pale beige-grey, each column
+  // its own flat facet with a stepped top — not noisy rock. Drawn as columns.
   function cliffs(u0,u1){
     const x0=u0*2048,x1=u1*2048;
-    bc.fillStyle='#b9ae97';
-    bc.beginPath();bc.moveTo(x0,256);
-    for(let x=x0;x<=x1;x+=40){bc.lineTo(x,26+((x*13)%53))}
-    bc.lineTo(x1,256);bc.closePath();bc.fill();
-    bc.strokeStyle='#8d8371';bc.lineWidth=5;
-    for(let x=x0+22;x<x1;x+=44){bc.beginPath();bc.moveTo(x,60+((x*7)%40));bc.lineTo(x-9,256);bc.stroke()}
-    bc.strokeStyle='#d8cfba';bc.lineWidth=3;
-    for(let x=x0+40;x<x1;x+=52){bc.beginPath();bc.moveTo(x,50+((x*11)%46));bc.lineTo(x+7,256);bc.stroke()}
+    for(let x=x0;x<x1;x+=34){
+      const top=22+((x*13)%48),shade=((x*7)%3);
+      bc.fillStyle=shade===0?'#cfc6ae':shade===1?'#bdb29a':'#a89e88';
+      bc.fillRect(x,top,32,256-top);
+      bc.fillStyle='#8d8371';bc.fillRect(x,top,32,6);
+      bc.fillStyle='#e4dcc6';bc.fillRect(x,top+6,4,256-top-6);
+    }
   }
   cliffs(0,.34);cliffs(.62,1);
   const bandTexture=new THREE.CanvasTexture(bandCanvas);bandTexture.colorSpace=THREE.SRGBColorSpace;
@@ -877,11 +882,15 @@ function buildChaoGarden(centerX,centerZ){
   // The meadow: vivid mottled grass with a worn dirt fringe at the cliffs.
   const grassCanvas=document.createElement('canvas');grassCanvas.width=512;grassCanvas.height=512;
   const gc=grassCanvas.getContext('2d');
-  gc.fillStyle='#3cbf47';gc.fillRect(0,0,512,512);
+  gc.fillStyle='#3ecf4a';gc.fillRect(0,0,512,512);
   for(let i=0;i<340;i++){const x=(i*97)%512,y=(i*173)%512;
-    gc.fillStyle=i%3?'#43cc4f':(i%2?'#33ad3e':'#4fd65a');gc.globalAlpha=.5;
+    gc.fillStyle=i%3?'#46d852':(i%2?'#36b542':'#54e060');gc.globalAlpha=.5;
     gc.beginPath();gc.ellipse(x,y,14+(i%9)*3,9+(i%5)*3,i,0,Math.PI*2);gc.fill()}
   gc.globalAlpha=1;
+  // The meadow darkens toward the cliff base, which is what grounds the wall.
+  const rim=gc.createRadialGradient(256,256,150,256,256,256);
+  rim.addColorStop(0,'rgba(20,80,28,0)');rim.addColorStop(1,'rgba(20,80,28,.55)');
+  gc.fillStyle=rim;gc.fillRect(0,0,512,512);
   const grassTexture=new THREE.CanvasTexture(grassCanvas);grassTexture.colorSpace=THREE.SRGBColorSpace;
   const meadow=new THREE.Mesh(new THREE.CircleGeometry(1,56),
     new THREE.MeshStandardMaterial({map:grassTexture,roughness:.85,metalness:.02,emissive:0x1c6b24,emissiveIntensity:.5}));
@@ -907,25 +916,9 @@ function buildChaoGarden(centerX,centerZ){
   fall.position.set(poolX+1.6,1.68,poolZ-1.35);fall.lookAt(centerX,1.4,centerZ);scene.add(fall);
   const foam=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0xeaf7fc,transparent:true,opacity:.85}));
   foam.rotation.x=-Math.PI/2;foam.scale.set(1.15,.6,1);foam.position.set(poolX+1.35,.06,poolZ-1.1);scene.add(foam);
-  // Rock stacks flanking the fall, the reference's stepped boulders.
-  const rock=new THREE.MeshStandardMaterial({color:0xb2a893,roughness:.92,metalness:.03});
-  for(const [dx,dz,w,h,d] of [[2.6,-2.2,1.7,3.1,1.5],[.9,-3,1.4,2.4,1.3],[3.4,-.6,1.4,2.1,1.4],[-.6,-3.4,1.1,1.5,1.1]]){
-    const boulder=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),rock);
-    boulder.position.set(poolX+dx,h/2,poolZ+dz);boulder.rotation.y=(dx*7+dz*3)%.6;scene.add(boulder);
-  }
-  // Palms: a bent trunk and a fan of fronds, six of them around the meadow.
-  const trunkMaterial=new THREE.MeshStandardMaterial({color:0x8a5a2e,roughness:.85});
-  const frondMaterial=new THREE.MeshStandardMaterial({color:0x2f9e3c,roughness:.75,side:THREE.DoubleSide,emissive:0x14501c,emissiveIntensity:.35});
-  const frondGeometry=new THREE.PlaneGeometry(1.15,.34);
-  for(const [px,pz,lean] of [[-4.6,2.6,.16],[-2.2,-4.2,-.13],[1.6,4.4,.1],[-6.8,-1.4,-.18],[3.8,2.2,-.09],[-.6,-1.2,.2]]){
-    const palm=new THREE.Group();palm.position.set(centerX+px,0,centerZ+pz);palm.rotation.z=lean;scene.add(palm);
-    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.06,.11,1.7,7),trunkMaterial);trunk.position.y=.85;palm.add(trunk);
-    for(let i=0;i<6;i++){
-      const frond=new THREE.Mesh(frondGeometry,frondMaterial);
-      frond.position.y=1.7;frond.rotation.y=i/6*Math.PI*2;frond.rotation.z=-.55;
-      frond.translateX(.5);palm.add(frond);
-    }
-  }
+  // The palms, boulders and cliff columns are real models now, generated in
+  // Blender on this machine and loaded lazily on approach — see
+  // installChaoGardenProps below.
   // Fruit on the grass, the garden's own colours.
   const fruitColours=[0xffd23e,0xff8c3a,0xff5fae,0xa06cff];
   const fruitGeometry=new THREE.SphereGeometry(.13,10,8);
@@ -943,7 +936,44 @@ function buildChaoGarden(centerX,centerZ){
     scene.add(sun);managedSceneLights.push(sun);
   }
 }
-buildChaoGarden(ANNEX_ROOM_CENTER_X,-25.2);
+buildChaoGarden(ANNEX_ROOM_CENTER_X,-22.8);
+/**
+ * The garden's modelled props: palms, boulders, and the columnar stone the
+ * waterfall pours over, generated in Blender (tools/make-chao-props.py) as one
+ * small GLB and cloned into place. Loaded on approach like the statues.
+ */
+function installChaoGardenProps(){
+  void (async()=>{try{
+    const loader=await getOptimizedGltfLoader();
+    loader.load('assets/models/chao-garden-props.glb?v=chao-props-1',gltf=>{
+      const source=gltf.scene;
+      const take=name=>{const found=source.getObjectByName(name);if(found)found.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});return found};
+      const palm=take('Palm'),rocks=[take('RockA'),take('RockB'),take('RockC')],column=take('CliffColumn');
+      const cx=CHAO_GARDEN.cx,cz=CHAO_GARDEN.cz;
+      if(palm)for(const [dx,dz,scale,turn] of [[-4.8,2.8,1.05,.3],[-2.4,-4.6,1.2,2.1],[1.8,4.8,1.1,4],[-7,-1.6,.95,1.2],[4,2.4,1.15,5.2],[-.8,-1.4,1.25,2.8],[2.6,-6.2,1,3.6]]){
+        const tree=palm.clone(true);
+        tree.position.set(cx+dx,0,cz+dz);tree.scale.setScalar(scale);tree.rotation.y=turn;
+        scene.add(tree);
+      }
+      if(column){
+        // Two flank the mouth where the cliffs part, two carry the waterfall.
+        for(const [dx,dz,scale,turn] of [[-9.9,-.1,1.05,.4],[-9.3,-4.4,1.15,2],[6.4,-5.6,1.35,1.1],[4.4,-7.4,1.2,2.6]]){
+          const stack=column.clone(true);
+          stack.position.set(cx+dx,0,cz+dz);stack.scale.setScalar(scale);stack.rotation.y=turn;
+          scene.add(stack);
+        }
+      }
+      for(let i=0;i<9;i++){
+        const rock=rocks[i%3];if(!rock)continue;
+        const angle=i*2.399,radius=7.4+(i%3)*1.1;
+        const boulder=rock.clone(true);
+        boulder.position.set(cx+Math.cos(angle)*radius,0,cz+Math.sin(angle)*radius);
+        boulder.scale.setScalar(.7+(i%4)*.28);boulder.rotation.y=i*1.3;
+        scene.add(boulder);
+      }
+    },undefined,error=>console.warn('The Chao Garden props could not load.',error));
+  }catch(error){console.warn('The Chao Garden prop loader could not initialize.',error)}})();
+}
 /**
  * The Silent Hill room: an empty city block in dense fog.
  *
@@ -958,7 +988,7 @@ buildChaoGarden(ANNEX_ROOM_CENTER_X,-25.2);
  * stand, with the monsters hidden along the way.
  */
 function buildSilentHillBlock(){
-  const CX=-32.4,MIN_Z=17,MAX_Z=40.2,CZ=(MIN_Z+MAX_Z)/2;
+  const CX=-32.4,MIN_Z=17,MAX_Z=49.8,CZ=(MIN_Z+MAX_Z)/2;
   // The street: cracked asphalt with a faded double centre line.
   const roadCanvas=document.createElement('canvas');roadCanvas.width=256;roadCanvas.height=512;
   const rc=roadCanvas.getContext('2d');
@@ -993,9 +1023,11 @@ function buildSilentHillBlock(){
   const brickTexture=new THREE.CanvasTexture(brickCanvas);brickTexture.colorSpace=THREE.SRGBColorSpace;
   const facadeMaterial=new THREE.MeshStandardMaterial({map:brickTexture,roughness:.9,metalness:.05,emissive:0x11130f,emissiveIntensity:.5});
   for(const [x,z,w,h,d] of [
-    [-42.4,21.5,1.6,9.5,8],[-42.4,30,1.6,11,8.5],[-42.4,37.5,1.6,8.5,6],
-    [-22.5,21,1.6,10.5,7.5],[-22.5,29.5,1.6,8.5,8],[-22.5,37,1.6,11.5,6.5],
-    [-27,39.7,9,9,1.2],[-37.5,39.7,9,10.5,1.2]
+    [-42.4,21.5,1.6,9.5,8],[-42.4,30,1.6,11,8.5],[-42.4,38,1.6,8.5,6],[-42.4,45.5,1.6,10,7],
+    [-22.5,21,1.6,10.5,7.5],[-22.5,29.5,1.6,8.5,8],
+    [-14.3,37.5,1.6,9.5,6],[-14.3,45.5,1.6,11,7],
+    [-27,49.3,9,10.5,1.2],[-37.5,49.3,9,9,1.2],[-18.5,49.3,7,8.5,1.2],
+    [-20,34.5,3,7.5,1.4]
   ]){
     const facade=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),facadeMaterial);
     facade.position.set(x,h/2,z);scene.add(facade);
@@ -1011,7 +1043,7 @@ function buildSilentHillBlock(){
   }
   // Dead streetlamps and poles: silhouettes for the fog to swallow.
   const ironwork=new THREE.MeshStandardMaterial({color:0x17191c,roughness:.7,metalness:.5});
-  for(const [x,z,lamp] of [[-41.2,20,true],[-41.2,29,true],[-23.7,25,true],[-23.7,34,true],[-41.2,37,false],[-23.7,18.5,false]]){
+  for(const [x,z,lamp] of [[-41.2,20,true],[-41.2,29,true],[-23.7,25,true],[-41.2,38,true],[-41.2,46,true],[-15.2,40,true],[-15.2,47,true],[-23.7,18.5,false],[-41.2,33.5,false],[-15.2,36,false]]){
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,lamp?3.6:4.6,7),ironwork);
     pole.position.set(x,(lamp?3.6:4.6)/2,z);scene.add(pole);
     if(lamp){
@@ -1030,19 +1062,26 @@ function buildSilentHillBlock(){
   puff.addColorStop(0,'rgba(168,175,178,.75)');puff.addColorStop(.6,'rgba(160,168,172,.35)');puff.addColorStop(1,'rgba(160,168,172,0)');
   fg.fillStyle=puff;fg.fillRect(0,0,128,128);
   const fogTexture=new THREE.CanvasTexture(fogCanvas);fogTexture.colorSpace=THREE.SRGBColorSpace;
-  const fogMaterial=new THREE.MeshBasicMaterial({map:fogTexture,transparent:true,opacity:.34,depthWrite:false,side:THREE.DoubleSide});
+  const fogMaterial=new THREE.MeshBasicMaterial({map:fogTexture,transparent:true,opacity:.44,depthWrite:false,side:THREE.DoubleSide});
   const fogGeometry=new THREE.PlaneGeometry(7,4.2);
-  for(let i=0;i<26;i++){
+  for(let i=0;i<40;i++){
     const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
-    sheet.position.set(CX+((i*73)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+1+((i*127)%210)/10);
+    sheet.position.set(CX+((i*73)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+1+((i*127)%310)/10);
     sheet.rotation.y=(i*2.399)%Math.PI;
     sheet.renderOrder=3;scene.add(sheet);
   }
+  // The back lot drowns deepest: its own sheets, wider than the street's.
+  for(let i=0;i<14;i++){
+    const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
+    sheet.position.set(-27+((i*67)%250)/10-6,(i%3)*1.1+1.2,36+((i*113)%130)/10);
+    sheet.rotation.y=(i*1.93)%Math.PI;
+    sheet.renderOrder=3;scene.add(sheet);
+  }
   const mistGeometry=new THREE.PlaneGeometry(9,6.5);
-  for(let i=0;i<10;i++){
+  for(let i=0;i<16;i++){
     const mist=new THREE.Mesh(mistGeometry,fogMaterial);
     mist.rotation.x=-Math.PI/2;mist.rotation.z=(i*1.7)%Math.PI;
-    mist.position.set(CX+((i*89)%160)/10-8,.5+(i%2)*.35,MIN_Z+2+((i*151)%190)/10);
+    mist.position.set(CX+((i*89)%220)/10-8,.5+(i%2)*.35,MIN_Z+2+((i*151)%290)/10);
     mist.renderOrder=3;scene.add(mist);
   }
   // The red arrows, painted rough on the asphalt: the trail from the doorway
@@ -1057,19 +1096,38 @@ function buildSilentHillBlock(){
   ac.globalCompositeOperation='source-over';ac.globalAlpha=1;
   const arrowTexture=new THREE.CanvasTexture(arrowCanvas);arrowTexture.colorSpace=THREE.SRGBColorSpace;
   const arrowMaterial=new THREE.MeshBasicMaterial({map:arrowTexture,transparent:true,opacity:.85,depthWrite:false});
-  const trail=[[-23.4,25.2],[-26.6,24.4],[-30.2,25.6],[-33.6,27.4],[-35.4,30.4],[-34.2,33.8],[-32.4,36.8]];
+  const trail=[[-23.4,25.2],[-26.6,24.4],[-30.2,25.6],[-33.6,27.4],[-35.4,30.4],[-34.2,33.8],[-32.4,36.8],[-30.4,40.4],[-27.2,43.6],[-23.2,45.6],[-19.6,46.9]];
   for(let i=0;i<trail.length;i++){
     const [ax,az]=trail[i];
-    const next=trail[i+1]??[-32.4,39];
+    const next=trail[i+1]??[-16.8,47.8];
     const arrow=new THREE.Mesh(new THREE.PlaneGeometry(1.15,.86),arrowMaterial);
     arrow.rotation.x=-Math.PI/2;
     arrow.rotation.z=-Math.atan2(next[1]-az,next[0]-ax);
     arrow.position.set(ax,.045,az);arrow.renderOrder=4;scene.add(arrow);
   }
   // What light there is: two sickly grey-green pools on the managed budget.
-  for(const [x,z] of [[-31,24],[-33.5,35]]){
+  for(const [x,z] of [[-31,24],[-33.5,35],[-24,45]]){
     const pall=new THREE.PointLight(0xaab8a4,2.6,13,2);
     pall.position.set(x,3.2,z);scene.add(pall);managedSceneLights.push(pall);
+  }
+  // A second car, nose-in at the back lot, and faded parking bays beside it —
+  // the lot is where the machines will stand, at the end of the arrow trail.
+  const paint2=new THREE.MeshStandardMaterial({color:0x3a3330,roughness:.5,metalness:.4});
+  const body2=new THREE.Mesh(new THREE.BoxGeometry(1.05,.5,2.3),paint2);body2.position.set(-20.6,.42,44.6);body2.rotation.y=-1.2;scene.add(body2);
+  const cabin2=new THREE.Mesh(new THREE.BoxGeometry(.95,.42,1.25),paint2);cabin2.position.set(-20.72,.85,44.55);cabin2.rotation.y=-1.2;scene.add(cabin2);
+  const bay=new THREE.MeshBasicMaterial({color:0x9aa0a4,transparent:true,opacity:.16,depthWrite:false});
+  for(let i=0;i<5;i++){
+    const line=new THREE.Mesh(new THREE.PlaneGeometry(.1,4.4),bay);
+    line.rotation.x=-Math.PI/2;line.rotation.z=1.2;
+    line.position.set(-25+i*2.4,.03,45.6);scene.add(line);
+  }
+  // Sagging wires between the poles, for the fog to hang from.
+  const wireMaterial=new THREE.MeshBasicMaterial({color:0x0c0e10});
+  for(const [x1,z1,x2,z2] of [[-41.2,20,-23.7,25],[-41.2,29,-41.2,38],[-15.2,40,-15.2,47]]){
+    const length=Math.hypot(x2-x1,z2-z1);
+    const wire=new THREE.Mesh(new THREE.BoxGeometry(.025,.025,length),wireMaterial);
+    wire.position.set((x1+x2)/2,3.32,(z1+z2)/2);
+    wire.rotation.y=Math.atan2(x2-x1,z2-z1);wire.rotation.x=.04;scene.add(wire);
   }
 }
 buildSilentHillBlock();
@@ -1122,16 +1180,25 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   // through the hole cut for them; and that room's end wall is gone, because it
   // continues into its annex.
   if(west)box(ROOM_SPAN,.12,50.4,0x090b18,roomX,5.08,-8.4,.08);
-  else box(ROOM_SPAN,.12,SIDE_COLUMN_DEPTH,0x090b18,roomX,5.08,SIDE_COLUMN_CENTER_Z,.08);
+  // The east column's plate stops at the garden too: its sky dome was being
+  // sliced at ceiling height by a lid nothing had removed.
+  else box(ROOM_SPAN,.12,45.6,0x090b18,roomX,5.08,10.8,.08);
   for(const wallZ of [SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z]){
     if(west&&wallZ===SIDE_COLUMN_MAX_Z)continue;
-    const wall=box(ROOM_SPAN,5,.3,0x11182c,roomX,2.5,wallZ,.05);wall.receiveShadow=true;
+    // The east column's first divider moved: the Chao Garden is square now,
+    // 21.6 on both sides, and the room south of it is shallower for it.
+    const wallAt=(!west&&wallZ===-ROOM_DEPTH)?-12:wallZ;
+    const wall=box(ROOM_SPAN,5,.3,0x11182c,roomX,2.5,wallAt,.05);wall.receiveShadow=true;
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
-    // Silent Hill lights itself: fog, lamps and a car, not troffers.
+    // Silent Hill and the Chao Garden light themselves — fog and lamps in one,
+    // suns and sky in the other — so neither takes the ring's troffers.
     if(west&&index===3)return;
-    for(let z=centerZ-6;z<=centerZ+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
-    lightRoom(roomX,centerZ,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
+    if(!west&&index===0)return;
+    // The room south of the garden starts at the moved divider.
+    const at=(!west&&index===1)?-6:centerZ;
+    for(let z=at-6;z<=at+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
+    lightRoom(roomX,at,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
   });
 }
 // The top row, and the full-width band of hall in front of it.
@@ -1158,20 +1225,19 @@ const TOURNAMENT_ROOM_WIDTH=SHELL_HALF_WIDTH*2,TOURNAMENT_ROOM_DEPTH=ROOM_DEPTH,
 const tournamentFloorMaterial=(()=>{const map=floorTextures.map.clone(),roughnessMap=floorTextures.roughnessMap.clone();map.needsUpdate=roughnessMap.needsUpdate=true;map.repeat.set(14,3.5);roughnessMap.repeat.set(14,3.5);return new THREE.MeshStandardMaterial({map,roughnessMap,color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12})})();
 const tournamentFloor=new THREE.Mesh(new THREE.PlaneGeometry(TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH),tournamentFloorMaterial);tournamentFloor.rotation.x=-Math.PI/2;tournamentFloor.position.set(0,.002,TOURNAMENT_ROOM_CENTER_Z);tournamentFloor.receiveShadow=true;scene.add(tournamentFloor);
 // The hall's ceiling starts east of the Silent Hill annex.
-const tournamentCeiling=box(64.8,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,10.8,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
+const tournamentCeiling=box(56.6,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,14.9,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
 box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,-SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);
 box(TOURNAMENT_ROOM_WIDTH,5,.3,0x11182c,0,2.5,TOURNAMENT_ROOM_BACK_Z,.06);
 // The hub's front wall, either side of the one doorway. It reaches the
 // partition walls rather than stopping short of them, which used to leave a two
 // metre hole at each end that only the old room's narrower side walls covered.
-// West of the Silent Hill room the front wall is gone — the room flows into
-// its annex there — so the west segment runs only from the room's edge to the
-// hall's doorway.
-box(20,5,.3,0x11182c,-11.6,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
+// West of the Silent Hill annex the front wall is gone — the block runs all
+// the way to the hall's back wall — so the west segment covers only the
+// stretch between the annex and the doorway.
+box(11.8,5,.3,0x11182c,-7.5,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
 box(SHELL_HALF_WIDTH-ROOM_DOOR_HALF_WIDTH,5,.3,0x11182c,(SHELL_HALF_WIDTH+ROOM_DOOR_HALF_WIDTH)/2,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
-// The annex's own shell: its south wall, and the wall between it and the hall.
-box(21.6,5,.3,0x11182c,-32.4,2.5,40.4,.06);
-box(.3,5,6.8,0x11182c,-21.6,2.5,37,.06);
+// The wall between the block's back lot and what remains of the hall.
+box(.3,5,16.8,0x11182c,-13.4,2.5,42,.06);
 for(let x=-40;x<=40;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,TOURNAMENT_ROOM_BACK_Z-.19,.75);
 lightRoom(0,TOURNAMENT_ROOM_CENTER_Z,TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH,0xffb066);
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
@@ -1633,7 +1699,7 @@ const GAMECUBE_HUES=[0x8b5cf6,0x36f9f6,0xff4da6,0x7dff67,0xffb42e];
 // the other headline multiplayer games; the rest hold their foyer slots, so a
 // missing cabinet reads as a gap in the row rather than a renumbering.
 const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>index===3
-  ?[4,-15,42,Math.PI/2,hue]
+  ?[4,-9,42,Math.PI/2,hue]
   :[index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
   const cabinetId=`gamecube-cabinet-0${index}`;
@@ -1833,7 +1899,7 @@ async function installFurthermoreModel(){try{const loader=await getOptimizedGltf
 async function installEnterpriseModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/enterprise.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('enterprise-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.76/Math.max(size.x,size.y,size.z));model.rotation.y=Math.PI/2;model.position.y=.02;slot.add(model);},undefined,error=>console.warn('Enterprise model could not load.',error));}catch(error){console.warn('Enterprise model loader could not initialize.',error)}}
 async function installKurackModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/kurack.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('kurack-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.72/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.rotation.y=Math.PI*1.5;model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y=-scaledBounds.min.y-.18;slot.add(model);},undefined,error=>console.warn('Kurack model could not load.',error));}catch(error){console.warn('Kurack model loader could not initialize.',error)}}
 async function installGangsterPepe(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-gangster-animated.optimized.glb?v=meshopt-1',gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.016/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;gangsterPepeMount.add(model);if(gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());animatedMixers.push(mixer);}},undefined,error=>console.warn('Animated gangster Pepe model could not load.',error));}catch(error){console.warn('Animated gangster Pepe loader could not initialize.',error)}}
-let prizeModelsStarted=false,megaManStatuesStarted=false,nextHeavyAssetCheck=0;
+let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenPropsStarted=false,nextHeavyAssetCheck=0;
 // Real controllers on the deck instead of a generic stick and four buttons.
 // Each model loads once per system and is cloned onto every cabinet of that
 // system; clones share geometry and materials, so the cost is one upload each.
@@ -1894,7 +1960,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenPropsStarted&&playerPosition.x>14&&playerPosition.z>-36&&playerPosition.z<-8){chaoGardenPropsStarted=true;installChaoGardenProps();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -2152,7 +2218,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=sh-1')
+  import('./emulators/disc-range-cache.js?v=big-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2172,7 +2238,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=sh-1')
+  import('./emulators/disc-range-cache.js?v=big-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2392,7 +2458,17 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
   for(const dividerZ of SIDE_ROOM_DIVIDER_Z){
     // The west column's end wall is gone: Silent Hill continues into its annex.
-    if(dividerZ===SIDE_COLUMN_MAX_Z&&playerPosition.x<0)continue;
+    if(dividerZ===SIDE_COLUMN_MAX_Z&&playerPosition.x<-13.4)continue;
+    // And the east column's first divider stands at the garden's new edge.
+    const wallZ=(dividerZ===-ROOM_DEPTH&&playerPosition.x>0)?-12:dividerZ;
+    if(wallZ!==dividerZ){
+      const northFace=wallZ-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
+      const southFace=wallZ+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
+      if(playerPosition.z>northFace&&playerPosition.z<southFace){
+        if(previousZ<wallZ)playerPosition.z=northFace;else playerPosition.z=southFace;
+      }
+      continue;
+    }
     const northFace=dividerZ-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
     const southFace=dividerZ+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
     if(playerPosition.z<=northFace||playerPosition.z>=southFace)continue;
@@ -2418,10 +2494,12 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:POKEMON_CENTER_Z,ax:15.35,az:11.75,laneHa
  * just inside the painted band, passable only where the cliffs part at the
  * doorway. Mirrored on both authoritative paths.
  */
-const CHAO_GARDEN={cx:ANNEX_ROOM_CENTER_X,cz:-25.2,ax:10.1,az:7.7,laneHalfWidth:1.5};
+// A circle now: the garden is square, so the cove is round, and the lane sits
+// at the doorway's own z rather than the circle's centre.
+const CHAO_GARDEN={cx:ANNEX_ROOM_CENTER_X,cz:-22.8,ax:10.2,az:10.2,laneHalfWidth:1.5,doorZ:-25.2};
 function resolveChaoGardenCollisions(previousX,previousZ){
-  if(playerPosition.x<21.6||playerPosition.z<-33.6||playerPosition.z>-16.8)return;
-  if(Math.abs(playerPosition.z-CHAO_GARDEN.cz)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5)return;
+  if(playerPosition.x<21.6||playerPosition.z<-33.6||playerPosition.z>-12)return;
+  if(Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5)return;
   const dx=(playerPosition.x-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,dz=(playerPosition.z-CHAO_GARDEN.cz)/CHAO_GARDEN.az;
   const now=dx*dx+dz*dz;
   const pdx=(previousX-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,pdz=(previousZ-CHAO_GARDEN.cz)/CHAO_GARDEN.az;

@@ -62,14 +62,14 @@ const NORTH_ROW_DIVIDER_X = [-21.6];
 const POKEBOWL = { cx: 27, cz: -54.6, ax: 15.35, az: 11.75, laneHalfWidth: 1.5 };
 // The Chao Garden's cliffs: the same rule at the garden's scale, passable only
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
-const CHAO_GARDEN = { cx: 32.4, cz: -25.2, ax: 10.1, az: 7.7, laneHalfWidth: 1.5 };
+const CHAO_GARDEN = { cx: 32.4, cz: -22.8, ax: 10.2, az: 10.2, laneHalfWidth: 1.5, doorZ: -25.2 };
 function insideChaoGarden(x: number, z: number): boolean {
   const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
   const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
   return dx * dx + dz * dz <= 1;
 }
 function inChaoGardenLane(x: number, z: number): boolean {
-  return Math.abs(z - CHAO_GARDEN.cz) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.cx - CHAO_GARDEN.ax * 0.5;
+  return Math.abs(z - CHAO_GARDEN.doorZ) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.cx - CHAO_GARDEN.ax * 0.5;
 }
 function insidePokemonBowl(x: number, z: number): boolean {
   const dx = (x - POKEBOWL.cx) / POKEBOWL.ax;
@@ -612,8 +612,9 @@ function decodeBase64Url(value: string): Uint8Array {
 function isInsideWorld(x: number, z: number): boolean {
   if (x >= MIN_WORLD_X && x <= MAX_WORLD_X && z >= MIN_WORLD_Z && z <= MAX_WORLD_Z) return true;
   // The Silent Hill room runs deeper than its column, into the west end of the
-  // tournament hall. Matches SILENT_HILL_ANNEX in arcade.js.
-  return x >= -42.7 && x <= -22.1 && z >= MAX_WORLD_Z && z <= 39.9;
+  // tournament hall down to its back wall. Matches SILENT_HILL_ANNEX in
+  // arcade.js.
+  return x >= -42.7 && x <= -13.7 && z >= MAX_WORLD_Z && z <= 49.9;
 }
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
@@ -636,10 +637,13 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   if (inSideColumn) {
     for (const dividerZ of SIDE_ROOM_DIVIDER_Z) {
       // The west column's end wall is gone: Silent Hill continues into its
-      // annex through where it stood.
-      if (dividerZ === 33.6 && Math.max(fromX, toX) < 0) continue;
-      if (Math.abs(toZ - dividerZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
-      if ((fromZ - dividerZ) * (toZ - dividerZ) < 0) return true;
+      // annex through where it stood. The Silent Hill annex is wider than the
+      // room now, so the opening spans everything west of its east wall.
+      if (dividerZ === 33.6 && Math.max(fromX, toX) < -13.4) continue;
+      // The east column's first divider stands at the Chao Garden's new edge.
+      const wallZ = (dividerZ === -16.8 && Math.min(fromX, toX) > 0) ? -12 : dividerZ;
+      if (Math.abs(toZ - wallZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
+      if ((fromZ - wallZ) * (toZ - wallZ) < 0) return true;
     }
   }
   // The Pokemon bowl's stands. A step that crosses the ellipse is refused

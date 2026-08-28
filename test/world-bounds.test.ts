@@ -66,11 +66,11 @@ void test('the floor is the main rectangle plus the Silent Hill annex, in all th
   assert.equal(clientBounds.minX, -clientBounds.maxX, 'the main rectangle stays symmetric');
 
   const clientAnnex = clientRegion('SILENT_HILL_ANNEX');
-  assert.deepEqual(clientAnnex, { minX: -42.7, maxX: -22.1, minZ: 33.1, maxZ: 39.9 });
+  assert.deepEqual(clientAnnex, { minX: -42.7, maxX: -13.7, minZ: 33.1, maxZ: 49.9 });
   // Both authorities carry the same numbers, keyed off the main rectangle's
   // maxZ so the two regions cannot drift apart at the seam.
   for (const [name, source] of [['server', server], ['worker', worker]] as const) {
-    assert.ok(source.includes('return x >= -42.7 && x <= -22.1 && z >= MAX_WORLD_Z && z <= 39.9;'),
+    assert.ok(source.includes('return x >= -42.7 && x <= -13.7 && z >= MAX_WORLD_Z && z <= 49.9;'),
       `${name} must enforce the Silent Hill annex`);
   }
   assert.equal(clientAnnex.minZ, clientBounds.maxZ, 'the annex must meet the main rectangle');

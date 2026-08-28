@@ -568,12 +568,12 @@
     "gameId": "super-smash-bros-melee",
     "enabled": true,
     "interactionPosition": {
-      "x": -13,
+      "x": -7,
       "y": 1.65,
       "z": 42
     },
     "playerPosition": {
-      "x": -12.65,
+      "x": -6.65,
       "y": 1.65,
       "z": 42
     },
