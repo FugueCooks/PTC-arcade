@@ -646,6 +646,15 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     const crossingX = fromX + (toX - fromX) * crossing;
     if (crossing >= 0 && crossing <= 1 && crossingX > POKEMON_WEST_X && !throughStadiumDoor(crossingX)) return true;
   }
+  // The vomitory's two walls, from the mouth down to the field's edge.
+  for (const wallX of [POKEMON_DOOR_X - 1.7, POKEMON_DOOR_X + 1.7]) {
+    if (toZ > -47.4 && toZ < POKEMON_SOUTH_Z + 0.5 && Math.abs(toX - wallX) < 0.3) return true;
+    if ((fromX - wallX) * (toX - wallX) < 0) {
+      const crossing = (wallX - fromX) / (toX - fromX);
+      const crossingZ = fromZ + (toZ - fromZ) * crossing;
+      if (crossing >= 0 && crossing <= 1 && crossingZ > -47.4 && crossingZ < POKEMON_SOUTH_Z + 0.5) return true;
+    }
+  }
   // The stadium's west wall: full depth, no doorway.
   if (Math.min(fromZ, toZ) < POKEMON_SOUTH_Z) {
     if (toZ < POKEMON_SOUTH_Z && Math.abs(toX - POKEMON_WEST_X) < PARTITION_COLLISION_HALF_WIDTH) return true;

@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=tunnel-2';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=tunnel-3';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -564,7 +564,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-tunnel-2');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-tunnel-3');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -1784,7 +1784,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=tunnel-2')
+  import('./emulators/disc-range-cache.js?v=tunnel-3')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1804,7 +1804,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=tunnel-2')
+  import('./emulators/disc-range-cache.js?v=tunnel-3')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2069,6 +2069,17 @@ function resolvePokemonBowlCollisions(previousX,previousZ){
  */
 function resolveTopRowCollisions(previousX,previousZ){
   const wallGap=PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
+  // The vomitory's two walls. The tunnel spans the mouth at z=-42 down to the
+  // field's edge, and its walls are the way in being a passage rather than a
+  // suggestion: a player brushing one from either side is held off it.
+  if(playerPosition.z>-47.4&&playerPosition.z<POKEMON_SOUTH_Z+.5){
+    for(const wallX of [POKEMON_DOOR_X-1.7,POKEMON_DOOR_X+1.7]){
+      const westFace=wallX-(.12+PLAYER_COLLISION_RADIUS),eastFace=wallX+(.12+PLAYER_COLLISION_RADIUS);
+      if(playerPosition.x<=westFace||playerPosition.x>=eastFace)continue;
+      if(previousX<wallX)playerPosition.x=westFace;else playerPosition.x=eastFace;
+      return;
+    }
+  }
   // The front wall at z=-50.4 ends where the stadium begins.
   if(playerPosition.x<POKEMON_WEST_X){
     const northFace=TOP_BAND_MIN_Z-wallGap,southFace=TOP_BAND_MIN_Z+wallGap;
