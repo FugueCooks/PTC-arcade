@@ -26,6 +26,19 @@ void test('touch controls use Play upstream key codes and support simultaneous h
   assert.match(frame, /for \(const code of active\.codes\) dispatchPs2Key\(code, false\)/);
 });
 
-void test('the PS2 frame cache key changes with the mobile control release', () => {
-  assert.match(adapter, /index\.html\?v=ps2-touch-1/);
+void test('the PS2 frame cache key changes with the gamepad control release', () => {
+  assert.match(adapter, /index\.html\?v=ps2-gamepad-2/);
+});
+
+void test('Play PS2 maps a standard physical gamepad and exposes its controls panel', () => {
+  assert.match(frame, /navigator\.getGamepads/);
+  assert.match(frame, /GAMEPAD_DEAD_ZONE = \.22/);
+  assert.match(frame, /id="ps2-controller-toggle"/);
+  assert.match(frame, /id="ps2-controller-status"/);
+  for (const button of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15]) {
+    assert.match(frame, new RegExp(`button: ${button}(?:\\s|\\})`), `missing standard gamepad button ${button}`);
+  }
+  for (const axis of [0, 1, 2, 3]) assert.match(frame, new RegExp(`axis: ${axis}`));
+  assert.match(frame, /setGamepadKey\(binding\.code/);
+  assert.match(frame, /requestAnimationFrame\(pollPs2Gamepad\)/);
 });

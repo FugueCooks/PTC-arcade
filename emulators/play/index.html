@@ -19,6 +19,38 @@
       body.remote-disc #root { position:absolute; right:.65rem; bottom:.55rem; width:auto; padding:.28rem .5rem; border:1px solid #36f9f655; border-radius:4px; background:#050510c7; pointer-events:none; }
       body.remote-disc #root input, body.remote-disc #root .version { display:none; }
       body.remote-disc #root .stats { float:none; color:#8ffdfa; letter-spacing:.05em; }
+      #ps2-controller-menu {
+        position:fixed;
+        z-index:30;
+        top:2.7rem;
+        right:.65rem;
+        display:grid;
+        justify-items:end;
+        gap:.4rem;
+        font-size:.62rem;
+      }
+      #ps2-controller-toggle {
+        min-width:7.25rem;
+        padding:.5rem .7rem;
+        color:#36f9f6;
+        background:#080719e8;
+        border:1px solid #36f9f6;
+        border-radius:.25rem;
+        font:700 .62rem "Courier New",monospace;
+        letter-spacing:.05em;
+      }
+      #ps2-controller-help {
+        width:min(19rem,calc(100vw - 1.3rem));
+        padding:.65rem .75rem;
+        color:#d9d2e6;
+        background:#050510ed;
+        border:1px solid #543386;
+        box-shadow:0 0 1.3rem #36f9f633;
+        line-height:1.55;
+      }
+      #ps2-controller-help[hidden] { display:none; }
+      #ps2-controller-status { color:#fff4a8; }
+      #ps2-controller-help strong { color:#36f9f6; }
       #ps2-touch-controls { display:none; }
       body.touch-controls #ps2-touch-controls {
         position:fixed;
@@ -136,6 +168,17 @@
       <div id="ps2-status">PLAY! WEBASSEMBLY // INITIALIZING EXPERIMENTAL PS2 CORE…</div>
       <canvas id="outputCanvas" width="640" height="480" tabindex="0"></canvas>
       <div id="root"></div>
+      <aside id="ps2-controller-menu">
+        <button id="ps2-controller-toggle" type="button" aria-expanded="false">CONTROLS</button>
+        <div id="ps2-controller-help" hidden>
+          <div id="ps2-controller-status">CONTROLLER: CONNECT OR PRESS A BUTTON</div>
+          <div><strong>LEFT STICK / D-PAD</strong> MOVE</div>
+          <div><strong>RIGHT STICK</strong> CAMERA</div>
+          <div><strong>A / B / X / Y</strong> × / ○ / □ / △</div>
+          <div><strong>LB / LT / RB / RT</strong> L1 / L2 / R1 / R2</div>
+          <div><strong>MENU / VIEW</strong> START / SELECT</div>
+        </div>
+      </aside>
       <section id="ps2-touch-controls" aria-label="PlayStation 2 touch controller">
         <div class="ps2-touch-shoulders">
           <button class="ps2-touch-button" data-ps2-keys="Key1" aria-label="L1">L1</button>
@@ -203,6 +246,30 @@
         KeyZ: { key: 'z', keyCode: 90 }
       });
       const activeTouchKeys = new Map();
+      const activeGamepadKeys = new Set();
+      const GAMEPAD_DEAD_ZONE = .22;
+      const GAMEPAD_KEY_BINDINGS = Object.freeze([
+        { code: 'KeyZ', button: 0 },
+        { code: 'KeyX', button: 1 },
+        { code: 'KeyA', button: 2 },
+        { code: 'KeyS', button: 3 },
+        { code: 'Key1', button: 4 },
+        { code: 'Key8', button: 5 },
+        { code: 'Key2', button: 6 },
+        { code: 'Key9', button: 7 },
+        { code: 'Backspace', button: 8 },
+        { code: 'Enter', button: 9 },
+        { code: 'ArrowUp', button: 12 },
+        { code: 'ArrowDown', button: 13 },
+        { code: 'ArrowLeft', button: 14 },
+        { code: 'ArrowRight', button: 15 }
+      ]);
+      const GAMEPAD_AXIS_BINDINGS = Object.freeze([
+        { negative: 'KeyF', positive: 'KeyH', axis: 0 },
+        { negative: 'KeyT', positive: 'KeyG', axis: 1 },
+        { negative: 'KeyJ', positive: 'KeyL', axis: 2 },
+        { negative: 'KeyI', positive: 'KeyK', axis: 3 }
+      ]);
 
       function dispatchPs2Key(code, pressed) {
         const definition = PS2_KEYS[code];
@@ -220,6 +287,57 @@
         Object.defineProperty(event, 'which', { get: () => definition.keyCode });
         canvas.dispatchEvent(event);
       }
+
+      function setGamepadKey(code, pressed) {
+        const active = activeGamepadKeys.has(code);
+        if (pressed === active) return;
+        if (pressed) activeGamepadKeys.add(code);
+        else activeGamepadKeys.delete(code);
+        dispatchPs2Key(code, pressed);
+      }
+
+      function releaseGamepadKeys() {
+        for (const code of [...activeGamepadKeys]) setGamepadKey(code, false);
+      }
+
+      function pollPs2Gamepad() {
+        const gamepad = [...(navigator.getGamepads?.() ?? [])].find(candidate => candidate?.connected);
+        const controllerStatus = document.querySelector('#ps2-controller-status');
+        if (!gamepad) {
+          releaseGamepadKeys();
+          controllerStatus.textContent = 'CONTROLLER: CONNECT OR PRESS A BUTTON';
+          requestAnimationFrame(pollPs2Gamepad);
+          return;
+        }
+        controllerStatus.textContent = `CONTROLLER: ${gamepad.id || 'STANDARD GAMEPAD'} READY`;
+        for (const binding of GAMEPAD_KEY_BINDINGS) {
+          const button = gamepad.buttons?.[binding.button];
+          setGamepadKey(binding.code, Boolean(button && (button.pressed || button.value > .55)));
+        }
+        for (const binding of GAMEPAD_AXIS_BINDINGS) {
+          const value = gamepad.axes?.[binding.axis] ?? 0;
+          setGamepadKey(binding.negative, value < -GAMEPAD_DEAD_ZONE);
+          setGamepadKey(binding.positive, value > GAMEPAD_DEAD_ZONE);
+        }
+        if (activeGamepadKeys.size) document.querySelector('#outputCanvas').focus({ preventScroll: true });
+        requestAnimationFrame(pollPs2Gamepad);
+      }
+
+      const controllerToggle = document.querySelector('#ps2-controller-toggle');
+      const controllerHelp = document.querySelector('#ps2-controller-help');
+      controllerToggle.addEventListener('click', () => {
+        const open = controllerHelp.hidden;
+        controllerHelp.hidden = !open;
+        controllerToggle.setAttribute('aria-expanded', String(open));
+      });
+      addEventListener('gamepadconnected', event => {
+        document.querySelector('#ps2-controller-status').textContent = `CONTROLLER: ${event.gamepad.id || 'STANDARD GAMEPAD'} READY`;
+        controllerHelp.hidden = false;
+        controllerToggle.setAttribute('aria-expanded', 'true');
+        document.querySelector('#outputCanvas').focus({ preventScroll: true });
+      });
+      addEventListener('gamepaddisconnected', releaseGamepadKeys);
+      requestAnimationFrame(pollPs2Gamepad);
 
       function releaseTouchPointer(pointerId) {
         const active = activeTouchKeys.get(pointerId);
@@ -255,6 +373,7 @@
         }
         addEventListener('blur', () => {
           for (const pointerId of [...activeTouchKeys.keys()]) releaseTouchPointer(pointerId);
+          releaseGamepadKeys();
         });
         document.addEventListener('visibilitychange', () => {
           if (document.hidden) for (const pointerId of [...activeTouchKeys.keys()]) releaseTouchPointer(pointerId);

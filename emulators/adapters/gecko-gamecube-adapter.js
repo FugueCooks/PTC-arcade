@@ -1,5 +1,5 @@
 import { FRAME_SIGNALS, createCapabilities, estimateLoadTimeoutMs, preflightAssets } from '../emulator-adapter.js';
-import { fileNameFromUrl } from './play-ps2-adapter.js?v=ps2-touch-1';
+import { fileNameFromUrl } from './play-ps2-adapter.js?v=ps2-gamepad-2';
 
 export const GECKO_FRAME_SRC = 'emulators/gecko/index.html?v=gecko-hosted-clean-1';
 

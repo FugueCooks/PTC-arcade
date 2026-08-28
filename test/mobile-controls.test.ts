@@ -23,3 +23,17 @@ void test('touch devices receive independent movement, look, use, and view contr
   assert.match(arcade, /mobileInputAvailable\(\)\?'TAP USE':'PRESS E'/);
   assert.match(arcade, /if\(!mobileInputAvailable\(\)\)renderer\.domElement\.requestPointerLock\(\)/);
 });
+
+void test('standard gamepads can move, look, interact, and switch arcade camera mode', async () => {
+  const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
+  assert.match(arcade, /navigator\.getGamepads/);
+  assert.match(arcade, /GAMEPAD_DEAD_ZONE=\.18/);
+  assert.match(arcade, /gamepadMove\.x=dpadX\|\|gamepadAxis\(pad\.axes\?\.\[0\]\)/);
+  assert.match(arcade, /gamepadMove\.y=dpadY\|\|gamepadAxis\(pad\.axes\?\.\[1\]\)/);
+  assert.match(arcade, /yaw-=lookX\*delta\*2\.25/);
+  assert.match(arcade, /consumeGamepadPress\(pad,0/);
+  assert.match(arcade, /consumeGamepadPress\(pad,3,toggleCameraMode\)/);
+  assert.match(arcade, /consumeGamepadPress\(pad,1/);
+  assert.match(arcade, /mobileMove\.x\+gamepadMove\.x/);
+  assert.match(arcade, /mobileMove\.y\+gamepadMove\.y/);
+});

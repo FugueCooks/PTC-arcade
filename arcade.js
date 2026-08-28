@@ -40,6 +40,10 @@ function clampToWorld(previousX,previousZ){
 }
 const clock = new THREE.Clock(), keys = {}, cabinets = [], cabinetsById = new Map(), raycaster = new THREE.Raycaster(), animatedMixers = [];
 const mobileMove={x:0,y:0};
+const gamepadMove={x:0,y:0};
+const gamepadButtonState=[];
+let activeGamepadIndex=null;
+const GAMEPAD_DEAD_ZONE=.18;
 const mobileViewportQuery=matchMedia('(max-width: 720px)'),coarsePointerQuery=matchMedia('(hover: none) and (pointer: coarse)');
 const mobileInputAvailable=()=>mobileViewportQuery.matches||coarsePointerQuery.matches||navigator.maxTouchPoints>0;
 const syncMobileInputMode=()=>document.body.classList.toggle('mobile-input',mobileInputAvailable());
@@ -893,13 +897,62 @@ for(const [z,rotation] of [[.436,0],[-.436,Math.PI]]){const face=new THREE.Mesh(
 point(0x36f9f6,-2.6,2.3,0,2);point(0xff3cac,2.6,2.3,0,2);
 const start=document.querySelector('#start-screen'), prompt=document.querySelector('#prompt'), modal=document.querySelector('#machine-modal'), hudStatus=document.querySelector('.status');
 const mobileMoveZone=document.querySelector('#mobile-move-zone'),mobileMoveThumb=document.querySelector('#mobile-move-thumb'),mobileLookZone=document.querySelector('#mobile-look-zone');
-function updateViewStatus(){if(hudStatus)hudStatus.textContent=mobileInputAvailable()?`LEFT STICK · MOVE   /   DRAG · LOOK   /   VIEW · ${cameraMode==='first-person'?'1ST':'3RD'} PERSON`:`WASD · MOVE   /   MOUSE · LOOK   /   V · ${cameraMode==='first-person'?'1ST':'3RD'} PERSON`}
+function updateViewStatus(){if(!hudStatus)return;hudStatus.textContent=document.body.classList.contains('gamepad-input')?`LEFT STICK · MOVE   /   RIGHT STICK · LOOK   /   A · USE   /   Y · ${cameraMode==='first-person'?'1ST':'3RD'} PERSON`:mobileInputAvailable()?`LEFT STICK · MOVE   /   DRAG · LOOK   /   VIEW · ${cameraMode==='first-person'?'1ST':'3RD'} PERSON`:`WASD · MOVE   /   MOUSE · LOOK   /   V · ${cameraMode==='first-person'?'1ST':'3RD'} PERSON`}
 function toggleCameraMode(){
   if(activeCabinet||start.style.display!=='none')return;
   cameraMode=cameraMode==='first-person'?'third-person':'first-person';
   updateViewStatus();
   window.dispatchEvent(new CustomEvent('arcade:camera-mode-changed',{detail:{mode:cameraMode}}));
 }
+function gamepadAxis(value){
+  const magnitude=Math.abs(value||0);
+  if(magnitude<=GAMEPAD_DEAD_ZONE)return 0;
+  return Math.sign(value)*(magnitude-GAMEPAD_DEAD_ZONE)/(1-GAMEPAD_DEAD_ZONE);
+}
+function currentArcadeGamepad(){
+  const pads=navigator.getGamepads?.()||[];
+  if(activeGamepadIndex!==null&&pads[activeGamepadIndex]?.connected)return pads[activeGamepadIndex];
+  const pad=[...pads].find(candidate=>candidate?.connected);
+  activeGamepadIndex=pad?.index??null;
+  return pad??null;
+}
+function gamepadButtonPressed(pad,index){
+  const button=pad?.buttons?.[index];
+  return Boolean(button&&(button.pressed||button.value>.55));
+}
+function consumeGamepadPress(pad,index,callback){
+  const pressed=gamepadButtonPressed(pad,index),wasPressed=gamepadButtonState[index]===true;
+  gamepadButtonState[index]=pressed;
+  if(pressed&&!wasPressed)callback();
+}
+function interactWithNearbyCabinet(){
+  if(!near)return;
+  if(near.disabledReason==='desktop-only')showCabinetMessage('DESKTOP ONLY — ABOUT 1 GB PER GAME');
+  else window.dispatchEvent(new CustomEvent('arcade:cabinet-interact',{detail:{cabinetId:near.id}}));
+}
+function pollArcadeGamepad(delta){
+  const pad=currentArcadeGamepad();
+  if(!pad){gamepadMove.x=0;gamepadMove.y=0;gamepadButtonState.fill(false);return false}
+  document.body.classList.add('gamepad-input');
+  if(start.style.display!=='none'){
+    consumeGamepadPress(pad,0,beginArcade);
+    consumeGamepadPress(pad,9,beginArcade);
+    return false;
+  }
+  const dpadX=(gamepadButtonPressed(pad,15)?1:0)-(gamepadButtonPressed(pad,14)?1:0);
+  const dpadY=(gamepadButtonPressed(pad,13)?1:0)-(gamepadButtonPressed(pad,12)?1:0);
+  gamepadMove.x=dpadX||gamepadAxis(pad.axes?.[0]);
+  gamepadMove.y=dpadY||gamepadAxis(pad.axes?.[1]);
+  const lookX=gamepadAxis(pad.axes?.[2]),lookY=gamepadAxis(pad.axes?.[3]);
+  yaw-=lookX*delta*2.25;
+  pitch=Math.max(-.42,Math.min(.58,pitch-lookY*delta*1.75));
+  consumeGamepadPress(pad,0,()=>{if(!activeCabinet)interactWithNearbyCabinet()});
+  consumeGamepadPress(pad,3,toggleCameraMode);
+  consumeGamepadPress(pad,1,()=>{if(activeCabinet)closeMachine();else if(socialFollowProvider)socialFollowProvider=null});
+  return true;
+}
+addEventListener('gamepadconnected',event=>{activeGamepadIndex=event.gamepad.index;gamepadButtonState.fill(false);document.body.classList.add('gamepad-input');updateViewStatus()});
+addEventListener('gamepaddisconnected',event=>{if(activeGamepadIndex===event.gamepad.index){activeGamepadIndex=null;gamepadMove.x=0;gamepadMove.y=0;gamepadButtonState.fill(false)}updateViewStatus()});
 function beginArcade(){
   start.style.display='none';
   document.body.classList.add('arcade-started');
@@ -921,7 +974,7 @@ function resetMobileMove(){mobileMove.x=0;mobileMove.y=0;if(mobileMoveThumb)mobi
 window.addEventListener('blur', ()=>{ Object.keys(keys).forEach(key=>keys[key]=false);resetMobileMove(); });
 document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement;document.querySelector('#crosshair').style.opacity=locked||mobileInputAvailable()&&document.body.classList.contains('arcade-started')?'1':'0'});
 document.addEventListener('mousemove',e=>{if(!locked)return;yaw-=e.movementX*.0025;pitch=Math.max(-.42,Math.min(.58,pitch-e.movementY*.0025))});
-addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyV'&&!e.repeat)toggleCameraMode();if(e.code==='KeyE'&&near&&(locked||mobileInputAvailable())&&!e.repeat){if(near.disabledReason==='desktop-only'){showCabinetMessage('DESKTOP ONLY — ABOUT 1 GB PER GAME')}else{window.dispatchEvent(new CustomEvent('arcade:cabinet-interact',{detail:{cabinetId:near.id}}))}};if(e.code==='Escape'&&activeCabinet)closeMachine();else if(e.code==='Escape'&&socialFollowProvider)socialFollowProvider=null});addEventListener('keyup',e=>keys[e.code]=false);
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyV'&&!e.repeat)toggleCameraMode();if(e.code==='KeyE'&&near&&(locked||mobileInputAvailable())&&!e.repeat)interactWithNearbyCabinet();if(e.code==='Escape'&&activeCabinet)closeMachine();else if(e.code==='Escape'&&socialFollowProvider)socialFollowProvider=null});addEventListener('keyup',e=>keys[e.code]=false);
 if(mobileMoveZone&&mobileMoveThumb&&mobileLookZone){
   let movePointer=null,lookPointer=null,lastLookX=0,lastLookY=0;
   const updateMove=event=>{const rect=mobileMoveThumb.parentElement.getBoundingClientRect(),centerX=rect.left+rect.width/2,centerY=rect.top+rect.height/2,radius=rect.width*.34,dx=event.clientX-centerX,dy=event.clientY-centerY,length=Math.hypot(dx,dy)||1,scale=Math.min(1,radius/length),x=dx*scale,y=dy*scale;mobileMove.x=x/radius;mobileMove.y=y/radius;mobileMoveThumb.style.transform=`translate(calc(-50% + ${x}px),calc(-50% + ${y}px))`};
@@ -1209,6 +1262,6 @@ function updatePerformanceStats(now){performanceFrames++;const elapsed=now-perfo
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){movementVector.normalize().multiplyScalar(d*5).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveRearGalleryCollision(previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,devicePixelRatio,pixelRatioCap);renderer.setPixelRatio(currentPixelRatio)});
