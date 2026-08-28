@@ -121,7 +121,7 @@ void test('the sealed rooms are closed in the scene and in what it enforces', ()
   // the top row is reached through its own front wall rather than being held
   // out by the world bound, so that wall has to be enforced now.
   assert.equal((client.match(/sealDoorway\('/g) ?? []).length, 1, 'the tournament hall is the only sealed room');
-  assert.ok(/const OPEN_DOOR_Z=\[-25\.2,-8,8,25\.2\]/.test(client),
+  assert.ok(/const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8,25\.2\]/.test(client),
     'the doorways that are open must be stated once');
   assert.ok(client.includes('resolveTopRowCollisions'), 'the top row needs real walls now that it is open');
   assert.ok(clientBounds.minZ < -50.4, 'the world must reach into the top row');

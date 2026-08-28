@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=big-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=east-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -268,7 +268,14 @@ const SIDE_ROOM_Z=[-25.2,-8.4,8.4,25.2];
  * room still shut is the Multiplayer / Tournament hall, which is behind the
  * hall's own front wall rather than either of these.
  */
-const OPEN_DOOR_Z=[-25.2,-8,8,25.2];
+// The two partition walls no longer mirror each other. The garden's growth
+// pushed the whole east column south: Metroid and the room after it keep full
+// depth and the unbuilt room at the bottom absorbs the squeeze, so every door
+// on that side moved to its room's new centre.
+const OPEN_DOOR_Z_WEST=[-25.2,-8,8,25.2];
+const OPEN_DOOR_Z_EAST=[-25.2,-3.6,13.2,27.6];
+const EAST_ROOM_Z=[-22.8,-3.6,13.2,27.6];
+const EAST_WALL_Z={'-16.8':-12,'0':4.8,'16.8':21.6};
 const SIDE_COLUMN_MIN_Z=-33.6,SIDE_COLUMN_MAX_Z=33.6;
 const TOP_BAND_MIN_Z=-50.4,NORTH_ROW_MIN_Z=-67.2;
 // Two rooms remain in the top row's west stretch; the east half of the row,
@@ -304,9 +311,10 @@ box(14.6,5,.3,0x11182c,35.9,2.5,POKEMON_SOUTH_Z,.06);
 const gangsterPepeMount=new THREE.Group();
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);
 const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34;
-const PARTITION_WALL_SEGMENTS=[[-30.2,6.8],[-16.6,14],[0,12.8],[16.6,14],[30.2,6.8]];
-function buildPartitionWall(wallX,accent){
-  for(const [centerZ,depth] of PARTITION_WALL_SEGMENTS){
+const PARTITION_WALL_SEGMENTS_WEST=[[-30.2,6.8],[-16.6,14],[0,12.8],[16.6,14],[30.2,6.8]];
+const PARTITION_WALL_SEGMENTS_EAST=[[-30.2,6.8],[-14.4,18.4],[4.8,13.6],[20.4,11.2],[31.4,4.4]];
+function buildPartitionWall(wallX,accent,segments){
+  for(const [centerZ,depth] of segments){
     const wall=box(PARTITION_WALL_HALF_THICKNESS*2,5,depth,0x111425,wallX,2.5,centerZ,.08);wall.receiveShadow=true;
     box(.42,.08,depth,accent,wallX,4.86,centerZ,.9);box(.42,.1,depth,0x251447,wallX,.08,centerZ,.45);
   }
@@ -314,8 +322,8 @@ function buildPartitionWall(wallX,accent){
 // The console logos that hung on the two divider walls are gone: the rooms are
 // being re-themed by title rather than by machine, so a PlayStation mark on the
 // wall of a room that no longer holds PlayStation games named the wrong thing.
-buildPartitionWall(PLAYSTATION_WALL_X,0xd18a52);
-buildPartitionWall(N64_WALL_X,0x36f9f6);
+buildPartitionWall(PLAYSTATION_WALL_X,0xd18a52,PARTITION_WALL_SEGMENTS_WEST);
+buildPartitionWall(N64_WALL_X,0x36f9f6,PARTITION_WALL_SEGMENTS_EAST);
 // The old front-left expansion is now the MegaMan Room. Xbox remains behind
 // its original barrier while PS2 keeps its dedicated rear gallery.
 // Hazard signage, but lit rather than painted. The yellow and black tape read
@@ -522,8 +530,11 @@ themeRoom({
 });
 // Metroid, across the hall in the east column. Each wall is a band from one of
 // the three images supplied for it, cut to that wall's own aspect.
+// Metroid moved south with the garden's growth and keeps its full depth; its
+// murals re-hang on the room's actual walls, which is what went missing when
+// the divider moved out from under them.
 themeRoom({
-  centerX:ANNEX_ROOM_CENTER_X,centerZ:-8.4,
+  centerX:ANNEX_ROOM_CENTER_X,centerZ:-3.6,
   far:'metroid-room-mural.webp?v=metroid-1',
   near:'metroid-room-mural-3.webp?v=metroid-1',
   side:'metroid-room-mural-2.webp?v=metroid-1'
@@ -583,7 +594,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-big-1');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-east-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -774,13 +785,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=big-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=east-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=big-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=east-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=big-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=east-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -1185,9 +1196,9 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   else box(ROOM_SPAN,.12,45.6,0x090b18,roomX,5.08,10.8,.08);
   for(const wallZ of [SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z]){
     if(west&&wallZ===SIDE_COLUMN_MAX_Z)continue;
-    // The east column's first divider moved: the Chao Garden is square now,
-    // 21.6 on both sides, and the room south of it is shallower for it.
-    const wallAt=(!west&&wallZ===-ROOM_DEPTH)?-12:wallZ;
+    // The east column's dividers all moved with the garden's growth: full
+    // rooms follow it, and the bottom room absorbs the squeeze.
+    const wallAt=(!west&&EAST_WALL_Z[String(wallZ)]!==undefined)?EAST_WALL_Z[String(wallZ)]:wallZ;
     const wall=box(ROOM_SPAN,5,.3,0x11182c,roomX,2.5,wallAt,.05);wall.receiveShadow=true;
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
@@ -1195,8 +1206,7 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
     // suns and sky in the other — so neither takes the ring's troffers.
     if(west&&index===3)return;
     if(!west&&index===0)return;
-    // The room south of the garden starts at the moved divider.
-    const at=(!west&&index===1)?-6:centerZ;
+    const at=west?centerZ:EAST_ROOM_Z[index];
     for(let z=at-6;z<=at+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
     lightRoom(roomX,at,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
   });
@@ -1770,10 +1780,8 @@ function lightThreshold(x,z,alongZ){
     jamb.position.set(x+(alongZ?offset:0),1.7,z+(alongZ?0:offset));scene.add(jamb);
   }
 }
-for(const doorZ of OPEN_DOOR_Z){
-  lightThreshold(PLAYSTATION_WALL_X,doorZ,false);
-  lightThreshold(N64_WALL_X,doorZ,false);
-}
+for(const doorZ of OPEN_DOOR_Z_WEST)lightThreshold(PLAYSTATION_WALL_X,doorZ,false);
+for(const doorZ of OPEN_DOOR_Z_EAST)lightThreshold(N64_WALL_X,doorZ,false);
 for(const doorX of NORTH_ROOM_X)lightThreshold(doorX,TOP_BAND_MIN_Z,true);
 lightThreshold(POKEMON_DOOR_X,POKEMON_SOUTH_Z,true);
 lightThreshold(0,TOURNAMENT_MIN_Z,true);
@@ -2218,7 +2226,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=big-1')
+  import('./emulators/disc-range-cache.js?v=east-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2238,7 +2246,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=big-1')
+  import('./emulators/disc-range-cache.js?v=east-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2439,7 +2447,8 @@ function resolvePartitionWallCollisions(previousX,previousZ){
     const crossedWall=(previousX-wallX)*(playerPosition.x-wallX)<=0&&previousX!==playerPosition.x;
     const crossing=(wallX-previousX)/(playerPosition.x-previousX);
     const crossingZ=crossedWall?previousZ+(playerPosition.z-previousZ)*crossing:playerPosition.z;
-    if(OPEN_DOOR_Z.some(doorZ=>Math.abs(crossingZ-doorZ)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS))continue;
+    const doors=wallX<0?OPEN_DOOR_Z_WEST:OPEN_DOOR_Z_EAST;
+    if(doors.some(doorZ=>Math.abs(crossingZ-doorZ)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS))continue;
     const leftFace=wallX-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
     const rightFace=wallX+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
     if(previousX<wallX&&playerPosition.x>leftFace)playerPosition.x=leftFace;
@@ -2459,8 +2468,8 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
   for(const dividerZ of SIDE_ROOM_DIVIDER_Z){
     // The west column's end wall is gone: Silent Hill continues into its annex.
     if(dividerZ===SIDE_COLUMN_MAX_Z&&playerPosition.x<-13.4)continue;
-    // And the east column's first divider stands at the garden's new edge.
-    const wallZ=(dividerZ===-ROOM_DEPTH&&playerPosition.x>0)?-12:dividerZ;
+    // The east column's dividers all stand at their re-planned lines.
+    const wallZ=(playerPosition.x>0&&EAST_WALL_Z[String(dividerZ)]!==undefined)?EAST_WALL_Z[String(dividerZ)]:dividerZ;
     if(wallZ!==dividerZ){
       const northFace=wallZ-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
       const southFace=wallZ+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;

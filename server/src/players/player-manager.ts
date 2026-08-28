@@ -41,7 +41,12 @@ const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 // Four rooms open off each partition wall, and every one of them is walkable.
 // The only room still shut is the Multiplayer / Tournament hall, which is
 // behind the hall's own front wall. arcade.js holds the same table.
-const OPEN_DOOR_Z = [-25.2, -8, 8, 25.2];
+// The east column re-planned around the grown garden: full rooms follow it
+// south and the unbuilt bottom room absorbs the squeeze, so the two partition
+// walls no longer mirror each other. Matches arcade.js.
+const OPEN_DOOR_Z_WEST = [-25.2, -8, 8, 25.2];
+const OPEN_DOOR_Z_EAST = [-25.2, -3.6, 13.2, 27.6];
+const EAST_WALL_Z: Record<string, number> = { '-16.8': -12, '0': 4.8, '16.8': 21.6 };
 // The top row's front wall, with a doorway into each of its four rooms, and the
 // walls between them. The row was shut by the world bound until its barriers
 // came down, so none of this needed enforcing before.
@@ -93,7 +98,8 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     // hall is full width, which is what lets the top row's outer rooms open
     // onto the hall.
     if (Math.max(fromZ, toZ) < SIDE_COLUMN_MIN_Z || Math.min(fromZ, toZ) > SIDE_COLUMN_MAX_Z) continue;
-    const throughDoor = (z: number) => OPEN_DOOR_Z.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE);
+    const doors = wallX < 0 ? OPEN_DOOR_Z_WEST : OPEN_DOOR_Z_EAST;
+    const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE);
     if (!throughDoor(toZ) && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
@@ -110,8 +116,8 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
       // annex through where it stood. The Silent Hill annex is wider than the
       // room now, so the opening spans everything west of its east wall.
       if (dividerZ === 33.6 && Math.max(fromX, toX) < -13.4) continue;
-      // The east column's first divider stands at the Chao Garden's new edge.
-      const wallZ = (dividerZ === -16.8 && Math.min(fromX, toX) > 0) ? -12 : dividerZ;
+      // The east column's dividers all stand at their re-planned lines.
+      const wallZ = (Math.min(fromX, toX) > 0 && EAST_WALL_Z[String(dividerZ)] !== undefined) ? EAST_WALL_Z[String(dividerZ)] : dividerZ;
       if (Math.abs(toZ - wallZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
       if ((fromZ - wallZ) * (toZ - wallZ) < 0) return true;
     }
