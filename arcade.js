@@ -747,23 +747,63 @@ for(const [index,x,z,rotation] of megaManCabinetLayout){
 // cabinets across the room, in the same series order the cabinets already read
 // in. The models are a few megabytes and arrive on approach rather than at
 // boot, so the room is walkable before they land.
-const MEGAMAN_STATUE_Z=1.62,MEGAMAN_STATUE_HEIGHT=1.62,MEGAMAN_STATUE_MAX_SPAN=3.1,MEGAMAN_STATUE_RADIUS=.66;
+const MEGAMAN_STATUE_Z=1.62,MEGAMAN_STATUE_HEIGHT=2.43,MEGAMAN_STATUE_MAX_SPAN=5.2,MEGAMAN_STATUE_RADIUS=.66;
 // Five of the seven models dropped in. Two of them carry no textures and no
 // colours — three white parts and nothing to paint them from — and an
 // untextured figure under coloured light is a mannequin however it is dressed.
-// Spaced for the widest of them rather than evenly for the narrowest: these are
-// action poses, and one scaled to the same height as the others is three metres
-// across with its arms out while another is two-thirds of a metre.
+//
+// The second number is how wide each model is per unit of its height, measured
+// from the model itself. These are action poses, so at a shared height the
+// widest is five times the width of the narrowest, and a line spaced evenly put
+// one figure inside the next. They are placed narrowest first and packed by the
+// width each actually occupies, so the spacing follows the scale instead of
+// having to be re-tuned every time it changes.
 const MEGAMAN_STATUES=[
-  ['x-fourth-armor',-17],
-  ['zero-copy-x',-21.2],
-  ['exe5-soul',-25.4],
-  ['exe4-alma',-29.6],
-  ['x8-zero',-33.8]
+  ['x8-zero',.38],
+  ['x-fourth-armor',.96],
+  ['zero-copy-x',1.29],
+  ['exe4-alma',1.35],
+  ['exe5-soul',1.89]
 ];
+// The south wall, then round the corner onto the west wall below the cabinets.
+const MEGAMAN_STATUE_GAP=.4;
+const MEGAMAN_STATUE_RUNS=[
+  {along:'x',from:-15.2,to:-35.3,fixed:MEGAMAN_STATUE_Z,rotation:0},
+  {along:'z',from:11.4,to:2.4,fixed:-34.4,rotation:Math.PI/2}
+];
+function packMegaManStatues(){
+  const widths=MEGAMAN_STATUES.map(([,aspect])=>aspect*MEGAMAN_STATUE_HEIGHT);
+  // Centre what fits on the first wall, so a line shorter than the wall sits in
+  // the middle of it rather than crowding the doorway end.
+  const first=MEGAMAN_STATUE_RUNS[0],capacity=Math.abs(first.to-first.from);
+  let used=0;
+  for(const width of widths){
+    const extended=used?used+MEGAMAN_STATUE_GAP+width:width;
+    if(extended>capacity)break;
+    used=extended;
+  }
+  const placed=[];
+  let runIndex=0,cursor=first.from+Math.sign(first.to-first.from)*(capacity-used)/2;
+  for(const [slug,aspect] of MEGAMAN_STATUES){
+    const width=aspect*MEGAMAN_STATUE_HEIGHT;
+    let run=MEGAMAN_STATUE_RUNS[runIndex];
+    // A figure that will not fit in what is left of this wall starts the next
+    // one rather than being squeezed in or quietly standing inside its
+    // neighbour, which is what happened the last time the scale went up.
+    while(run&&Math.abs(cursor-run.to)<width){
+      runIndex+=1;run=MEGAMAN_STATUE_RUNS[runIndex];
+      if(run)cursor=run.from;
+    }
+    if(!run){console.warn(`No wall left in the Mega Man room for the ${slug} statue.`);continue}
+    const direction=Math.sign(run.to-run.from),centre=cursor+direction*width/2;
+    placed.push({slug,x:run.along==='x'?centre:run.fixed,z:run.along==='x'?run.fixed:centre,rotation:run.rotation});
+    cursor+=direction*(width+MEGAMAN_STATUE_GAP);
+  }
+  return placed;
+}
 const megaManStatueMounts=[];
-for(const [slug,x] of MEGAMAN_STATUES){
-  const mount=new THREE.Group();mount.name=`megaman-statue-${slug}`;mount.position.set(x,0,MEGAMAN_STATUE_Z);scene.add(mount);
+for(const {slug,x,z,rotation} of packMegaManStatues()){
+  const mount=new THREE.Group();mount.name=`megaman-statue-${slug}`;mount.position.set(x,0,z);mount.rotation.y=rotation;scene.add(mount);
   megaManStatueMounts.push({slug,mount,radius:MEGAMAN_STATUE_RADIUS});
 }
 async function installMegaManStatues(){
@@ -800,7 +840,7 @@ async function installMegaManStatues(){
 // Cheap because it never runs outside the room: a player anywhere else fails
 // the first comparison and pays two subtractions for the whole gallery.
 function resolveStatueCollisions(previousX,previousZ){
-  if(playerPosition.x>-15.5||playerPosition.z>MEGAMAN_STATUE_Z+1.2)return;
+  if(playerPosition.x>-15.2)return;
   for(const {mount,radius} of megaManStatueMounts){
     const dx=playerPosition.x-mount.position.x,dz=playerPosition.z-mount.position.z,distance=Math.hypot(dx,dz);
     if(distance>=radius)continue;

@@ -11,9 +11,15 @@ function statueSlugs(): string[] {
   return [...block.matchAll(/\['([a-z0-9-]+)',(-?[\d.]+)\]/g)].map((match) => match[1]);
 }
 
-function statuePositions(): number[] {
+function statueAspects(): number[] {
   const block = /const MEGAMAN_STATUES=\[([\s\S]*?)\];/.exec(arcade)?.[1] ?? '';
-  return [...block.matchAll(/\['[a-z0-9-]+',(-?[\d.]+)\]/g)].map((match) => Number(match[1]));
+  return [...block.matchAll(/\['[a-z0-9-]+',([\d.]+)\]/g)].map((match) => Number(match[1]));
+}
+
+function numberOf(name: string): number {
+  const value = new RegExp(`${name}=(-?[\\d.]+)`).exec(arcade)?.[1];
+  assert.ok(value !== undefined, `${name} is missing`);
+  return Number(value);
 }
 
 void test('every statue in the line has a model shipped for it', async () => {
@@ -30,14 +36,32 @@ void test('every statue in the line has a model shipped for it', async () => {
   assert.match(arcade, /getOptimizedGltfLoader\(\)/);
 });
 
-void test('the statues stand clear of one another', () => {
-  // They are scaled to one height, and an action pose at that height is metres
-  // wide: a line spaced for the narrowest of them put an outstretched arm
-  // through its neighbour.
-  const positions = statuePositions();
-  const gaps = positions.slice(1).map((value, index) => Math.abs(value - positions[index]));
-  for (const gap of gaps) assert.ok(gap >= 3.5, `statues ${gap.toFixed(1)}m apart are too close for these poses`);
+void test('the statues fit the wall they stand against at the height they are set to', () => {
+  // The failure this replaces: the line was spaced evenly, the height went up,
+  // and figures ended up standing inside one another. Spacing follows from the
+  // width each model actually occupies, so the check is that the widths plus
+  // their gaps still fit the wall — whatever the height is changed to next.
+  const height = numberOf('MEGAMAN_STATUE_HEIGHT');
+  const gap = numberOf('MEGAMAN_STATUE_GAP');
+  const run = /\{along:'x',from:(-?[\d.]+),to:(-?[\d.]+)/.exec(arcade);
+  assert.ok(run, 'the statues must name the wall they are packed along');
+  const capacity = Math.abs(Number(run[2]) - Number(run[1]));
+  const aspects = statueAspects();
+  assert.equal(aspects.length, statueSlugs().length, 'every statue carries the width it occupies');
+  const needed = aspects.reduce((total, aspect) => total + aspect * height, 0) + gap * (aspects.length - 1);
+  assert.ok(needed <= capacity, `${needed.toFixed(1)}m of statue does not fit a ${capacity.toFixed(1)}m wall at height ${height}`);
+  // Narrowest first, so anything that does overflow is the one figure that has
+  // to turn the corner rather than an arbitrary one.
+  assert.deepEqual(aspects, [...aspects].sort((first, second) => first - second));
   assert.match(arcade, /MEGAMAN_STATUE_MAX_SPAN\/Math\.max\(size\.x,size\.z,\.001\)/, 'a wide pose must be capped, not left to reach into the next statue');
+});
+
+void test('a statue with nowhere left to stand turns the corner or says so', () => {
+  assert.match(arcade, /const MEGAMAN_STATUE_RUNS=\[/);
+  assert.equal((arcade.match(/\{along:'[xz]',from:/g) ?? []).length, 2, 'the gallery continues onto a second wall');
+  assert.match(arcade, /No wall left in the Mega Man room for the \$\{slug\} statue/);
+  // Centred on its wall rather than pushed up against the doorway end.
+  assert.match(arcade, /cursor=first\.from\+Math\.sign\(first\.to-first\.from\)\*\(capacity-used\)\/2/);
 });
 
 void test('the statue line loads on approach and is solid to walk into', () => {
@@ -48,8 +72,9 @@ void test('the statue line loads on approach and is solid to walk into', () => {
   // Footprint comes from the model that actually loaded, not one guess for all.
   assert.match(arcade, /entry\.radius=Math\.min\(1\.15,Math\.max\(MEGAMAN_STATUE_RADIUS/);
   assert.match(arcade, /const \{mount,radius\} of megaManStatueMounts/);
-  // And the check costs nothing anywhere else in the arcade.
-  assert.match(arcade, /function resolveStatueCollisions\(previousX,previousZ\)\{\s*if\(playerPosition\.x>-15\.5/);
+  // And the check costs nothing anywhere else in the arcade: a player outside
+  // the room fails one comparison and never touches the gallery.
+  assert.match(arcade, /function resolveStatueCollisions\(previousX,previousZ\)\{\s*if\(playerPosition\.x>-15\.2\)return;/);
 });
 
 void test('the murals light the room from their own bright regions', () => {
