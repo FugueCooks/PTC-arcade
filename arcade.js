@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=rooms-2';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=chao-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -156,6 +156,11 @@ ceilingShape.moveTo(-43.2,-58.8);ceilingShape.lineTo(43.2,-58.8);ceilingShape.li
 const stadiumHole=new THREE.Path();
 stadiumHole.moveTo(10.8,-58.8);stadiumHole.lineTo(43.2,-58.8);stadiumHole.lineTo(43.2,-33.6);stadiumHole.lineTo(10.8,-33.6);stadiumHole.closePath();
 ceilingShape.holes.push(stadiumHole);
+// And a second over the Chao Garden, whose sky dome also rises past the
+// building's ceiling. Local y is world z plus the plane's offset, as above.
+const gardenHole=new THREE.Path();
+gardenHole.moveTo(21.6,-25.2);gardenHole.lineTo(43.2,-25.2);gardenHole.lineTo(43.2,-8.4);gardenHole.lineTo(21.6,-8.4);gardenHole.closePath();
+ceilingShape.holes.push(gardenHole);
 const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
 ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,5.08,-8.4);scene.add(ceiling);
 const ceilingBeamMaterial=new THREE.MeshStandardMaterial({color:0x14111f,roughness:.7,metalness:.5});
@@ -564,7 +569,7 @@ function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
   const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-rooms-2');
+  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-chao-1');
   bandTexture.colorSpace=THREE.SRGBColorSpace;
   bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
   // The band stops short of a full circle: the missing arc is the tunnel
@@ -755,13 +760,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=rooms-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=chao-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=rooms-2',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=chao-1',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=rooms-2',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=chao-1',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -782,6 +787,149 @@ hangMuralWalls([
 // Pokemon, in the east column: the bowl itself, not flat murals — the band and
 // dome carry the stands, so this room does not go through themeRoom at all.
 buildPokemonStadium(POKEMON_CENTER_X,POKEMON_CENTER_Z);
+/**
+ * The Sonic room is the Chao Garden.
+ *
+ * Like the stadium, it is the place itself rather than a room with pictures of
+ * it: a grass meadow ringed by cliffs, a stretch of open sea where the cliffs
+ * part, a waterfall feeding a pool, palm trees, fruit on the grass, and a day
+ * sky overhead rising through its own hole in the building's ceiling. Every
+ * texture is painted to a canvas and every shape is primitive geometry — the
+ * Dreamcast garden was low-poly, and so is this one, on purpose.
+ *
+ * The space under the sky is left clear for the Chao when their models arrive.
+ */
+function buildChaoGarden(centerX,centerZ){
+  const RX=10.5,RZ=8.1,BAND_BASE=.4,BAND_TOP=4;
+  const MOUTH_ARC=3.6/RZ;
+  const THETA_START=Math.PI*1.5+MOUTH_ARC/2,THETA_LENGTH=Math.PI*2-MOUTH_ARC;
+  // The horizon band: sky over sea all the way round, with two headlands of
+  // cliff painted on top so the garden reads as a cove. The mouth faces the
+  // doorway, and the cliffs stand either side of it.
+  const bandCanvas=document.createElement('canvas');bandCanvas.width=2048;bandCanvas.height=256;
+  const bc=bandCanvas.getContext('2d');
+  const sky=bc.createLinearGradient(0,0,0,150);
+  sky.addColorStop(0,'#a7dcf2');sky.addColorStop(1,'#d9f0f8');
+  bc.fillStyle=sky;bc.fillRect(0,0,2048,150);
+  const sea=bc.createLinearGradient(0,150,0,256);
+  sea.addColorStop(0,'#3f7fc4');sea.addColorStop(1,'#274f9e');
+  bc.fillStyle=sea;bc.fillRect(0,150,2048,106);
+  bc.fillStyle='#ffffff';
+  for(let i=0;i<70;i++){const x=(i*211)%2048,y=156+(i*67)%90;bc.globalAlpha=.12+(i%4)*.05;bc.fillRect(x,y,26+(i%5)*8,2)}
+  bc.globalAlpha=1;
+  // Clouds sit on the horizon like the reference's.
+  for(let i=0;i<9;i++){const x=(i*479)%2048,y=108+(i*37)%34;bc.globalAlpha=.5;bc.fillStyle='#ffffff';
+    bc.beginPath();bc.ellipse(x,y,60+(i%3)*24,13,0,0,Math.PI*2);bc.fill()}
+  bc.globalAlpha=1;
+  // Two cliff headlands: jagged-topped rock over the band, one each side of the
+  // mouth (u 0 and u 1), leaving open sea across the middle of the loop.
+  function cliffs(u0,u1){
+    const x0=u0*2048,x1=u1*2048;
+    bc.fillStyle='#b9ae97';
+    bc.beginPath();bc.moveTo(x0,256);
+    for(let x=x0;x<=x1;x+=40){bc.lineTo(x,26+((x*13)%53))}
+    bc.lineTo(x1,256);bc.closePath();bc.fill();
+    bc.strokeStyle='#8d8371';bc.lineWidth=5;
+    for(let x=x0+22;x<x1;x+=44){bc.beginPath();bc.moveTo(x,60+((x*7)%40));bc.lineTo(x-9,256);bc.stroke()}
+    bc.strokeStyle='#d8cfba';bc.lineWidth=3;
+    for(let x=x0+40;x<x1;x+=52){bc.beginPath();bc.moveTo(x,50+((x*11)%46));bc.lineTo(x+7,256);bc.stroke()}
+  }
+  cliffs(0,.34);cliffs(.62,1);
+  const bandTexture=new THREE.CanvasTexture(bandCanvas);bandTexture.colorSpace=THREE.SRGBColorSpace;
+  const band=new THREE.Mesh(
+    new THREE.CylinderGeometry(1,1,BAND_TOP-BAND_BASE,72,1,true,THETA_START,THETA_LENGTH),
+    new THREE.MeshBasicMaterial({map:bandTexture,side:THREE.DoubleSide}));
+  band.scale.set(RX,1,RZ);band.position.set(centerX,(BAND_BASE+BAND_TOP)/2,centerZ);scene.add(band);
+  const skirt=new THREE.Mesh(
+    new THREE.CylinderGeometry(1,1,BAND_BASE,72,1,true,THETA_START,THETA_LENGTH),
+    new THREE.MeshStandardMaterial({color:0x8d8371,roughness:.9,metalness:.05,side:THREE.DoubleSide}));
+  skirt.scale.set(RX,1,RZ);skirt.position.set(centerX,BAND_BASE/2,centerZ);scene.add(skirt);
+  // The day sky, through the second ceiling hole.
+  const skyCanvas=document.createElement('canvas');skyCanvas.width=512;skyCanvas.height=512;
+  const sc2=skyCanvas.getContext('2d');
+  const zenith=sc2.createLinearGradient(0,0,0,512);
+  zenith.addColorStop(0,'#5fb2e6');zenith.addColorStop(.7,'#9dd3ef');zenith.addColorStop(1,'#d9f0f8');
+  sc2.fillStyle=zenith;sc2.fillRect(0,0,512,512);
+  sc2.fillStyle='#ffffff';
+  for(let i=0;i<12;i++){const x=(i*197)%512,y=90+(i*151)%360;sc2.globalAlpha=.42;
+    sc2.beginPath();sc2.ellipse(x,y,52+(i%4)*18,16,0,0,Math.PI*2);sc2.fill();
+    sc2.beginPath();sc2.ellipse(x+34,y+8,34,12,0,0,Math.PI*2);sc2.fill()}
+  sc2.globalAlpha=1;
+  const skyTexture=new THREE.CanvasTexture(skyCanvas);skyTexture.colorSpace=THREE.SRGBColorSpace;
+  const skyDome=new THREE.Mesh(
+    new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI/2),
+    new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide}));
+  skyDome.scale.set(RX,5,RZ);skyDome.position.set(centerX,BAND_TOP,centerZ);scene.add(skyDome);
+  // The meadow: vivid mottled grass with a worn dirt fringe at the cliffs.
+  const grassCanvas=document.createElement('canvas');grassCanvas.width=512;grassCanvas.height=512;
+  const gc=grassCanvas.getContext('2d');
+  gc.fillStyle='#3cbf47';gc.fillRect(0,0,512,512);
+  for(let i=0;i<340;i++){const x=(i*97)%512,y=(i*173)%512;
+    gc.fillStyle=i%3?'#43cc4f':(i%2?'#33ad3e':'#4fd65a');gc.globalAlpha=.5;
+    gc.beginPath();gc.ellipse(x,y,14+(i%9)*3,9+(i%5)*3,i,0,Math.PI*2);gc.fill()}
+  gc.globalAlpha=1;
+  const grassTexture=new THREE.CanvasTexture(grassCanvas);grassTexture.colorSpace=THREE.SRGBColorSpace;
+  const meadow=new THREE.Mesh(new THREE.CircleGeometry(1,56),
+    new THREE.MeshStandardMaterial({map:grassTexture,roughness:.85,metalness:.02,emissive:0x1c6b24,emissiveIntensity:.5}));
+  meadow.rotation.x=-Math.PI/2;meadow.scale.set(RX-.15,RZ-.15,1);
+  meadow.position.set(centerX,.02,centerZ);meadow.receiveShadow=true;scene.add(meadow);
+  // The pool and its waterfall, tucked against the north-east cliffs.
+  const poolX=centerX+5.2,poolZ=centerZ-3.9;
+  const poolRim=new THREE.Mesh(new THREE.CircleGeometry(1,36),new THREE.MeshBasicMaterial({color:0x9fd4ea}));
+  poolRim.rotation.x=-Math.PI/2;poolRim.scale.set(2.9,2.1,1);poolRim.position.set(poolX,.035,poolZ);scene.add(poolRim);
+  const pool=new THREE.Mesh(new THREE.CircleGeometry(1,36),new THREE.MeshBasicMaterial({color:0x4189cc}));
+  pool.rotation.x=-Math.PI/2;pool.scale.set(2.45,1.7,1);pool.position.set(poolX,.045,poolZ);scene.add(pool);
+  const fallCanvas=document.createElement('canvas');fallCanvas.width=128;fallCanvas.height=256;
+  const fc=fallCanvas.getContext('2d');
+  const water=fc.createLinearGradient(0,0,0,256);
+  water.addColorStop(0,'#bfe6f5');water.addColorStop(1,'#6fb4e0');
+  fc.fillStyle=water;fc.fillRect(0,0,128,256);
+  fc.strokeStyle='#ffffff';
+  for(let x=6;x<128;x+=11){fc.globalAlpha=.35+(x%3)*.15;fc.lineWidth=2+(x%3);
+    fc.beginPath();fc.moveTo(x,0);fc.lineTo(x-4,256);fc.stroke()}
+  fc.globalAlpha=1;
+  const fallTexture=new THREE.CanvasTexture(fallCanvas);fallTexture.colorSpace=THREE.SRGBColorSpace;
+  const fall=new THREE.Mesh(new THREE.PlaneGeometry(2.1,3.3),new THREE.MeshBasicMaterial({map:fallTexture}));
+  fall.position.set(poolX+1.6,1.68,poolZ-1.35);fall.lookAt(centerX,1.4,centerZ);scene.add(fall);
+  const foam=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0xeaf7fc,transparent:true,opacity:.85}));
+  foam.rotation.x=-Math.PI/2;foam.scale.set(1.15,.6,1);foam.position.set(poolX+1.35,.06,poolZ-1.1);scene.add(foam);
+  // Rock stacks flanking the fall, the reference's stepped boulders.
+  const rock=new THREE.MeshStandardMaterial({color:0xb2a893,roughness:.92,metalness:.03});
+  for(const [dx,dz,w,h,d] of [[2.6,-2.2,1.7,3.1,1.5],[.9,-3,1.4,2.4,1.3],[3.4,-.6,1.4,2.1,1.4],[-.6,-3.4,1.1,1.5,1.1]]){
+    const boulder=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),rock);
+    boulder.position.set(poolX+dx,h/2,poolZ+dz);boulder.rotation.y=(dx*7+dz*3)%.6;scene.add(boulder);
+  }
+  // Palms: a bent trunk and a fan of fronds, six of them around the meadow.
+  const trunkMaterial=new THREE.MeshStandardMaterial({color:0x8a5a2e,roughness:.85});
+  const frondMaterial=new THREE.MeshStandardMaterial({color:0x2f9e3c,roughness:.75,side:THREE.DoubleSide,emissive:0x14501c,emissiveIntensity:.35});
+  const frondGeometry=new THREE.PlaneGeometry(1.15,.34);
+  for(const [px,pz,lean] of [[-4.6,2.6,.16],[-2.2,-4.2,-.13],[1.6,4.4,.1],[-6.8,-1.4,-.18],[3.8,2.2,-.09],[-.6,-1.2,.2]]){
+    const palm=new THREE.Group();palm.position.set(centerX+px,0,centerZ+pz);palm.rotation.z=lean;scene.add(palm);
+    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.06,.11,1.7,7),trunkMaterial);trunk.position.y=.85;palm.add(trunk);
+    for(let i=0;i<6;i++){
+      const frond=new THREE.Mesh(frondGeometry,frondMaterial);
+      frond.position.y=1.7;frond.rotation.y=i/6*Math.PI*2;frond.rotation.z=-.55;
+      frond.translateX(.5);palm.add(frond);
+    }
+  }
+  // Fruit on the grass, the garden's own colours.
+  const fruitColours=[0xffd23e,0xff8c3a,0xff5fae,0xa06cff];
+  const fruitGeometry=new THREE.SphereGeometry(.13,10,8);
+  for(let i=0;i<9;i++){
+    const angle=i*2.399,radius=1.6+(i%5)*1.15;
+    const fruit=new THREE.Mesh(fruitGeometry,new THREE.MeshStandardMaterial({color:fruitColours[i%4],roughness:.4,emissive:fruitColours[i%4],emissiveIntensity:.12}));
+    fruit.scale.y=1.35;fruit.position.set(centerX+Math.cos(angle)*radius,.16,centerZ+Math.sin(angle)*radius*.75);
+    scene.add(fruit);
+  }
+  // Daylight: two warm suns on the managed budget, one over the meadow and one
+  // at the falls.
+  for(const [lx,lz] of [[-2.5,1.5],[4.8,-3.2]]){
+    const sun=new THREE.PointLight(0xfff3d0,4.8,16,2);
+    sun.position.set(centerX+lx,3.6,centerZ+lz);
+    scene.add(sun);managedSceneLights.push(sun);
+  }
+}
+buildChaoGarden(ANNEX_ROOM_CENTER_X,-25.2);
 // No light rig added per room: the ring already lays one into every side room,
 // and a second in the same room is two rigs competing for the same light
 // budget. The stadium's floodlights are the exception, and they are its point.
@@ -1845,7 +1993,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=rooms-2')
+  import('./emulators/disc-range-cache.js?v=chao-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1865,7 +2013,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=rooms-2')
+  import('./emulators/disc-range-cache.js?v=chao-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2104,6 +2252,24 @@ function resolveRearGalleryCollision(){}
  * back on the boundary. The same rule runs on both authoritative paths.
  */
 const POKEBOWL={cx:POKEMON_CENTER_X,cz:POKEMON_CENTER_Z,ax:15.35,az:11.75,laneHalfWidth:1.5};
+/**
+ * The Chao Garden's cliffs, the same rule at the garden's scale: an ellipse
+ * just inside the painted band, passable only where the cliffs part at the
+ * doorway. Mirrored on both authoritative paths.
+ */
+const CHAO_GARDEN={cx:ANNEX_ROOM_CENTER_X,cz:-25.2,ax:10.1,az:7.7,laneHalfWidth:1.5};
+function resolveChaoGardenCollisions(previousX,previousZ){
+  if(playerPosition.x<21.6||playerPosition.z<-33.6||playerPosition.z>-16.8)return;
+  if(Math.abs(playerPosition.z-CHAO_GARDEN.cz)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5)return;
+  const dx=(playerPosition.x-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,dz=(playerPosition.z-CHAO_GARDEN.cz)/CHAO_GARDEN.az;
+  const now=dx*dx+dz*dz;
+  const pdx=(previousX-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,pdz=(previousZ-CHAO_GARDEN.cz)/CHAO_GARDEN.az;
+  const before=pdx*pdx+pdz*pdz;
+  if((before<=1)===(now<=1))return;
+  const scale=(before<=1?.995:1.005)/Math.sqrt(now);
+  playerPosition.x=CHAO_GARDEN.cx+(playerPosition.x-CHAO_GARDEN.cx)*scale;
+  playerPosition.z=CHAO_GARDEN.cz+(playerPosition.z-CHAO_GARDEN.cz)*scale;
+}
 function resolvePokemonBowlCollisions(previousX,previousZ){
   if(playerPosition.x<POKEMON_WEST_X||playerPosition.z>-40)return;
   // The tunnel lane, on the doorway side only: the matching band of ellipse on
@@ -2205,6 +2371,6 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*7.5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld()}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*7.5*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld()}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});

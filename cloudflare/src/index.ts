@@ -60,6 +60,17 @@ const NORTH_ROW_DIVIDER_X = [-21.6];
 // The Pokemon bowl: the stands are solid, and the only way through them is the
 // entrance lane on the doorway side. Matches POKEBOWL in arcade.js.
 const POKEBOWL = { cx: 27, cz: -54.6, ax: 15.35, az: 11.75, laneHalfWidth: 1.5 };
+// The Chao Garden's cliffs: the same rule at the garden's scale, passable only
+// where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
+const CHAO_GARDEN = { cx: 32.4, cz: -25.2, ax: 10.1, az: 7.7, laneHalfWidth: 1.5 };
+function insideChaoGarden(x: number, z: number): boolean {
+  const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
+  const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
+  return dx * dx + dz * dz <= 1;
+}
+function inChaoGardenLane(x: number, z: number): boolean {
+  return Math.abs(z - CHAO_GARDEN.cz) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.cx - CHAO_GARDEN.ax * 0.5;
+}
 function insidePokemonBowl(x: number, z: number): boolean {
   const dx = (x - POKEBOWL.cx) / POKEBOWL.ax;
   const dz = (z - POKEBOWL.cz) / POKEBOWL.az;
@@ -630,6 +641,9 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // jumbotron, and there is no way through a jumbotron.
   if (insidePokemonBowl(fromX, fromZ) !== insidePokemonBowl(toX, toZ)
     && !(inPokemonTunnelLane(fromX, fromZ) || inPokemonTunnelLane(toX, toZ))) return true;
+  // The Chao Garden's cliffs.
+  if (insideChaoGarden(fromX, fromZ) !== insideChaoGarden(toX, toZ)
+    && !(inChaoGardenLane(fromX, fromZ) || inChaoGardenLane(toX, toZ))) return true;
   // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
   if (toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
