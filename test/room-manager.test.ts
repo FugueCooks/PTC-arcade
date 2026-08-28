@@ -93,11 +93,10 @@ void test('the solid section of the PlayStation outer wall remains authoritative
   assert.deepEqual(players.stateFor('socket-a')?.p, [-29, 1.65, -10]);
 });
 
-void test('the social couch, room walls, rear doorway, and annex divider are authoritative', () => {
+void test('room walls, rear doorway, and annex divider are authoritative', () => {
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
   assert.deepEqual(players.move('socket-a', { p: [0, 8], r: Math.PI }, 1_500)?.p, [0, 1.65, 8]);
-  assert.equal(players.move('socket-a', { p: [0, 6], r: Math.PI }, 2_000), undefined);
   assert.deepEqual(players.move('socket-a', { p: [3, 8], r: -Math.PI / 2 }, 2_500)?.p, [3, 1.65, 8]);
   assert.deepEqual(players.move('socket-a', { p: [6, 8], r: -Math.PI / 2 }, 3_000)?.p, [6, 1.65, 8]);
   assert.deepEqual(players.move('socket-a', { p: [9, 8], r: Math.PI }, 3_500)?.p, [9, 1.65, 8]);
@@ -115,13 +114,16 @@ void test('the social couch, room walls, rear doorway, and annex divider are aut
   assert.equal(players.move('socket-a', { p: [17.5, 1], r: 0 }, 9_500), undefined);
 });
 
-void test('the wider social couch has usable side openings while its glass display stays solid', () => {
+void test('the middle of the hall can be walked straight through', () => {
+  // The couch ring and the round glass case both stood here. A player used to
+  // be stopped at a radius of 2.07 m from the origin and pushed around a ring
+  // at 4.2 m; the floorplan puts open floor under the chandelier instead, so
+  // this route crosses the exact centre and comes out the far side.
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  const steps: Array<[number, number]> = [[3, 11], [6, 11], [6, 8], [6, 5], [6, 2], [5, 0], [4.3, 0], [3.8, 1.4], [3, 1], [2.2, 0]];
-  steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500)));
-  assert.equal(players.move('socket-a', { p: [1.8, 0], r: -Math.PI / 2 }, 6_000), undefined);
-  assert.deepEqual(players.stateFor('socket-a')?.p, [2.2, 1.65, 0]);
+  const steps: Array<[number, number]> = [[3, 11], [6, 11], [6, 8], [6, 5], [6, 2], [5, 0], [4.3, 0], [3, 0], [1.5, 0], [0, 0], [-1.5, 0], [-3, 0]];
+  steps.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500), `step ${index} was refused`));
+  assert.deepEqual(players.stateFor('socket-a')?.p, [-3, 1.65, 0]);
 });
 
 void test('a stationary accepted update returns a player to idle', () => {

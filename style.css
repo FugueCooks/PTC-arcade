@@ -46,7 +46,10 @@ body.mobile-input.arcade-started:not(.cabinet-open):not(.emulator-running) #cros
 /* Whether a cabinet is about to run natively, said above the screen rather
    than under it: the panel scrolls, and the line that carried this before was
    below the fold on every PS2 cabinet. */
-#native-runtime-state { margin:-14px 0 16px; font-size:10px; letter-spacing:.14em; line-height:1.7; color:#7dff67; }
+#cabinet-warning { margin:-14px 0 10px; padding:.5rem .7rem; font-size:10px; letter-spacing:.14em; line-height:1.8;
+  color:#ffb42e; border:1px solid #6b4a12; background:#241703; }
+#cabinet-warning[hidden] { display:none; }
+#native-runtime-state { margin:0 0 16px; font-size:10px; letter-spacing:.14em; line-height:1.7; color:#7dff67; }
 #native-runtime-state[data-native="false"] { color:#ffb42e; }
 #native-runtime-state[hidden] { display:none; }
 body.emulator-running #arcade-canvas { display:none; }

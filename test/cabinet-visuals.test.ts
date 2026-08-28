@@ -59,7 +59,7 @@ void test('floor materials stay visible from every camera direction', async () =
   assert.match(arcade, /emissive:0x0b1324,emissiveIntensity:\.38,roughness:\.7,metalness:\.12/);
 });
 
-void test('the main room is a collision-safe social lounge beside square console rooms', async () => {
+void test('the main room is an open hall beside square console rooms', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const edge = await readFile(path.resolve(process.cwd(), 'cloudflare/src/index.ts'), 'utf8');
 
@@ -70,20 +70,22 @@ void test('the main room is a collision-safe social lounge beside square console
   assert.match(arcade, /new THREE\.PlaneGeometry\(17,16\.8\)/);
   assert.match(arcade, /PS2_ROOM_CENTER_Z=-25\.2/);
   assert.match(arcade, /PS2_ROOM_BACK_Z=-33\.6/);
-  assert.match(arcade, /const socialCouch=new THREE\.Group/);
-  assert.match(arcade, /function couchSectionShape/);
-  assert.match(arcade, /new THREE\.ExtrudeGeometry\(couchSectionShape/);
-  assert.match(arcade, /SOCIAL_COUCH_OUTER_RADIUS=6\.75/);
-  assert.match(arcade, /SOCIAL_COUCH_INNER_RADIUS=4\.2/);
-  assert.match(arcade, /SOCIAL_COUCH_GAP_HALF_ANGLE=\.34/);
-  assert.match(arcade, /SOCIAL_DISPLAY_RADIUS=2\.07/);
+  // The middle of the hall is open floor. The couch ring and the round glass
+  // case that stood at the origin are gone, and nothing may quietly restore an
+  // obstacle there: the floorplan puts the chandelier over walkable ground.
+  assert.doesNotMatch(arcade, /const socialCouch=/);
+  assert.doesNotMatch(arcade, /couchSectionShape/);
+  assert.doesNotMatch(arcade, /SOCIAL_COUCH_/);
+  assert.doesNotMatch(arcade, /SOCIAL_DISPLAY_RADIUS/);
+  assert.doesNotMatch(edge, /SOCIAL_COUCH_/);
+  // Trench Pepe moved out of that case and onto the prize counter.
+  assert.match(arcade, /gangsterPepeMount\.position\.set\(0,1\.265,0\);prizeDisplay\.add\(gangsterPepeMount\)/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(17,34\)/);
   assert.match(arcade, /new THREE\.PlaneGeometry\(24,24\)/);
   assert.match(arcade, /const n64CabinetLayout=/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /resolveSocialLayoutCollisions\(previousX,previousZ\)/);
   assert.match(edge, /violatesSocialLayout\(player\.p\[0\], player\.p\[2\]/);
-  assert.match(edge, /SOCIAL_COUCH_GAP_HALF_ANGLE = 0\.34/);
 });
 
 void test('the MegaMan Room gives each mural its own full-length solid wall', async () => {

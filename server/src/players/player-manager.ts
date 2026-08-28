@@ -41,10 +41,9 @@ const PLAYABLE_ROOM_DOOR_Z = -8;
 const PS2_ROOM_CENTER_X = -22.5;
 const PS2_ROOM_DOOR_Z = -16.8;
 const ROOM_DOOR_CLEARANCE = 1.26;
-const SOCIAL_COUCH_OUTER_RADIUS = 6.75;
-const SOCIAL_COUCH_INNER_RADIUS = 4.2;
-const SOCIAL_COUCH_GAP_HALF_ANGLE = 0.34;
-const SOCIAL_DISPLAY_RADIUS = 2.07;
+// The couch ring and the round display case that used to stand at the origin
+// are gone, so the middle of the hall is open floor and nothing here refuses a
+// step into it. What remains in this function is the partition walls.
 // The westernmost wall any annex reaches, which is now the Mega Man room's.
 // Scopes the checks below to the side rooms; a player west of it is outside the
 // building entirely and has already been refused by the world bounds.
@@ -52,10 +51,6 @@ const ANNEX_MIN_X = MEGAMAN_ALCOVE_MIN_X;
 const MEGAMAN_ROOM_DOOR_Z = 8;
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
-  const socialDistance = Math.hypot(toX, toZ);
-  if (socialDistance < SOCIAL_DISPLAY_RADIUS) return true;
-  const inSideGap = Math.abs(Math.sin(Math.atan2(toZ, toX))) <= Math.sin(SOCIAL_COUCH_GAP_HALF_ANGLE);
-  if (!inSideGap && socialDistance >= SOCIAL_COUCH_INNER_RADIUS && socialDistance < SOCIAL_COUCH_OUTER_RADIUS) return true;
   for (const wallX of [-PARTITION_WALL_X, PARTITION_WALL_X]) {
     const targetInDoor = Math.abs(toZ - PLAYABLE_ROOM_DOOR_Z) < ROOM_DOOR_CLEARANCE;
     const targetInMegaManDoor = wallX === -PARTITION_WALL_X

@@ -204,9 +204,9 @@ const rearWall=box(28,5,.3,0x15182a,0,2.5,-16.8,.18);rearWall.receiveShadow=true
 const rearPanelMaterial=new THREE.MeshStandardMaterial({color:0x17233a,emissive:0x08162b,emissiveIntensity:.5,roughness:.58,metalness:.38});
 for(let x=-12;x<=12;x+=4){const panel=new THREE.Mesh(new THREE.BoxGeometry(3.82,4.62,.055),rearPanelMaterial);panel.position.set(x,2.42,-16.62);panel.receiveShadow=true;scene.add(panel)}
 box(27.5,.09,.08,0xd18a52,0,4.78,-16.57,.85);box(27.5,.12,.08,0x251447,0,.1,-16.57,.55);
-const gangsterPepeMount=new THREE.Group();gangsterPepeMount.position.set(0,.16,0);scene.add(gangsterPepeMount);
-const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);gangsterPepeLight.position.set(0,.82,.55);scene.add(gangsterPepeLight);
-const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-22.5,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,SOCIAL_COUCH_OUTER_RADIUS=6.75,SOCIAL_COUCH_INNER_RADIUS=4.2,SOCIAL_COUCH_GAP_HALF_ANGLE=.34,SOCIAL_DISPLAY_RADIUS=2.07,PLAYER_COLLISION_RADIUS=.34;
+const gangsterPepeMount=new THREE.Group();
+const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);
+const PLAYSTATION_WALL_X=-14,N64_WALL_X=14,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-22.5,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34;
 function buildPartitionWall(wallX,accent){
   for(const [centerZ,depth] of [[-13.25,7.1],[-.0,12.8],[13.25,7.1]]){
     const wall=box(PARTITION_WALL_HALF_THICKNESS*2,5,depth,0x111425,wallX,2.5,centerZ,.08);wall.receiveShadow=true;
@@ -887,28 +887,10 @@ for(const [index,x,z,rotation] of xboxCabinetLayout){
   makeCabinet(cabinetId,`XBOX // READY 0${index}`,x,z,expansionCabinetColors[5-index],false,false,'xbox');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'xbox',gameName:`Xbox Cabinet ${index}`,enabled:false,status:'disabled'});
 }
-// Circular prize counter in the middle of the arcade.
-const prizeCounter=new THREE.Group();prizeCounter.position.set(0,0,0);scene.add(prizeCounter);
-const counterGlassMat=new THREE.MeshStandardMaterial({color:0x79dfff,emissive:0x123b66,emissiveIntensity:.34,transparent:true,opacity:.17,metalness:.45,roughness:.08,side:THREE.DoubleSide,depthWrite:false});
-const counterBase=new THREE.Mesh(new THREE.CylinderGeometry(1.55,1.7,1.1,48),counterGlassMat);counterBase.position.y=.55;prizeCounter.add(counterBase);
-const counterGlow=new THREE.Mesh(new THREE.CylinderGeometry(1.62,1.62,.08,48),new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:2.1,metalness:.5}));counterGlow.position.y=.12;prizeCounter.add(counterGlow);
-const counterTop=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,.09,48),new THREE.MeshStandardMaterial({color:0xb8f3ff,emissive:0x1c4e6a,emissiveIntensity:.34,transparent:true,opacity:.32,metalness:.65,roughness:.07,side:THREE.DoubleSide,depthWrite:false}));counterTop.position.y=1.15;prizeCounter.add(counterTop);
-const counterTopRim=new THREE.Mesh(new THREE.CylinderGeometry(1.73,1.73,.12,48,1,true),new THREE.MeshStandardMaterial({color:0x1a2d3a,emissive:0x0d1c28,emissiveIntensity:.45,metalness:.9,roughness:.12}));counterTopRim.position.y=1.15;prizeCounter.add(counterTopRim);
-const counterDisplayLight=new THREE.PointLight(0xe8f9ff,5.4,4.2,2);counterDisplayLight.position.set(0,.82,0);prizeCounter.add(counterDisplayLight);
-// A padded circular couch makes the centre a compact social lounge while
-// preserving a clear view into Trench Pepe's glass display. Its outer radius
-// is mirrored by authoritative collision below and on both multiplayer paths.
-const socialCouch=new THREE.Group();socialCouch.position.set(0,0,0);scene.add(socialCouch);
-const couchMaterial=new THREE.MeshStandardMaterial({color:0x33143f,emissive:0x2a0f45,emissiveIntensity:.5,roughness:.22,metalness:.62});
-const couchBackMaterial=new THREE.MeshStandardMaterial({color:0x4a1c63,emissive:0x3a1156,emissiveIntensity:.6,roughness:.18,metalness:.58});
-const couchToeMaterial=new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:1.35,roughness:.3,metalness:.55});
-function couchSectionShape(start,end){const shape=new THREE.Shape();shape.absarc(0,0,6.32,start,end,false);shape.lineTo(4.65*Math.cos(end),4.65*Math.sin(end));shape.absarc(0,0,4.65,end,start,true);shape.closePath();return shape}
-for(const [start,end] of [[SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI-SOCIAL_COUCH_GAP_HALF_ANGLE],[Math.PI+SOCIAL_COUCH_GAP_HALF_ANGLE,Math.PI*2-SOCIAL_COUCH_GAP_HALF_ANGLE]]){
-  const seatGeometry=new THREE.ExtrudeGeometry(couchSectionShape(start,end),{depth:.42,steps:1,bevelEnabled:true,bevelThickness:.08,bevelSize:.08,bevelSegments:2,curveSegments:36});seatGeometry.rotateX(Math.PI/2);seatGeometry.translate(0,.62,0);
-  const seat=new THREE.Mesh(seatGeometry,couchMaterial);seat.receiveShadow=true;socialCouch.add(seat);
-  const backGeometry=new THREE.TorusGeometry(5.92,.34,12,64,end-start);backGeometry.rotateZ(start);const back=new THREE.Mesh(backGeometry,couchBackMaterial);back.rotation.x=Math.PI/2;back.position.y=.96;socialCouch.add(back);
-  const toeGeometry=new THREE.TorusGeometry(5.62,.12,10,64,end-start);toeGeometry.rotateZ(start);const toeGlow=new THREE.Mesh(toeGeometry,couchToeMaterial);toeGlow.rotation.x=Math.PI/2;toeGlow.position.y=.16;socialCouch.add(toeGlow);
-}
+// The centre of the hall is deliberately empty. The couch ring and the round
+// glass case that stood here made the middle of the arcade a thing to walk
+// around rather than a place to walk through, and the floorplan puts the
+// chandelier over open floor. Trench Pepe moved to the prize counter with it.
 // The hub floor is a very large unbroken sheet. Lit inlays give it a centre and
 // draw the eye toward each gallery doorway, which also makes the room easier to
 // read as a space rather than an empty plane.
@@ -975,9 +957,62 @@ for(const [radius,y,tube,color,speed,tilt] of [[2.35,3.05,.045,0x36f9f6,.16,.05]
   ring.rotation.x=Math.PI/2+tilt;ring.position.y=y;centrepiece.add(ring);
   haloRings.push({ring,speed});
 }
+// The floor under the chandelier. With the couch gone the beam landed on bare
+// terrazzo, so the light now has something to land on: a medallion of counter-
+// rotating rings, a ring of low bollards marking the edge of the pool, and slow
+// motes drifting up through the beam. All of it is additive emissive geometry
+// on shared materials — no lights, so none of it is charged against the budget
+// the rooms are competing for.
+const medallionMaterial=new THREE.MeshBasicMaterial({color:0x7fe4ff,transparent:true,opacity:.34,depthWrite:false,blending:THREE.AdditiveBlending});
+const medallionWarmMaterial=new THREE.MeshBasicMaterial({color:0xffb877,transparent:true,opacity:.26,depthWrite:false,blending:THREE.AdditiveBlending});
+const spinningFloorRings=[];
+for(const [inner,thickness,segments,material] of [[3.15,.055,96,medallionMaterial],[3.62,.03,96,medallionWarmMaterial]]){
+  const ring=new THREE.Mesh(new THREE.RingGeometry(inner,inner+thickness,segments),material);
+  ring.rotation.x=-Math.PI/2;ring.position.y=.032;centrepiece.add(ring);
+}
+// Dashes rather than a continuous ring, so the rotation is legible.
+for(const [radius,count,length,material,speed] of [[2.62,24,.19,medallionMaterial,.11],[4.18,32,.13,medallionWarmMaterial,-.07]]){
+  const dashes=new THREE.Group();dashes.position.y=.034;centrepiece.add(dashes);
+  for(let i=0;i<count;i++){
+    const angle=i/count*Math.PI*2;
+    const dash=new THREE.Mesh(new THREE.PlaneGeometry(.05,length),material);
+    dash.rotation.x=-Math.PI/2;dash.rotation.z=-angle;
+    dash.position.set(Math.cos(angle)*radius,0,Math.sin(angle)*radius);
+    dashes.add(dash);
+  }
+  spinningFloorRings.push({ring:dashes,speed});
+}
+const bollardMaterial=new THREE.MeshStandardMaterial({color:0x1a2740,emissive:0x123c5e,emissiveIntensity:.9,metalness:.72,roughness:.24});
+const bollardCapMaterial=new THREE.MeshBasicMaterial({color:0x8ff0ff,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false});
+const bollardGeometry=new THREE.CylinderGeometry(.075,.1,.52,10);
+const bollardCapGeometry=new THREE.SphereGeometry(.085,10,8);
+for(let i=0;i<8;i++){
+  const angle=i/8*Math.PI*2+Math.PI/8;
+  const bollard=new THREE.Mesh(bollardGeometry,bollardMaterial);
+  bollard.position.set(Math.cos(angle)*4.55,.26,Math.sin(angle)*4.55);centrepiece.add(bollard);
+  const cap=new THREE.Mesh(bollardCapGeometry,bollardCapMaterial);
+  cap.position.set(Math.cos(angle)*4.55,.55,Math.sin(angle)*4.55);centrepiece.add(cap);
+}
+const moteMaterial=new THREE.MeshBasicMaterial({color:0xbdf3ff,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending});
+const moteGeometry=new THREE.SphereGeometry(.035,6,5);
+const motes=[];
+for(let i=0;i<26;i++){
+  const angle=i*2.399,radius=.35+(i%7)*.26;
+  const mote=new THREE.Mesh(moteGeometry,moteMaterial);
+  mote.position.set(Math.cos(angle)*radius,.1+(i%13)*.28,Math.sin(angle)*radius);
+  centrepiece.add(mote);
+  motes.push({mote,speed:.22+(i%5)*.06,base:.1+(i%13)*.28});
+}
 beforeRenderCallbacks.push((now,delta)=>{
   if(playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z>900)return;
   for(const {ring,speed} of haloRings)ring.rotation.z+=speed*delta;
+  for(const {ring,speed} of spinningFloorRings)ring.rotation.y+=speed*delta;
+  for(const mote of motes){
+    mote.mote.position.y+=mote.speed*delta;
+    // Recycled at the top of the beam rather than respawned, so the count is
+    // fixed and nothing allocates once the scene is built.
+    if(mote.mote.position.y>3.7)mote.mote.position.y=mote.base%1.2;
+  }
 });
 // Low, oversized glass prize display set flush against the true back wall.
 const prizeDisplay=new THREE.Group();prizeDisplay.position.set(0,0,-15.65);scene.add(prizeDisplay);
@@ -993,6 +1028,11 @@ const prizeLightBeam=new THREE.DirectionalLight(0xe9fbff,4.2);prizeLightBeam.pos
 const prizeUnderlightBar=new THREE.Mesh(new THREE.BoxGeometry(12.9,.045,.1),new THREE.MeshStandardMaterial({color:0x87dfff,emissive:0x5fcaff,emissiveIntensity:1.85,metalness:.3,roughness:.18}));prizeUnderlightBar.position.set(0,.19,-.62);prizeDisplay.add(prizeUnderlightBar);
 const prizeUnderlightBeam=new THREE.DirectionalLight(0x9addff,1.6);prizeUnderlightBeam.position.set(0,-.7,-.45);prizeUnderlightBeam.target.position.set(0,.62,.1);prizeDisplay.add(prizeUnderlightBeam,prizeUnderlightBeam.target);
 const prizeDisplayLights=[prizeDisplayLight,prizeLightBeam,prizeUnderlightBeam];
+// Trench Pepe stands on the counter top, at the same size he was in the case.
+// The prize windows occupy x = +/-1.15, 3.45 and 5.75, so the middle of the
+// counter is the one span of it that was never spoken for.
+gangsterPepeMount.position.set(0,1.265,0);prizeDisplay.add(gangsterPepeMount);
+gangsterPepeLight.position.set(0,1.95,.62);prizeDisplay.add(gangsterPepeLight);
 function prizeLabel(text,color){const canvas=document.createElement('canvas');canvas.width=256;canvas.height=72;const c=canvas.getContext('2d');c.fillStyle='#070914';c.fillRect(0,0,256,72);c.strokeStyle=color;c.lineWidth=5;c.strokeRect(3,3,250,66);c.fillStyle='#fff4cc';c.font='bold 23px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(text,128,37);return new THREE.CanvasTexture(canvas);}
 function addPrizeWindow(x,label,kind,color){const display=new THREE.Group();display.position.set(x,.62,.08);prizeDisplay.add(display);const toy=new THREE.Group();toy.position.set(0,-.02,.1);toy.scale.setScalar(1.15);if(kind==='pepe')toy.name='pepe-model-slot';if(kind==='penguin')toy.name='pudgy-model-slot';if(kind==='furthermore')toy.name='furthermore-model-slot';if(kind==='enterprise')toy.name='enterprise-model-slot';if(kind==='kurack')toy.name='kurack-model-slot';display.add(toy);
   const toyMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.38,metalness:.12});
@@ -1012,7 +1052,7 @@ async function installFurthermoreModel(){try{const loader=await getOptimizedGltf
 async function installEnterpriseModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/enterprise.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('enterprise-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.76/Math.max(size.x,size.y,size.z));model.rotation.y=Math.PI/2;model.position.y=.02;slot.add(model);},undefined,error=>console.warn('Enterprise model could not load.',error));}catch(error){console.warn('Enterprise model loader could not initialize.',error)}}
 async function installKurackModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/kurack.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('kurack-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.72/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.rotation.y=Math.PI*1.5;model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y=-scaledBounds.min.y-.18;slot.add(model);},undefined,error=>console.warn('Kurack model could not load.',error));}catch(error){console.warn('Kurack model loader could not initialize.',error)}}
 async function installGangsterPepe(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-gangster-animated.optimized.glb?v=meshopt-1',gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.016/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;gangsterPepeMount.add(model);if(gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());animatedMixers.push(mixer);}},undefined,error=>console.warn('Animated gangster Pepe model could not load.',error));}catch(error){console.warn('Animated gangster Pepe loader could not initialize.',error)}}
-let prizeModelsStarted=false,centerModelStarted=false,megaManStatuesStarted=false,nextHeavyAssetCheck=0;
+let prizeModelsStarted=false,megaManStatuesStarted=false,nextHeavyAssetCheck=0;
 // Real controllers on the deck instead of a generic stick and four buttons.
 // Each model loads once per system and is cloned onto every cabinet of that
 // system; clones share geometry and materials, so the cost is one upload each.
@@ -1073,7 +1113,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();}if(!centerModelStarted&&playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z<16){centerModelStarted=true;installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-11&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-11&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -1091,7 +1131,7 @@ accentLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},
 // A mural washes its wall from across the room, so it is ranked over the range
 // it actually reaches. On the accent budget every one of these sat dark unless
 // the player pressed into the wall, which is the one place you cannot see it.
-muralLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<3&&distanceSq<225});const centerDistanceSq=playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z;gangsterPepeLight.visible=centerDistanceSq<25;counterDisplayLight.visible=centerDistanceSq<49;const prizeVisible=playerPosition.distanceToSquared(prizeDisplay.position)<144;prizeDisplayLights.forEach(light=>{light.visible=prizeVisible});}
+muralLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<3&&distanceSq<225});const prizeVisible=playerPosition.distanceToSquared(prizeDisplay.position)<144;gangsterPepeLight.visible=prizeVisible;prizeDisplayLights.forEach(light=>{light.visible=prizeVisible});}
 const prizeSignCanvas=document.createElement('canvas');prizeSignCanvas.width=1024;prizeSignCanvas.height=192;const psc=prizeSignCanvas.getContext('2d');const prizeLedTexture=new THREE.CanvasTexture(prizeSignCanvas);
 function drawPrizeLed(time=0){psc.fillStyle='#05060b';psc.fillRect(0,0,1024,192);for(let x=8;x<1024;x+=16){for(let y=8;y<192;y+=16){psc.fillStyle=(x+y)%32?'#101527':'#1c2540';psc.fillRect(x,y,3,3)}}psc.font='bold 88px monospace';psc.textBaseline='middle';psc.shadowColor='#ff3cac';psc.shadowBlur=20;psc.fillStyle='#fff4cc';const text='  ✦  PRIZE COUNTER  ✦  ';const width=psc.measureText(text).width;const offset=(time*.14)%(width+1024);psc.fillText(text,1024-offset,98);psc.fillText(text,1024-offset+width+160,98);psc.shadowBlur=0;prizeLedTexture.needsUpdate=true;}
 drawPrizeLed();
@@ -1192,6 +1232,17 @@ if(mobileMoveZone&&mobileMoveThumb&&mobileLookZone){
   document.querySelector('#mobile-use').addEventListener('click',event=>{event.preventDefault();const down=new KeyboardEvent('keydown',{code:'KeyE',key:'e'}),up=new KeyboardEvent('keyup',{code:'KeyE',key:'e'});dispatchEvent(down);dispatchEvent(up)});
 }
 let near=null;
+/**
+ * Platforms whose emulation is not finished, stated at the cabinet.
+ *
+ * Keyed by platform rather than carried per game: the warning is a property of
+ * the emulator behind the cabinet, and a per-game field is a thing someone can
+ * forget to set on the next title added.
+ */
+const EXPERIMENTAL_PLATFORMS={
+  ps2:'PLAYSTATION 2 SUPPORT IS EXPERIMENTAL AND STILL IN DEVELOPMENT · EXPECT SLOWDOWN, GLITCHES AND GAMES THAT DO NOT BOOT',
+  gamecube:'GAMECUBE SUPPORT IS EXPERIMENTAL AND STILL IN DEVELOPMENT · EXPECT SLOWDOWN, GLITCHES AND GAMES THAT DO NOT BOOT'
+};
 function openMachine(c){
   activeCabinet=c;
   document.body.classList.add('cabinet-open');resetMobileMove();
@@ -1200,6 +1251,12 @@ function openMachine(c){
   const performanceNote=c.performanceNote?` · ${c.performanceNote.toUpperCase()}`:'';
   const nativeState=document.querySelector('#native-runtime-state');
   if(nativeState)nativeState.hidden=true;
+  const warning=document.querySelector('#cabinet-warning');
+  if(warning){
+    const platformWarning=EXPERIMENTAL_PLATFORMS[c.system];
+    warning.hidden=!platformWarning;
+    if(platformWarning)warning.textContent=platformWarning+(c.performanceNote?` · ${c.performanceNote.toUpperCase()}`:'');
+  }
   document.querySelector('#machine-type').textContent=(c.system==='psx'?'PLAYSTATION // CABINET':(c.system==='n64'?'NINTENDO 64 // CABINET':(c.system==='snes'?'SUPER NINTENDO // CABINET':(c.system==='ps2'?'PLAYSTATION 2 // EXPERIMENTAL CABINET':(c.system==='gamecube'?'GAMECUBE // EXPERIMENTAL GECKO':c.type)))))+performanceNote;
   document.querySelector('#machine-name').textContent=c.name;
   const controls=document.querySelector('#emulator-controls');
@@ -1503,18 +1560,6 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
     if(previousZ<0&&playerPosition.z>rearFace)playerPosition.z=rearFace;
     else if(previousZ>=0&&playerPosition.z<frontFace)playerPosition.z=frontFace;
   }
-  const distance=Math.hypot(playerPosition.x,playerPosition.z);
-  const previousDistance=Math.hypot(previousX,previousZ);
-  if(distance<SOCIAL_DISPLAY_RADIUS){
-    if(distance>.001){playerPosition.x*=SOCIAL_DISPLAY_RADIUS/distance;playerPosition.z*=SOCIAL_DISPLAY_RADIUS/distance}
-    else if(previousDistance>.001){playerPosition.x=previousX;playerPosition.z=previousZ}
-    else playerPosition.x=SOCIAL_DISPLAY_RADIUS;
-    return;
-  }
-  const inSideGap=Math.abs(Math.sin(Math.atan2(playerPosition.z,playerPosition.x)))<=Math.sin(SOCIAL_COUCH_GAP_HALF_ANGLE);
-  if(inSideGap||distance<SOCIAL_COUCH_INNER_RADIUS||distance>=SOCIAL_COUCH_OUTER_RADIUS)return;
-  const boundary=previousDistance<=SOCIAL_COUCH_INNER_RADIUS?SOCIAL_COUCH_INNER_RADIUS:SOCIAL_COUCH_OUTER_RADIUS;
-  playerPosition.x*=boundary/distance;playerPosition.z*=boundary/distance;
 }
 function resolveRearGalleryCollision(previousZ){
   if(playerPosition.x<-30.5||playerPosition.x>-14.5)return;
