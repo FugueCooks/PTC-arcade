@@ -620,27 +620,51 @@ themeRoom({
 function pokemonFieldTexture(){
   const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=840;
   const c=canvas.getContext('2d');
-  c.fillStyle='#2f7a3a';c.fillRect(0,0,1080,840);
-  // Mown stripes, the width a roller leaves rather than a stripe per metre.
-  for(let x=0;x<1080;x+=108){c.fillStyle=(x/108)%2?'#357f40':'#2b7435';c.fillRect(x,0,108,840)}
-  // The painted boundary: an octagon, as the stage in the reference is.
-  const inset=54,cut=132;
-  c.strokeStyle='#eef3ee';c.lineWidth=9;c.lineJoin='round';
-  c.beginPath();
-  c.moveTo(inset+cut,inset);c.lineTo(1080-inset-cut,inset);c.lineTo(1080-inset,inset+cut);
-  c.lineTo(1080-inset,840-inset-cut);c.lineTo(1080-inset-cut,840-inset);c.lineTo(inset+cut,840-inset);
-  c.lineTo(inset,840-inset-cut);c.lineTo(inset,inset+cut);c.closePath();c.stroke();
-  // The ball at the centre spot, in the field's muted paint rather than in the
-  // colours of a toy: it is a marking, not a decal.
-  const cx=540,cy=420,r=186;
-  c.fillStyle='#b8574f';c.beginPath();c.arc(cx,cy,r,Math.PI,0);c.closePath();c.fill();
-  c.fillStyle='#dfe4de';c.beginPath();c.arc(cx,cy,r,0,Math.PI);c.closePath();c.fill();
-  c.fillStyle='#20241f';c.fillRect(cx-r,cy-r*.085,r*2,r*.17);
-  c.beginPath();c.arc(cx,cy,r*.32,0,Math.PI*2);c.fill();
-  c.fillStyle='#dfe4de';c.beginPath();c.arc(cx,cy,r*.23,0,Math.PI*2);c.fill();
-  c.strokeStyle='#20241f';c.lineWidth=r*.055;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();
+  // The armored platform the field sits on: grey deck plates in a panel grid,
+  // red service segments, bolt heads — the stage, not a lawn.
+  c.fillStyle='#7b8290';c.fillRect(0,0,1080,840);
+  c.strokeStyle='#4f545f';c.lineWidth=6;
+  for(let x=0;x<=1080;x+=135){c.beginPath();c.moveTo(x,0);c.lineTo(x,840);c.stroke()}
+  for(let y=0;y<=840;y+=140){c.beginPath();c.moveTo(0,y);c.lineTo(1080,y);c.stroke()}
+  c.fillStyle='#a72e2e';
+  for(const [x,y,w,h] of [[30,30,150,40],[900,30,150,40],[30,770,150,40],[900,770,150,40],[500,18,80,26],[500,796,80,26],[16,390,26,60],[1038,390,26,60]])c.fillRect(x,y,w,h);
+  c.fillStyle='#3d424c';
+  for(let i=0;i<40;i++){c.beginPath();c.arc(40+(i*167)%1000,44+(i*211)%752,7,0,Math.PI*2);c.fill()}
+  // The field: bright green, cornered like the stage, mown in wide bands.
+  const inset=96,cut=150;
+  const tracePlate=()=>{
+    c.beginPath();
+    c.moveTo(inset+cut,inset);c.lineTo(1080-inset-cut,inset);c.lineTo(1080-inset,inset+cut);
+    c.lineTo(1080-inset,840-inset-cut);c.lineTo(1080-inset-cut,840-inset);c.lineTo(inset+cut,840-inset);
+    c.lineTo(inset,840-inset-cut);c.lineTo(inset,inset+cut);c.closePath();
+  };
+  tracePlate();c.save();c.clip();
+  c.fillStyle='#59bd4a';c.fillRect(0,0,1080,840);
+  for(let x=0;x<1080;x+=120){if((x/120)%2){c.fillStyle='#63c953';c.fillRect(x,0,120,840)}}
+  // The dark wedges either side of centre, and the yellow guides at their backs.
+  c.fillStyle='#2f7d34';
+  c.beginPath();c.moveTo(250,330);c.lineTo(250,510);c.lineTo(360,420);c.closePath();c.fill();
+  c.beginPath();c.moveTo(830,330);c.lineTo(830,510);c.lineTo(720,420);c.closePath();c.fill();
+  c.fillStyle='#ffd23e';
+  for(const [ax,ay,dx] of [[205,420,-1],[875,420,1]]){
+    c.beginPath();c.moveTo(ax,ay-26);c.lineTo(ax,ay+26);c.lineTo(ax+dx*40,ay);c.closePath();c.fill();
+  }
+  c.restore();
+  tracePlate();c.strokeStyle='#e8eef2';c.lineWidth=8;c.lineJoin='round';c.stroke();
+  // The ball at centre, in the toy's own colours, as the stage paints it.
+  const cx=540,cy=420,r=150;
+  c.fillStyle='#e23d3d';c.beginPath();c.arc(cx,cy,r,Math.PI,0);c.closePath();c.fill();
+  c.fillStyle='#f4f6f8';c.beginPath();c.arc(cx,cy,r,0,Math.PI);c.closePath();c.fill();
+  c.fillStyle='#16181d';c.fillRect(cx-r,cy-11,r*2,22);
+  c.beginPath();c.arc(cx,cy,44,0,Math.PI*2);c.fill();
+  c.fillStyle='#f4f6f8';c.beginPath();c.arc(cx,cy,30,0,Math.PI*2);c.fill();
+  c.strokeStyle='#16181d';c.lineWidth=8;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
   texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  // The plane maps canvas x down the room rather than across it; a quarter
+  // turn puts the ball band, the wedges and the mowing the way the stage
+  // has them.
+  texture.center.set(.5,.5);texture.rotation=-Math.PI/2;
   return texture;
 }
 /**
@@ -661,85 +685,100 @@ function pokemonFieldTexture(){
 function buildPokemonStadium(centerX,centerZ){
   // 1.5x the original bowl. The heights stay: the building's ceiling did not
   // grow, and the dome still tops out three centimetres under it.
-  const RX=15.75,RZ=12.15,BAND_BASE=.6,BAND_TOP=4.2;
-  const bandTexture=new THREE.TextureLoader().load('assets/art/pokemon-stadium-band.webp?v=pokemon-poke-1');
-  bandTexture.colorSpace=THREE.SRGBColorSpace;
-  bandTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-  // The band stops short of a full circle: the missing arc is the tunnel
-  // mouth, so the way in is an opening in the stands rather than a walk
-  // through the image. The arc faces the doorway (local theta 3pi/2 is -x),
-  // and its width is the tunnel plus a shoulder, measured along the ellipse
-  // where dz/dtheta is RZ.
-  // The mouth faces +z now — the doorway is in the room's south wall — and at
-  // theta 0 the tangent runs along x at rate RX.
-  const MOUTH_ARC=4.2/RX;
-  const BAND_THETA_START=MOUTH_ARC/2,BAND_THETA_LENGTH=Math.PI*2-MOUTH_ARC;
-  const band=new THREE.Mesh(
-    new THREE.CylinderGeometry(1,1,BAND_TOP-BAND_BASE,72,1,true,BAND_THETA_START,BAND_THETA_LENGTH),
-    new THREE.MeshBasicMaterial({map:bandTexture,side:THREE.DoubleSide}));
-  band.scale.set(RX,1,RZ);
-  band.position.set(centerX,(BAND_BASE+BAND_TOP)/2,centerZ);
-  // Rotating the mesh a quarter turn would swing the 10.5 m axis across the
-  // room's 8.4 m half-depth and push the band through both neighbouring
-  // rooms — and out of line with the dome. The jumbotron is aimed by sliding
-  // the texture instead. The arc starts at the far edge of the tunnel mouth,
-  // and the jumbotron panel — the first 25.4% of the strip, centre .127 —
-  // belongs opposite the mouth, which is halfway along the arc. The seam where
-  // the loop would have joined lands inside the mouth, where there is no wall
-  // to show it on.
-  bandTexture.wrapS=THREE.RepeatWrapping;
-  bandTexture.offset.x=.127-.5;
-  scene.add(band);
-  // The roof: a shallow dome from the band's rim to just under the ceiling,
-  // drawn as a night sky with a lit rim so the bowl reads as open to the dark
-  // rather than shut by a lid.
-  // The sphere's v axis runs pole to rim, so the sky is painted as a vertical
-  // gradient — a radial one lands as a dark blob on the apex, which is exactly
-  // what it looked like. Zenith deep, horizon lifting toward the rim, and a
-  // faint ring of roof lights where the dome meets the stands.
-  const domeCanvas=document.createElement('canvas');domeCanvas.width=512;domeCanvas.height=512;
-  const dc=domeCanvas.getContext('2d');
-  const sky=dc.createLinearGradient(0,0,0,512);
-  sky.addColorStop(0,'#0a1233');sky.addColorStop(.55,'#0d1a3f');sky.addColorStop(.86,'#1d3a66');sky.addColorStop(1,'#38609a');
-  dc.fillStyle=sky;dc.fillRect(0,0,512,512);
-  for(let i=0;i<240;i++){
-    const x=(i*197)%512,y=((i*89)%460)*.92;
-    dc.fillStyle=i%3?'#c9d6ee':'#ffffff';dc.globalAlpha=.2+(i%5)*.13;
-    dc.fillRect(x,y,1.7,1.7);
-  }
-  dc.globalAlpha=1;
-  dc.fillStyle='#ffe9b8';
-  for(let i=0;i<64;i++){dc.globalAlpha=.5+(i%3)*.2;dc.fillRect(i*8+2,494,3,2.2)}
-  dc.globalAlpha=1;
-  const domeTexture=new THREE.CanvasTexture(domeCanvas);domeTexture.colorSpace=THREE.SRGBColorSpace;
-  // A true dome: the apex sits more than seven metres over the stands' rim,
-  // through the hole cut in the building's ceiling for it.
-  const dome=new THREE.Mesh(
-    new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI/2),
-    new THREE.MeshBasicMaterial({map:domeTexture,side:THREE.BackSide}));
-  dome.scale.set(RX,7.4,RZ);
-  dome.position.set(centerX,BAND_TOP,centerZ);
-  scene.add(dome);
-  // The sky is BackSide, so from outside the bowl the dome was invisible and
-  // everything above the band read as dead black space — worst from the
-  // doorway, straight over the vomitory. A dark outer shell a hair larger
-  // gives those sightlines a roof; from inside it is the culled side, unseen.
-  const domeShell=new THREE.Mesh(
-    new THREE.SphereGeometry(1,48,24,0,Math.PI*2,0,Math.PI/2),
+  // The bowl is a real sphere now: one painted globe — night sky and
+  // fireworks overhead, city skyline at the horizon, tier upon tier of
+  // crowd wrapped the whole way round, the service wall below — with the
+  // tunnel piercing its south wall through a cut in the mesh.
+  const RX=15.75,RZ=12.15,SPHERE_RY=8,SPHERE_CY=4.2;
+  const sphereTexture=(()=>{
+    const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=1024;
+    const c=canvas.getContext('2d');
+    const sky=c.createLinearGradient(0,0,0,470);
+    sky.addColorStop(0,'#04060e');sky.addColorStop(.6,'#0b1130');sky.addColorStop(1,'#1b2450');
+    c.fillStyle=sky;c.fillRect(0,0,2048,470);
+    for(let i=0;i<340;i++){const x=(i*211)%2048,y=((i*97)%420)*.98;c.globalAlpha=.25+(i%4)*.2;c.fillStyle=i%5?'#cdd7ee':'#ffffff';c.fillRect(x,y,2,2)}
+    c.globalAlpha=1;
+    // Fireworks, like the night the picture was taken.
+    const burst=(bx,by,r,spokes,core,tip)=>{
+      c.strokeStyle=core;c.lineWidth=3;
+      for(let i=0;i<spokes;i++){const a=i/spokes*Math.PI*2;
+        c.globalAlpha=.85;c.beginPath();c.moveTo(bx+Math.cos(a)*r*.15,by+Math.sin(a)*r*.15);
+        c.lineTo(bx+Math.cos(a)*r,by+Math.sin(a)*r);c.stroke();
+        c.globalAlpha=1;c.fillStyle=tip;c.beginPath();c.arc(bx+Math.cos(a)*r,by+Math.sin(a)*r,4,0,Math.PI*2);c.fill();
+      }
+      c.fillStyle='#ffffff';c.beginPath();c.arc(bx,by,6,0,Math.PI*2);c.fill();
+    };
+    burst(1620,150,105,26,'#8a3ff0','#e79bff');
+    burst(1500,255,44,18,'#c05ae0','#ffb8f0');
+    burst(420,120,60,20,'#7a52e8','#d9a8ff');
+    // The skyline below the sky, and the grandstand roofline over the bowl.
+    c.fillStyle='#07090f';
+    for(let x=0;x<2048;x+=26){const h=18+((x*37)%52);c.fillRect(x,470-h,24,h)}
+    c.fillStyle='#e8d27a';
+    for(let i=0;i<160;i++){c.globalAlpha=.5;c.fillRect((i*89)%2048,436+((i*31)%30),2,2)}
+    c.globalAlpha=1;
+    c.fillStyle='#171b26';c.fillRect(0,470,2048,26);
+    // A ring of rim lights where the roof meets the stands.
+    for(let x=10;x<2048;x+=34){c.fillStyle='#fff6d8';c.fillRect(x,478,7,7);c.globalAlpha=.35;c.fillStyle='#fff0b8';c.fillRect(x-3,474,13,15);c.globalAlpha=1}
+    // Four tiers of dotted crowd between dark rails, aisle stairs cutting
+    // down every stretch.
+    const crowd=['#cfd6e2','#e2c9c9','#c9e2cf','#d8d2b8','#c9cde2','#e2d9c9'];
+    let top=496;
+    for(let tier=0;tier<4;tier++){
+      const height=tier<2?66:74;
+      c.fillStyle=tier%2?'#4e5563':'#575e6d';c.fillRect(0,top,2048,height);
+      for(let i=0;i<1400;i++){
+        const x=(i*61+tier*23)%2048,y=top+6+((i*37+tier*11)%(height-14));
+        c.fillStyle=crowd[(i+tier)%6];c.globalAlpha=.75;c.fillRect(x,y,4,6);
+      }
+      c.globalAlpha=1;
+      for(let x=0;x<2048;x+=256){c.fillStyle='#2c313c';c.fillRect(x,top,10,height)}
+      c.fillStyle='#181c26';c.fillRect(0,top+height,2048,10);
+      top+=height+10;
+    }
+    // The wall below the stands, with its red service stripe; then the dark
+    // below the floor, which the platform hides.
+    c.fillStyle='#23272f';c.fillRect(0,top,2048,1024-top);
+    c.fillStyle='#a03434';
+    for(let x=0;x<2048;x+=170){c.fillRect(x+16,top+14,120,22)}
+    c.fillStyle='#0b0d13';c.fillRect(0,top+52,2048,1024-top-52);
+    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+    texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    return texture;
+  })();
+  // The tunnel pierces the globe: triangles inside the mouth's box go, and
+  // the vomitory's own walls and roof frame the opening they leave. The same
+  // cut opens the dark outer shell, which exists because BackSide is
+  // invisible from outside and the doorway used to stare into dead black.
+  const cutMouth=(geometry,scaleX,scaleY,scaleZ)=>{
+    const position=geometry.attributes.position;
+    const inMouth=index=>{
+      const x=position.getX(index)*scaleX+centerX;
+      const y=position.getY(index)*scaleY+SPHERE_CY;
+      const z=position.getZ(index)*scaleZ+centerZ;
+      return x>24.7&&x<29.3&&y<3.15&&z>centerZ+7&&z<centerZ+14;
+    };
+    const oldIndex=geometry.index,kept=[];
+    for(let i=0;i<oldIndex.count;i+=3){
+      const a=oldIndex.getX(i),b=oldIndex.getX(i+1),d=oldIndex.getX(i+2);
+      if(inMouth(a)&&inMouth(b)&&inMouth(d))continue;
+      kept.push(a,b,d);
+    }
+    geometry.setIndex(kept);
+  };
+  const bowlGeometry=new THREE.SphereGeometry(1,72,44);
+  cutMouth(bowlGeometry,RX+.15,SPHERE_RY,RZ+.15);
+  const bowl=new THREE.Mesh(bowlGeometry,new THREE.MeshBasicMaterial({map:sphereTexture,side:THREE.BackSide}));
+  bowl.scale.set(RX+.15,SPHERE_RY,RZ+.15);
+  bowl.position.set(centerX,SPHERE_CY,centerZ);
+  scene.add(bowl);
+  const shellGeometry=new THREE.SphereGeometry(1,48,24);
+  cutMouth(shellGeometry,RX+.38,SPHERE_RY+.2,RZ+.38);
+  const bowlShell=new THREE.Mesh(shellGeometry,
     new THREE.MeshStandardMaterial({color:0x0c1220,emissive:0x0a1425,emissiveIntensity:.35,roughness:.6,metalness:.3}));
-  domeShell.scale.set(RX+.18,7.5,RZ+.18);
-  domeShell.position.set(centerX,BAND_TOP,centerZ);
-  scene.add(domeShell);
-  // Below the band, a dark skirt down to the floor, so no sightline under the
-  // stands reaches the room outside. It is the wall the stands sit on.
-  // The skirt leaves the same arc open, or it would wall off the bottom 60 cm
-  // of the tunnel mouth.
-  const skirt=new THREE.Mesh(
-    new THREE.CylinderGeometry(1,1,BAND_BASE,72,1,true,BAND_THETA_START,BAND_THETA_LENGTH),
-    new THREE.MeshStandardMaterial({color:0x0c1220,emissive:0x0a1425,emissiveIntensity:.4,roughness:.6,metalness:.3,side:THREE.DoubleSide}));
-  skirt.scale.set(RX,1,RZ);
-  skirt.position.set(centerX,BAND_BASE/2,centerZ);
-  scene.add(skirt);
+  bowlShell.scale.set(RX+.38,SPHERE_RY+.2,RZ+.38);
+  bowlShell.position.set(centerX,SPHERE_CY,centerZ);
+  scene.add(bowlShell);
   // The way in is a stadium tunnel: a dark vomitory from the room's doorway
   // through the stands. The player crosses the band's image inside it, where
   // there is nothing to see, so the bowl never visibly breaks.
@@ -796,15 +835,8 @@ function buildPokemonStadium(centerX,centerZ){
   headerTrim.position.set(centerX,2.85,TUNNEL_MOUTH_Z-.24);scene.add(headerTrim);
   // The exit opens straight onto the grass: wing walls stood here and read as
   // loose blocks on the field, so the run ends clean.
-  // Above and beside the tunnel, the mouth is closed off. Without this the
-  // opening in the band was taller and wider than the tunnel, and the bowl's
-  // inside was visible over the tunnel roof from the doorway.
-  const headwall=new THREE.Mesh(new THREE.BoxGeometry(4.8,BAND_TOP-2.55,.16),tunnelMaterial);
-  headwall.position.set(centerX,(BAND_TOP+2.55)/2,centerZ+RZ-.35);scene.add(headwall);
-  for(const side of [-1,1]){
-    const cheek=new THREE.Mesh(new THREE.BoxGeometry(.6,2.7,.16),tunnelMaterial);
-    cheek.position.set(centerX+side*(TUNNEL_HALF_W+.42),1.35,centerZ+RZ-.35);scene.add(cheek);
-  }
+  // Nothing seals the mouth any more: the globe's own cut is the opening,
+  // and the tunnel's walls and roof frame it.
   // The field sits inscribed in the ellipse rather than filling the rectangle,
   // so it never runs behind the stands.
   const field=new THREE.Mesh(new THREE.PlaneGeometry(18.9,14.1),
@@ -812,26 +844,54 @@ function buildPokemonStadium(centerX,centerZ){
   field.rotation.x=-Math.PI/2;field.position.set(centerX,.014,centerZ);field.receiveShadow=true;scene.add(field);
   // No barrier ring: the field runs open to the foot of the stands, which is
   // the space the Pokemon will occupy.
-  // Floodlight rigs on the dome rim, leaning in over the field, with one
-  // managed light per side as before: the rigs are the look, the two lights
-  // are the proof, and two is what the budget carries.
-  const housing=new THREE.MeshStandardMaterial({color:0x161b24,metalness:.7,roughness:.35});
-  const lamp=new THREE.MeshBasicMaterial({color:0xfff6dc});
-  for(let i=0;i<6;i++){
-    const a=(i+.5)/6*Math.PI*2,x=Math.cos(a)*(RX-.9),z=Math.sin(a)*(RZ-.9);
-    const rig=new THREE.Group();
-    rig.position.set(centerX+x,BAND_TOP-.25,centerZ+z);
-    rig.lookAt(centerX,1.2,centerZ);
-    const bank=new THREE.Mesh(new THREE.BoxGeometry(1.9,.42,.3),housing);rig.add(bank);
-    for(const cell of [-.62,0,.62]){
-      const face=new THREE.Mesh(new THREE.PlaneGeometry(.5,.28),lamp);
-      face.position.set(cell,0,.17);rig.add(face);
-    }
-    scene.add(rig);
-  }
+  // The set pieces, standing inside the globe the way the stage dresses
+  // them: the jumbotron and its red-striped pylons opposite the mouth, a
+  // string of bulbs burning above it, and a floodlight wing over each long
+  // side. Two managed lights stay the whole light budget, as before.
+  const steel=new THREE.MeshStandardMaterial({color:0x171a22,metalness:.6,roughness:.4});
+  const darkSteel=new THREE.MeshStandardMaterial({color:0x10131a,metalness:.5,roughness:.5});
+  const redTrim=new THREE.MeshStandardMaterial({color:0xb02828,emissive:0x8a1414,emissiveIntensity:.9,roughness:.4});
+  const lampFace=new THREE.MeshBasicMaterial({color:0xfff6dc});
+  const screenZ=centerZ-8.6;
+  const jumboBase=new THREE.Mesh(new THREE.BoxGeometry(11.4,1.5,1.6),steel);
+  jumboBase.position.set(centerX,.75,screenZ-.2);scene.add(jumboBase);
+  const jumboFrame=new THREE.Mesh(new THREE.BoxGeometry(10.4,4.5,.5),darkSteel);
+  jumboFrame.position.set(centerX,4.15,screenZ);scene.add(jumboFrame);
+  const jumboPanel=new THREE.Mesh(new THREE.PlaneGeometry(9.9,4),
+    new THREE.MeshStandardMaterial({color:0x0c130e,emissive:0x0a1a10,emissiveIntensity:.5,roughness:.3,metalness:.2}));
+  jumboPanel.position.set(centerX,4.15,screenZ+.27);scene.add(jumboPanel);
   for(const side of [-1,1]){
+    const pylon=new THREE.Mesh(new THREE.BoxGeometry(1.15,7,1.15),darkSteel);
+    pylon.position.set(centerX+side*6.35,3.5,screenZ-.1);scene.add(pylon);
+    const stripe=new THREE.Mesh(new THREE.BoxGeometry(.2,5.6,.1),redTrim);
+    stripe.position.set(centerX+side*6.1,3.7,screenZ+.5);scene.add(stripe);
+  }
+  const lightBar=new THREE.Mesh(new THREE.BoxGeometry(11.8,.22,.24),steel);
+  lightBar.position.set(centerX,6.85,screenZ+.1);scene.add(lightBar);
+  for(let i=0;i<21;i++){
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),lampFace);
+    bulb.position.set(centerX-5.5+i*.55,6.68,screenZ+.2);scene.add(bulb);
+  }
+  const stringGlow=new THREE.Mesh(new THREE.PlaneGeometry(12.4,1.7),
+    new THREE.MeshBasicMaterial({map:haloTexture,color:0xffedb8,transparent:true,opacity:.55,depthWrite:false,blending:THREE.AdditiveBlending}));
+  stringGlow.position.set(centerX,6.7,screenZ+.3);scene.add(stringGlow);
+  for(const side of [-1,1]){
+    const wing=new THREE.Group();
+    wing.position.set(centerX+side*10.6,6.3,centerZ+1.2);
+    wing.rotation.z=side*.42;
+    const wingSlab=new THREE.Mesh(new THREE.BoxGeometry(5,.4,2.8),steel);wing.add(wingSlab);
+    for(let row=0;row<2;row++)for(let col=0;col<5;col++){
+      const cellLamp=new THREE.Mesh(new THREE.PlaneGeometry(.62,.5),lampFace);
+      cellLamp.position.set(-1.8+col*.9,-.22,row?-.72:.72);
+      cellLamp.rotation.x=Math.PI/2;
+      wing.add(cellLamp);
+    }
+    const wingGlow=new THREE.Mesh(new THREE.PlaneGeometry(5.4,3.4),
+      new THREE.MeshBasicMaterial({map:haloTexture,color:0xfff3cc,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending}));
+    wingGlow.position.y=-.5;wingGlow.rotation.x=-Math.PI/2;wing.add(wingGlow);
+    scene.add(wing);
     const flood=new THREE.PointLight(0xfff2d6,5.2,22,2);
-    flood.position.set(centerX,3.6,centerZ+side*7);
+    flood.position.set(centerX+side*7,4.6,centerZ+1.2);
     scene.add(flood);managedSceneLights.push(flood);
   }
 }
@@ -2777,7 +2837,9 @@ function resolveRearGalleryCollision(){}
  * else — outward from the field or inward from a room corner — puts the player
  * back on the boundary. The same rule runs on both authoritative paths.
  */
-const POKEBOWL={cx:POKEMON_CENTER_X,cz:POKEMON_CENTER_Z,ax:15.35,az:11.75,laneHalfWidth:1.5};
+// The stands are a real sphere now, which narrows toward the floor: the
+// walkable ellipse is the globe at ankle height, not the old band.
+const POKEBOWL={cx:POKEMON_CENTER_X,cz:POKEMON_CENTER_Z,ax:12.9,az:9.9,laneHalfWidth:1.5};
 /**
  * The Chao Garden's cliffs, the same rule at the garden's scale: an ellipse
  * just inside the painted band, passable only where the cliffs part at the

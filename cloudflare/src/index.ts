@@ -70,7 +70,7 @@ const POKEMON_DOOR_X = 27;
 const NORTH_ROW_DIVIDER_X = [-21.6];
 // The Pokemon bowl: the stands are solid, and the only way through them is the
 // entrance lane on the doorway side. Matches POKEBOWL in arcade.js.
-const POKEBOWL = { cx: 27, cz: -54.6, ax: 15.35, az: 11.75, laneHalfWidth: 1.5 };
+const POKEBOWL = { cx: 27, cz: -54.6, ax: 12.9, az: 9.9, laneHalfWidth: 1.5 };
 // The Chao Garden's cliffs: the same rule at the garden's scale, passable only
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
