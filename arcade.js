@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=mobile-scale-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=foyer-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -755,7 +755,27 @@ const ARCADE_ROW_SPACING=2.3;
 function arcadeRow(centerX,count,spacing=ARCADE_ROW_SPACING){
   return Array.from({length:count},(_,index)=>centerX+(index-(count-1)/2)*spacing);
 }
-const playstationRowX=arcadeRow(-ANNEX_ROOM_CENTER_X,7);
+/**
+ * Every console game is out on the main floor while the rooms are re-themed.
+ *
+ * Two rows down the hall either side of the centre aisle, directly under the
+ * pendant rows, each facing the aisle a player walks along. Twelve a side: the
+ * PlayStation and PS2 sets to the west, Nintendo 64 and GameCube to the east.
+ * The Mega Man room keeps its own machines — it is a finished room, not a pile
+ * of loose cabinets.
+ *
+ * The rows sit 11.5 m out, which clears the chandelier's bollards at 4.55 m
+ * and leaves both partition walls, and every doorway in them, ten metres clear.
+ */
+const FOYER_ROW_X=11.5,FOYER_ROW_SPACING=ARCADE_ROW_SPACING,FOYER_ROW_LENGTH=12;
+function foyerRow(side){
+  return Array.from({length:FOYER_ROW_LENGTH},(_,index)=>({
+    x:side*FOYER_ROW_X,
+    z:(index-(FOYER_ROW_LENGTH-1)/2)*FOYER_ROW_SPACING,
+    rotation:side<0?Math.PI/2:-Math.PI/2
+  }));
+}
+const FOYER_WEST=foyerRow(-1),FOYER_EAST=foyerRow(1);
 const playstationRow=[
   ['silent-hill','SILENT HILL',0xc94c4c,false,false],
   ['pixel-rally',"TONY HAWK'S PRO SKATER 2",0x36f9f6,false,false],
@@ -766,8 +786,9 @@ const playstationRow=[
   ['metal-gear-solid','METAL GEAR SOLID',0x5d75d9,false,false]
 ];
 playstationRow.forEach(([id,label,hue,isCrash,isGex],index)=>{
-  makeCabinet(id,label,playstationRowX[index],-1.7,hue,isCrash,isGex,'psx');
-  cabinets[cabinets.length-1].g.rotation.y=Math.PI;configureHostedCabinet(id);
+  const slot=FOYER_WEST[index];
+  makeCabinet(id,label,slot.x,slot.z,hue,isCrash,isGex,'psx');
+  cabinets[cabinets.length-1].g.rotation.y=slot.rotation;configureHostedCabinet(id);
 });
 // The row starts on the north wall — the one on your left as you walk in — and
 // turns the corner onto the west wall rather than crowding ten machines onto
@@ -947,18 +968,15 @@ function resolveStatueCollisions(previousX,previousZ){
     return;
   }
 }
-// The four against the outer wall followed it out to the room's new width. The
-// three along the back wall moved west of the doorway that now leads to the
-// GameCube gallery, which the third of them would otherwise stand in front of.
-const n64CabinetLayout=[[1,41.4,-13,-Math.PI/2,0x8b5cf6],[2,41.4,-9,-Math.PI/2,0xff4da6],[3,41.4,-5,-Math.PI/2,0x36f9f6],[4,41.4,-1,-Math.PI/2,0xffb42e],[5,22.8,-15.2,0,0x7dff67],[6,26.1,-15.2,0,0xff3cac],[7,29.4,-15.2,0,0x42a5ff]];
+const N64_HUES=[0x8b5cf6,0xff4da6,0x36f9f6,0xffb42e,0x7dff67,0xff3cac,0x42a5ff];
+const n64CabinetLayout=N64_HUES.map((hue,index)=>[index+1,FOYER_EAST[index].x,FOYER_EAST[index].z,FOYER_EAST[index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of n64CabinetLayout){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
 // Five experimental GameCube cabinets sit inside their dedicated construction
 // room, facing its doorway. Gecko remains available for later runtime work, but
 // the cabinets cannot be reached while the room is blocked.
 const gamecubeTitles=['THE LEGEND OF ZELDA: THE WIND WAKER','THE LEGEND OF ZELDA: TWILIGHT PRINCESS','PIKMIN','SUPER SMASH BROS. MELEE','SUPER MARIO SUNSHINE'];
-// GameCube moved into the rear gallery behind Nintendo 64, mirroring the PS2
-// room behind PlayStation. The space it used to occupy is the tournament room.
-const gamecubeCabinetLayout=[[1,41.4,-30,-Math.PI/2,0x8b5cf6],[2,41.4,-25,-Math.PI/2,0x36f9f6],[3,41.4,-20,-Math.PI/2,0xff4da6],[4,35.4,-32,0,0x7dff67],[5,29.4,-32,0,0xffb42e]];
+const GAMECUBE_HUES=[0x8b5cf6,0x36f9f6,0xff4da6,0x7dff67,0xffb42e];
+const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>[index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
   const cabinetId=`gamecube-cabinet-0${index}`;
   makeCabinet(cabinetId,gamecubeTitles[index-1],x,z,hue,false,false,'gamecube');
@@ -966,7 +984,7 @@ for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
 }
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
-const ps2CabinetLayout=[[1,-41.4,-30,Math.PI/2],[2,-41.4,-25,Math.PI/2],[3,-41.4,-20,Math.PI/2],[4,-35.4,-32,0],[5,-29.4,-32,0]];
+const ps2CabinetLayout=Array.from({length:5},(_,index)=>[index+1,FOYER_WEST[7+index].x,FOYER_WEST[7+index].z,FOYER_WEST[7+index].rotation]);
 for(const [index,x,z,rotation] of ps2CabinetLayout){
   const cabinetId=`psx-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
   makeCabinet(cabinetId,ps2RoomTitles[index-1],x,z,expansionCabinetColors[index-1],false,false,'ps2');
@@ -1468,7 +1486,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=mobile-scale-1')
+  import('./emulators/disc-range-cache.js?v=foyer-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -1488,7 +1506,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=mobile-scale-1')
+  import('./emulators/disc-range-cache.js?v=foyer-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))

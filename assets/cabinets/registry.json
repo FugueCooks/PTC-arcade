@@ -8,16 +8,16 @@
     "gameId": "tony-hawks-pro-skater-2",
     "enabled": true,
     "interactionPosition": {
-      "x": -37,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.7
+      "z": -10.35
     },
     "playerPosition": {
-      "x": -37,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.05
+      "z": -10.35
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "tony-hawks-pro-skater-2"
   },
   {
@@ -29,16 +29,16 @@
     "gameId": "gex-enter-the-gecko",
     "enabled": true,
     "interactionPosition": {
-      "x": -34.7,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.7
+      "z": -8.05
     },
     "playerPosition": {
-      "x": -34.7,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.05
+      "z": -8.05
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "gex-enter-the-gecko"
   },
   {
@@ -50,16 +50,16 @@
     "gameId": "crash-bandicoot",
     "enabled": true,
     "interactionPosition": {
-      "x": -32.4,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.7
+      "z": -5.75
     },
     "playerPosition": {
-      "x": -32.4,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.05
+      "z": -5.75
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "crash-bandicoot"
   },
   {
@@ -71,16 +71,16 @@
     "gameId": "spyro-year-of-the-dragon",
     "enabled": true,
     "interactionPosition": {
-      "x": -30.1,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.7
+      "z": -3.45
     },
     "playerPosition": {
-      "x": -30.1,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.05
+      "z": -3.45
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "spyro-year-of-the-dragon"
   },
   {
@@ -92,16 +92,16 @@
     "gameId": "twisted-metal-world-tour",
     "enabled": true,
     "interactionPosition": {
-      "x": -27.8,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.7
+      "z": -1.15
     },
     "playerPosition": {
-      "x": -27.8,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.05
+      "z": -1.15
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "twisted-metal-world-tour"
   },
   {
@@ -113,16 +113,16 @@
     "gameId": "silent-hill",
     "enabled": true,
     "interactionPosition": {
-      "x": -39.3,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.7
+      "z": -12.65
     },
     "playerPosition": {
-      "x": -39.3,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.05
+      "z": -12.65
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "silent-hill"
   },
   {
@@ -134,16 +134,16 @@
     "gameId": "metal-gear-solid",
     "enabled": true,
     "interactionPosition": {
-      "x": -25.5,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.7
+      "z": 1.15
     },
     "playerPosition": {
-      "x": -25.5,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.05
+      "z": 1.15
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "metal-gear-solid"
   },
   {
@@ -374,14 +374,14 @@
     "gameId": "pokemon-snap",
     "enabled": true,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -13
+      "z": -12.65
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 9.15,
       "y": 1.65,
-      "z": -13
+      "z": -12.65
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "pokemon-snap"
@@ -395,14 +395,14 @@
     "gameId": "super-mario-64",
     "enabled": true,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -9
+      "z": -10.35
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 9.15,
       "y": 1.65,
-      "z": -9
+      "z": -10.35
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "super-mario-64"
@@ -416,14 +416,14 @@
     "gameId": "glover",
     "enabled": true,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -5
+      "z": -8.05
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 9.15,
       "y": 1.65,
-      "z": -5
+      "z": -8.05
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "glover"
@@ -437,14 +437,14 @@
     "gameId": "doom-64",
     "enabled": true,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -1
+      "z": -5.75
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 9.15,
       "y": 1.65,
-      "z": -1
+      "z": -5.75
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "doom-64"
@@ -458,16 +458,16 @@
     "gameId": "zelda-ocarina-of-time",
     "enabled": true,
     "interactionPosition": {
-      "x": 22.8,
+      "x": 9.5,
       "y": 1.65,
-      "z": -13.2
+      "z": -3.45
     },
     "playerPosition": {
-      "x": 22.8,
+      "x": 9.15,
       "y": 1.65,
-      "z": -12.85
+      "z": -3.45
     },
-    "playerRotationY": 0,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "zelda-ocarina-of-time"
   },
   {
@@ -479,16 +479,16 @@
     "gameId": "star-fox-64",
     "enabled": true,
     "interactionPosition": {
-      "x": 26.1,
+      "x": 9.5,
       "y": 1.65,
-      "z": -13.2
+      "z": -1.15
     },
     "playerPosition": {
-      "x": 26.1,
+      "x": 9.15,
       "y": 1.65,
-      "z": -12.85
+      "z": -1.15
     },
-    "playerRotationY": 0,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "star-fox-64"
   },
   {
@@ -500,16 +500,16 @@
     "gameId": null,
     "enabled": true,
     "interactionPosition": {
-      "x": 29.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -13.2
+      "z": 1.15
     },
     "playerPosition": {
-      "x": 29.4,
+      "x": 9.15,
       "y": 1.65,
-      "z": -12.85
+      "z": 1.15
     },
-    "playerRotationY": 0
+    "playerRotationY": -1.5707963267948966
   },
   {
     "id": "gamecube-cabinet-01",
@@ -520,14 +520,14 @@
     "gameId": "wind-waker",
     "enabled": true,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -30
+      "z": 3.45
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 9.15,
       "y": 1.65,
-      "z": -30
+      "z": 3.45
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "wind-waker",
@@ -543,14 +543,14 @@
     "gameId": "zelda-twilight-princess",
     "enabled": true,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -25
+      "z": 5.75
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 9.15,
       "y": 1.65,
-      "z": -25
+      "z": 5.75
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "zelda-twilight-princess",
@@ -566,14 +566,14 @@
     "gameId": "pikmin",
     "enabled": true,
     "interactionPosition": {
-      "x": 39.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -20
+      "z": 8.05
     },
     "playerPosition": {
-      "x": 39.05,
+      "x": 9.15,
       "y": 1.65,
-      "z": -20
+      "z": 8.05
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "pikmin",
@@ -589,16 +589,16 @@
     "gameId": "super-smash-bros-melee",
     "enabled": true,
     "interactionPosition": {
-      "x": 35.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -30
+      "z": 10.35
     },
     "playerPosition": {
-      "x": 35.4,
+      "x": 9.15,
       "y": 1.65,
-      "z": -29.65
+      "z": 10.35
     },
-    "playerRotationY": 0,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "super-smash-bros-melee",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -612,16 +612,16 @@
     "gameId": "super-mario-sunshine",
     "enabled": true,
     "interactionPosition": {
-      "x": 29.4,
+      "x": 9.5,
       "y": 1.65,
-      "z": -30
+      "z": 12.65
     },
     "playerPosition": {
-      "x": 29.4,
+      "x": 9.15,
       "y": 1.65,
-      "z": -29.65
+      "z": 12.65
     },
-    "playerRotationY": 0,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "super-mario-sunshine",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -635,14 +635,14 @@
     "gameId": null,
     "enabled": false,
     "interactionPosition": {
-      "x": -39.4,
+      "x": -9.5,
       "y": 1.65,
-      "z": -30
+      "z": 3.45
     },
     "playerPosition": {
-      "x": -39.05,
+      "x": -9.15,
       "y": 1.65,
-      "z": -30
+      "z": 3.45
     },
     "playerRotationY": 1.5707963267948966
   },
@@ -655,14 +655,14 @@
     "gameId": "kingdom-hearts",
     "enabled": true,
     "interactionPosition": {
-      "x": -39.4,
+      "x": -9.5,
       "y": 1.65,
-      "z": -25
+      "z": 5.75
     },
     "playerPosition": {
-      "x": -39.05,
+      "x": -9.15,
       "y": 1.65,
-      "z": -25
+      "z": 5.75
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "kingdom-hearts"
@@ -676,14 +676,14 @@
     "gameId": "gta-san-andreas",
     "enabled": true,
     "interactionPosition": {
-      "x": -39.4,
+      "x": -9.5,
       "y": 1.65,
-      "z": -20
+      "z": 8.05
     },
     "playerPosition": {
-      "x": -39.05,
+      "x": -9.15,
       "y": 1.65,
-      "z": -20
+      "z": 8.05
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "gta-san-andreas"
@@ -697,16 +697,16 @@
     "gameId": "dbz-tenkaichi-3",
     "enabled": true,
     "interactionPosition": {
-      "x": -35.4,
+      "x": -9.5,
       "y": 1.65,
-      "z": -30
+      "z": 10.35
     },
     "playerPosition": {
-      "x": -35.4,
+      "x": -9.15,
       "y": 1.65,
-      "z": -29.65
+      "z": 10.35
     },
-    "playerRotationY": 0,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "dbz-tenkaichi-3"
   },
   {
@@ -718,16 +718,16 @@
     "gameId": null,
     "enabled": false,
     "interactionPosition": {
-      "x": -29.4,
+      "x": -9.5,
       "y": 1.65,
-      "z": -30
+      "z": 12.65
     },
     "playerPosition": {
-      "x": -29.4,
+      "x": -9.15,
       "y": 1.65,
-      "z": -29.65
+      "z": 12.65
     },
-    "playerRotationY": 0
+    "playerRotationY": 1.5707963267948966
   },
   {
     "id": "xbox-cabinet-01",

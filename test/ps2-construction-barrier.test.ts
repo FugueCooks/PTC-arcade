@@ -20,7 +20,10 @@ void test('only the tournament hall is sealed; every other room is open', async 
   assert.match(arcade, /sealDoorway\('Multiplayer \/ Tournament',0,TOURNAMENT_MIN_Z-\.25,Math\.PI\)/);
   // Exactly one call, so a barrier cannot come back without this failing.
   assert.equal((arcade.match(/sealDoorway\('/g) ?? []).length, 1, 'the tournament hall is the only sealed room');
-  assert.match(arcade, /const ps2CabinetLayout=\[\[1,-41\.4,-30/);
+  // The console games are all out in the foyer while the rooms are re-themed,
+  // so their layouts are slots in the two hall rows rather than wall positions.
+  assert.match(arcade, /const ps2CabinetLayout=Array\.from\(\{length:5\}/);
+  assert.match(arcade, /const FOYER_ROW_X=11\.5/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /Room Under Construction\./);
 

@@ -60,10 +60,12 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // GameCube moved into the rear gallery behind Nintendo 64, mirroring the PS2
   // room behind PlayStation. The room it used to occupy is the Multiplayer /
   // Tournament room, which runs the full width of the building.
+  // Out in the foyer with the other console games: the back five of the east
+  // hall row, all facing the centre aisle.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
-    { x: 39.4, y: 1.65, z: -30 }, { x: 39.4, y: 1.65, z: -25 },
-    { x: 39.4, y: 1.65, z: -20 }, { x: 35.4, y: 1.65, z: -30 },
-    { x: 29.4, y: 1.65, z: -30 }
+    { x: 9.5, y: 1.65, z: 3.45 }, { x: 9.5, y: 1.65, z: 5.75 },
+    { x: 9.5, y: 1.65, z: 8.05 }, { x: 9.5, y: 1.65, z: 10.35 },
+    { x: 9.5, y: 1.65, z: 12.65 }
   ]);
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [
     'wind-waker',

@@ -20,7 +20,7 @@ void test('the custom Crash and Gex cabinets use PlayStation controllers', async
   // their flags there. The flags are what matters: they pick the controller.
   assert.match(arcade, /\['gex-enter-the-gecko',[^\n]+,false,true\]/);
   assert.match(arcade, /\['crash-bandicoot',[^\n]+,true,false\]/);
-  assert.match(arcade, /makeCabinet\(id,label,playstationRowX\[index\],[^\n]+,'psx'\)/);
+  assert.match(arcade, /makeCabinet\(id,label,slot\.x,slot\.z,hue,isCrash,isGex,'psx'\)/);
 });
 
 void test('the N64 wall loads the window-free environment module without a stale cache', async () => {

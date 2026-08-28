@@ -121,13 +121,16 @@ void test('zone activation follows the player and never leaves nothing loaded', 
   assert.ok(inMegaman.includes('megaman-room'));
   assert.ok(!inMegaman.includes('xbox-gallery'), 'a distant zone must not be activated');
 
-  // The GameCube zone moved with its cabinets, into the gallery behind
-  // Nintendo 64. The room it left is the Multiplayer / Tournament room.
-  const inGamecube = zones.activeZoneIds(35.4, -30);
+  // The GameCube zone moved with its cabinets, which are out on the main
+  // floor with the rest of the console games while the rooms are re-themed.
+  const inGamecube = zones.activeZoneIds(9.5, 12.65);
   assert.ok(inGamecube.includes('gamecube-room'));
 
-  // Standing between zones still resolves to the nearby ones by distance.
-  assert.ok(zones.activeZoneIds(-37.6, -14).length > 0);
+  // Standing between zones still resolves to the nearby ones by distance. The
+  // probe is between the Mega Man room and the west foyer row; deep inside one
+  // of the rooms the console games moved out of, nothing loads, because there
+  // is nothing in there to load.
+  assert.ok(zones.activeZoneIds(-16, 8).length > 0);
   assert.equal(zones.zoneAt(-30.1, 12)?.id, 'megaman-room');
 });
 
