@@ -52,3 +52,32 @@ void test('the PS2 controller poll idles when no pad is connected', () => {
   const poll = frame.slice(frame.indexOf('function pollPs2Gamepad()'), frame.indexOf('function scheduleGamepadPoll()'));
   assert.doesNotMatch(poll, /document\.querySelector/, 'the poll must hold its element references, not re-query them each frame');
 });
+
+void test('the PS2 frame offers the controls its core can actually honour', () => {
+  // EmulatorJS ships a whole frontend, so the other cabinets get save states,
+  // pause and the rest. Play! is a bare core and keeps its Emscripten module in
+  // its own scope: there is no pause, no reset, no save state to call. What can
+  // be reached is what the core is built on, and nothing here claims more.
+  assert.match(frame, /id="ps2-toolbar"/);
+  for (const control of ['ps2-mute', 'ps2-fullscreen', 'ps2-restart', 'ps2-exit']) {
+    assert.match(frame, new RegExp(`id="${control}"`), `the toolbar is missing ${control}`);
+  }
+  // Pause was built and removed: Play! emulates on worker threads, so holding
+  // the main thread's animation frames left the core running at full speed
+  // behind a button that said RESUME.
+  assert.doesNotMatch(frame, /id="ps2-pause"/, 'a pause button that cannot pause must not ship');
+  assert.doesNotMatch(frame, /emulatorPaused/);
+  // Mute suspends the context the core created, because the graph between its
+  // source and the speakers belongs to the core and has no gain to turn.
+  assert.match(frame, /audioContexts\.push\(context\)/, 'the audio context has to be captured before the core makes it');
+  assert.match(frame, /context\.suspend\?\.\(\)/);
+});
+
+void test('a frame without threads says so instead of quietly crawling', () => {
+  // Without cross-origin isolation the core loses SharedArrayBuffer and runs
+  // single-threaded, which is the difference between 56 f/s and a slideshow —
+  // and is otherwise invisible.
+  assert.match(frame, /!crossOriginIsolated \|\| typeof SharedArrayBuffer === 'undefined'/);
+  assert.match(frame, /RUNNING WITHOUT THREADS/);
+  assert.match(frame, /arcade:ps2-degraded/);
+});

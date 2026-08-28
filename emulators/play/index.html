@@ -19,6 +19,32 @@
       body.remote-disc #root { position:absolute; right:.65rem; bottom:.55rem; width:auto; padding:.28rem .5rem; border:1px solid #36f9f655; border-radius:4px; background:#050510c7; pointer-events:none; }
       body.remote-disc #root input, body.remote-disc #root .version { display:none; }
       body.remote-disc #root .stats { float:none; color:#8ffdfa; letter-spacing:.05em; }
+      #ps2-toolbar {
+        position:fixed;
+        z-index:31;
+        top:.5rem;
+        left:50%;
+        display:flex;
+        gap:.3rem;
+        padding:.3rem .4rem;
+        background:#080719e8;
+        border:1px solid #36f9f655;
+        border-radius:.3rem;
+        transform:translateX(-50%);
+      }
+      #ps2-toolbar button {
+        min-width:2.6rem;
+        padding:.35rem .5rem;
+        color:#36f9f6;
+        background:transparent;
+        border:1px solid #36f9f644;
+        border-radius:.2rem;
+        font:700 .6rem "Courier New",monospace;
+        letter-spacing:.04em;
+        cursor:pointer;
+      }
+      #ps2-toolbar button:hover { color:#071018; background:#36f9f6; }
+      #ps2-toolbar button[aria-pressed="true"] { color:#071018; background:#ffb000; border-color:#ffb000; }
       #ps2-controller-menu {
         position:fixed;
         z-index:30;
@@ -168,6 +194,12 @@
       <div id="ps2-status">PLAY! WEBASSEMBLY // INITIALIZING EXPERIMENTAL PS2 CORE…</div>
       <canvas id="outputCanvas" width="640" height="480" tabindex="0"></canvas>
       <div id="root"></div>
+      <nav id="ps2-toolbar" aria-label="Emulator controls">
+        <button id="ps2-mute" type="button" aria-pressed="false" title="Mute and unmute">SOUND</button>
+        <button id="ps2-fullscreen" type="button" title="Fullscreen">FULL</button>
+        <button id="ps2-restart" type="button" title="Restart this disc">RESET</button>
+        <button id="ps2-exit" type="button" title="Leave the cabinet">EXIT</button>
+      </nav>
       <aside id="ps2-controller-menu">
         <button id="ps2-controller-toggle" type="button" aria-expanded="false">CONTROLS</button>
         <div id="ps2-controller-help" hidden>
@@ -247,6 +279,22 @@
         KeyZ: { key: 'z', keyCode: 90 }
       });
       const activeTouchKeys = new Map();
+      // Play! keeps its Emscripten module in its own scope: there is no pause,
+      // no reset and no save state to call. What can be reached is what the
+      // core is built on — the audio contexts it creates and the animation
+      // frames it is driven by — so both are captured here, before it starts.
+      const audioContexts = [];
+      for (const name of ['AudioContext', 'webkitAudioContext']) {
+        const Original = window[name];
+        if (typeof Original !== 'function') continue;
+        const Wrapped = function (...args) {
+          const context = new Original(...args);
+          audioContexts.push(context);
+          return context;
+        };
+        Wrapped.prototype = Original.prototype;
+        window[name] = Wrapped;
+      }
       const bootChunks = bootChunkRecorder();
       const BOOT_RECORD_MS = 45000;
       // Leave the browser room to breathe rather than filling its quota, wait
@@ -344,6 +392,33 @@
       function scheduleGamepadPoll() {
         if (gamepadPollHandle === null) gamepadPollHandle = requestAnimationFrame(pollPs2Gamepad);
       }
+
+      const toolbar = {
+        mute: document.querySelector('#ps2-mute'),
+        fullscreen: document.querySelector('#ps2-fullscreen'),
+        restart: document.querySelector('#ps2-restart'),
+        exit: document.querySelector('#ps2-exit')
+      };
+      toolbar.mute.addEventListener('click', () => {
+        const muted = toolbar.mute.getAttribute('aria-pressed') !== 'true';
+        toolbar.mute.setAttribute('aria-pressed', String(muted));
+        toolbar.mute.textContent = muted ? 'MUTED' : 'SOUND';
+        // Suspending the context is the whole of it: the core owns the graph
+        // between its source and the speakers, so there is no gain to turn.
+        for (const context of audioContexts) {
+          if (muted) void context.suspend?.();
+          else void context.resume?.();
+        }
+      });
+      toolbar.fullscreen.addEventListener('click', () => {
+        const shell = document.querySelector('#ps2-shell');
+        if (document.fullscreenElement) void document.exitFullscreen?.();
+        else void shell?.requestFullscreen?.().catch(error => console.warn('Fullscreen was refused.', error));
+      });
+      // No reset entry point either, so the disc is loaded again from the top.
+      // The ranges it reads are on disk by now, so this is quick.
+      toolbar.restart.addEventListener('click', () => location.reload());
+      toolbar.exit.addEventListener('click', () => parent.postMessage({ type: 'arcade:emulator-closed', core: 'ps2-play' }, location.origin));
 
       const controllerToggle = document.querySelector('#ps2-controller-toggle');
       const controllerHelp = document.querySelector('#ps2-controller-help');
@@ -650,6 +725,12 @@
           if (!loadPendingRemote()) statusElement.textContent = 'PS2 CORE READYING REMOTE DISC…';
         }
       });
+
+      if (!crossOriginIsolated || typeof SharedArrayBuffer === 'undefined') {
+        statusElement.textContent = 'PS2 CORE IS RUNNING WITHOUT THREADS // EXPECT HEAVY SLOWDOWN';
+        console.warn('This page is not cross-origin isolated, so the PS2 core cannot use threads.');
+        parent.postMessage({ type: 'arcade:ps2-degraded', core: 'ps2-play', reason: 'not-cross-origin-isolated' }, location.origin);
+      }
 
       const readyPoll = setInterval(() => {
         const input = document.querySelector('input[type="file"]');
