@@ -22,7 +22,7 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 2);
-  assert.equal(registry.games.length, 29);
+  assert.equal(registry.games.length, 30);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);
@@ -100,7 +100,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
     'mega-man-x5',
     'mega-man-x6',
     'mega-man-8',
-    undefined,
+    'mega-man-x7',
     'mega-man-64',
     undefined
   ]);
@@ -119,12 +119,16 @@ void test('every supplied Mega Man game has its own cabinet and supported image'
     'Mega Man X5',
     'Mega Man X6',
     'Mega Man 8',
+    'Mega Man X7',
     'Mega Man 64'
   ]);
   assert.equal(new Set(megaManGames.map((game) => game.cabinetId)).size, megaManGames.length);
   assert.ok(megaManGames.filter((game) => game.system === 'snes').every((game) => game.file.endsWith('.sfc')));
   assert.ok(megaManGames.filter((game) => game.system === 'psx').every((game) => game.file.endsWith('.chd')));
   assert.ok(megaManGames.filter((game) => game.system === 'n64').every((game) => game.file.endsWith('.z64')));
+  // The PS2 disc is CHD rather than the ISO it was supplied as: the same image
+  // at 62% of the size, over a path that streams either way.
+  assert.ok(megaManGames.filter((game) => game.system === 'ps2').every((game) => game.file.endsWith('.chd')));
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const player = await readFile(path.resolve(process.cwd(), 'player.html'), 'utf8');
   // The core rename moved into the EmulatorJS adapter, which is now the only

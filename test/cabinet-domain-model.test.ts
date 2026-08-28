@@ -16,7 +16,7 @@ void test('the shipped registry maps onto the domain model with zones and types'
   assert.equal(definitions.length, 39);
   assert.equal(new Set(definitions.map(({ zoneId }) => zoneId)).size, 6);
   assert.equal(definitions.filter(({ zoneId }) => zoneId === 'megaman-room').length, 10);
-  assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 29);
+  assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 30);
   assert.ok(definitions.every(({ cabinetType }) => cabinetType.length > 0));
   assert.ok(definitions.every(({ interactionPolicy }) => interactionPolicy.interactionDistance > 0));
 });

@@ -20,11 +20,11 @@ function definition(overrides: Record<string, unknown> = {}): GameDefinition {
 void test('the shipped game registry loads with adapter identity for every game', () => {
   const { registry, issues } = loadGameRegistry();
   assert.deepEqual(issues, []);
-  assert.equal(registry.size, 29);
+  assert.equal(registry.size, 30);
   assert.ok(registry.all().every((game) => game.emulatorAdapterId !== undefined));
   assert.ok(registry.all().every((game) => game.launcherAdapterId === 'hosted-image'));
   assert.equal(registry.forAdapter('emulatorjs').length, 21);
-  assert.equal(registry.forAdapter('play-ps2').length, 3);
+  assert.equal(registry.forAdapter('play-ps2').length, 4);
   assert.equal(registry.forAdapter('gecko-gamecube').length, 5);
 });
 
@@ -46,7 +46,7 @@ void test('an unassigned cabinet resolves no game and fails safely', () => {
   // Milestone 11.40 test 4: unknown game fails safely.
   const { registry } = loadGameRegistry();
   const placeholders = CABINET_REGISTRY.filter(({ gameId }) => gameId === null);
-  assert.equal(placeholders.length, 10);
+  assert.equal(placeholders.length, 9);
   assert.equal(registry.get('no-such-game'), undefined);
   assert.equal(registry.forCabinet('xbox-cabinet-01'), undefined);
   assert.equal(registry.has('no-such-game'), false);

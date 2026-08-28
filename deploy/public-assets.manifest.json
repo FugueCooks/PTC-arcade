@@ -1,5 +1,11 @@
 [
   {
+    "kind": "bios",
+    "file": "SCPH1001.BIN",
+    "bytes": 524288,
+    "sha256": "71af94d1e47a68c11e8fdb9f8368040601514a42a5a399cda48c7d3bff1e99d3"
+  },
+  {
     "kind": "game",
     "file": "crash-bandicoot.pbp",
     "bytes": 549791897,
@@ -22,6 +28,12 @@
     "file": "glover.z64",
     "bytes": 8388608,
     "sha256": "363c84be17c7c11e97df6069ee8f3b205cb190f60e0c02ca223892ff7f47367a"
+  },
+  {
+    "kind": "game",
+    "file": "mega-man-64.z64",
+    "bytes": 33554432,
+    "sha256": "618d49bf62913b376e4858f1422a51a4352792b070fe6305860dd43e28353999"
   },
   {
     "kind": "game",
@@ -67,6 +79,12 @@
   },
   {
     "kind": "game",
+    "file": "mega-man-x7.chd",
+    "bytes": 797582980,
+    "sha256": "6592a617fca2981c933f53e6399b9df311588e01cf9c60b19ae20edb5f8f97ca"
+  },
+  {
+    "kind": "game",
     "file": "metal-gear-solid-disc-1.chd",
     "bytes": 406013391,
     "sha256": "dd4f62195f35279c5b471e511479c7640876c3c23bb2ec41ac6a304a217add2c"
@@ -76,12 +94,6 @@
     "file": "metal-gear-solid-disc-2.chd",
     "bytes": 373290629,
     "sha256": "8ac7eb5025e7432c5d44e010c9da87d945c08717747f0871702ca1249f703024"
-  },
-  {
-    "kind": "game",
-    "file": "mega-man-64.z64",
-    "bytes": 33554432,
-    "sha256": "618d49bf62913b376e4858f1422a51a4352792b070fe6305860dd43e28353999"
   },
   {
     "kind": "game",
@@ -130,11 +142,5 @@
     "file": "zelda-ocarina-of-time.z64",
     "bytes": 33554432,
     "sha256": "49acd3885f13b0730119b78fb970911cc8aba614fe383368015c21565983368d"
-  },
-  {
-    "kind": "bios",
-    "file": "SCPH1001.BIN",
-    "bytes": 524288,
-    "sha256": "71af94d1e47a68c11e8fdb9f8368040601514a42a5a399cda48c7d3bff1e99d3"
   }
 ]

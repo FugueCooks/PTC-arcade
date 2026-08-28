@@ -800,6 +800,29 @@
           "label": null
         }
       ]
+    },
+    {
+      "id": "mega-man-x7",
+      "cabinetId": "megaman-cabinet-08",
+      "name": "Mega Man X7",
+      "system": "ps2",
+      "file": "mega-man-x7.chd",
+      "emulatorId": 96008,
+      "sizeBytes": 797582980,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mega-man-x7.chd",
+          "sizeBytes": 797582980,
+          "required": true,
+          "label": null
+        }
+      ]
     }
   ]
 }

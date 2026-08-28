@@ -302,11 +302,11 @@
   },
   {
     "id": "megaman-cabinet-08",
-    "name": "MegaMan Room PS2 Cabinet",
-    "sceneKey": "PS2 // READY 08",
+    "name": "Mega Man X7",
+    "sceneKey": "MEGA MAN X7",
     "cabinetType": "ps2-kiosk",
     "zoneId": "megaman-room",
-    "gameId": null,
+    "gameId": "mega-man-x7",
     "enabled": true,
     "interactionPosition": {
       "x": -29.8,
@@ -319,7 +319,8 @@
       "z": 12.85
     },
     "playerRotationY": 3.141592653589793,
-    "system": "ps2"
+    "system": "ps2",
+    "defaultGameId": "mega-man-x7"
   },
   {
     "id": "megaman-cabinet-09",
