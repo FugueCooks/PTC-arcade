@@ -136,5 +136,19 @@ function headersFile() {
 
 /emulators/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# The wasm cores above are content and keep the long cache. The frames and
+# adapters beside them are application code: a day of cache plus a week of
+# stale-while-revalidate is how a shipped fix sits unreachable while the page
+# looks current. These match the same short revalidation the root modules get,
+# which is what the ?v= tokens in the import graph were compensating for.
+/emulators/*.js
+  Cache-Control: public, max-age=300, must-revalidate
+
+/emulators/*.html
+  Cache-Control: public, max-age=300, must-revalidate
+
+/emulators/*.css
+  Cache-Control: public, max-age=300, must-revalidate
 `;
 }

@@ -26,19 +26,29 @@ void test('touch controls use Play upstream key codes and support simultaneous h
   assert.match(frame, /for \(const code of active\.codes\) dispatchPs2Key\(code, false\)/);
 });
 
-void test('the PS2 frame cache key changes with the gamepad control release', () => {
-  assert.match(adapter, /index\.html\?v=ps2-gamepad-2/);
+void test('the PS2 frame cache key changes with the shared-input release', () => {
+  assert.match(adapter, /index\.html\?v=input-and-loading-1/);
 });
 
 void test('Play PS2 maps a standard physical gamepad and exposes its controls panel', () => {
-  assert.match(frame, /navigator\.getGamepads/);
-  assert.match(frame, /GAMEPAD_DEAD_ZONE = \.22/);
+  assert.match(frame, /import \{[^}]*pickGamepad[^}]*\} from '\.\.\/gamepad-mapping\.js/, 'the frame shares the arcade mapping');
   assert.match(frame, /id="ps2-controller-toggle"/);
   assert.match(frame, /id="ps2-controller-status"/);
-  for (const button of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15]) {
-    assert.match(frame, new RegExp(`button: ${button}(?:\\s|\\})`), `missing standard gamepad button ${button}`);
+  for (const button of ['SOUTH', 'EAST', 'WEST', 'NORTH', 'L1', 'R1', 'L2', 'R2', 'SELECT', 'START', 'DPAD_UP', 'DPAD_DOWN', 'DPAD_LEFT', 'DPAD_RIGHT']) {
+    assert.match(frame, new RegExp(`GAMEPAD_BUTTONS\\.${button}`), `missing standard gamepad button ${button}`);
   }
-  for (const axis of [0, 1, 2, 3]) assert.match(frame, new RegExp(`axis: ${axis}`));
+  for (const axis of ['LEFT_X', 'LEFT_Y', 'RIGHT_X', 'RIGHT_Y']) assert.match(frame, new RegExp(`GAMEPAD_AXES\\.${axis}`));
   assert.match(frame, /setGamepadKey\(binding\.code/);
-  assert.match(frame, /requestAnimationFrame\(pollPs2Gamepad\)/);
+});
+
+void test('the PS2 controller poll idles when no pad is connected', () => {
+  // This shares a frame budget with a PS2 core. The old poll ran an animation
+  // frame forever on machines with no controller, and rewrote the status line
+  // and re-queried its elements on every one of them.
+  assert.match(frame, /gamepadPollHandle = null;/);
+  assert.match(frame, /function scheduleGamepadPoll\(\) \{\s*if \(gamepadPollHandle === null\)/);
+  assert.match(frame, /addEventListener\('gamepadconnected'[\s\S]{0,600}scheduleGamepadPoll\(\)/);
+  assert.doesNotMatch(frame, /controllerStatus\.textContent = /, 'the status line is written through setControllerStatus, which only writes on change');
+  const poll = frame.slice(frame.indexOf('function pollPs2Gamepad()'), frame.indexOf('function scheduleGamepadPoll()'));
+  assert.doesNotMatch(poll, /document\.querySelector/, 'the poll must hold its element references, not re-query them each frame');
 });

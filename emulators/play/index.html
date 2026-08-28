@@ -212,10 +212,11 @@
         </div>
       </section>
     </main>
-    <script>
+    <script type="module">
+      import { GAMEPAD_AXES, GAMEPAD_BUTTONS, DEFAULT_DEAD_ZONE, buttonPressed, pickGamepad } from '../gamepad-mapping.js?v=input-and-loading-1';
+      import { RANGE_CHUNK_BYTES, fetchDiscRange, openDiscRangeCache } from '../disc-range-cache.js?v=input-and-loading-1';
+
       const statusElement = document.querySelector('#ps2-status');
-      const RANGE_CACHE_DIRECTORY = 'retro-arcade-ps2-ranges-v1';
-      const RANGE_CHUNK_BYTES = 4 * 1024 * 1024;
       let pendingFile = null;
       let pendingRemote = null;
       let readySent = false;
@@ -247,28 +248,28 @@
       });
       const activeTouchKeys = new Map();
       const activeGamepadKeys = new Set();
-      const GAMEPAD_DEAD_ZONE = .22;
+      const CONTROLLER_IDLE_STATUS = 'CONTROLLER: CONNECT OR PRESS A BUTTON';
       const GAMEPAD_KEY_BINDINGS = Object.freeze([
-        { code: 'KeyZ', button: 0 },
-        { code: 'KeyX', button: 1 },
-        { code: 'KeyA', button: 2 },
-        { code: 'KeyS', button: 3 },
-        { code: 'Key1', button: 4 },
-        { code: 'Key8', button: 5 },
-        { code: 'Key2', button: 6 },
-        { code: 'Key9', button: 7 },
-        { code: 'Backspace', button: 8 },
-        { code: 'Enter', button: 9 },
-        { code: 'ArrowUp', button: 12 },
-        { code: 'ArrowDown', button: 13 },
-        { code: 'ArrowLeft', button: 14 },
-        { code: 'ArrowRight', button: 15 }
+        { code: 'KeyZ', button: GAMEPAD_BUTTONS.SOUTH },
+        { code: 'KeyX', button: GAMEPAD_BUTTONS.EAST },
+        { code: 'KeyA', button: GAMEPAD_BUTTONS.WEST },
+        { code: 'KeyS', button: GAMEPAD_BUTTONS.NORTH },
+        { code: 'Key1', button: GAMEPAD_BUTTONS.L1 },
+        { code: 'Key8', button: GAMEPAD_BUTTONS.R1 },
+        { code: 'Key2', button: GAMEPAD_BUTTONS.L2 },
+        { code: 'Key9', button: GAMEPAD_BUTTONS.R2 },
+        { code: 'Backspace', button: GAMEPAD_BUTTONS.SELECT },
+        { code: 'Enter', button: GAMEPAD_BUTTONS.START },
+        { code: 'ArrowUp', button: GAMEPAD_BUTTONS.DPAD_UP },
+        { code: 'ArrowDown', button: GAMEPAD_BUTTONS.DPAD_DOWN },
+        { code: 'ArrowLeft', button: GAMEPAD_BUTTONS.DPAD_LEFT },
+        { code: 'ArrowRight', button: GAMEPAD_BUTTONS.DPAD_RIGHT }
       ]);
       const GAMEPAD_AXIS_BINDINGS = Object.freeze([
-        { negative: 'KeyF', positive: 'KeyH', axis: 0 },
-        { negative: 'KeyT', positive: 'KeyG', axis: 1 },
-        { negative: 'KeyJ', positive: 'KeyL', axis: 2 },
-        { negative: 'KeyI', positive: 'KeyK', axis: 3 }
+        { negative: 'KeyF', positive: 'KeyH', axis: GAMEPAD_AXES.LEFT_X },
+        { negative: 'KeyT', positive: 'KeyG', axis: GAMEPAD_AXES.LEFT_Y },
+        { negative: 'KeyJ', positive: 'KeyL', axis: GAMEPAD_AXES.RIGHT_X },
+        { negative: 'KeyI', positive: 'KeyK', axis: GAMEPAD_AXES.RIGHT_Y }
       ]);
 
       function dispatchPs2Key(code, pressed) {
@@ -300,44 +301,67 @@
         for (const code of [...activeGamepadKeys]) setGamepadKey(code, false);
       }
 
+      function setControllerStatus(text) {
+        if (controllerStatusElement.textContent !== text) controllerStatusElement.textContent = text;
+      }
+
+      /**
+       * Runs only while a pad is connected. This shares a frame budget with a
+       * PS2 core, so the poll holds its element references, writes the status
+       * line only when it changes, and stops altogether rather than spinning an
+       * animation frame forever on a machine that has no controller at all.
+       */
       function pollPs2Gamepad() {
-        const gamepad = [...(navigator.getGamepads?.() ?? [])].find(candidate => candidate?.connected);
-        const controllerStatus = document.querySelector('#ps2-controller-status');
+        gamepadPollHandle = null;
+        const gamepad = pickGamepad(navigator.getGamepads?.(), activeGamepadIndex);
         if (!gamepad) {
+          activeGamepadIndex = null;
           releaseGamepadKeys();
-          controllerStatus.textContent = 'CONTROLLER: CONNECT OR PRESS A BUTTON';
-          requestAnimationFrame(pollPs2Gamepad);
+          setControllerStatus(CONTROLLER_IDLE_STATUS);
           return;
         }
-        controllerStatus.textContent = `CONTROLLER: ${gamepad.id || 'STANDARD GAMEPAD'} READY`;
-        for (const binding of GAMEPAD_KEY_BINDINGS) {
-          const button = gamepad.buttons?.[binding.button];
-          setGamepadKey(binding.code, Boolean(button && (button.pressed || button.value > .55)));
-        }
+        activeGamepadIndex = gamepad.index;
+        setControllerStatus(`CONTROLLER: ${gamepad.id || 'STANDARD GAMEPAD'} READY`);
+        for (const binding of GAMEPAD_KEY_BINDINGS) setGamepadKey(binding.code, buttonPressed(gamepad, binding.button));
         for (const binding of GAMEPAD_AXIS_BINDINGS) {
           const value = gamepad.axes?.[binding.axis] ?? 0;
-          setGamepadKey(binding.negative, value < -GAMEPAD_DEAD_ZONE);
-          setGamepadKey(binding.positive, value > GAMEPAD_DEAD_ZONE);
+          setGamepadKey(binding.negative, value < -DEFAULT_DEAD_ZONE);
+          setGamepadKey(binding.positive, value > DEFAULT_DEAD_ZONE);
         }
-        if (activeGamepadKeys.size) document.querySelector('#outputCanvas').focus({ preventScroll: true });
-        requestAnimationFrame(pollPs2Gamepad);
+        if (activeGamepadKeys.size) outputCanvas.focus({ preventScroll: true });
+        scheduleGamepadPoll();
+      }
+
+      function scheduleGamepadPoll() {
+        if (gamepadPollHandle === null) gamepadPollHandle = requestAnimationFrame(pollPs2Gamepad);
       }
 
       const controllerToggle = document.querySelector('#ps2-controller-toggle');
       const controllerHelp = document.querySelector('#ps2-controller-help');
+      const controllerStatusElement = document.querySelector('#ps2-controller-status');
+      const outputCanvas = document.querySelector('#outputCanvas');
+      let gamepadPollHandle = null;
+      let activeGamepadIndex = null;
       controllerToggle.addEventListener('click', () => {
         const open = controllerHelp.hidden;
         controllerHelp.hidden = !open;
         controllerToggle.setAttribute('aria-expanded', String(open));
       });
       addEventListener('gamepadconnected', event => {
-        document.querySelector('#ps2-controller-status').textContent = `CONTROLLER: ${event.gamepad.id || 'STANDARD GAMEPAD'} READY`;
+        activeGamepadIndex = event.gamepad.index;
+        setControllerStatus(`CONTROLLER: ${event.gamepad.id || 'STANDARD GAMEPAD'} READY`);
         controllerHelp.hidden = false;
         controllerToggle.setAttribute('aria-expanded', 'true');
-        document.querySelector('#outputCanvas').focus({ preventScroll: true });
+        outputCanvas.focus({ preventScroll: true });
+        scheduleGamepadPoll();
       });
-      addEventListener('gamepaddisconnected', releaseGamepadKeys);
-      requestAnimationFrame(pollPs2Gamepad);
+      addEventListener('gamepaddisconnected', () => {
+        releaseGamepadKeys();
+        setControllerStatus(CONTROLLER_IDLE_STATUS);
+      });
+      // A pad connected before this frame loaded only surfaces once the page
+      // has seen it, so take one look now and then wait for the connect event.
+      scheduleGamepadPoll();
 
       function releaseTouchPointer(pointerId) {
         const active = activeTouchKeys.get(pointerId);
@@ -382,64 +406,6 @@
 
       initializeTouchControls();
 
-      function cacheKey(source) {
-        let hash = 2166136261;
-        for (const character of `${source.url}|${source.name}|${source.size}`) {
-          hash ^= character.charCodeAt(0);
-          hash = Math.imul(hash, 16777619);
-        }
-        const safeName = source.name.toLowerCase().replace(/[^a-z0-9.-]+/g, '-').slice(0, 48) || 'disc';
-        return `${safeName}-${source.size}-${(hash >>> 0).toString(16)}`;
-      }
-
-      async function rangeCache(source, maxChunks) {
-        if (typeof navigator.storage?.getDirectory !== 'function') return null;
-        try {
-          await navigator.storage.persist?.();
-          const root = await navigator.storage.getDirectory();
-          const cache = await root.getDirectoryHandle(RANGE_CACHE_DIRECTORY, { create: true });
-          const directory = await cache.getDirectoryHandle(cacheKey(source), { create: true });
-          const storedIndexes = new Set();
-          for await (const name of directory.keys()) {
-            const match = /^(\d+)\.chunk$/.exec(name);
-            if (match) storedIndexes.add(Number(match[1]));
-          }
-          return {
-            async get(index, expectedBytes) {
-              const name = `${index}.chunk`;
-              try {
-                const handle = await directory.getFileHandle(name);
-                const file = await handle.getFile();
-                if (file.size === expectedBytes) return file.arrayBuffer();
-                await directory.removeEntry(name);
-              } catch (error) {
-                if (error?.name !== 'NotFoundError') console.warn('Could not read a cached PS2 disc range.', error);
-              }
-              return null;
-            },
-            async put(index, buffer) {
-              if (!storedIndexes.has(index) && storedIndexes.size >= maxChunks) return false;
-              const isNew = !storedIndexes.has(index);
-              storedIndexes.add(index);
-              const handle = await directory.getFileHandle(`${index}.chunk`, { create: true });
-              const writable = await handle.createWritable({ keepExistingData: false });
-              try {
-                await writable.write(buffer);
-                await writable.close();
-                return true;
-              } catch (error) {
-                if (isNew) storedIndexes.delete(index);
-                try { await writable.abort(); } catch { /* Already closed. */ }
-                throw error;
-              }
-            }
-          };
-        } catch (error) {
-          console.warn('Persistent PS2 range caching is unavailable.', error);
-          return null;
-        }
-      }
-
       function reportDiscFailure(error, start, end) {
         if (discFailureReported) return;
         discFailureReported = true;
@@ -449,41 +415,13 @@
         parent.postMessage({ type: 'arcade:ps2-disc-error', core: 'ps2-play', message }, location.origin);
       }
 
-      async function fetchRange(url, start, end) {
-        let lastError;
-        for (let attempt = 1; attempt <= 5; attempt += 1) {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 20000);
-          try {
-            const response = await fetch(url, {
-              headers: { Range: `bytes=${start}-${end - 1}` },
-              credentials: 'omit',
-              signal: controller.signal
-            });
-            if (response.status !== 206) throw new Error(`Remote disc range request failed (${response.status}).`);
-            const expectedRange = `bytes ${start}-${end - 1}/`;
-            const contentRange = response.headers.get('content-range') ?? '';
-            if (!contentRange.toLowerCase().startsWith(expectedRange)) throw new Error('Remote disc returned the wrong byte range.');
-            const buffer = await response.arrayBuffer();
-            if (buffer.byteLength !== end - start) throw new Error('Remote disc returned an incomplete byte range.');
-            return buffer;
-          } catch (error) {
-            lastError = error;
-            if (attempt < 5) await new Promise(resolve => setTimeout(resolve, attempt * 400));
-          } finally {
-            clearTimeout(timeout);
-          }
-        }
-        throw lastError;
-      }
-
       function remoteDisc(source) {
         const chunkSize = RANGE_CHUNK_BYTES;
         const maxCachedChunks = 40;
         const readAheadChunks = navigator.connection?.saveData ? 0 : (navigator.connection?.downlink >= 10 ? 4 : 2);
         const maxPersistentChunks = navigator.deviceMemory && navigator.deviceMemory <= 4 ? 32 : 128;
         const chunks = new Map();
-        const persistentCache = rangeCache(source, maxPersistentChunks);
+        const persistentCache = openDiscRangeCache(source, maxPersistentChunks);
         const persistentWrites = new Set();
         let persistentCacheFailed = false;
 
@@ -491,7 +429,7 @@
           const persistent = await persistentCache;
           const cached = await persistent?.get(index, end - start);
           if (cached) return cached;
-          const buffer = await fetchRange(source.url, start, end);
+          const buffer = await fetchDiscRange(source.url, start, end);
           if (persistent && !persistentCacheFailed && !persistentWrites.has(index)) {
             persistentWrites.add(index);
             void persistent.put(index, buffer).catch(error => {

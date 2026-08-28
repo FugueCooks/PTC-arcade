@@ -1,0 +1,99 @@
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import test from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
+
+const rangeCache = await import(pathToFileURL(path.resolve(process.cwd(), 'emulators/disc-range-cache.js')).href);
+
+const disc = { url: 'https://assets.example/ps2/kingdom-hearts.iso', name: 'kingdom-hearts.iso', size: 4_600_000_000 };
+
+function rangeResponse(start: number, end: number, total: number, body?: ArrayBuffer) {
+  return {
+    status: 206,
+    headers: { get: (name: string) => (name.toLowerCase() === 'content-range' ? `bytes ${start}-${end - 1}/${total}` : null) },
+    arrayBuffer: async () => body ?? new ArrayBuffer(end - start)
+  };
+}
+
+async function withFetch<T>(stub: (...args: never[]) => unknown, run: () => Promise<T>): Promise<T> {
+  const original = globalThis.fetch;
+  (globalThis as Record<string, unknown>).fetch = stub;
+  try {
+    return await run();
+  } finally {
+    (globalThis as Record<string, unknown>).fetch = original;
+  }
+}
+
+void test('a disc cache key covers the url, the name, and the size', () => {
+  const key = rangeCache.discCacheKey(disc);
+  assert.match(key, /^kingdom-hearts\.iso-4600000000-[0-9a-f]+$/);
+  assert.notEqual(key, rangeCache.discCacheKey({ ...disc, size: disc.size - 1 }));
+  assert.notEqual(key, rangeCache.discCacheKey({ ...disc, url: `${disc.url}?token=2` }));
+  // A name that cannot be a directory entry still yields a usable key.
+  assert.match(rangeCache.discCacheKey({ ...disc, name: '../../etc/passwd' }), /^[a-z0-9.-]+-\d+-[0-9a-f]+$/);
+});
+
+void test('a range request asks for the bytes it wants and checks it got them', async () => {
+  const requests: Array<Record<string, string>> = [];
+  const buffer = await withFetch(((_url: string, init: { headers: Record<string, string> }) => {
+    requests.push(init.headers);
+    return Promise.resolve(rangeResponse(0, 1024, disc.size));
+  }) as never, () => rangeCache.fetchDiscRange(disc.url, 0, 1024) as Promise<ArrayBuffer>);
+  assert.equal(buffer.byteLength, 1024);
+  assert.deepEqual(requests, [{ Range: 'bytes=0-1023' }]);
+});
+
+void test('a server that answers with the wrong bytes is a failure, not a cache entry', async () => {
+  // A proxy that ignores Range and returns the whole file answers 200, and a
+  // proxy that returns a different window still answers 206. Both would put
+  // the wrong sectors on disk under a chunk name the core later trusts.
+  await withFetch(() => Promise.resolve({ status: 200, headers: { get: () => null }, arrayBuffer: async () => new ArrayBuffer(disc.size) }),
+    async () => assert.rejects(() => rangeCache.fetchDiscRange(disc.url, 0, 1024, { attempts: 1 }), /range request failed/i));
+  await withFetch(() => Promise.resolve(rangeResponse(4096, 5120, disc.size)),
+    async () => assert.rejects(() => rangeCache.fetchDiscRange(disc.url, 0, 1024, { attempts: 1 }), /wrong byte range/i));
+  await withFetch(() => Promise.resolve({ ...rangeResponse(0, 1024, disc.size), arrayBuffer: async () => new ArrayBuffer(512) }),
+    async () => assert.rejects(() => rangeCache.fetchDiscRange(disc.url, 0, 1024, { attempts: 1 }), /incomplete byte range/i));
+});
+
+void test('a failed range is retried before it gives up', async () => {
+  let attempts = 0;
+  const buffer = await withFetch(() => {
+    attempts += 1;
+    if (attempts < 3) return Promise.reject(new Error('network reset'));
+    return Promise.resolve(rangeResponse(0, 64, disc.size));
+  }, () => rangeCache.fetchDiscRange(disc.url, 0, 64, { attempts: 3 }) as Promise<ArrayBuffer>);
+  assert.equal(attempts, 3);
+  assert.equal(buffer.byteLength, 64);
+});
+
+void test('warming refuses a disc it cannot address, and never throws at the caller', async () => {
+  let called = false;
+  await withFetch(() => { called = true; return Promise.resolve(rangeResponse(0, 1, 1)); }, async () => {
+    for (const bad of [null, { ...disc, url: 'http://assets.example/x.iso' }, { ...disc, size: 0 }]) {
+      assert.deepEqual(await rangeCache.prewarmDiscRanges(bad), { warmed: 0, skipped: true });
+    }
+  });
+  assert.equal(called, false, 'a disc that cannot be addressed must not reach the network');
+  // Nothing the player asked for has failed when a speculative warm cannot
+  // run, so an environment without OPFS reports a skip rather than raising.
+  assert.equal((await rangeCache.prewarmDiscRanges(disc)).skipped, true);
+});
+
+void test('the PS2 frame reads its ranges through the shared cache', async () => {
+  const frame = await readFile(path.resolve(process.cwd(), 'emulators/play/index.html'), 'utf8');
+  assert.match(frame, /import \{[^}]*openDiscRangeCache[^}]*\} from '\.\.\/disc-range-cache\.js/);
+  assert.doesNotMatch(frame, /async function rangeCache\(/, 'the frame must not keep a second copy of the range cache');
+  assert.doesNotMatch(frame, /async function fetchRange\(/, 'the frame must not keep a second copy of the range fetch');
+});
+
+void test('walking up to a streaming cabinet warms its boot region', async () => {
+  const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
+  // warmEmulatorCore runs on approach and returns early once a core is warm,
+  // so the disc warm has to happen before that return or it never runs twice.
+  const warmCore = arcade.slice(arcade.indexOf('function warmEmulatorCore('));
+  assert.match(warmCore.slice(0, 200), /warmStreamingDisc\(cabinet\)/);
+  assert.match(arcade, /prewarmDiscRanges/);
+  assert.match(arcade, /warmedDiscCabinets\.has\(cabinet\.id\)/, 'a cabinet must only be warmed once');
+});

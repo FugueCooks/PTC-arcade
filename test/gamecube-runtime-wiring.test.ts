@@ -54,8 +54,11 @@ void test('the import chain moved together', async () => {
   const index = await readFile(path.join(root, 'index.html'), 'utf8');
   const bootstrapKey = /app-bootstrap\.js\?v=([A-Za-z0-9-]+)/.exec(index)?.[1];
   const arcadeKey = /arcade\.js\?v=([A-Za-z0-9-]+)/.exec(bootstrap)?.[1];
-  assert.equal(bootstrapKey, arcadeKey);
-  assert.equal(bootstrapKey, 'megaman64-room-1', 'the key must move when this chain changes');
+  assert.ok(bootstrapKey, 'index.html must version the bootstrap it loads');
+  // The invariant is that the chain moves together. Pinning the literal token
+  // as well meant every unrelated release edited this file to re-state the
+  // same thing, which is how the tokens drifted apart in the first place.
+  assert.equal(bootstrapKey, arcadeKey, 'the key must move through the whole chain when it changes');
 });
 
 void test('the catalogue route serves what the runtime parser reads', async () => {

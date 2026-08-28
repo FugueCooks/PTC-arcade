@@ -10,6 +10,7 @@ void test('the PS2 cabinet waits for Play! readiness and acknowledges disc hando
   // with the frame is unchanged, so the same messages are asserted at their new
   // home; arcade.js keeps only the origin check and the generic pump.
   const adapter = await readFile(path.resolve(process.cwd(), 'emulators/adapters/play-ps2-adapter.js'), 'utf8');
+  const rangeCache = await readFile(path.resolve(process.cwd(), 'emulators/disc-range-cache.js'), 'utf8');
 
   assert.match(arcade, /event\.source!==activeEmulatorFrame\?\.contentWindow/);
   assert.match(arcade, /signal\.needsSource&&pendingEmulatorSource/);
@@ -18,20 +19,26 @@ void test('the PS2 cabinet waits for Play! readiness and acknowledges disc hando
   assert.match(adapter, /type: 'arcade:ps2-load-remote'/);
   assert.match(adapter, /message\?\.type === 'arcade:ps2-source-accepted'/);
   assert.match(player, /type: 'arcade:ps2-source-accepted', core: 'ps2-play'/);
-  assert.match(player, /Range: `bytes=\$\{start\}-\$\{end - 1\}`/);
-  assert.match(player, /response\.status !== 206/);
-  assert.match(player, /const RANGE_CHUNK_BYTES = 4 \* 1024 \* 1024/);
   assert.match(player, /const chunkSize = RANGE_CHUNK_BYTES/);
   assert.match(player, /const maxCachedChunks = 40/);
   assert.match(player, /navigator\.connection\?\.downlink >= 10 \? 4 : 2/);
   assert.match(player, /void cachedChunk\(nextChunk\)\.catch/);
-  assert.match(player, /navigator\.storage\?\.getDirectory/);
-  assert.match(player, /retro-arcade-ps2-ranges-v1/);
   assert.match(player, /persistent\?\.get\(index, end - start\)/);
   assert.match(player, /persistent\.put\(index, buffer\)/);
   assert.match(player, /arrayBuffer: \(\) => read\(safeStart, safeEnd\)\.catch/);
-  assert.match(player, /const expectedRange = `bytes \$\{start\}-\$\{end - 1\}\//);
-  assert.match(player, /buffer\.byteLength !== end - start/);
+
+  // The range protocol and the on-disk chunk store moved into the shared cache
+  // module so the arcade can warm the same chunks this frame reads. What that
+  // module does is exercised for real in disc-range-cache.test.ts; what
+  // matters here is that the frame still gets it from there.
+  assert.match(player, /import \{[^}]*openDiscRangeCache[^}]*\} from '\.\.\/disc-range-cache\.js/);
+  assert.match(rangeCache, /Range: `bytes=\$\{start\}-\$\{end - 1\}`/);
+  assert.match(rangeCache, /response\.status !== 206/);
+  assert.match(rangeCache, /export const RANGE_CHUNK_BYTES = 4 \* 1024 \* 1024/);
+  assert.match(rangeCache, /navigator\.storage\?\.getDirectory/);
+  assert.match(rangeCache, /retro-arcade-ps2-ranges-v1/);
+  assert.match(rangeCache, /const expectedRange = `bytes \$\{start\}-\$\{end - 1\}\//);
+  assert.match(rangeCache, /buffer\.byteLength !== end - start/);
   assert.match(player, /type: 'arcade:ps2-disc-error'/);
   assert.match(player, /BLACK INTRO MOVIE\? PRESS ENTER ONCE TO SKIP/);
   assert.match(adapter, /message\?\.type === 'arcade:ps2-disc-error'/);
