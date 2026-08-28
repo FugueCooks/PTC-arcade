@@ -143,7 +143,7 @@ TLS handshake at the moment a player is waiting.
 In rough order of payoff:
 
 1. Re-encode the five GameCube images with zstd. Free, halves that queue.
-2. Record  for the remaining PS2 titles — Kingdom Hearts, GTA San
+2. Record `bootChunks` for the remaining PS2 titles — Kingdom Hearts, GTA San
    Andreas, DBZ Tenkaichi 3. Mega Man X7 is done; each is one play session.
 3. Convert `crash-bandicoot` from pbp to CHD.
 4. Convert the two raw PS2 ISOs to CHD.
