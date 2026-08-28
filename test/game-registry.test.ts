@@ -47,7 +47,8 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   const cabinets = await loadJson<Array<{ id: string; name: string; enabled: boolean; defaultGameId?: string; system?: string; emulatorId?: string; interactionPosition?: { x: number; y: number; z: number }; playerPosition?: { x: number; y: number; z: number } }>>('assets/cabinets/registry.json');
   const byId = new Map(cabinets.map((cabinet) => [cabinet.id, cabinet]));
   assert.equal(byId.get('n64-cabinet-06')?.defaultGameId, 'star-fox-64');
-  assert.equal(byId.get('n64-cabinet-07')?.defaultGameId, 'mega-man-64');
+  assert.equal(byId.get('n64-cabinet-07')?.defaultGameId, undefined);
+  assert.equal(byId.get('megaman-cabinet-09')?.defaultGameId, 'mega-man-64');
   assert.equal(byId.get('silent-hill')?.defaultGameId, 'silent-hill');
   assert.equal(byId.get('metal-gear-solid')?.defaultGameId, 'metal-gear-solid');
   assert.equal([...byId].filter(([id]) => id.startsWith('n64-back-cabinet-')).length, 0);
@@ -89,7 +90,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // the row; the ids stay in their original order, which is why the odd one out
   // is eighth here and seventh on the wall.
   assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.system), [
-    'snes', 'snes', 'snes', 'psx', 'psx', 'psx', 'psx', 'ps2', 'psx', 'psx'
+    'snes', 'snes', 'snes', 'psx', 'psx', 'psx', 'psx', 'ps2', 'n64', 'psx'
   ]);
   assert.deepEqual(megaManCabinets.map((cabinet) => cabinet.defaultGameId), [
     'mega-man-x',
@@ -100,14 +101,16 @@ void test('unique N64 games are consolidated in the main room and the rear room 
     'mega-man-x6',
     'mega-man-8',
     undefined,
-    undefined,
+    'mega-man-64',
     undefined
   ]);
 });
 
 void test('every supplied Mega Man game has its own cabinet and supported image', async () => {
   const games = (await loadJson<{ games: GameDefinition[] }>('assets/games/registry.json')).games;
-  const megaManGames = games.filter((game) => game.cabinetId.startsWith('megaman-cabinet-'));
+  const megaManGames = games
+    .filter((game) => game.cabinetId.startsWith('megaman-cabinet-'))
+    .sort((left, right) => left.cabinetId.localeCompare(right.cabinetId));
   assert.deepEqual(megaManGames.map((game) => game.name), [
     'Mega Man X',
     'Mega Man X2',
@@ -115,11 +118,13 @@ void test('every supplied Mega Man game has its own cabinet and supported image'
     'Mega Man X4',
     'Mega Man X5',
     'Mega Man X6',
-    'Mega Man 8'
+    'Mega Man 8',
+    'Mega Man 64'
   ]);
   assert.equal(new Set(megaManGames.map((game) => game.cabinetId)).size, megaManGames.length);
   assert.ok(megaManGames.filter((game) => game.system === 'snes').every((game) => game.file.endsWith('.sfc')));
   assert.ok(megaManGames.filter((game) => game.system === 'psx').every((game) => game.file.endsWith('.chd')));
+  assert.ok(megaManGames.filter((game) => game.system === 'n64').every((game) => game.file.endsWith('.z64')));
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const player = await readFile(path.resolve(process.cwd(), 'player.html'), 'utf8');
   // The core rename moved into the EmulatorJS adapter, which is now the only

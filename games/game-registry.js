@@ -1,5 +1,5 @@
 export async function loadGameRegistry() {
-  const response = await fetch('assets/games/registry.json?v=megaman-cabinet-order-1', { cache: 'no-cache' });
+  const response = await fetch('assets/games/registry.json?v=megaman64-room-1', { cache: 'no-cache' });
   if (!response.ok) throw new Error(`Game registry failed to load (${response.status}).`);
   const payload = await response.json();
   if (![1, 2].includes(payload?.version) || !Array.isArray(payload.games)) throw new Error('Unsupported game registry.');

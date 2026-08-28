@@ -370,7 +370,7 @@
     },
     {
       "id": "mega-man-64",
-      "cabinetId": "n64-cabinet-07",
+      "cabinetId": "megaman-cabinet-09",
       "name": "Mega Man 64",
       "system": "n64",
       "file": "mega-man-64.z64",

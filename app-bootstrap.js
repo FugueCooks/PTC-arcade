@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { loadGameRegistry } from './games/game-registry.js?v=platform-id-2';
+import { loadGameRegistry } from './games/game-registry.js?v=megaman64-room-1';
 import { Ps2GameCache } from './games/ps2-game-cache.js?v=ps2-local-cache-1';
 import { loadRoomRegistry } from './rooms/room-registry.js?v=10-rooms-1';
 import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=ps2-gamepad-2';
@@ -50,6 +50,6 @@ window.ARCADE_ENSURE_RUNTIME_DETECTION = () => {
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=arcade-rows-6-gamepad-1');
+await import('./arcade.js?v=megaman64-room-1');
 await import('./avatar-selection.js?v=triple-t-label-2');
 await import('./multiplayer-client.js?v=arcade-rows-5');

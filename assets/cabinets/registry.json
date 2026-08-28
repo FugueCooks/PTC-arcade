@@ -323,11 +323,11 @@
   },
   {
     "id": "megaman-cabinet-09",
-    "name": "MegaMan Room PlayStation Cabinet 9",
-    "sceneKey": "PLAYSTATION // READY 09",
-    "cabinetType": "psx-upright",
+    "name": "Mega Man 64",
+    "sceneKey": "MEGA MAN 64",
+    "cabinetType": "n64-upright",
     "zoneId": "megaman-room",
-    "gameId": null,
+    "gameId": "mega-man-64",
     "enabled": true,
     "interactionPosition": {
       "x": -32,
@@ -340,7 +340,8 @@
       "z": 14.5
     },
     "playerRotationY": 1.5707963267948966,
-    "system": "psx"
+    "defaultGameId": "mega-man-64",
+    "system": "n64"
   },
   {
     "id": "megaman-cabinet-10",
@@ -491,11 +492,11 @@
   },
   {
     "id": "n64-cabinet-07",
-    "name": "Mega Man 64",
-    "sceneKey": "MEGA MAN 64",
+    "name": "N64 Cabinet 7",
+    "sceneKey": "N64 // READY 07",
     "cabinetType": "n64-upright",
     "zoneId": "main-floor-east",
-    "gameId": "mega-man-64",
+    "gameId": null,
     "enabled": true,
     "interactionPosition": {
       "x": 24.5,
@@ -507,8 +508,7 @@
       "y": 1.65,
       "z": -12.85
     },
-    "playerRotationY": 0,
-    "defaultGameId": "mega-man-64"
+    "playerRotationY": 0
   },
   {
     "id": "gamecube-cabinet-01",
