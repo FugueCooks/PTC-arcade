@@ -1250,6 +1250,9 @@ function buildChaoGarden(centerX,centerZ){
     scene.add(sun);managedSceneLights.push(sun);
   }
 }
+// The garden mounts are declared ahead of everything that assigns them: the
+// bore group is built right here at module evaluation.
+let chaoGardenMount=null,chaoBoreGroup=null;
 // The supplied SA1-style garden model owns the room now. A grass disc holds
 // the floor while its GLB loads, and the suns stay because the model brings
 // no lights of its own.
@@ -1452,7 +1455,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-baked-2',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-baked-3',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3155,7 +3158,7 @@ const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.5};
 // wherever a ray straight down finds ground within a stride's climb of the
 // player's feet, and the player's height follows that ground. Slopes and
 // shelves are walked, sheer cliffs and open sea are refused.
-let chaoGardenMount=null,chaoBoreGroup=null;
+
 const chaoGroundRay=new THREE.Raycaster();
 const chaoGroundOrigin=new THREE.Vector3(),chaoGroundDown=new THREE.Vector3(0,-1,0);
 function chaoGroundAt(x,z,feetY){
