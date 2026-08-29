@@ -102,7 +102,7 @@
         apply();
       }
       window.EJS_ready = enforceBrowserSavePersistenceWithRetries;
-      window.EJS_onGameStart = enforceBrowserSavePersistenceWithRetries;
+      window.EJS_onGameStart = () => { window.__arcadeGameStarted = true; enforceBrowserSavePersistenceWithRetries(); };
 
       let stopRequested = false;
       async function flushAndStopEmulator() {
@@ -137,8 +137,18 @@
       });
       // Every failure used to collapse into one opaque "could not load", which
       // made a blocked script indistinguishable from a bad ROM. Report why.
+      // Only failures that actually stop the game get reported. EmulatorJS
+      // leaves benign rejections uncaught (WakeLock and pointer-lock denials,
+      // fullscreen refusals), and once the game is running no stray script
+      // error should tear down a working session.
+      const BENIGN_ERROR = /wake ?lock|pointer ?lock|wrongdocumenterror|notallowederror|fullscreen|permissions policy|request was interrupted|aborterror|not visible/i;
       function reportError(detail) {
-        parent.postMessage({ type: 'arcade:emulator-error', detail: String(detail).slice(0, 300) }, location.origin);
+        const text = String(detail).slice(0, 300);
+        if (window.__arcadeGameStarted || BENIGN_ERROR.test(text)) {
+          console.warn('[player] non-fatal emulator error:', text);
+          return;
+        }
+        parent.postMessage({ type: 'arcade:emulator-error', detail: text }, location.origin);
       }
       addEventListener('error', (event) => reportError(event?.message || 'script error'));
       addEventListener('unhandledrejection', (event) => reportError(event?.reason?.message || event?.reason || 'promise rejection'));

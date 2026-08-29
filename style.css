@@ -73,3 +73,24 @@ body.emulator-running #machine-modal { background:#06030b; }
 .match-actions button { font-family: inherit; font-size: .72rem; letter-spacing: .14em;
   padding: .45rem .8rem; background: #12111f; color: #36f9f6; border: 1px solid #36f9f6; cursor: pointer; }
 .match-actions button:disabled { color: #4a4560; border-color: #2b2a44; cursor: not-allowed; }
+
+/* The entry panel used to scroll on an ordinary laptop screen; player select
+   should be one glance. Same layout, tighter rhythm. */
+#avatar-screen { padding:12px; }
+.avatar-panel { padding:clamp(12px,2vw,18px) clamp(14px,2.5vw,24px); }
+.avatar-panel .eyebrow { margin-bottom:6px; }
+.avatar-panel h2 { font-size:clamp(15px,2.2vw,22px); margin-bottom:12px; }
+.wallet-panel { padding:10px 12px; margin-bottom:12px; }
+.wallet-panel #identity-mode { margin-bottom:5px; font-size:11px; }
+.wallet-explainer { margin-bottom:8px; line-height:1.45; }
+.wallet-picker-row button { padding:9px 11px; }
+.wallet-panel #wallet-address { margin-top:7px; }
+.avatar-panel input,.avatar-panel select { padding:9px 12px; font-size:13px; }
+.avatar-name-label { margin-bottom:5px; }
+.avatar-cards { margin:12px 0; gap:8px; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); }
+.avatar-card { min-height:38px; padding:9px 8px; font-size:10px; box-shadow:2px 2px 0 #3d2671; }
+.avatar-room-label { margin-top:10px; }
+.room-id-label { margin-top:8px; }
+.avatar-panel #room-help { margin-top:4px; }
+#avatar-status { min-height:1.6em; margin:8px 0; }
+#avatar-confirm,#placement-cancel { padding:11px 16px; }
