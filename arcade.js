@@ -1344,6 +1344,14 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   vault.scale.set(1,1,.95);bore.add(vault);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
+  // The Sonic marquee on the header's hall face: the garden's front door
+  // says whose garden it is.
+  new THREE.TextureLoader().load('assets/art/sonic/'+'tunnel-sign.png?v=sonic-sign-1',texture=>{
+    texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
+    const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.84,1.66),new THREE.MeshBasicMaterial({map:texture,fog:false}));
+    sign.position.set(21.64,4.25,13.2);sign.rotation.y=-Math.PI/2;
+    bore.add(sign);
+  },undefined,()=>{});
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(41.4,.06,5.6),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
   boreFloor.position.set(42.3,.03,13.2);bore.add(boreFloor);
   // The mouth is a mound of marble-toned boulders, oversized and sunk so
@@ -1500,9 +1508,8 @@ function installChaoGardenFlora(){
       const palm=gltf.scene.getObjectByName('Palm');
       if(!palm)return;
       palm.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material[0]:o.material;o.material=new THREE.MeshBasicMaterial({map:m.map??null,color:m.color?.clone()??new THREE.Color(0x3da53c),fog:false});o.castShadow=false;o.receiveShadow=false}});
-      for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,51,1.4,1.8],[64,50,1.35,2.4],[72,52,1.2,4.6],[86,52,1.45,1.3],[94,53,1.25,3.1],[68,47,1.15,5.5]]){
-        const ground=chaoLawnAt(px,pz);
-        if(ground===null)continue;
+      for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,44,1.4,1.8],[64,42,1.35,2.4],[72,44,1.2,4.6],[86,43,1.45,1.3],[94,40,1.25,3.1],[68,38,1.15,5.5]]){
+        const ground=chaoGroundAt(px,pz,6)??.25;
         const tree=palm.clone(true);
         tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
         scene.add(tree);
@@ -1526,9 +1533,8 @@ function installChaoGardenFlora(){
   const flowerTexture=new THREE.CanvasTexture(flowerCanvas);flowerTexture.colorSpace=THREE.SRGBColorSpace;
   const flowerMaterial=new THREE.MeshBasicMaterial({map:flowerTexture,transparent:true,side:THREE.DoubleSide,fog:false});
   for(let i=0;i<26;i++){
-    const fx=63+((i*173)%370)/10,fz=6+((i*257)%440)/10;
-    const ground=chaoLawnAt(fx,fz);
-    if(ground===null)continue;
+    const fx=63+((i*173)%370)/10,fz=6+((i*257)%360)/10;
+    const ground=chaoGroundAt(fx,fz,9)??.25;
     const patch=new THREE.Group();
     for(const spin of [0,Math.PI/2]){
       const quad=new THREE.Mesh(new THREE.PlaneGeometry(.55,.4),flowerMaterial);
@@ -1555,9 +1561,8 @@ function installChaoGardenEggs(){
   const eggGeometry=new THREE.SphereGeometry(.34,18,14);
   eggColours.forEach((colour,index)=>{
     const egg=new THREE.Mesh(eggGeometry,new THREE.MeshBasicMaterial({map:speckleTexture,color:colour,fog:false}));
-    const ex=64+((index*211)%330)/10,ez=8+((index*307)%420)/10;
-    const ground=chaoLawnAt(ex,ez);
-    if(ground===null)return;
+    const ex=64+((index*211)%330)/10,ez=8+((index*307)%340)/10;
+    const ground=chaoGroundAt(ex,ez,9)??.25;
     egg.scale.set(1,1.32,1);
     egg.position.set(ex,ground+.4,ez);
     egg.rotation.set(((index*73)%10-5)*.03,index*1.3,((index*41)%10-5)*.03);
@@ -1567,7 +1572,7 @@ function installChaoGardenEggs(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-6',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-8',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1621,7 +1626,7 @@ function installChaoGardenModel(){
       chaoGardenMount=source;
       // The authored falls leave gaps between tiers; one continuous curtain,
       // sized off the tall water geometry itself, completes the drop.
-      const fallsBox=new THREE.Box3(),pieceBox=new THREE.Box3(),fallsSlabs=[];
+      const fallsBox=new THREE.Box3(),pieceBox=new THREE.Box3();
       let fallsFound=false;
       source.traverse(node=>{
         if(!node.isMesh)return;
@@ -1629,30 +1634,30 @@ function installChaoGardenModel(){
         if(!materials.some(material=>material.map===waterTexture))return;
         pieceBox.setFromObject(node);
         if(pieceBox.max.y-pieceBox.min.y<8)return;
-        // these building-sized translucent slabs are what hid the rock:
-        // they go, and thin streams take their place
-        fallsSlabs.push(node);
         if(fallsFound)fallsBox.union(pieceBox);else{fallsBox.copy(pieceBox);fallsFound=true}
       });
-      fallsSlabs.forEach(node=>node.removeFromParent());
       if(fallsFound){
         const fallsCentreX=(fallsBox.min.x+fallsBox.max.x)/2;
-        const fallsSpan=fallsBox.max.x-fallsBox.min.x;
-        const fallsTop=fallsBox.max.y-4;
+        const fallsWidth=(fallsBox.max.x-fallsBox.min.x)*.62;
+        const fallsTop=fallsBox.max.y-3;
         const fallsHeight=fallsTop-fallsBox.min.y;
-        const curtainMaterial=new THREE.MeshBasicMaterial({map:waterTexture,transparent:true,opacity:.48,depthWrite:false,side:THREE.DoubleSide,fog:false});
-        // three narrow streams instead of one milky wall: rock shows between
-        for(const [offset,widthShare,heightShare] of [[-.22,.2,1],[.06,.3,.92],[.32,.16,.8]]){
-          const stream=new THREE.Mesh(new THREE.PlaneGeometry(fallsSpan*widthShare,fallsHeight*heightShare),curtainMaterial);
-          stream.position.set(fallsCentreX+fallsSpan*offset,fallsBox.min.y+fallsHeight*heightShare/2,fallsBox.min.z-.35);
-          scene.add(stream);
-        }
-        // the headwall sits right behind the streams' crest: the rock the
-        // water falls from, in plain view
+        const curtainMaterial=new THREE.MeshBasicMaterial({map:waterTexture,transparent:true,opacity:.62,depthWrite:false,side:THREE.DoubleSide,fog:false});
+        const curtain=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth,fallsHeight),curtainMaterial);
+        curtain.position.set(fallsCentreX,fallsBox.min.y+fallsHeight/2,fallsBox.min.z-.35);
+        scene.add(curtain);
+        const rill=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth*.3,fallsHeight*.75),curtainMaterial);
+        rill.position.set(fallsBox.min.x+fallsWidth*.2,fallsBox.min.y+fallsHeight*.4,fallsBox.min.z-.55);
+        scene.add(rill);
+        // the headwall: the water needed somewhere to fall FROM. A broad
+        // marble-toned summit closes the cliff top behind and above the
+        // curtain so every stream begins at rock.
         const headwallMaterial=new THREE.MeshBasicMaterial({map:chaoRockTexture,color:0xc9d3dd,fog:false});
-        const headwall=new THREE.Mesh(new THREE.BoxGeometry(fallsSpan+10,9,8),headwallMaterial);
-        headwall.position.set(fallsCentreX,fallsTop+3.6,fallsBox.min.z+2.8);
+        const headwall=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+14,11,10),headwallMaterial);
+        headwall.position.set(fallsCentreX,fallsTop+3.2,fallsBox.min.z+5.4);
         scene.add(headwall);
+        const summitLedge=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+18,4,16),headwallMaterial);
+        summitLedge.position.set(fallsCentreX,fallsTop+8.4,fallsBox.min.z+9);
+        scene.add(summitLedge);
       }
       chaoGardenFallback.visible=false;
       installChaoGardenFlora();
@@ -3361,21 +3366,7 @@ function chaoGroundAt(x,z,feetY){
   }
   return null;
 }
-function chaoLawnAt(x,z){
-  // strictly grass: the topmost surface must wear the lawn material, so no
-  // palm, flower or egg can ever seat on water or bare rock again
-  if(!chaoGardenMount)return null;
-  chaoGroundOrigin.set(x,42,z);
-  chaoGroundRay.set(chaoGroundOrigin,chaoGroundDown);
-  const hits=chaoGroundRay.intersectObject(chaoGardenMount,true);
-  for(const hit of hits){
-    if(hit.point.y<-3.5||hit.point.y>10)continue;
-    const material=Array.isArray(hit.object.material)?hit.object.material[0]:hit.object.material;
-    if(material?.userData?.isWater)return null;
-    return material?.userData?.isLawn?hit.point.y:null;
-  }
-  return null;
-}
+
 function resolveChaoGardenCollisions(previousX,previousZ){
   // The bore is the only road through the old room, and past the shell the
   // measured grass edge is the only fence. A step that lands on neither goes
@@ -3482,7 +3473,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-exact-6';
+const ARCADE_BUILD='garden-exact-8';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -3492,7 +3483,7 @@ if(performanceStats){
 }
 let performanceWindowStart=performance.now(),performanceFrames=0,slowWindows=0,fastWindows=0,latestPerformance={fps:0,frameMs:0,quality:'WARMING'};
 const getRendererStats=()=>{const memory=performance.memory;return{...latestPerformance,renderScale:currentPixelRatio,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,heapUsedMb:memory?Number((memory.usedJSHeapSize/1048576).toFixed(1)):null,heapLimitMb:memory?Number((memory.jsHeapSizeLimit/1048576).toFixed(1)):null}};
-window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,position.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
+window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,position.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
 function updatePerformanceStats(now){performanceFrames++;const elapsed=now-performanceWindowStart;if(elapsed<1000)return;const fps=Math.round(performanceFrames*1000/elapsed),frameMs=Math.round(elapsed/performanceFrames),quality=currentPixelRatio<=pixelRatioFloor+.01?'LOW':currentPixelRatio<.9?'MED':'HIGH';latestPerformance={fps,frameMs,quality};if(performanceStats)performanceStats.textContent=`${fps} FPS · ${frameMs} MS · ${quality} · ${Math.round(currentPixelRatio*100)}%`;// This only ever went down.
 //
 // It dropped the scale on a single second under 48 fps — one hitch, a model
