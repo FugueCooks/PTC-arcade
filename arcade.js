@@ -1510,6 +1510,7 @@ function installChaoGardenFlora(){
       palm.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material[0]:o.material;o.material=new THREE.MeshBasicMaterial({map:m.map??null,color:m.color?.clone()??new THREE.Color(0x3da53c),fog:false});o.castShadow=false;o.receiveShadow=false}});
       for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[78,30,1.2,3.9],[88,36,1.5,2.7],[95,33,1.4,1.8],[71,36,1.2,4.6]]){
         const ground=chaoGroundAt(px,pz,6)??.25;
+        if(ground<-0.05)continue;
         const tree=palm.clone(true);
         tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
         scene.add(tree);
@@ -1535,6 +1536,7 @@ function installChaoGardenFlora(){
   for(let i=0;i<26;i++){
     const fx=63+((i*173)%370)/10,fz=6+((i*257)%300)/10;
     const ground=chaoGroundAt(fx,fz,9)??.25;
+    if(ground<-0.05)continue;
     const patch=new THREE.Group();
     for(const spin of [0,Math.PI/2]){
       const quad=new THREE.Mesh(new THREE.PlaneGeometry(.55,.4),flowerMaterial);
@@ -1563,6 +1565,7 @@ function installChaoGardenEggs(){
     const egg=new THREE.Mesh(eggGeometry,new THREE.MeshBasicMaterial({map:speckleTexture,color:colour,fog:false}));
     const ex=64+((index*211)%330)/10,ez=8+((index*307)%300)/10;
     const ground=chaoGroundAt(ex,ez,9)??.25;
+    if(ground<-0.05)return;
     egg.scale.set(1,1.32,1);
     egg.position.set(ex,ground+.4,ez);
     egg.rotation.set(((index*73)%10-5)*.03,index*1.3,((index*41)%10-5)*.03);
@@ -1571,7 +1574,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=garden-cast-2',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=garden-cast-3',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1604,8 +1607,15 @@ function installChaoGardenCast(){
       model.scale.setScalar(scale);
       model.position.set(-centre.x*scale,-bounds.min.y*scale,-centre.z*scale);
       holder.add(model);
-      const groundY=options.y??((chaoGroundAt(options.x,options.z,12)??.25));
-      holder.position.set(options.x,groundY+(options.hover??0),options.z);
+      let spotX=options.x,spotZ=options.z,groundY=options.y??null;
+      if(groundY===null){
+        for(const [dx,dz] of [[0,0],[0,-3],[0,-6],[3,0],[-3,0],[3,-4],[-3,-4]]){
+          const probe=chaoGroundAt(options.x+dx,options.z+dz,12);
+          if(probe!==null&&(probe>-0.05||options.wet)){spotX=options.x+dx;spotZ=options.z+dz;groundY=probe;break}
+        }
+        if(groundY===null)groundY=.25;
+      }
+      holder.position.set(spotX,groundY+(options.hover??0),spotZ);
       holder.rotation.y=options.rotY??0;
       scene.add(holder);
       if(options.spinY||options.bob){
@@ -1620,14 +1630,14 @@ function installChaoGardenCast(){
   // the four hedgehogs and the fox
   place('amy.glb',{x:69,z:16,height:1.42,rotY:2.4});
   place('shadow.glb',{x:91,z:27,height:1.45,rotY:-2});
-  place('tails.glb',{x:75,z:50,height:1.35,rotY:0});
+  place('tails.glb',{x:73,z:45,height:1.35,rotY:0});
   place('sonic.glb',{x:81,z:12,height:1.5,rotY:2.9});
   // Silver hangs just off the west cliff lip, mid-jump toward the meadow
   const silverLip=chaoGroundAt(57.4,26,20);
   place('silver.glb',{x:59.2,z:26,y:(silverLip??5)+0.5,height:1.45,rotY:-Math.PI/2});
   // chao, everywhere a chao should be
   for(const [cx,cz,turn] of [[72,12,1.2],[80,22,3.4],[88,12,5.1],[70,30,2.2],[84,34,4.4]])place('baby-chao.glb',{x:cx,z:cz,height:.55,rotY:turn});
-  for(const [cx,cz,turn] of [[76,40,2.8],[92,20,.7]])place('tails-chao.glb',{x:cx,z:cz,height:.6,rotY:turn});
+  for(const [cx,cz,turn] of [[74,36,2.8],[92,20,.7]])place('tails-chao.glb',{x:cx,z:cz,height:.6,rotY:turn});
   // two omochao, hovering and bobbing the way omochao do
   place('omochao.glb',{x:67,z:22,height:.8,hover:.45,bob:.12,rotY:1.1});
   place('omochao.glb',{x:86,z:28,height:.8,hover:.45,bob:.12,rotY:-2.4});
@@ -1636,13 +1646,13 @@ function installChaoGardenCast(){
   // rings, floating at collect height, all spinning
   for(let i=0;i<16;i++){
     const rx=64+((i*197)%340)/10,rz=6+((i*283)%380)/10;
-    place('ring.glb',{x:rx,z:rz,height:.85,hover:1.1,spinY:2.6,rotY:i*.8});
+    place('ring.glb',{x:rx,z:rz,height:.85,hover:1.1,spinY:2.6,rotY:i*.8,wet:true});
   }
 }
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-cast-2',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-cast-3',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3549,7 +3559,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-cast-2';
+const ARCADE_BUILD='garden-cast-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
