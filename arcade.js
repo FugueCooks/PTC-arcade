@@ -1390,7 +1390,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-env-1',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=counter-flanks-1',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The doorway opens into the garden and nothing else: the model's east
       // cliff ring fills the old room as an approach canyon, and the meadow,
@@ -2473,6 +2473,35 @@ const prizeDisplayLights=[prizeDisplayLight,prizeLightBeam,prizeUnderlightBeam];
 // counter is the one span of it that was never spoken for.
 gangsterPepeMount.position.set(0,1.265,0);prizeDisplay.add(gangsterPepeMount);
 gangsterPepeLight.position.set(0,1.95,.62);prizeDisplay.add(gangsterPepeLight);
+// The counter's flanks: a capsule tower on either end of the case, built from
+// the case's own materials so the three read as one piece of furniture. The
+// capsules are the arcade's gacha stock, procedural and light.
+for(const side of [-1,1]){
+  const flank=new THREE.Group();flank.position.set(side*8.9,0,0);prizeDisplay.add(flank);
+  const flankBase=new THREE.Mesh(new THREE.BoxGeometry(1.16,.16,1.16),new THREE.MeshStandardMaterial({color:0x142331,metalness:.9,roughness:.12}));
+  flankBase.position.y=.08;flank.add(flankBase);
+  const flankGlass=new THREE.Mesh(new THREE.BoxGeometry(.98,2.28,.98),new THREE.MeshStandardMaterial({color:0x8deeff,emissive:0x173d5d,emissiveIntensity:.26,transparent:true,opacity:.16,metalness:.65,roughness:.06,side:THREE.DoubleSide,depthWrite:false}));
+  flankGlass.position.y=1.3;flank.add(flankGlass);
+  const flankTop=new THREE.Mesh(new THREE.BoxGeometry(1.16,.09,1.16),new THREE.MeshStandardMaterial({color:0x243a4b,emissive:0x173c56,emissiveIntensity:.6,metalness:.85,roughness:.1}));
+  flankTop.position.y=2.49;flank.add(flankTop);
+  for(const [ex,ez] of [[-.52,.52],[.52,.52],[-.52,-.52],[.52,-.52]]){
+    const edge=new THREE.Mesh(new THREE.BoxGeometry(.08,2.34,.08),new THREE.MeshStandardMaterial({color:0x36f9f6,emissive:0x36f9f6,emissiveIntensity:1.15,metalness:.7,roughness:.12}));
+    edge.position.set(ex,1.3,ez);flank.add(edge);
+  }
+  const capsuleShell=new THREE.MeshStandardMaterial({color:0xf4f8fb,transparent:true,opacity:.55,roughness:.08,metalness:.15});
+  const capsuleColours=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67,0x5f8cff,0xff5f5f];
+  for(let i=0;i<9;i++){
+    const angle=(i*2.399+side)*1,radius=.16+((i*53)%23)/100;
+    const cx=Math.cos(angle)*radius*.9,cz=Math.sin(angle)*radius*.9,cy=.36+i*.235;
+    const bottom=new THREE.Mesh(new THREE.SphereGeometry(.145,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2),
+      new THREE.MeshStandardMaterial({color:capsuleColours[(i+(side>0?3:0))%capsuleColours.length],emissive:capsuleColours[(i+(side>0?3:0))%capsuleColours.length],emissiveIntensity:.18,roughness:.24}));
+    bottom.position.set(cx,cy,cz);flank.add(bottom);
+    const top=new THREE.Mesh(new THREE.SphereGeometry(.145,16,10,0,Math.PI*2,0,Math.PI/2),capsuleShell);
+    top.position.set(cx,cy,cz);flank.add(top);
+  }
+  const flankGlow=new THREE.PointLight(0x9be8ff,1.3,3.4,2);flankGlow.position.set(0,1.5,.2);flank.add(flankGlow);
+  prizeDisplayLights.push(flankGlow);
+}
 function prizeLabel(text,color){const canvas=document.createElement('canvas');canvas.width=256;canvas.height=72;const c=canvas.getContext('2d');c.fillStyle='#070914';c.fillRect(0,0,256,72);c.strokeStyle=color;c.lineWidth=5;c.strokeRect(3,3,250,66);c.fillStyle='#fff4cc';c.font='bold 23px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(text,128,37);return new THREE.CanvasTexture(canvas);}
 function addPrizeWindow(x,label,kind,color){const display=new THREE.Group();display.position.set(x,.62,.08);prizeDisplay.add(display);const toy=new THREE.Group();toy.position.set(0,-.02,.1);toy.scale.setScalar(1.15);if(kind==='pepe')toy.name='pepe-model-slot';if(kind==='penguin')toy.name='pudgy-model-slot';if(kind==='furthermore')toy.name='furthermore-model-slot';if(kind==='enterprise')toy.name='enterprise-model-slot';if(kind==='kurack')toy.name='kurack-model-slot';display.add(toy);
   const toyMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.38,metalness:.12});
