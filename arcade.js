@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-2';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-3';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -965,13 +965,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=poke-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=poke-3',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=poke-2',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=poke-3',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=poke-2',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=poke-3',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -1313,6 +1313,21 @@ function installPokemonCenter(){
       lintelPlate.position.set(27.08,4.15,-40.6);scene.add(lintelPlate);
       const lintelTrim=new THREE.Mesh(new THREE.BoxGeometry(3.9,.09,.1),portalGlow);
       lintelTrim.position.set(27.08,3.22,-40.36);scene.add(lintelTrim);
+      // The loose cut tears the whole east stretch of the wall away, and the
+      // black gap it left read as walkable while the arcade wall behind it
+      // refused the step — an invisible wall in a hole. The stretch is
+      // rebuilt as clean panels in the building own colours, full-bright
+      // like its unlit bake, leaving only the framed doorway.
+      const centerWall=new THREE.MeshBasicMaterial({color:0xf2dfa6});
+      const centerWainscot=new THREE.MeshBasicMaterial({color:0xd97a4e});
+      for(const [wx,ww] of [[24.62,1.4],[31.2,4.7]]){
+        const fill=new THREE.Mesh(new THREE.BoxGeometry(ww,4,.34),centerWall);
+        fill.position.set(wx,2,-40.82);scene.add(fill);
+        const skirt=new THREE.Mesh(new THREE.BoxGeometry(ww,.85,.1),centerWainscot);
+        skirt.position.set(wx,.43,-40.6);scene.add(skirt);
+      }
+      const overDoor=new THREE.Mesh(new THREE.BoxGeometry(9.7,.95,.34),centerWall);
+      overDoor.position.set(28.75,4.48,-40.82);scene.add(overDoor);
     },undefined,error=>console.warn('The Pokemon Center could not load.',error));
   }catch(error){console.warn('The Pokemon Center loader could not initialize.',error)}})();
 }
@@ -2629,7 +2644,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-2')
+  import('./emulators/disc-range-cache.js?v=poke-3')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2649,7 +2664,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-2')
+  import('./emulators/disc-range-cache.js?v=poke-3')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
