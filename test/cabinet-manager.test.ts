@@ -21,7 +21,7 @@ function setup(options = {}) {
 void test('the approved registry exposes consolidated console rooms and the MegaMan PlayStation cabinets', () => {
   const { cabinets } = setup();
   const snapshot = cabinets.snapshot('main');
-  assert.equal(snapshot.length, 38);
+  assert.equal(snapshot.length, 59);
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'pixel-rally'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'silent-hill'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'metal-gear-solid'));

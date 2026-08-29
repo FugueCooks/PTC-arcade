@@ -7,6 +7,8 @@ import { createRuntimeServer } from './server.js';
 import { DiskLibrary } from './disk-library.js';
 import { DolphinLauncher } from './dolphin-launcher.js';
 import { Pcsx2Launcher } from './pcsx2-launcher.js';
+import { MelondsLauncher } from './melonds-launcher.js';
+import { VbaLauncher } from './vba-launcher.js';
 import { LaunchGuard } from './dolphin.js';
 import { SessionManager } from './session-manager.js';
 import { catalogUrlFor, parseCatalog } from './library.js';
@@ -78,6 +80,14 @@ export async function startRuntime({ origin = ARCADE_ORIGIN, log = consoleLog } 
   if (!pcsx2.ok) log('pcsx2_not_found', { reason: pcsx2.reason });
   else log('pcsx2_found', { path: pcsx2.path, source: pcsx2.source });
 
+  // The handhelds: melonDS for DS, VBA-M for the whole Game Boy line.
+  const melonds = MelondsLauncher.discover({ configuredPath: config.melondsPath ?? null, exists: existsSync });
+  if (!melonds.ok) log('melonds_not_found', { reason: melonds.reason });
+  else log('melonds_found', { path: melonds.path, source: melonds.source });
+  const vba = VbaLauncher.discover({ configuredPath: config.vbaPath ?? null, exists: existsSync });
+  if (!vba.ok) log('vba_not_found', { reason: vba.reason });
+  else log('vba_found', { path: vba.path, source: vba.source });
+
   let catalog = await loadCatalog(origin, log);
 
   const sessions = new SessionManager({
@@ -88,7 +98,11 @@ export async function startRuntime({ origin = ARCADE_ORIGIN, log = consoleLog } 
         dolphinPath: discovered.ok ? discovered.path : null,
         userDirectory: path.join(home, 'dolphin-user')
       }),
-      ps2: new Pcsx2Launcher({ pcsx2Path: pcsx2.ok ? pcsx2.path : null })
+      ps2: new Pcsx2Launcher({ pcsx2Path: pcsx2.ok ? pcsx2.path : null }),
+      nds: new MelondsLauncher({ melondsPath: melonds.ok ? melonds.path : null }),
+      gb: new VbaLauncher({ vbaPath: vba.ok ? vba.path : null }),
+      gbc: new VbaLauncher({ vbaPath: vba.ok ? vba.path : null }),
+      gba: new VbaLauncher({ vbaPath: vba.ok ? vba.path : null })
     },
     guard: new LaunchGuard(),
     log

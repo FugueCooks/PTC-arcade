@@ -20,7 +20,7 @@ function definition(overrides: Record<string, unknown> = {}): GameDefinition {
 void test('the shipped game registry loads with adapter identity for every game', () => {
   const { registry, issues } = loadGameRegistry();
   assert.deepEqual(issues, []);
-  assert.equal(registry.size, 30);
+  assert.equal(registry.size, 51);
   assert.ok(registry.all().every((game) => game.emulatorAdapterId !== undefined));
   assert.ok(registry.all().every((game) => game.launcherAdapterId === 'hosted-image'));
   assert.equal(registry.forAdapter('emulatorjs').length, 21);
@@ -58,7 +58,7 @@ void test('an unassigned cabinet resolves no game and fails safely', () => {
 void test('a game declares its emulator adapter, so cabinets never choose a core', () => {
   // Milestone 11.40 test 2.
   const { registry } = loadGameRegistry();
-  const expected: Record<string, string> = { psx: 'emulatorjs', n64: 'emulatorjs', snes: 'emulatorjs', ps2: 'play-ps2', gamecube: 'gecko-gamecube' };
+  const expected: Record<string, string> = { psx: 'emulatorjs', n64: 'emulatorjs', snes: 'emulatorjs', ps2: 'play-ps2', gamecube: 'gecko-gamecube', gb: 'ptc-runtime-gb', gbc: 'ptc-runtime-gb', gba: 'ptc-runtime-gb', nds: 'ptc-runtime-nds' };
   for (const game of registry.all()) assert.equal(game.emulatorAdapterId, expected[game.platformId]);
 });
 

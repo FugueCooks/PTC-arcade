@@ -172,5 +172,131 @@
     "file": "super-mario-sunshine-v2.rvz",
     "bytes": 1073698636,
     "sha256": "85b20aea95fddf549e1e1486b2cce87c0c39c5dc30a2a98403d7af1dc224489f"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-red.zip",
+    "bytes": 368511,
+    "sha256": "a7b8edf992168bf9043254825f817e51aa002c281adccba0dfa606218120d1b4"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-blue.zip",
+    "bytes": 368303,
+    "sha256": "57a74d9ea1e35a6f3fe70cd8165b7bd7002c50829e83a91986804d81e9506153"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-yellow.zip",
+    "bytes": 495259,
+    "sha256": "12ce4935540a5cb7ba4d386625356429c2b95d66cb141ed53685d97d8599bc38"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-gold.zip",
+    "bytes": 726756,
+    "sha256": "70d2801dfe900a25c84b6601c8bd7221b99348f609e94bb16d5483a0403ce0db"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-silver.zip",
+    "bytes": 726508,
+    "sha256": "d82fd90f947e84f01df447a9867beed95579a1242aa27d1d107c367a0883ae6c"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-crystal.zip",
+    "bytes": 999132,
+    "sha256": "363ab5f3027212d3a2d0435c0181593a712ef9d0b8cd0b1348710c7c194e87ca"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-ruby.zip",
+    "bytes": 4807370,
+    "sha256": "b22ba30d884fac78eb4b0be8feae322458027c55c0f167bf7c7e6a968cef7903"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-sapphire.zip",
+    "bytes": 4807532,
+    "sha256": "c2c48e8057404a242c5d9f5f5c6ae0b01002ff830f79c829e1cf42fd1c6d700f"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-emerald.zip",
+    "bytes": 6791457,
+    "sha256": "4a966c630f501ce9e0d2240d148fe0ea33df02bb99547f44ee3beb9200978b88"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-firered.zip",
+    "bytes": 5192816,
+    "sha256": "335e7628a8ee43ec9f6c5fc50d811c7e9345e029f8e96a820a574526936c6296"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-leafgreen.zip",
+    "bytes": 5192998,
+    "sha256": "9567c2a1cfc0864c8ce9a6a064fb139f97bd706f6098e346d243237bb6d260b5"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-aurora-ticket.zip",
+    "bytes": 148116,
+    "sha256": "7c6fc39972dcee2056535789897d23f9fd45380fdfcd7e2eb56c77cf678748c5"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-diamond.zip",
+    "bytes": 27924487,
+    "sha256": "e9b45e78c0f9be645ee59c9fa5cbf036896176b421812a986a9935438a8d9d6c"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-pearl.zip",
+    "bytes": 27924476,
+    "sha256": "b602407104e09b4daded46ff169099aea6d6407c8936d54af8c3e7b35ea58061"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-platinum.zip",
+    "bytes": 50778279,
+    "sha256": "ba8f8e54d7d4cfa10ce1353415062739d6f2e66ad479a268f031f762e2fa1f69"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-heartgold.zip",
+    "bytes": 60760561,
+    "sha256": "aa8bfc1d006f10a72321e46381c5b389875254fb5ea48fb15af2a51cc8f8d1ed"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-soulsilver.zip",
+    "bytes": 60760448,
+    "sha256": "9b35fb1e70750eef6da6a0afff4ad57b26505adaab82cc27307d1b46f9bd689e"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-black.zip",
+    "bytes": 110697413,
+    "sha256": "e6acfb34b4b5b3d3590fc4bc30343908186739230935f866777c6168c3dd83ad"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-white.zip",
+    "bytes": 110699618,
+    "sha256": "bb8b634b22a911a48b1b5f41d6e42134f2aa61483bfcc7d67e3bbf967ca87b05"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-black-2.zip",
+    "bytes": 154063144,
+    "sha256": "4a21aee8f169facf25068d67e24f3275603c7b3a96c18bcd950ce53cd6d8bba8"
+  },
+  {
+    "kind": "game",
+    "file": "pokemon-white-2.zip",
+    "bytes": 153749213,
+    "sha256": "01b0e1376bc0afb20bfe4ffffcd4e1edefc9b7a8df4b8504a69be74c260b8ac9"
   }
 ]

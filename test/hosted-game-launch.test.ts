@@ -17,6 +17,8 @@ import { importBrowserModule } from './helpers/browser-module.js';
  */
 const { loadGameRegistry } = await importBrowserModule<any>('games/game-registry.js');
 const { createDefaultAdapterRegistry } = await importBrowserModule<any>('emulators/emulator-adapter-registry.js');
+const { createPtcRuntimeGbAdapter } = await importBrowserModule<any>('emulators/adapters/ptc-runtime-gb-adapter.js');
+const { createPtcRuntimeNdsAdapter } = await importBrowserModule<any>('emulators/adapters/ptc-runtime-nds-adapter.js');
 const { createEmulatorJsAdapter } = await importBrowserModule<any>('emulators/adapters/emulatorjs-adapter.js');
 
 /** Serves the shipped registry file to the loader's relative fetch. */
@@ -45,6 +47,10 @@ void test('every shipped game exposes the platform field the adapters read', asy
 void test('a shipped game resolves to an adapter that covers its platform', async () => {
   const registry = await loadShippedRegistry();
   const adapters = createDefaultAdapterRegistry();
+  // The handheld games name the runtime adapters, which the page registers
+  // at bootstrap; the test registry mirrors that.
+  adapters.register(createPtcRuntimeGbAdapter());
+  adapters.register(createPtcRuntimeNdsAdapter());
   for (const game of registry.byId.values()) {
     const resolution = adapters.resolveForGame(game);
     assert.equal(resolution.ok, true, `${game.id} resolved no adapter (${resolution.reason})`);
@@ -125,6 +131,10 @@ void test('a game names an adapter that exists and covers it', async () => {
   // so a wrong declaration must fail here, not at a cabinet.
   const registry = await loadShippedRegistry();
   const adapters = createDefaultAdapterRegistry();
+  // The handheld games name the runtime adapters, which the page registers
+  // at bootstrap; the test registry mirrors that.
+  adapters.register(createPtcRuntimeGbAdapter());
+  adapters.register(createPtcRuntimeNdsAdapter());
   for (const game of registry.byId.values()) {
     const adapter = adapters.get(game.emulatorAdapterId);
     assert.ok(adapter, `${game.id} names unknown adapter ${game.emulatorAdapterId}`);

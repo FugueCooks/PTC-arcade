@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { loadGameRegistry } from './games/game-registry.js?v=poke-5';
+import { loadGameRegistry } from './games/game-registry.js?v=poke-6';
 import { Ps2GameCache } from './games/ps2-game-cache.js?v=ps2-local-cache-1';
 import { loadRoomRegistry } from './rooms/room-registry.js?v=10-rooms-1';
-import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=poke-5';
+import { createDefaultAdapterRegistry } from './emulators/emulator-adapter-registry.js?v=poke-6';
 import { CabinetSpatialIndex } from './cabinets/cabinet-spatial-index.js?v=spatial-1';
 import { createPtcRuntimeGameCubeAdapter, chooseGameCubeAdapter } from './emulators/adapters/ptc-runtime-gamecube-adapter.js?v=runtime-1';
 import { createPtcRuntimePs2Adapter, choosePs2Adapter } from './emulators/adapters/ptc-runtime-ps2-adapter.js?v=runtime-1';
+import { createPtcRuntimeGbAdapter, chooseGbAdapter } from './emulators/adapters/ptc-runtime-gb-adapter.js?v=runtime-1';
+import { createPtcRuntimeNdsAdapter, chooseNdsAdapter } from './emulators/adapters/ptc-runtime-nds-adapter.js?v=runtime-1';
 import { RuntimeClient } from './emulators/ptc-runtime/runtime-client.js?v=runtime-1';
 
 // Legacy scene code and newer ES modules now share the exact same Three.js
@@ -28,6 +30,12 @@ window.ARCADE_CHOOSE_GAMECUBE_ADAPTER = chooseGameCubeAdapter;
 // everyone else stays on Play! — including on a phone, which Gecko cannot do.
 window.ARCADE_EMULATOR_ADAPTERS.register(createPtcRuntimePs2Adapter());
 window.ARCADE_CHOOSE_PS2_ADAPTER = choosePs2Adapter;
+// The handhelds run natively or not at all: VBA-M carries the Game Boy line
+// and melonDS carries the DS library, both through the runtime.
+window.ARCADE_EMULATOR_ADAPTERS.register(createPtcRuntimeGbAdapter());
+window.ARCADE_CHOOSE_GB_ADAPTER = chooseGbAdapter;
+window.ARCADE_EMULATOR_ADAPTERS.register(createPtcRuntimeNdsAdapter());
+window.ARCADE_CHOOSE_NDS_ADAPTER = chooseNdsAdapter;
 window.ARCADE_RUNTIME_CLIENT = new RuntimeClient();
 window.ARCADE_RUNTIME_DETECTION = null;
 
@@ -64,6 +72,6 @@ window.ARCADE_ENSURE_RUNTIME_DETECTION = () => {
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=poke-5');
+await import('./arcade.js?v=poke-6');
 await import('./avatar-selection.js?v=triple-t-label-2');
 await import('./multiplayer-client.js?v=arcade-rows-6');

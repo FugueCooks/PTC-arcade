@@ -38,7 +38,9 @@ export const RUNTIME_PLATFORMS = Object.freeze(['gamecube', 'ps2']);
 export const RUNTIME_ADAPTER_ID = 'ptc-runtime-gamecube';
 export const RUNTIME_PS2_ADAPTER_ID = 'ptc-runtime-ps2';
 /** Which adapter drives which platform natively. */
-export const RUNTIME_ADAPTER_IDS = Object.freeze({ gamecube: RUNTIME_ADAPTER_ID, ps2: RUNTIME_PS2_ADAPTER_ID });
+export const RUNTIME_NDS_ADAPTER_ID = 'ptc-runtime-nds';
+export const RUNTIME_GB_ADAPTER_ID = 'ptc-runtime-gb';
+export const RUNTIME_ADAPTER_IDS = Object.freeze({ gamecube: RUNTIME_ADAPTER_ID, ps2: RUNTIME_PS2_ADAPTER_ID, nds: RUNTIME_NDS_ADAPTER_ID, gb: RUNTIME_GB_ADAPTER_ID });
 
 /** Session lifecycle, as reported to the page. */
 export const SESSION_STATES = Object.freeze({
@@ -81,6 +83,8 @@ export const FAILURE_REASONS = Object.freeze({
   PLATFORM_UNSUPPORTED: 'platform-unsupported',
   DOLPHIN_MISSING: 'dolphin-missing',
   PCSX2_MISSING: 'pcsx2-missing',
+  MELONDS_MISSING: 'melonds-missing',
+  VBA_MISSING: 'vba-missing',
   DOWNLOAD_FAILED: 'download-failed',
   INTEGRITY_FAILED: 'integrity-failed',
   DISK_FULL: 'disk-full',

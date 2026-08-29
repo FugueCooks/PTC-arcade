@@ -931,6 +931,489 @@
         26
       ],
       "performanceNote": "Runs below full speed · about 40 f/s"
+    },
+    {
+      "id": "pokemon-red",
+      "cabinetId": "gameboy-cabinet-01",
+      "name": "Pokemon Red",
+      "system": "gb",
+      "file": "pokemon-red.zip",
+      "emulatorId": 40001,
+      "sizeBytes": 368511,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-red.zip",
+          "sizeBytes": 368511,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-blue",
+      "cabinetId": "gameboy-cabinet-02",
+      "name": "Pokemon Blue",
+      "system": "gb",
+      "file": "pokemon-blue.zip",
+      "emulatorId": 40002,
+      "sizeBytes": 368303,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-blue.zip",
+          "sizeBytes": 368303,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-yellow",
+      "cabinetId": "gameboy-cabinet-03",
+      "name": "Pokemon Yellow",
+      "system": "gb",
+      "file": "pokemon-yellow.zip",
+      "emulatorId": 40003,
+      "sizeBytes": 495259,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-yellow.zip",
+          "sizeBytes": 495259,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-gold",
+      "cabinetId": "gameboy-cabinet-04",
+      "name": "Pokemon Gold",
+      "system": "gbc",
+      "file": "pokemon-gold.zip",
+      "emulatorId": 40004,
+      "sizeBytes": 726756,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-gold.zip",
+          "sizeBytes": 726756,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-silver",
+      "cabinetId": "gameboy-cabinet-05",
+      "name": "Pokemon Silver",
+      "system": "gbc",
+      "file": "pokemon-silver.zip",
+      "emulatorId": 40005,
+      "sizeBytes": 726508,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-silver.zip",
+          "sizeBytes": 726508,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-crystal",
+      "cabinetId": "gameboy-cabinet-06",
+      "name": "Pokemon Crystal",
+      "system": "gbc",
+      "file": "pokemon-crystal.zip",
+      "emulatorId": 40006,
+      "sizeBytes": 999132,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-crystal.zip",
+          "sizeBytes": 999132,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-ruby",
+      "cabinetId": "gameboy-cabinet-07",
+      "name": "Pokemon Ruby",
+      "system": "gba",
+      "file": "pokemon-ruby.zip",
+      "emulatorId": 40007,
+      "sizeBytes": 4807370,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-ruby.zip",
+          "sizeBytes": 4807370,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-sapphire",
+      "cabinetId": "gameboy-cabinet-08",
+      "name": "Pokemon Sapphire",
+      "system": "gba",
+      "file": "pokemon-sapphire.zip",
+      "emulatorId": 40008,
+      "sizeBytes": 4807532,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-sapphire.zip",
+          "sizeBytes": 4807532,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-firered",
+      "cabinetId": "gameboy-cabinet-09",
+      "name": "Pokemon FireRed",
+      "system": "gba",
+      "file": "pokemon-firered.zip",
+      "emulatorId": 40009,
+      "sizeBytes": 5192816,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-firered.zip",
+          "sizeBytes": 5192816,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-leafgreen",
+      "cabinetId": "gameboy-cabinet-10",
+      "name": "Pokemon LeafGreen",
+      "system": "gba",
+      "file": "pokemon-leafgreen.zip",
+      "emulatorId": 40010,
+      "sizeBytes": 5192998,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-leafgreen.zip",
+          "sizeBytes": 5192998,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-aurora-ticket",
+      "cabinetId": "gameboy-cabinet-11",
+      "name": "Aurora Ticket Kiosk",
+      "system": "gba",
+      "file": "pokemon-aurora-ticket.zip",
+      "emulatorId": 40011,
+      "sizeBytes": 148116,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-aurora-ticket.zip",
+          "sizeBytes": 148116,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-emerald",
+      "cabinetId": "gameboy-cabinet-12",
+      "name": "Pokemon Emerald",
+      "system": "gba",
+      "file": "pokemon-emerald.zip",
+      "emulatorId": 40012,
+      "sizeBytes": 6791457,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-gb",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-emerald.zip",
+          "sizeBytes": 6791457,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-diamond",
+      "cabinetId": "nds-cabinet-01",
+      "name": "Pokemon Diamond",
+      "system": "nds",
+      "file": "pokemon-diamond.zip",
+      "emulatorId": 40013,
+      "sizeBytes": 27924487,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-diamond.zip",
+          "sizeBytes": 27924487,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-pearl",
+      "cabinetId": "nds-cabinet-02",
+      "name": "Pokemon Pearl",
+      "system": "nds",
+      "file": "pokemon-pearl.zip",
+      "emulatorId": 40014,
+      "sizeBytes": 27924476,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-pearl.zip",
+          "sizeBytes": 27924476,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-platinum",
+      "cabinetId": "nds-cabinet-03",
+      "name": "Pokemon Platinum",
+      "system": "nds",
+      "file": "pokemon-platinum.zip",
+      "emulatorId": 40015,
+      "sizeBytes": 50778279,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-platinum.zip",
+          "sizeBytes": 50778279,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-heartgold",
+      "cabinetId": "nds-cabinet-04",
+      "name": "Pokemon HeartGold",
+      "system": "nds",
+      "file": "pokemon-heartgold.zip",
+      "emulatorId": 40016,
+      "sizeBytes": 60760561,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-heartgold.zip",
+          "sizeBytes": 60760561,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-soulsilver",
+      "cabinetId": "nds-cabinet-05",
+      "name": "Pokemon SoulSilver",
+      "system": "nds",
+      "file": "pokemon-soulsilver.zip",
+      "emulatorId": 40017,
+      "sizeBytes": 60760448,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-soulsilver.zip",
+          "sizeBytes": 60760448,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-black",
+      "cabinetId": "nds-cabinet-06",
+      "name": "Pokemon Black",
+      "system": "nds",
+      "file": "pokemon-black.zip",
+      "emulatorId": 40018,
+      "sizeBytes": 110697413,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-black.zip",
+          "sizeBytes": 110697413,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-white",
+      "cabinetId": "nds-cabinet-07",
+      "name": "Pokemon White",
+      "system": "nds",
+      "file": "pokemon-white.zip",
+      "emulatorId": 40019,
+      "sizeBytes": 110699618,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-white.zip",
+          "sizeBytes": 110699618,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-black-2",
+      "cabinetId": "nds-cabinet-08",
+      "name": "Pokemon Black 2",
+      "system": "nds",
+      "file": "pokemon-black-2.zip",
+      "emulatorId": 40020,
+      "sizeBytes": 154063144,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-black-2.zip",
+          "sizeBytes": 154063144,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "pokemon-white-2",
+      "cabinetId": "nds-cabinet-09",
+      "name": "Pokemon White 2",
+      "system": "nds",
+      "file": "pokemon-white-2.zip",
+      "emulatorId": 40021,
+      "sizeBytes": 153749213,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "ptc-runtime-nds",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "pokemon-white-2.zip",
+          "sizeBytes": 153749213,
+          "required": true,
+          "label": null
+        }
+      ]
     }
   ]
 }

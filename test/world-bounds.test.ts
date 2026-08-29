@@ -97,8 +97,11 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
     const cabinets: Array<Record<string, any>> = Array.isArray(parsed) ? parsed : parsed.cabinets ?? [];
     assert.ok(cabinets.length > 0, 'the cabinet registry must not be empty');
 
+    // The floor is a union now: the main rectangle, the Silent Hill annex,
+    // and the arena in the void — a cabinet in any of them can be walked to.
+    const regions = [clientBounds, clientRegion('SILENT_HILL_EXPANSE'), clientRegion('POKEMON_EXPANSE')];
     const reachable = (x: number, z: number) =>
-      x >= clientBounds.minX && x <= clientBounds.maxX && z >= clientBounds.minZ && z <= clientBounds.maxZ;
+      regions.some((region) => x >= region.minX && x <= region.maxX && z >= region.minZ && z <= region.maxZ);
 
     const unreachable = cabinets.filter((cabinet) => {
       if (cabinet.enabled === false) return false;

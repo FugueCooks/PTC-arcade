@@ -78,6 +78,8 @@ export class RuntimeClient {
       // Named separately from Dolphin: a player can have the runtime and one
       // emulator but not the other, and the advice differs.
       pcsx2Present: found.status.pcsx2?.present === true,
+      melondsPresent: found.status.melonds?.present === true,
+      vbaPresent: found.status.vba?.present === true,
       paired: found.status.paired === true && Boolean(this.token)
     };
   }

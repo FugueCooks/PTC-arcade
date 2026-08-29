@@ -18,10 +18,11 @@ export const RUNTIME_FRAME_SRC = 'emulators/ptc-runtime/session.html?v=runtime-1
  * the frame, the handshake, the message contract, the timeout — is the runtime
  * protocol, and there is one copy of it here.
  */
-export function createRuntimeAdapter({ platform, adapterId, emulatorKey, emulatorMissingReason, runtime, detectRuntime } = {}) {
+export function createRuntimeAdapter({ platform, platforms, adapterId, emulatorKey, emulatorMissingReason, runtime, detectRuntime } = {}) {
   return {
     id: adapterId,
-    supportedPlatforms: Object.freeze([platform]),
+    // One emulator can cover a family: VBA-M runs GB, GBC and GBA alike.
+    supportedPlatforms: Object.freeze(platforms ?? [platform]),
 
     /**
      * The native emulator can do all of this; this adapter cannot drive it.

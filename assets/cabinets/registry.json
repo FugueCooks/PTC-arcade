@@ -348,21 +348,21 @@
     "id": "n64-cabinet-01",
     "name": "Pokemon Snap",
     "sceneKey": "POKEMON SNAP",
-    "cabinetType": "n64-upright",
-    "zoneId": "main-floor-east",
+    "cabinetType": "pokemon-arcade",
+    "zoneId": "pokemon-arena",
     "gameId": "pokemon-snap",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
+      "x": 5.49,
       "y": 1.65,
-      "z": -12.65
+      "z": -125.1
     },
     "playerPosition": {
-      "x": 9.15,
+      "x": 5.49,
       "y": 1.65,
-      "z": -12.65
+      "z": -125.45
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": 0,
     "defaultGameId": "pokemon-snap"
   },
   {
@@ -807,5 +807,446 @@
       "z": 46.05
     },
     "playerRotationY": 3.141592653589793
+  },
+  {
+    "id": "gameboy-cabinet-01",
+    "name": "Pokemon Red",
+    "sceneKey": "POKEMON RED",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-red",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 1.46,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 1.46,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-red"
+  },
+  {
+    "id": "gameboy-cabinet-02",
+    "name": "Pokemon Blue",
+    "sceneKey": "POKEMON BLUE",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-blue",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 3.5,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 3.5,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-blue"
+  },
+  {
+    "id": "gameboy-cabinet-03",
+    "name": "Pokemon Yellow",
+    "sceneKey": "POKEMON YELLOW",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-yellow",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 7.49,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 7.49,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-yellow"
+  },
+  {
+    "id": "gameboy-cabinet-04",
+    "name": "Pokemon Gold",
+    "sceneKey": "POKEMON GOLD",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-gold",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 9.52,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 9.52,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-gold"
+  },
+  {
+    "id": "gameboy-cabinet-05",
+    "name": "Pokemon Silver",
+    "sceneKey": "POKEMON SILVER",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-silver",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 11.54,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 11.54,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-silver"
+  },
+  {
+    "id": "gameboy-cabinet-06",
+    "name": "Pokemon Crystal",
+    "sceneKey": "POKEMON CRYSTAL",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-crystal",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 13.57,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 13.57,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-crystal"
+  },
+  {
+    "id": "gameboy-cabinet-07",
+    "name": "Pokemon Ruby",
+    "sceneKey": "POKEMON RUBY",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-ruby",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 15.6,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 15.6,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-ruby"
+  },
+  {
+    "id": "gameboy-cabinet-08",
+    "name": "Pokemon Sapphire",
+    "sceneKey": "POKEMON SAPPHIRE",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-sapphire",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 17.63,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 17.63,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-sapphire"
+  },
+  {
+    "id": "gameboy-cabinet-09",
+    "name": "Pokemon FireRed",
+    "sceneKey": "POKEMON FIRERED",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-firered",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 19.66,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 19.66,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-firered"
+  },
+  {
+    "id": "gameboy-cabinet-10",
+    "name": "Pokemon LeafGreen",
+    "sceneKey": "POKEMON LEAFGREEN",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-leafgreen",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 21.7,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 21.7,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-leafgreen"
+  },
+  {
+    "id": "gameboy-cabinet-11",
+    "name": "Aurora Ticket Kiosk",
+    "sceneKey": "AURORA TICKET KIOSK",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-aurora-ticket",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 23.73,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 23.73,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-aurora-ticket"
+  },
+  {
+    "id": "gameboy-cabinet-12",
+    "name": "Pokemon Emerald",
+    "sceneKey": "POKEMON EMERALD",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-emerald",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 25.76,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 25.76,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-emerald"
+  },
+  {
+    "id": "nds-cabinet-01",
+    "name": "Pokemon Diamond",
+    "sceneKey": "POKEMON DIAMOND",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-diamond",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 28.4,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 28.4,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-diamond"
+  },
+  {
+    "id": "nds-cabinet-02",
+    "name": "Pokemon Pearl",
+    "sceneKey": "POKEMON PEARL",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-pearl",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 31.65,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 31.65,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-pearl"
+  },
+  {
+    "id": "nds-cabinet-03",
+    "name": "Pokemon Platinum",
+    "sceneKey": "POKEMON PLATINUM",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-platinum",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 34.9,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 34.9,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-platinum"
+  },
+  {
+    "id": "nds-cabinet-04",
+    "name": "Pokemon HeartGold",
+    "sceneKey": "POKEMON HEARTGOLD",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-heartgold",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 38.15,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 38.15,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-heartgold"
+  },
+  {
+    "id": "nds-cabinet-05",
+    "name": "Pokemon SoulSilver",
+    "sceneKey": "POKEMON SOULSILVER",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-soulsilver",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.4,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 41.4,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-soulsilver"
+  },
+  {
+    "id": "nds-cabinet-06",
+    "name": "Pokemon Black",
+    "sceneKey": "POKEMON BLACK",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-black",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 44.65,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 44.65,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-black"
+  },
+  {
+    "id": "nds-cabinet-07",
+    "name": "Pokemon White",
+    "sceneKey": "POKEMON WHITE",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-white",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 47.9,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 47.9,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-white"
+  },
+  {
+    "id": "nds-cabinet-08",
+    "name": "Pokemon Black 2",
+    "sceneKey": "POKEMON BLACK 2",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-black-2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 51.15,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 51.15,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-black-2"
+  },
+  {
+    "id": "nds-cabinet-09",
+    "name": "Pokemon White 2",
+    "sceneKey": "POKEMON WHITE 2",
+    "cabinetType": "nds-upright",
+    "zoneId": "pokemon-arena",
+    "gameId": "pokemon-white-2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 54.4,
+      "y": 1.65,
+      "z": -125.1
+    },
+    "playerPosition": {
+      "x": 54.4,
+      "y": 1.65,
+      "z": -125.45
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "pokemon-white-2"
   }
 ]

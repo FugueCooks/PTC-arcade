@@ -24,7 +24,7 @@ const MAX_BODY_BYTES = 4 * 1024;
  */
 export function createRuntimeServer({
   sessions, pairing, onPairingCode, allowedOrigins = ALLOWED_ORIGINS,
-  installSecret, version, dolphinAvailable, pcsx2Available = () => false, now = () => Date.now(), log = () => {}
+  installSecret, version, dolphinAvailable, pcsx2Available = () => false, melondsAvailable = () => false, vbaAvailable = () => false, now = () => Date.now(), log = () => {}
 }) {
   let pendingPairing = null;
   const paired = pairing ?? { tokens: new Set() };
@@ -87,7 +87,9 @@ export function createRuntimeServer({
         dolphin: { present: dolphinAvailable() },
         // Named separately so a player missing one emulator is told which:
         // "install the runtime" is not useful advice to somebody who has it.
-        pcsx2: { present: pcsx2Available() }
+        pcsx2: { present: pcsx2Available() },
+        melonds: { present: melondsAvailable() },
+        vba: { present: vbaAvailable() }
       });
       return;
     }

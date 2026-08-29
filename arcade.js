@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-5';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-6';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -965,13 +965,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=poke-5',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=poke-6',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=poke-5',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=poke-6',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=poke-5',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=poke-6',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -1855,6 +1855,52 @@ function makeCabinet(id,name,x,z,hue,isCrash=false,isGex=false,system=''){
   const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(.48,2.48,.43);statusLight.rotation.x=-.1;g.add(statusLight);
   scene.add(g);const cabinet={id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot,controllerSystem:system,renderLights:[floorGlow,glow],status:'syncing',occupiedByDisplayName:null,enabled:true};cabinets.push(cabinet);cabinetsById.set(id,cabinet);indexCabinet(cabinet);
 }
+/**
+ * A cabinet whose body is a supplied model rather than the procedural shell:
+ * the Pokemon machines. The plinth, underglow, floor glow, marquee plate and
+ * status light are the house language every cabinet speaks; the model is the
+ * machine itself, loaded once per file on approach and cloned into place.
+ * Models are Y-up with their ground at zero and their front on +z, measured
+ * before placement, so an entry is a scale and a yard position.
+ */
+const pokemonMachineFiles=new Map();
+function loadPokemonMachine(file){
+  if(pokemonMachineFiles.has(file))return pokemonMachineFiles.get(file);
+  const pending=(async()=>{
+    const loader=await getOptimizedGltfLoader();
+    return await new Promise((resolve,reject)=>loader.load(file,gltf=>{
+      gltf.scene.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});
+      resolve(gltf.scene);
+    },undefined,reject));
+  })();
+  pokemonMachineFiles.set(file,pending);
+  return pending;
+}
+function makeModelCabinet(id,name,x,z,hue,system,model){
+  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=model.rotY??0;
+  const plinth=new THREE.Mesh(cabinetGeometry.plinth,cabinetPlinthMaterial);plinth.position.y=.05;plinth.scale.set(model.plinthScale??1.4,1,model.plinthScale??1.4);g.add(plinth);
+  const underglowMat=new THREE.MeshBasicMaterial({color:hue,transparent:true,opacity:.62});
+  const railScale=model.plinthScale??1.4;
+  for(const [railGeometry,px,pz] of [[cabinetGeometry.railLong,0,.52*railScale],[cabinetGeometry.railLong,0,-.52*railScale],[cabinetGeometry.railSide,.72*railScale,0],[cabinetGeometry.railSide,-.72*railScale,0]]){
+    const rail=new THREE.Mesh(railGeometry,underglowMat);rail.scale.set(railScale,1,railScale);rail.position.set(px,.106,pz);g.add(rail);
+  }
+  const floorGlow=new THREE.PointLight(hue,1.3,3,2);floorGlow.position.set(0,.14,0);g.add(floorGlow);
+  const plate=new THREE.Mesh(new THREE.PlaneGeometry(1.9,.58),new THREE.MeshBasicMaterial({map:cabinetMarqueeTexture(name,hue,system),side:THREE.DoubleSide}));
+  plate.position.set(0,model.plateY??3.4,.1);g.add(plate);
+  const statusMaterial=new THREE.MeshStandardMaterial({color:0x50ff9a,emissive:0x50ff9a,emissiveIntensity:2.4});
+  const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(1.05,(model.plateY??3.4)-.02,.1);g.add(statusLight);
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(.72,.54),new THREE.MeshBasicMaterial({color:0x050710}));
+  screen.position.set(0,1.4,model.screenZ??.2);screen.visible=false;g.add(screen);
+  void loadPokemonMachine(model.file).then(source=>{
+    const body=source.clone(true);
+    body.scale.setScalar(model.scale);
+    body.position.y=(model.lift??0)+.1;
+    g.add(body);
+  }).catch(error=>console.warn('A Pokemon machine model could not load.',error));
+  scene.add(g);
+  const cabinet={id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot:new THREE.Group(),controllerSystem:system,renderLights:[floorGlow],status:'syncing',occupiedByDisplayName:null,enabled:true};
+  cabinets.push(cabinet);cabinetsById.set(id,cabinet);indexCabinet(cabinet);
+}
 // Cabinet art keyed off the registry id. Crash and Gex keep their hand-made
 // panels; every other hosted game gets a generated front and side panel, loaded
 // lazily so none of it lands on first paint. A missing file simply leaves the
@@ -2111,7 +2157,53 @@ function resolveStatueCollisions(previousX,previousZ){
 }
 const N64_HUES=[0x8b5cf6,0xff4da6,0x36f9f6,0xffb42e,0x7dff67,0xff3cac,0x42a5ff];
 const n64CabinetLayout=N64_HUES.map((hue,index)=>[index+1,FOYER_EAST[index].x,FOYER_EAST[index].z,FOYER_EAST[index].rotation,hue]);
-for(const [index,x,z,rotation,hue] of n64CabinetLayout){const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
+for(const [index,x,z,rotation,hue] of n64CabinetLayout){
+  // Pokemon Snap moved to the plaza, into the Pokemon arcade machine.
+  if(index===1)continue;
+  const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
+/**
+ * The Pokemon library, lined up on the arena platform's north deck strip in
+ * release order — the Game Boy line on the Game Boy machines through VBA-M,
+ * the DS library on the DS Lite machines through melonDS, and Pokemon Snap
+ * in the Pokemon arcade machine where it landed between Blue and Yellow.
+ * All face the field; every machine carries its own cart.
+ */
+const POKEMON_MACHINE_MODELS={
+  gb:{file:'assets/models/pokemon/gameboy-cabinet.glb?v=poke-machines-1',scale:.17,plateY:3.35,plinthScale:1.15},
+  arc:{file:'assets/models/pokemon/pokemon-arcade-cabinet.glb?v=poke-machines-1',scale:.374,plateY:3.9,plinthScale:1.15},
+  ds:{file:'assets/models/pokemon/nds-cabinet.glb?v=poke-machines-1',scale:.22,plateY:2.6,plinthScale:1.6}
+};
+const POKEMON_MACHINE_ROW=[
+  ['gameboy-cabinet-01','gb',1.46,0xff5f5f],
+  ['gameboy-cabinet-02','gb',3.5,0x5f8cff],
+  ['n64-cabinet-01','arc',5.49,0xffd23e],
+  ['gameboy-cabinet-03','gb',7.49,0xffe45f],
+  ['gameboy-cabinet-04','gb',9.52,0xd9b44a],
+  ['gameboy-cabinet-05','gb',11.54,0xc8ccd4],
+  ['gameboy-cabinet-06','gb',13.57,0x8ee6ff],
+  ['gameboy-cabinet-07','gb',15.6,0xd45f5f],
+  ['gameboy-cabinet-08','gb',17.63,0x4a8cd4],
+  ['gameboy-cabinet-09','gb',19.66,0xff8c5f],
+  ['gameboy-cabinet-10','gb',21.7,0x7dff67],
+  ['gameboy-cabinet-11','gb',23.73,0xb08cff],
+  ['gameboy-cabinet-12','gb',25.76,0x4ad48c],
+  ['nds-cabinet-01','ds',28.4,0x8cb4ff],
+  ['nds-cabinet-02','ds',31.65,0xffb4d9],
+  ['nds-cabinet-03','ds',34.9,0xd9d9e6],
+  ['nds-cabinet-04','ds',38.15,0xffcf6b],
+  ['nds-cabinet-05','ds',41.4,0xc0c0d0],
+  ['nds-cabinet-06','ds',44.65,0x4a4a5f],
+  ['nds-cabinet-07','ds',47.9,0xf0f0f5],
+  ['nds-cabinet-08','ds',51.15,0x5f5f74],
+  ['nds-cabinet-09','ds',54.4,0xfafaff]
+];
+for(const [cabinetId,kind,rowX,hue] of POKEMON_MACHINE_ROW){
+  const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
+  const label=hosted?hosted.name.toUpperCase():cabinetId.toUpperCase();
+  const model=POKEMON_MACHINE_MODELS[kind];
+  makeModelCabinet(cabinetId,label,rowX,-127.2,hue,hosted?.system??(kind==='ds'?'nds':'gb'),model);
+  configureHostedCabinet(cabinetId);
+}
 // Five experimental GameCube cabinets sit inside their dedicated construction
 // room, facing its doorway. Gecko remains available for later runtime work, but
 // the cabinets cannot be reached while the room is blocked.
@@ -2646,7 +2738,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-5')
+  import('./emulators/disc-range-cache.js?v=poke-6')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2666,7 +2758,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-5')
+  import('./emulators/disc-range-cache.js?v=poke-6')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2718,6 +2810,12 @@ function resolveEmulatorAdapter(cabinet){
   }
   if(cabinet?.system==='gamecube'&&window.ARCADE_CHOOSE_GAMECUBE_ADAPTER){
     return window.ARCADE_CHOOSE_GAMECUBE_ADAPTER({adapters,detection:window.ARCADE_RUNTIME_DETECTION,isMobileDevice}).adapter;
+  }
+  if((cabinet?.system==='gb'||cabinet?.system==='gbc'||cabinet?.system==='gba')&&window.ARCADE_CHOOSE_GB_ADAPTER){
+    return window.ARCADE_CHOOSE_GB_ADAPTER({adapters,detection:window.ARCADE_RUNTIME_DETECTION}).adapter;
+  }
+  if(cabinet?.system==='nds'&&window.ARCADE_CHOOSE_NDS_ADAPTER){
+    return window.ARCADE_CHOOSE_NDS_ADAPTER({adapters,detection:window.ARCADE_RUNTIME_DETECTION}).adapter;
   }
   const game=emulatorGameFor(cabinet);
   if(game){const resolution=adapters.resolveForGame(game);if(resolution.ok)return resolution.adapter}
