@@ -1530,7 +1530,7 @@ function installChaoGardenFlora(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-5',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-6',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1543,7 +1543,7 @@ function installChaoGardenModel(){
         // no scene lighting, no arcade fog. One material swap gets all of it.
         const materials=Array.isArray(node.material)?node.material:[node.material];
         const replaced=materials.map(material=>{
-          const bright=new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),transparent:material.transparent,opacity:material.opacity,side:material.side,fog:false});
+          const bright=new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),transparent:material.transparent,opacity:material.opacity,side:THREE.DoubleSide,fog:false});
           return bright;
         });
         node.material=Array.isArray(node.material)?replaced:replaced[0];
@@ -3364,7 +3364,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-authored-5';
+const ARCADE_BUILD='garden-authored-6';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
