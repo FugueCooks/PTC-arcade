@@ -102,7 +102,7 @@
         apply();
       }
       window.EJS_ready = enforceBrowserSavePersistenceWithRetries;
-      window.EJS_onGameStart = () => { window.__arcadeGameStarted = true; enforceBrowserSavePersistenceWithRetries(); };
+      window.EJS_onGameStart = enforceBrowserSavePersistenceWithRetries;
 
       let stopRequested = false;
       async function flushAndStopEmulator() {
@@ -137,21 +137,17 @@
       });
       // Every failure used to collapse into one opaque "could not load", which
       // made a blocked script indistinguishable from a bad ROM. Report why.
-      // Only failures that actually stop the game get reported. EmulatorJS
-      // leaves benign rejections uncaught (WakeLock and pointer-lock denials,
-      // fullscreen refusals), and once the game is running no stray script
-      // error should tear down a working session.
-      const BENIGN_ERROR = /wake ?lock|pointer ?lock|wrongdocumenterror|notallowederror|fullscreen|permissions policy|request was interrupted|aborterror|not visible/i;
       function reportError(detail) {
-        const text = String(detail).slice(0, 300);
-        if (window.__arcadeGameStarted || BENIGN_ERROR.test(text)) {
-          console.warn('[player] non-fatal emulator error:', text);
-          return;
-        }
-        parent.postMessage({ type: 'arcade:emulator-error', detail: text }, location.origin);
+        parent.postMessage({ type: 'arcade:emulator-error', detail: String(detail).slice(0, 300) }, location.origin);
       }
-      addEventListener('error', (event) => reportError(event?.message || 'script error'));
-      addEventListener('unhandledrejection', (event) => reportError(event?.reason?.message || event?.reason || 'promise rejection'));
+      // Uncaught errors are advisory only. On some networks the CDN script
+      // loads without CORS, which masks every throw as 'Script error.' —
+      // fatal and benign indistinguishable — and EmulatorJS routinely leaves
+      // benign rejections uncaught (WakeLock, pointer lock, fullscreen).
+      // The explicit failures below still report, and the host's load
+      // deadline catches a boot that genuinely died.
+      addEventListener('error', (event) => console.warn('[player] uncaught:', event?.message || 'script error'));
+      addEventListener('unhandledrejection', (event) => console.warn('[player] uncaught rejection:', event?.reason?.message || event?.reason || 'promise rejection'));
       addEventListener('pagehide', () => parent.postMessage({ type: 'arcade:emulator-closed' }, location.origin));
 
       // Both of these used to fail quietly, and quietly is the whole problem:

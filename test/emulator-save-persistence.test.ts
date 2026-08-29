@@ -18,7 +18,7 @@ void test('EmulatorJS grants persistent saves only from server-issued wallet ent
   assert.match(player, /'save-state-location':\s*saveEntitled\s*\?\s*'browser'\s*:\s*'download'/);
   assert.match(player, /if\s*\(!saveEntitled\)\s*\{[\s\S]*arcade:emulator-stopped/);
   assert.match(player, /window\.EJS_ready\s*=\s*enforceBrowserSavePersistenceWithRetries/);
-  assert.match(player, /window\.EJS_onGameStart\s*=\s*\(\)\s*=>\s*\{\s*window\.__arcadeGameStarted\s*=\s*true;\s*enforceBrowserSavePersistenceWithRetries\(\);\s*\}/);
+  assert.match(player, /window\.EJS_onGameStart\s*=\s*enforceBrowserSavePersistenceWithRetries/);
   assert.doesNotMatch(player, /window\.EJS_onSaveState\s*=/, 'registering this callback suppresses EmulatorJS default save-state handling');
 });
 
