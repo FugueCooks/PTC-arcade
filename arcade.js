@@ -1452,7 +1452,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-8',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-9',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -1479,15 +1479,19 @@ function installChaoGardenModel(){
       mount.name='chao-garden-environment';mount.userData.chaoGarden=true;
       scene.add(mount);
       skySource.rotation.y=Math.PI;skyMount.add(skySource);
-      skyMount.scale.setScalar(.08);
-      skyMount.position.set(95,-.5,13.2);
+      // Sized and centred so the dome's west rim lands at x=43.5 — just
+      // outside the shell, never inside the building — while the whole
+      // meadow, the waterfall included, fits under it. The vertical axis is
+      // scaled separately so the cliff tops stay beneath the clouds.
+      skyMount.scale.set(.0582,.079,.0582);
+      skyMount.position.set(80,-.5,13.2);
       skyMount.name='chao-garden-sky';
       scene.add(skyMount);
       scene.updateWorldMatrix(true,true);
-      // The dome's west rim used to slice across the tunnel mouth, a wall of
-      // sky the player walked through. Its curved shells lose every triangle
-      // reaching west of the mouth; the flat sea lies under the ground and
-      // keeps its full spread.
+      // The sky ships with an inner cloud band that would drape across the
+      // meadow itself; everything of the tall sky shells inside the dome's
+      // own radius goes, and only the outermost shell remains. The flat sea
+      // lies under the ground and keeps its full spread.
       const skyVertex=new THREE.Vector3();
       skySource.traverse(node=>{
         if(!node.isMesh||!node.geometry?.index)return;
@@ -1495,10 +1499,10 @@ function installChaoGardenModel(){
         const tall=(node.geometry.boundingBox.max.y-node.geometry.boundingBox.min.y)>2;
         if(!tall)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return skyVertex.x<60.5};
+        const inner=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return Math.hypot(skyVertex.x-80,skyVertex.z-13.2)<34.9};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
-          if(west(a)||west(b)||west(c))continue;
+          if(inner(a)||inner(b)||inner(c))continue;
           kept.push(a,b,c);
         }
         if(kept.length!==index.count)node.geometry.setIndex(kept);
