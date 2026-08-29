@@ -70,7 +70,9 @@ const POKEMON_DOOR_X = 27;
 const NORTH_ROW_DIVIDER_X = [-21.6];
 // The Pokemon bowl: the stands are solid, and the only way through them is the
 // entrance lane on the doorway side. Matches POKEBOWL in arcade.js.
-const POKEBOWL = { cx: 27, cz: -54.6, ax: 12.9, az: 9.9, laneHalfWidth: 1.5 };
+// The arena hangs in the void north of the building now, tripled. Matches
+// POKEBOWL and POKEMON_EXPANSE in arcade.js.
+const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 };
 // The Chao Garden's cliffs: the same rule at the garden's scale, passable only
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
@@ -668,7 +670,10 @@ function isInsideWorld(x: number, z: number): boolean {
   // Silent Hill doubled sideways: its annex is bolted onto the OUTSIDE of
   // the building's west wall, over ground nothing else uses. Matches
   // SILENT_HILL_EXPANSE in arcade.js.
-  return x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5;
+  if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
+  // The arena's own region, north of the building. Matches POKEMON_EXPANSE
+  // in arcade.js.
+  return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;
 }
 
 function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: number): boolean {
@@ -678,7 +683,10 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     // onto the hall.
     if (Math.max(fromZ, toZ) < SIDE_COLUMN_MIN_Z || Math.min(fromZ, toZ) > SIDE_COLUMN_MAX_Z) continue;
     const doors = wallX < 0 ? OPEN_DOOR_Z_WEST : OPEN_DOOR_Z_EAST;
-    const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE);
+    // The Pokemon Center's storefront: the east wall is open from the old
+    // plaza door to the column's end. Matches arcade.js.
+    const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE)
+      || (wallX > 0 && z > -33.7 && z < -23.6);
     if (!throughDoor(toZ) && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
@@ -734,11 +742,11 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   }
   // The vomitory's two walls, from the mouth down to the field's edge.
   for (const wallX of [POKEMON_DOOR_X - 1.7, POKEMON_DOOR_X + 1.7]) {
-    if (toZ > -47.4 && toZ < POKEMON_SOUTH_Z + 0.5 && Math.abs(toX - wallX) < 0.3) return true;
+    if (toZ > -87.8 && toZ < POKEMON_SOUTH_Z + 0.5 && Math.abs(toX - wallX) < 0.3) return true;
     if ((fromX - wallX) * (toX - wallX) < 0) {
       const crossing = (wallX - fromX) / (toX - fromX);
       const crossingZ = fromZ + (toZ - fromZ) * crossing;
-      if (crossing >= 0 && crossing <= 1 && crossingZ > -47.4 && crossingZ < POKEMON_SOUTH_Z + 0.5) return true;
+      if (crossing >= 0 && crossing <= 1 && crossingZ > -87.8 && crossingZ < POKEMON_SOUTH_Z + 0.5) return true;
     }
   }
   // The stadium's west wall: full depth, no doorway.
