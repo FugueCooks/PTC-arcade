@@ -61,5 +61,5 @@ void test('an open cabinet keeps the camera, and analogue sticks keep their magn
   // Normalising alone threw away how far the stick was pushed, so every input
   // walked at exactly one speed.
   assert.match(arcade, /const analogSpeed=Math\.min\(1,movementVector\.length\(\)\)/);
-  assert.match(arcade, /multiplyScalar\(d\*7\.5\*analogSpeed\)/);
+  assert.match(arcade, /multiplyScalar\(d\*11\.25\*analogSpeed\)/);
 });
