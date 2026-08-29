@@ -1452,7 +1452,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-15x-3',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-ray-1',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -1477,7 +1477,7 @@ function installChaoGardenModel(){
       mount.scale.setScalar(GARDEN_SCALE);
       mount.position.set(GARDEN_TX,GARDEN_TY,GARDEN_TZ);
       mount.name='chao-garden-environment';mount.userData.chaoGarden=true;
-      scene.add(mount);
+      scene.add(mount);chaoGardenMount=mount;
       skySource.rotation.y=Math.PI;skyMount.add(skySource);
       // Sized and centred so the dome's west rim lands at x=43.5 — just
       // outside the shell, never inside the building — while the whole
@@ -3225,17 +3225,19 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
 const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.5};
-// The walkable meadow, measured row by row off the model's flat grass (world
-// z ascending; [z, minX, maxX], already inset 0.4 m from the true edge). The
-// fence IS the grass edge — the same table stands in the server and worker.
-const CHAO_MEADOW_ROWS=[[-18.3,57.5,120.5],[-17.1,57.5,132.5],[-15.9,57.5,134.3],[-14.7,57.5,136.1],[-13.5,57.5,137.9],[-12.3,57.5,139.1],[-11.1,57.5,139.1],[-9.9,57.5,139.1],[-8.7,57.5,137.3],[-7.5,56.9,135.5],[-6.3,56.9,133.7],[-5.1,56.9,131.9],[-3.9,56.9,137.9],[-2.7,56.9,138.5],[-1.5,56.3,139.1],[-0.3,43.6,139.7],[0.9,43.6,139.7],[2.1,43.6,139.7],[3.3,43.6,139.7],[4.5,43.6,139.7],[5.7,43.6,139.7],[6.9,43.6,139.7],[8.1,43.6,139.7],[9.3,43.6,139.7],[10.5,43.6,139.7],[11.7,43.6,139.7],[12.9,43.6,139.7],[14.1,43.6,139.7],[15.3,43.6,138.5],[16.5,43.6,139.1],[17.7,43.6,139.7],[18.9,43.6,139.7],[20.1,43.6,139.7],[21.3,43.6,139.7],[22.5,43.6,139.7],[23.7,43.6,139.7],[24.9,43.6,139.7],[26.1,43.6,136.7],[27.3,43.6,136.7],[28.5,56.9,136.7],[29.7,56.9,136.7],[30.9,57.5,136.1],[32.1,59.9,136.1],[33.3,60.5,136.1],[34.5,61.1,135.5],[35.7,61.1,135.5],[36.9,61.7,135.5],[38.1,61.7,134.9],[39.3,61.1,129.5],[40.5,60.5,129.5],[41.7,59.9,129.5],[42.9,59.3,129.5],[44.1,58.7,118.7],[45.3,58.7,68.3],[46.5,58.7,67.7],[47.7,59.9,67.1],[48.9,62.3,66.5]];
+// The fence is the geometry itself: a step in the garden stands wherever a
+// ray straight down finds real ground at a standable height. Grass, shelves,
+// pond shallows and slopes all pass; open sea and cliff walls do not.
+let chaoGardenMount=null;
+const chaoGroundRay=new THREE.Raycaster();
+const chaoGroundOrigin=new THREE.Vector3(),chaoGroundDown=new THREE.Vector3(0,-1,0);
 function insideChaoMeadow(x,z){
-  const rows=CHAO_MEADOW_ROWS;
-  if(z<rows[0][0]||z>rows[rows.length-1][0])return false;
-  let i=0;while(rows[i+1][0]<z)i++;
-  const [z0,min0,max0]=rows[i],[z1,min1,max1]=rows[i+1];
-  const t=(z-z0)/(z1-z0);
-  return x>=min0+(min1-min0)*t&&x<=max0+(max1-max0)*t;
+  if(!chaoGardenMount)return false;
+  chaoGroundOrigin.set(x,40,z);
+  chaoGroundRay.set(chaoGroundOrigin,chaoGroundDown);
+  const hits=chaoGroundRay.intersectObject(chaoGardenMount,true);
+  for(const hit of hits){if(hit.point.y>-3.5&&hit.point.y<8.5)return true}
+  return false;
 }
 function resolveChaoGardenCollisions(previousX,previousZ){
   // The bore is the only road through the old room, and past the shell the

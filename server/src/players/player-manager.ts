@@ -80,19 +80,9 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
 const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 63.5 };
-// The walkable meadow, measured row by row off the model's flat grass.
-// Matches CHAO_MEADOW_ROWS in arcade.js exactly.
-const CHAO_MEADOW_ROWS: Array<[number, number, number]> = [[-18.3,57.5,120.5],[-17.1,57.5,132.5],[-15.9,57.5,134.3],[-14.7,57.5,136.1],[-13.5,57.5,137.9],[-12.3,57.5,139.1],[-11.1,57.5,139.1],[-9.9,57.5,139.1],[-8.7,57.5,137.3],[-7.5,56.9,135.5],[-6.3,56.9,133.7],[-5.1,56.9,131.9],[-3.9,56.9,137.9],[-2.7,56.9,138.5],[-1.5,56.3,139.1],[-0.3,43.6,139.7],[0.9,43.6,139.7],[2.1,43.6,139.7],[3.3,43.6,139.7],[4.5,43.6,139.7],[5.7,43.6,139.7],[6.9,43.6,139.7],[8.1,43.6,139.7],[9.3,43.6,139.7],[10.5,43.6,139.7],[11.7,43.6,139.7],[12.9,43.6,139.7],[14.1,43.6,139.7],[15.3,43.6,138.5],[16.5,43.6,139.1],[17.7,43.6,139.7],[18.9,43.6,139.7],[20.1,43.6,139.7],[21.3,43.6,139.7],[22.5,43.6,139.7],[23.7,43.6,139.7],[24.9,43.6,139.7],[26.1,43.6,136.7],[27.3,43.6,136.7],[28.5,56.9,136.7],[29.7,56.9,136.7],[30.9,57.5,136.1],[32.1,59.9,136.1],[33.3,60.5,136.1],[34.5,61.1,135.5],[35.7,61.1,135.5],[36.9,61.7,135.5],[38.1,61.7,134.9],[39.3,61.1,129.5],[40.5,60.5,129.5],[41.7,59.9,129.5],[42.9,59.3,129.5],[44.1,58.7,118.7],[45.3,58.7,68.3],[46.5,58.7,67.7],[47.7,59.9,67.1],[48.9,62.3,66.5]];
-function insideChaoMeadow(x: number, z: number): boolean {
-  const rows = CHAO_MEADOW_ROWS;
-  if (z < rows[0][0] || z > rows[rows.length - 1][0]) return false;
-  let i = 0;
-  while (rows[i + 1][0] < z) i++;
-  const [z0, min0, max0] = rows[i];
-  const [z1, min1, max1] = rows[i + 1];
-  const t = (z - z0) / (z1 - z0);
-  return x >= min0 + (min1 - min0) * t && x <= max0 + (max1 - max0) * t;
-}
+// Past the shell the client fences against the garden's real geometry; the
+// authoritative copies hold the outer rectangle and the bore, which is what
+// they can state without the model.
 function inChaoGardenLane(x: number, z: number): boolean {
   return Math.abs(z - CHAO_GARDEN.doorZ) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.laneEndX;
 }
@@ -157,7 +147,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // and past the shell the cliff-edge ellipse is the only fence.
   if (toX > PARTITION_WALL_X && toX <= 42.7 && toZ > 4.8 && toZ < 21.6
     && !inChaoGardenLane(toX, toZ)) return true;
-  if (toX > 42.7 && !insideChaoMeadow(toX, toZ) && !inChaoGardenLane(toX, toZ)) return true;
+
   // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
   if (toX > SILENT_EAST_X && toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
