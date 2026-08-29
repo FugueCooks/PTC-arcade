@@ -1894,7 +1894,7 @@ function makeModelCabinet(id,name,x,z,hue,system,model){
     const mesh=new THREE.Mesh(new THREE.PlaneGeometry(art.w,art.w*aspect),new THREE.MeshBasicMaterial({map:texture}));
     place(mesh,aspect);g.add(mesh);
   },undefined,()=>{});};
-  artPlane(model.mat,mesh=>{mesh.rotation.x=-Math.PI/2;mesh.position.set(0,.025,model.matZ??1.35)});
+  artPlane(model.mat,mesh=>{mesh.rotation.x=-Math.PI/2;mesh.position.set(0,.065,model.matZ??1.35)});
   artPlane(model.top,mesh=>{mesh.position.set(0,model.top.y,model.top.z);mesh.rotation.x=model.top.tilt??0});
   const statusMaterial=new THREE.MeshStandardMaterial({color:0x50ff9a,emissive:0x50ff9a,emissiveIntensity:2.4});
   const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(1.05,model.statusY??(model.plateY??3.4)-.02,.1);g.add(statusLight);
@@ -2186,7 +2186,7 @@ const POKEMON_MACHINE_MODELS={
 const POKEMON_MACHINE_ROW=[
   ['gameboy-cabinet-01','gb',1.46,0xff5f5f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-red-mat.webp',w:1.8}}],
   ['gameboy-cabinet-02','gb',3.5,0x5f8cff,{noPlate:true,statusY:3.06,mat:{file:'pokemon-blue-mat.webp',w:1.8}}],
-  ['n64-cabinet-01','arc',5.49,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner.png',w:1.07,y:1.93,z:.56,tilt:-.08}}],
+  ['n64-cabinet-01','arc',5.49,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner.png',w:1.07,y:2.1,z:.12,tilt:0}}],
   ['gameboy-cabinet-03','gb',7.49,0xffe45f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-yellow-mat.webp',w:1.8}}],
   ['gameboy-cabinet-04','gb',9.52,0xd9b44a],
   ['gameboy-cabinet-05','gb',11.54,0xc8ccd4],
@@ -2916,10 +2916,11 @@ addEventListener('message',event=>{
   if(signal.kind==='source-accepted'){pendingEmulatorSource=null;clearTimeout(emulatorLoadTimer);return}
   if(signal.kind==='progress'){if(activeCabinet)document.querySelector('#rom-name').textContent=`DOWNLOADING GAME DATA · ${signal.percent}%`;return}
   if((signal.kind==='error'||signal.kind==='closed')&&activeCabinet){
-    // The on-screen message stays short; the real cause goes to the console so
-    // a blocked script can be told apart from a bad ROM.
+    // The cause rides along on screen: a player who cannot open the console
+    // can still show us exactly what refused to start.
     if(signal.detail)console.warn('[arcade] emulator failure:',signal.detail);
-    clearTimeout(emulatorLoadTimer);closeMachine();showCabinetMessage(signal.message)}
+    clearTimeout(emulatorLoadTimer);closeMachine();
+    showCabinetMessage(signal.detail?`${signal.message} ${String(signal.detail).toUpperCase().slice(0,110)}`:signal.message)}
 });
 function game(){if(!activeCabinet||!romLoaded)return;ctx.fillStyle='#02030a';ctx.fillRect(0,0,640,440);ctx.fillStyle='#85f9ff';stars.forEach(s=>{s.y+=s.s;if(s.y>440)s.y=0;ctx.fillRect(s.x,s.y,s.s,s.s)});if(keys.ArrowLeft)ship.x-=6;if(keys.ArrowRight)ship.x+=6;ship.x=Math.max(20,Math.min(620,ship.x));if(keys.Space&&ship.bullets.length<6)ship.bullets.push({x:ship.x,y:370});ship.bullets.forEach(b=>b.y-=10);ship.bullets=ship.bullets.filter(b=>b.y>0);ctx.fillStyle='#ff3cac';ctx.beginPath();ctx.moveTo(ship.x,350);ctx.lineTo(ship.x-18,392);ctx.lineTo(ship.x+18,392);ctx.fill();ctx.fillStyle='#fff6c7';ship.bullets.forEach(b=>ctx.fillRect(b.x-2,b.y,4,12));ctx.fillStyle='#36f9f6';ctx.font='13px monospace';ctx.textAlign='left';ctx.fillText('ROM SESSION // '+activeCabinet.name,20,28);ctx.fillText('SCORE '+String(Math.floor(performance.now()/30)%99999).padStart(5,'0'),20,48)}
 function updateFollowCamera(){
