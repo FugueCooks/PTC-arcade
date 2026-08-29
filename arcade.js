@@ -1299,6 +1299,20 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   const vault=new THREE.Mesh(new THREE.CylinderGeometry(2.05,2.05,BORE_LENGTH,22,1,true,0,Math.PI),boreRock);
   vault.rotation.z=Math.PI/2;vault.scale.y=1;vault.position.set(BORE_CENTER_X,1.95,13.2);
   vault.scale.set(1,1,.95);bore.add(vault);
+  // The carve that clears the bore's run through the meadow exposed the sea
+  // below; a grass apron patches the notch so the green reads as one lawn.
+  const grassCanvas=document.createElement('canvas');grassCanvas.width=grassCanvas.height=128;
+  const grassContext=grassCanvas.getContext('2d');
+  grassContext.fillStyle='#3da53c';grassContext.fillRect(0,0,128,128);
+  for(let i=0;i<420;i++){
+    grassContext.fillStyle=i%2?'#348f33':'#4cbb4a';
+    grassContext.globalAlpha=.3;
+    grassContext.beginPath();grassContext.arc((i*61)%128,(i*97)%128,2+(i*31)%6,0,Math.PI*2);grassContext.fill();
+  }
+  grassContext.globalAlpha=1;
+  const grassTexture=new THREE.CanvasTexture(grassCanvas);grassTexture.wrapS=grassTexture.wrapT=THREE.RepeatWrapping;grassTexture.repeat.set(9,4);
+  const apron=new THREE.Mesh(new THREE.BoxGeometry(18.8,.05,7.5),new THREE.MeshStandardMaterial({map:grassTexture,roughness:.95,metalness:0}));
+  apron.position.set(52.1,.05,13.2);bore.add(apron);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
@@ -1438,7 +1452,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-7',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-8',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
