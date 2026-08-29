@@ -56,7 +56,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // The Chao Garden meadow spills out of the building's east wall the way
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
-const CHAO_EXPANSE={minX:42.7,maxX:96.3,minZ:-6,maxZ:31.5};
+const CHAO_EXPANSE={minX:41.8,maxX:98.7,minZ:-7.6,maxZ:32.4};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -1452,7 +1452,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-run-1',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-run-2',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -3209,7 +3209,7 @@ const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:62};
 // The walkable meadow, measured row by row off the model's flat grass (world
 // z ascending; [z, minX, maxX], already inset 0.4 m from the true edge). The
 // fence IS the grass edge — the same table stands in the server and worker.
-const CHAO_MEADOW_ROWS=[[-5.8,46,94],[-4.8,46,95],[-3.8,46,96],[-2.8,46,90],[-1.8,46,89],[-0.8,45,89],[0.2,45,89],[1.2,45,89],[2.2,45,89],[3.2,45,89],[4.2,45,90],[5.2,45,91],[6.2,44,91],[7.2,44,90],[8.2,44,90],[9.2,44,89],[10.2,44,90],[11.2,43,90],[12.2,43,90],[13.2,44,91],[14.2,45,94],[15.2,45,94],[16.2,45,94],[17.2,46,93],[18.2,46,93],[19.2,46,93],[20.2,46,93],[21.2,46,93],[22.2,45,94],[23.2,45,94],[24.2,46,94],[25.2,47,95],[26.2,48,95],[27.2,48,95],[28.2,48,95],[29.2,59,95],[30.2,60,83],[31.2,61,83]];
+const CHAO_MEADOW_ROWS=[[-7.4,44.4,85.6],[-6.6,44.4,93.6],[-5.8,44.8,94.8],[-5,44.8,96],[-4.2,44.4,97.2],[-3.4,44.4,98],[-2.6,44.4,98],[-1.8,44.4,90.4],[-1,44.4,89.6],[-0.2,44.4,89.6],[0.6,44.4,89.6],[1.4,44.4,90],[2.2,44,90],[3,44,90],[3.8,44,98],[4.6,43.6,98.4],[5.4,43.6,98.4],[6.2,43.2,98.4],[7,43.2,98.4],[7.8,43.2,98.4],[8.6,42.8,98.4],[9.4,42.8,98.4],[10.2,42.4,98.4],[11,42.4,98.4],[11.8,42,98.4],[12.6,42,98.4],[13.4,42,96.8],[14.2,42.8,95.6],[15,43.6,95.2],[15.8,44,94.8],[16.6,44.4,94.4],[17.4,44.4,94.4],[18.2,44.4,94],[19,44.8,93.6],[19.8,44.8,93.2],[20.6,44.8,93.6],[21.4,44.4,93.6],[22.2,44.4,93.6],[23,44,93.6],[23.8,44,93.6],[24.6,44.8,93.6],[25.4,46.4,93.6],[26.2,46.8,93.6],[27,46.8,94],[27.8,47.2,94.8],[28.6,47.2,95.2],[29.4,50.4,95.2],[30.2,58.4,83.2],[31,58.8,83.2],[31.8,59.6,83.2],[32.2,60,83.2]];
 function insideChaoMeadow(x,z){
   const rows=CHAO_MEADOW_ROWS;
   if(z<rows[0][0]||z>rows[rows.length-1][0])return false;
