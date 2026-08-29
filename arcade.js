@@ -1452,7 +1452,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-run-2',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-run-3',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -1488,6 +1488,25 @@ function installChaoGardenModel(){
       skyMount.name='chao-garden-sky';
       scene.add(skyMount);
       scene.updateWorldMatrix(true,true);
+      // The dome's west rim passes through the bore's interior air where the
+      // tunnel pierces it. Local clipping notches the sky along exactly the
+      // tunnel corridor — a slot the tunnel itself hides — instead of cutting
+      // whole facets out of the visible sky.
+      renderer.localClippingEnabled=true;
+      const boreNotch=[
+        new THREE.Plane(new THREE.Vector3(1,0,0),-62),
+        new THREE.Plane(new THREE.Vector3(0,0,1),-15.8),
+        new THREE.Plane(new THREE.Vector3(0,0,-1),10.6),
+        new THREE.Plane(new THREE.Vector3(0,1,0),-8)
+      ];
+      skySource.traverse(node=>{
+        if(!node.isMesh)return;
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        for(const material of materials){
+          material.clippingPlanes=boreNotch;
+          material.clipIntersection=true;
+        }
+      });
       // The sky ships with an inner cloud band that would drape across the
       // meadow itself; everything of the tall sky shells inside the dome's
       // own radius goes, and only the outermost shell remains. The flat sea
