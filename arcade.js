@@ -200,6 +200,11 @@ ceilingShape.moveTo(-43.2,-58.8);ceilingShape.lineTo(43.2,-58.8);ceilingShape.li
 const silentHillHole=new THREE.Path();
 silentHillHole.moveTo(-43.2,-58.8);silentHillHole.lineTo(-21.6,-58.8);silentHillHole.lineTo(-21.6,-33.6);silentHillHole.lineTo(-43.2,-33.6);silentHillHole.closePath();
 ceilingShape.holes.push(silentHillHole);
+// The fourth hole is the Temple of Time's: its sanctum dome rises to nine
+// metres, far past the roof, in the west column's bottom room.
+const templeHole=new THREE.Path();
+templeHole.moveTo(-43.2,25.2);templeHole.lineTo(-21.6,25.2);templeHole.lineTo(-21.6,42);templeHole.lineTo(-43.2,42);templeHole.closePath();
+ceilingShape.holes.push(templeHole);
 const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
 ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,5.08,-8.4);scene.add(ceiling);
 const ceilingBeamMaterial=new THREE.MeshStandardMaterial({color:0x14111f,roughness:.7,metalness:.5});
@@ -994,21 +999,8 @@ hangMuralWalls([
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
-// Zelda swapped places with Silent Hill: it hangs in the west column's bottom
-// room now — the Wind Waker ensemble on the back wall, the vista along the
-// shell, and the divider pair on the north wall at its own width rather than
-// stretched to a wall it was not cut for.
-hangMuralWalls([
-  {file:'zelda-room-mural.webp?v=zelda-1',span:21.3,at:new THREE.Vector3(-32.4,2.5,33.34),
-    backing:()=>box(21.3,5,.08,0x050711,-32.4,2.5,33.41,.12),
-    rotation:Math.PI,normal:new THREE.Vector3(0,0,-1),along:new THREE.Vector3(-1,0,0),count:5},
-  {file:'zelda-room-mural-2.webp?v=zelda-1',span:21.3,at:new THREE.Vector3(-32.4,2.5,17.12),
-    backing:()=>box(21.3,5,.08,0x050711,-32.4,2.5,16.99,.12),
-    rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:4},
-  {file:'zelda-room-mural-3.webp?v=zelda-1',span:16.5,at:new THREE.Vector3(-42.88,2.5,25.2),
-    backing:()=>box(.08,5,16.5,0x050711,-43.01,2.5,25.2,.12),
-    rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
-]);
+// The Zelda room holds the Temple of Time itself now; no murals, the
+// building is the exhibit. It loads on approach like every heavy model.
 // Pokemon, in the east column: the bowl itself, not flat murals — the band and
 // dome carry the stands, so this room does not go through themeRoom at all.
 buildPokemonStadium(POKEMON_CENTER_X,-108.45);
@@ -1475,6 +1467,57 @@ function installPokemonCenter(){
     },undefined,error=>console.warn('The Pokemon Center could not load.',error));
   }catch(error){console.warn('The Pokemon Center loader could not initialize.',error)}})();
 }
+// The Temple of Time fills the old Zelda room, entrance facing the doorway.
+// Its textures carry their own light, so meshes go full-bright; the player
+// climbs its porch steps and raised floor by raycast, like the garden.
+let templeOfTimeStarted=false,templeMount=null,templeSettle=false;
+const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),templeRay=new THREE.Raycaster();
+function installTempleOfTime(){
+  void (async()=>{try{
+    const loader=await getOptimizedGltfLoader();
+    loader.load('assets/models/temple-of-time.glb?v=temple-1',gltf=>{
+      const temple=gltf.scene;
+      temple.traverse(node=>{
+        if(!node.isMesh)return;
+        node.castShadow=false;node.receiveShadow=false;
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        const swapped=materials.map(material=>new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),transparent:material.transparent,opacity:material.opacity,side:material.side}));
+        node.material=Array.isArray(node.material)?swapped:swapped[0];
+      });
+      temple.rotation.y=Math.PI/2;
+      temple.scale.setScalar(1.06);
+      const mount=new THREE.Group();
+      mount.add(temple);
+      mount.position.set(-31.1,-.955,25.2);
+      scene.add(mount);
+      templeMount=mount;
+    },undefined,error=>console.warn('Temple of Time failed to load:',error));
+  }catch(error){console.warn('Temple of Time failed to load:',error)}})();
+}
+function templeGroundAt(x,z,feetY){
+  if(!templeMount)return null;
+  templeRayOrigin.set(x,feetY+2.2,z);
+  templeRay.set(templeRayOrigin,templeDown);
+  templeRay.far=6;
+  for(const hit of templeRay.intersectObject(templeMount,true)){
+    const y=hit.point.y;
+    if(y>-.5&&y<=feetY+1.9)return y;
+  }
+  return null;
+}
+function resolveTempleFloor(){
+  const inRoom=playerPosition.x>-43.2&&playerPosition.x<-21.6&&playerPosition.z>16.8&&playerPosition.z<33.6;
+  if(!inRoom){
+    if(templeSettle){
+      playerPosition.y+=(1.65-playerPosition.y)*.3;
+      if(Math.abs(playerPosition.y-1.65)<.02){playerPosition.y=1.65;templeSettle=false}
+    }
+    return;
+  }
+  templeSettle=true;
+  const ground=templeGroundAt(playerPosition.x,playerPosition.z,playerPosition.y-1.65);
+  playerPosition.y+=((ground??0)+1.65-playerPosition.y)*.35;
+}
 function installSilentHillBuildings(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
@@ -1574,7 +1617,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=garden-cast-3',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-1',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1652,7 +1695,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-cast-3',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=temple-1',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1943,9 +1986,9 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   const west=roomX<0;
   const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,SIDE_COLUMN_DEPTH),worldAlignedFloorMaterial(ROOM_SPAN,SIDE_COLUMN_DEPTH,roomX,SIDE_COLUMN_CENTER_Z,EXPANSION_FLOOR_STYLE));
   columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,SIDE_COLUMN_CENTER_Z);columnFloor.receiveShadow=true;scene.add(columnFloor);
-  // Both columns run under a plate again in full: Silent Hill left the west
-  // column for the top row's corner, and Zelda's murals took its old room.
-  if(west)box(ROOM_SPAN,.12,67.2,0x090b18,roomX,5.08,0,.08);
+  // The west plate stops at the Temple of Time's room: its dome rises
+  // through the hole cut for it in the main ceiling.
+  if(west)box(ROOM_SPAN,.12,50.4,0x090b18,roomX,5.08,-8.4,.08);
   // The east column's plate stops at the garden's new room: its sky dome
   // rises through the hole cut for it. The old garden room is the Pokemon
   // Center's plaza now, covered by the main ceiling like any other room.
@@ -2865,7 +2908,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenModelStarted=true;installChaoGardenModel();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.x<-14&&playerPosition.z>10){templeOfTimeStarted=true;installTempleOfTime();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -3559,7 +3602,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-cast-3';
+const ARCADE_BUILD='temple-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -3569,7 +3612,7 @@ if(performanceStats){
 }
 let performanceWindowStart=performance.now(),performanceFrames=0,slowWindows=0,fastWindows=0,latestPerformance={fps:0,frameMs:0,quality:'WARMING'};
 const getRendererStats=()=>{const memory=performance.memory;return{...latestPerformance,renderScale:currentPixelRatio,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,heapUsedMb:memory?Number((memory.usedJSHeapSize/1048576).toFixed(1)):null,heapLimitMb:memory?Number((memory.jsHeapSizeLimit/1048576).toFixed(1)):null}};
-window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,position.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
+window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,position.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
 function updatePerformanceStats(now){performanceFrames++;const elapsed=now-performanceWindowStart;if(elapsed<1000)return;const fps=Math.round(performanceFrames*1000/elapsed),frameMs=Math.round(elapsed/performanceFrames),quality=currentPixelRatio<=pixelRatioFloor+.01?'LOW':currentPixelRatio<.9?'MED':'HIGH';latestPerformance={fps,frameMs,quality};if(performanceStats)performanceStats.textContent=`${fps} FPS · ${frameMs} MS · ${quality} · ${Math.round(currentPixelRatio*100)}%`;// This only ever went down.
 //
 // It dropped the scale on a single second under 48 fps — one hitch, a model
@@ -3595,6 +3638,6 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor();resolveTopRowCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
