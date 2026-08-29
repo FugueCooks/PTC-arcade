@@ -152,8 +152,24 @@ floorTextures.map.repeat.set(7,8.5);floorTextures.roughnessMap.repeat.set(7,8.5)
 // full-width band across the top of it where the prize counter stands. The
 // band is what lets the outer rooms of the top row open onto the hall.
 const hallFloorMaterial=new THREE.MeshStandardMaterial({map:floorTextures.map,roughnessMap:floorTextures.roughnessMap,emissive:0x10091c,emissiveIntensity:.42,roughness:.66,metalness:.14});
+// One world-aligned tile grid across every open floor plate. Each plate used
+// to stretch the same 7x8.5 repeat over its own size, so the grid jumped
+// pitch and phase at every seam; repeat and offset now derive from where the
+// plate stands in the world, with the hall floor as the phase reference.
+const FLOOR_PITCH_X=43.2/7,FLOOR_PITCH_Z=67.2/8.5;
+const HALL_FLOOR_STYLE={emissive:0x10091c,emissiveIntensity:.42,roughness:.66,metalness:.14};
+const EXPANSION_FLOOR_STYLE={color:0x8fa8d8,emissive:0x0b1324,emissiveIntensity:.38,roughness:.7,metalness:.12};
+function worldAlignedFloorMaterial(width,depth,centerX,centerZ,style){
+  const map=floorTextures.map.clone(),roughnessMap=floorTextures.roughnessMap.clone();
+  map.needsUpdate=roughnessMap.needsUpdate=true;
+  for(const texture of [map,roughnessMap]){
+    texture.repeat.set(width/FLOOR_PITCH_X,depth/FLOOR_PITCH_Z);
+    texture.offset.set((centerX-width/2+21.6)/FLOOR_PITCH_X%1,(33.6-centerZ-depth/2)/FLOOR_PITCH_Z%1);
+  }
+  return new THREE.MeshStandardMaterial({map,roughnessMap,...style});
+}
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(43.2,67.2),hallFloorMaterial);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
-const topBandFloor = new THREE.Mesh(new THREE.PlaneGeometry(86.4,16.8),hallFloorMaterial);topBandFloor.rotation.x=-Math.PI/2;topBandFloor.position.set(0,0,-42);topBandFloor.receiveShadow=true;scene.add(topBandFloor);
+const topBandFloor = new THREE.Mesh(new THREE.PlaneGeometry(86.4,16.8),worldAlignedFloorMaterial(86.4,16.8,0,-42,HALL_FLOOR_STYLE));topBandFloor.rotation.x=-Math.PI/2;topBandFloor.position.set(0,0,-42);topBandFloor.receiveShadow=true;scene.add(topBandFloor);
 function box(w,h,d,color,x,y,z,emissive=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissive,roughness:.43,metalness:.65}));m.position.set(x,y,z);m.castShadow=true;scene.add(m);return m}
 // Tokyo-noir ceiling. A real ceiling plane closes off what used to be an open
 // black void, and the full-width cyan light bars are replaced by short recessed
@@ -1385,7 +1401,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden.glb?v=garden-isle-1',gltf=>{
+    loader.load('assets/models/chao-garden.glb?v=floor-grid-1',gltf=>{
       const source=gltf.scene,mount=new THREE.Group(),discard=[];
       // The whole SA2 island at one uniform scale, entered through its own
       // cave: the authored rock arch (local x 1.5..4.3, west face z -5.3)
@@ -1632,8 +1648,8 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   // The east column's floor stops at the garden zone: from z=-12 north it is
   // open sea under the island, and a plate there would float on the water.
   const columnFloor=west
-    ?new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,SIDE_COLUMN_DEPTH),expansionFloorMaterial)
-    :new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,21.6),expansionFloorMaterial);
+    ?new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,SIDE_COLUMN_DEPTH),worldAlignedFloorMaterial(ROOM_SPAN,SIDE_COLUMN_DEPTH,roomX,SIDE_COLUMN_CENTER_Z,EXPANSION_FLOOR_STYLE))
+    :new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,21.6),worldAlignedFloorMaterial(ROOM_SPAN,21.6,roomX,-22.8,EXPANSION_FLOOR_STYLE));
   columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,west?SIDE_COLUMN_CENTER_Z:-22.8);columnFloor.receiveShadow=true;scene.add(columnFloor);
   // Both columns run under a plate again in full: Silent Hill left the west
   // column for the top row's corner, and Zelda's murals took its old room.
@@ -1665,9 +1681,9 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
 const NORTH_ROW_CENTER_Z=(NORTH_ROW_MIN_Z+TOP_BAND_MIN_Z)/2,TOP_BAND_CENTER_Z=(TOP_BAND_MIN_Z+SIDE_COLUMN_MIN_Z)/2;
 // Silent Hill's annex floor, outside the building proper: no ceiling above
 // it, ever — the open dark is the point.
-const silentAnnexFloor=new THREE.Mesh(new THREE.PlaneGeometry(21.6,25.2),expansionFloorMaterial);
+const silentAnnexFloor=new THREE.Mesh(new THREE.PlaneGeometry(21.6,25.2),worldAlignedFloorMaterial(21.6,25.2,-54,-54.6,EXPANSION_FLOOR_STYLE));
 silentAnnexFloor.rotation.x=-Math.PI/2;silentAnnexFloor.position.set(-54,.002,-54.6);silentAnnexFloor.receiveShadow=true;scene.add(silentAnnexFloor);
-const northRowFloor=new THREE.Mesh(new THREE.PlaneGeometry(SHELL_HALF_WIDTH*2,ROOM_DEPTH),expansionFloorMaterial);
+const northRowFloor=new THREE.Mesh(new THREE.PlaneGeometry(SHELL_HALF_WIDTH*2,ROOM_DEPTH),worldAlignedFloorMaterial(SHELL_HALF_WIDTH*2,ROOM_DEPTH,0,NORTH_ROW_CENTER_Z,EXPANSION_FLOOR_STYLE));
 northRowFloor.rotation.x=-Math.PI/2;northRowFloor.position.set(0,.002,NORTH_ROW_CENTER_Z);northRowFloor.receiveShadow=true;scene.add(northRowFloor);
 box(32.4,.12,ROOM_DEPTH,0x090b18,-5.4,5.08,NORTH_ROW_CENTER_Z,.08);
 // The middle top-row room absorbed the strip the stadium's wall cut off its
@@ -1932,7 +1948,7 @@ function makeModelCabinet(id,name,x,z,hue,system,model){
   // Key art instead of a text marquee where the user supplied it: a standing
   // pad on the floor in front of the machine, or a banner across the machine's
   // blank top. Both load lazily and simply stay absent until their file exists.
-  const artPlane=(art,place)=>{if(!art)return;cabinetArtLoader.load('assets/art/pokemon/'+art.file+'.jpg?v=poke-mats-1',texture=>{
+  const artPlane=(art,place)=>{if(!art)return;cabinetArtLoader.load('assets/art/pokemon/'+art.file+'?v=poke-mats-1',texture=>{
     texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
     const aspect=texture.image.height/texture.image.width;
     const mesh=new THREE.Mesh(new THREE.PlaneGeometry(art.w,art.w*aspect),new THREE.MeshBasicMaterial({map:texture}));
@@ -2228,10 +2244,10 @@ const POKEMON_MACHINE_MODELS={
   gbasp:{file:'assets/models/pokemon/gba-sp-cabinet.glb?v=poke-machines-2',scale:.5,plateY:2.6,plinthScale:1.15,lift:.61,offsetZ:-.48}
 };
 const POKEMON_MACHINE_ROW=[
-  ['gameboy-cabinet-01','gb',1.46,0xff5f5f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-red-mat',w:1.8}}],
-  ['gameboy-cabinet-02','gb',3.5,0x5f8cff,{noPlate:true,statusY:3.06,mat:{file:'pokemon-blue-mat',w:1.8}}],
-  ['n64-cabinet-01','arc',5.49,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner',w:1.07,y:1.93,z:.56,tilt:-.08}}],
-  ['gameboy-cabinet-03','gb',7.49,0xffe45f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-yellow-mat',w:1.8}}],
+  ['gameboy-cabinet-01','gb',1.46,0xff5f5f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-red-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-02','gb',3.5,0x5f8cff,{noPlate:true,statusY:3.06,mat:{file:'pokemon-blue-mat.webp',w:1.8}}],
+  ['n64-cabinet-01','arc',5.49,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner.png',w:1.07,y:1.93,z:.56,tilt:-.08}}],
+  ['gameboy-cabinet-03','gb',7.49,0xffe45f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-yellow-mat.webp',w:1.8}}],
   ['gameboy-cabinet-04','gb',9.52,0xd9b44a],
   ['gameboy-cabinet-05','gb',11.54,0xc8ccd4],
   ['gameboy-cabinet-06','gb',13.57,0x8ee6ff],
