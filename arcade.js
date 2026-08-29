@@ -1530,10 +1530,28 @@ function installChaoGardenFlora(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-1',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-2',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
+      // The model's own water texture is saturated blue and no tint can
+      // desaturate a map, so the falls get a painted one: soft white streams
+      // over the faintest aqua, the reference's water exactly.
+      const waterCanvas=document.createElement('canvas');waterCanvas.width=128;waterCanvas.height=256;
+      const waterContext=waterCanvas.getContext('2d');
+      waterContext.fillStyle='rgba(214,240,250,.55)';waterContext.fillRect(0,0,128,256);
+      for(let streak=0;streak<46;streak++){
+        const wx=(streak*29)%128,ww=2+(streak*13)%5;
+        const streakGradient=waterContext.createLinearGradient(0,0,0,256);
+        streakGradient.addColorStop(0,'rgba(255,255,255,'+(0.22+(streak%4)*0.12)+')');
+        streakGradient.addColorStop(.5,'rgba(255,255,255,'+(0.08+(streak%3)*0.08)+')');
+        streakGradient.addColorStop(1,'rgba(255,255,255,'+(0.3+(streak%4)*0.1)+')');
+        waterContext.fillStyle=streakGradient;
+        waterContext.fillRect(wx,0,ww,256);
+      }
+      const waterTexture=new THREE.CanvasTexture(waterCanvas);
+      waterTexture.wrapS=waterTexture.wrapT=THREE.RepeatWrapping;waterTexture.repeat.set(3,1.4);
+      waterTexture.colorSpace=THREE.SRGBColorSpace;
       const source=gltf.scene,doomed=[];
       source.traverse(node=>{
         if(node.isCamera||node.isLight){doomed.push(node);return}
@@ -1547,13 +1565,10 @@ function installChaoGardenModel(){
           const isWater=/0012|0013|0033/.test(name);
           const isRock=/0011|0014|0032/.test(name);
           const bright=new THREE.MeshBasicMaterial({
-            map:material.map??null,
-            // the reference's cliffs are cool white marble and its falls are
-            // pale translucent streams; tint multipliers get both from the
-            // same warm source textures
-            color:isWater?new THREE.Color(0xdff2fa):(isRock?new THREE.Color(0xc9d3dd):(material.color?.clone()??new THREE.Color(0xffffff))),
+            map:isWater?waterTexture:(material.map??null),
+            color:isRock?new THREE.Color(0xc9d3dd):new THREE.Color(0xffffff),
             transparent:isWater||material.transparent,
-            opacity:isWater?.72:material.opacity,
+            opacity:isWater?.66:material.opacity,
             depthWrite:!isWater,
             side:THREE.DoubleSide,fog:false});
           return bright;
@@ -3376,7 +3391,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-exact-1';
+const ARCADE_BUILD='garden-exact-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
