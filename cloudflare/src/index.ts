@@ -749,15 +749,8 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
       if (crossing >= 0 && crossing <= 1 && crossingZ > -87.8 && crossingZ < POKEMON_SOUTH_Z + 0.5) return true;
     }
   }
-  // The stadium's west wall: full depth, no doorway.
-  if (Math.min(fromZ, toZ) < POKEMON_SOUTH_Z) {
-    if (toZ < POKEMON_SOUTH_Z && Math.abs(toX - POKEMON_WEST_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
-    if ((fromX - POKEMON_WEST_X) * (toX - POKEMON_WEST_X) < 0) {
-      const crossing = (POKEMON_WEST_X - fromX) / (toX - fromX);
-      const crossingZ = fromZ + (toZ - fromZ) * crossing;
-      if (crossing >= 0 && crossing <= 1 && crossingZ < POKEMON_SOUTH_Z) return true;
-    }
-  }
+  // The old stadium room's west wall went with the arena: the concourse
+  // room is open to the band, and the tube's own walls shepherd inside it.
   // The wall between Silent Hill and the middle room, running from the back
   // wall down to Silent Hill's own south wall.
   if (Math.max(fromZ, toZ) < SILENT_SOUTH_Z && Math.min(fromX, toX) < POKEMON_WEST_X) {

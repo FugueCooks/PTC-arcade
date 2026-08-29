@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-4';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-5';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -328,9 +328,9 @@ for(const dividerX of NORTH_ROW_DIVIDER_X)box(.3,5,25.2,0x11182c,dividerX,2.5,-5
 // band with the entrance doorway at its centre.
 box(9.2,5,.3,0x11182c,-38.6,2.5,SILENT_SOUTH_Z,.06);
 box(9.2,5,.3,0x11182c,-26.2,2.5,SILENT_SOUTH_Z,.06);
-// The stadium's own shell: a full-height west wall the length of the room, and
-// a south wall into the band with the entrance doorway at its centre.
-box(.3,5,25.2,0x11182c,POKEMON_WEST_X,2.5,POKEMON_CENTER_Z,.06);
+// The old stadium room opened up when the arena left for the void: its west
+// wall is gone, so the concourse room reads as part of the band, with the
+// lit tube running through the dark. The south wall still holds the line.
 box(14.6,5,.3,0x11182c,18.1,2.5,POKEMON_SOUTH_Z,.06);
 box(14.6,5,.3,0x11182c,35.9,2.5,POKEMON_SOUTH_Z,.06);
 const gangsterPepeMount=new THREE.Group();
@@ -965,13 +965,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=poke-4',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=poke-5',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=poke-4',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=poke-5',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=poke-4',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=poke-5',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -2646,7 +2646,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-4')
+  import('./emulators/disc-range-cache.js?v=poke-5')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2666,7 +2666,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-4')
+  import('./emulators/disc-range-cache.js?v=poke-5')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -3015,15 +3015,8 @@ function resolveTopRowCollisions(previousX,previousZ){
       return;
     }
   }
-  // The stadium's west wall runs the whole depth of the room; there is no
-  // doorway in it.
-  if(playerPosition.z<POKEMON_SOUTH_Z+PLAYER_COLLISION_RADIUS){
-    const westFace=POKEMON_WEST_X-wallGap,eastFace=POKEMON_WEST_X+wallGap;
-    if(playerPosition.x>westFace&&playerPosition.x<eastFace){
-      if(previousX<POKEMON_WEST_X)playerPosition.x=westFace;else playerPosition.x=eastFace;
-      return;
-    }
-  }
+  // The old west wall is gone with the arena: the concourse room is open
+  // to the band, and the tube's own walls do the shepherding inside it.
   if(playerPosition.z>=SILENT_SOUTH_Z||playerPosition.x>=POKEMON_WEST_X)return;
   for(const dividerX of NORTH_ROW_DIVIDER_X){
     const westFace=dividerX-wallGap,eastFace=dividerX+wallGap;
