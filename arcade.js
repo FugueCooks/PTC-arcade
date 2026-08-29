@@ -57,7 +57,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
 const CHAO_EXPANSE={minX:42.7,maxX:102.5,minZ:3,maxZ:64.5};
-const TEMPLE_EXPANSE={minX:-57.2,maxX:-21.6,minZ:17.9,maxZ:32.5};
+const TEMPLE_EXPANSE={minX:-93.5,maxX:-43,minZ:14.2,maxZ:36.2};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -326,7 +326,7 @@ const MEGAMAN_ROOM_WEST_X=-SHELL_HALF_WIDTH,MEGAMAN_ROOM_CENTER_X=-ANNEX_ROOM_CE
 const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MAX_Z+NORTH_ROW_MIN_Z)/2;
 // The west shell opens where Silent Hill spills out of the building; the
 // wall resumes at the fog's south line and runs to the back of the building.
-box(.3,5,59.9,0x180d31,-SHELL_HALF_WIDTH,2.5,-12.05);box(.3,5,17.9,0x180d31,-SHELL_HALF_WIDTH,2.5,41.45);
+box(.3,5,58.8,0x180d31,-SHELL_HALF_WIDTH,2.5,-12.6);box(.3,5,16.8,0x180d31,-SHELL_HALF_WIDTH,2.5,42);
 box(.3,5,78.4,0x180d31,SHELL_HALF_WIDTH,2.5,-28);
 box(.3,5,35.2,0x180d31,SHELL_HALF_WIDTH,2.5,32.8);
 // The north wall runs on across the annex, which closes its own west and
@@ -1476,7 +1476,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=temple-2',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=temple-3',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1510,7 +1510,7 @@ function templeGroundAt(x,z,feetY){
   return null;
 }
 function resolveTempleFloor(previousX,previousZ){
-  const inRoom=playerPosition.x>-57.4&&playerPosition.x<-21.6&&playerPosition.z>16.8&&playerPosition.z<33.6;
+  const inRoom=playerPosition.x>-93.5&&playerPosition.x<-21.6&&playerPosition.z>14.2&&playerPosition.z<36.2;
   if(!inRoom){
     if(templeSettle){
       playerPosition.y+=(1.65-playerPosition.y)*.3;
@@ -1626,7 +1626,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-2',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-3',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1704,7 +1704,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=temple-2',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=temple-3',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -2013,8 +2013,10 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
     // The Chao Garden lights itself — suns and sky — so its new slot takes
-    // no troffers; the plaza it left inherits the rig like any room.
+    // no troffers; the plaza it left inherits the rig like any room. The
+    // Temple of Time's forecourt is open sky: no troffers there either.
     if(!west&&index===2)return;
+    if(west&&index===3)return;
     const at=west?centerZ:EAST_ROOM_Z[index];
     for(let z=at-6;z<=at+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
     lightRoom(roomX,at,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
@@ -3611,7 +3613,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-2';
+const ARCADE_BUILD='temple-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
