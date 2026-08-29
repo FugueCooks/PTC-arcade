@@ -34,6 +34,7 @@ export interface TokenHolding {
 
 export interface TokenServiceOptions {
   mint?: string;
+  treasuryWallet?: string;
   symbol?: string;
   rpcUrl?: string;
   tierUsd?: number[];
@@ -43,6 +44,7 @@ export interface TokenServiceOptions {
 
 export class TokenService {
   readonly mint: string | null;
+  readonly treasuryWallet: string | null;
   readonly symbol: string;
   readonly tierUsd: number[];
   readonly #rpcUrl: string;
@@ -50,9 +52,11 @@ export class TokenService {
   readonly #now: () => number;
   #market: TokenMarket | null = null;
   #holdings = new Map<string, { holding: TokenHolding; fetchedAt: number }>();
+  #treasury: { value: { address: string; sol: number | null; tokens: number | null; usd: number | null }; fetchedAt: number } | null = null;
 
   constructor(options: TokenServiceOptions = {}) {
     this.mint = options.mint?.trim() || null;
+    this.treasuryWallet = options.treasuryWallet?.trim() || null;
     this.symbol = options.symbol?.trim() || 'PTC';
     this.tierUsd = options.tierUsd ?? [3, 30, 150];
     this.#rpcUrl = options.rpcUrl?.trim() || 'https://api.mainnet-beta.solana.com';
@@ -71,6 +75,24 @@ export class TokenService {
 
   static isWalletAddress(value: string): boolean {
     return BASE58_ADDRESS.test(value);
+  }
+
+  /**
+   * The treasury is the dev wallet, and the prize pool is whatever creator
+   * fees have accumulated there: no automated buys, no ledger to keep — the
+   * wallet IS the ledger, and anyone can read it. SOL from pump.fun creator
+   * fees, plus whatever of the token itself it holds.
+   */
+  async treasury(): Promise<{ address: string; sol: number | null; tokens: number | null; usd: number | null } | null> {
+    if (!this.treasuryWallet || !TokenService.isWalletAddress(this.treasuryWallet)) return null;
+    const now = this.#now();
+    if (this.#treasury && now - this.#treasury.fetchedAt < HOLDING_CACHE_MS) return this.#treasury.value;
+    const [sol, tokens] = await Promise.all([this.#solBalance(this.treasuryWallet), this.mint ? this.#balance(this.treasuryWallet) : Promise.resolve(null)]);
+    const price = this.mint ? (await this.market())?.price ?? null : null;
+    const usd = tokens !== null && price !== null ? tokens * price : null;
+    const value = { address: this.treasuryWallet, sol, tokens, usd };
+    if (sol !== null || tokens !== null) this.#treasury = { value, fetchedAt: now };
+    return this.#treasury?.value ?? value;
   }
 
   async market(): Promise<TokenMarket | null> {
@@ -141,6 +163,23 @@ export class TokenService {
         change24h: typeof pair?.priceChange?.h24 === 'number' ? pair.priceChange.h24 : null,
         source: 'dexscreener'
       };
+    } catch {
+      return null;
+    }
+  }
+
+  /** The wallet's SOL, the currency creator fees arrive in. */
+  async #solBalance(address: string): Promise<number | null> {
+    try {
+      const response = await this.#fetch(this.#rpcUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getBalance', params: [address] })
+      });
+      if (!response.ok) return null;
+      const body = (await response.json()) as { result?: { value?: number }; error?: unknown };
+      if (body.error || typeof body.result?.value !== 'number') return null;
+      return body.result.value / 1_000_000_000;
     } catch {
       return null;
     }

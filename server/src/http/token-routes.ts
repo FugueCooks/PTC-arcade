@@ -17,7 +17,7 @@ export function installTokenRoutes(app: Express, tokens: TokenService): void {
       response.json({ ok: true, configured: false, symbol: tokens.symbol });
       return;
     }
-    const market = await tokens.market();
+    const [market, treasury] = await Promise.all([tokens.market(), tokens.treasury()]);
     response.json({
       ok: true,
       configured: true,
@@ -25,7 +25,10 @@ export function installTokenRoutes(app: Express, tokens: TokenService): void {
       mint: tokens.mint,
       buyUrl: tokens.buyUrl,
       tiersUsd: tokens.tierUsd,
-      market
+      market,
+      // The prize pool is the dev wallet: creator fees accumulate there and
+      // nothing is bought back. The wallet is the ledger.
+      treasury
     });
   });
 

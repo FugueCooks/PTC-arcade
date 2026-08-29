@@ -123,3 +123,30 @@ void test('tier thresholds are dollars, so tier 0 is simply holding little', asy
   assert.equal(holding?.usd, 1);
   assert.equal(holding?.tier, 0);
 });
+
+void test('the treasury is the dev wallet, read like any other', async () => {
+  // No automated buys and no ledger to keep: creator fees accumulate in the
+  // dev wallet, and the wallet itself is the ledger anyone can read.
+  const service = new TokenService({
+    mint: MINT,
+    treasuryWallet: WALLET,
+    fetchImpl: (async (url: string, init?: RequestInit) => {
+      const body = String(init?.body ?? '');
+      if (String(url).includes('jup.ag')) return jsonResponse({ [MINT]: { usdPrice: 0.5 } });
+      if (body.includes('getBalance')) return jsonResponse({ result: { value: 12_500_000_000 } });
+      return jsonResponse({ result: { value: [
+        { account: { data: { parsed: { info: { tokenAmount: { uiAmount: 1_000 } } } } } }
+      ] } });
+    }) as typeof fetch
+  });
+  const treasury = await service.treasury();
+  assert.equal(treasury?.address, WALLET);
+  assert.equal(treasury?.sol, 12.5, 'lamports become SOL');
+  assert.equal(treasury?.tokens, 1_000);
+  assert.equal(treasury?.usd, 500);
+});
+
+void test('no treasury wallet configured means no treasury, quietly', async () => {
+  const service = new TokenService({ mint: MINT, fetchImpl: () => { throw new Error('must not be called'); } });
+  assert.equal(await service.treasury(), null);
+});

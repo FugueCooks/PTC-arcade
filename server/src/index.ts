@@ -225,7 +225,7 @@ const roomPlacement = new RoomPlacementService(rooms, roomDirectory, roomLifecyc
 const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirectory(redis.client, redisKeys) : new InMemoryReconnectDirectory();
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
-installTokenRoutes(app, new TokenService({ mint: config.pumpTokenMint, symbol: config.pumpTokenSymbol, rpcUrl: config.solanaRpcUrl }));
+installTokenRoutes(app, new TokenService({ mint: config.pumpTokenMint, symbol: config.pumpTokenSymbol, rpcUrl: config.solanaRpcUrl, treasuryWallet: config.pumpTreasuryWallet }));
 app.use(express.json({ limit: '16kb' }));
 // A refused mutation is either a real cross-site attempt or a misconfigured
 // PUBLIC_APP_ORIGIN, and the two are indistinguishable from the browser. Logged
