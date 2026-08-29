@@ -56,7 +56,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // The Chao Garden meadow spills out of the building's east wall the way
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
-const CHAO_EXPANSE={minX:41.8,maxX:98.7,minZ:-7.6,maxZ:32.4};
+const CHAO_EXPANSE={minX:42.7,maxX:140,minZ:-18.6,maxZ:42.6};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -1259,12 +1259,12 @@ const chaoGardenFallback=new THREE.Mesh(
 );
 chaoGardenFallback.name='chao-garden-loading-floor';
 chaoGardenFallback.rotation.x=-Math.PI/2;
-chaoGardenFallback.scale.set(20,14,1);
-chaoGardenFallback.position.set(66,.025,13.2);
+chaoGardenFallback.scale.set(30,21,1);
+chaoGardenFallback.position.set(96,.025,13.2);
 scene.add(chaoGardenFallback);
-for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
-  const sun=new THREE.PointLight(0xfff3d0,7,38,1.8);
-  sun.position.set(66+lx,7,13.2+lz);
+for(const [lx,lz] of [[-21,-12],[-21,12],[0,-15],[0,15],[19.5,0],[27,-12],[-28.5,0],[38,8],[38,-8]]){
+  const sun=new THREE.PointLight(0xfff3d0,8.4,46,1.8);
+  sun.position.set(96+lx,8.5,13.2+lz);
   scene.add(sun);managedSceneLights.push(sun);
 }
 // The way out is a stone bore: straight walls and one smooth barrel vault
@@ -1291,7 +1291,7 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   rockContext.globalAlpha=1;
   const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
   const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
-  const BORE_MIN_X=21.9,BORE_MAX_X=60,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
+  const BORE_MIN_X=21.9,BORE_MAX_X=61.5,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
   for(const side of [-1,1]){
     const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
     wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
@@ -1311,8 +1311,8 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   }
   grassContext.globalAlpha=1;
   const grassTexture=new THREE.CanvasTexture(grassCanvas);grassTexture.wrapS=grassTexture.wrapT=THREE.RepeatWrapping;grassTexture.repeat.set(9,4);
-  const apron=new THREE.Mesh(new THREE.BoxGeometry(18.8,.05,7.5),new THREE.MeshStandardMaterial({map:grassTexture,roughness:.95,metalness:0}));
-  apron.position.set(52.1,.05,13.2);bore.add(apron);
+  const apron=new THREE.Mesh(new THREE.BoxGeometry(20.6,.05,7.5),new THREE.MeshStandardMaterial({map:grassTexture,roughness:.95,metalness:0}));
+  apron.position.set(52.8,.05,13.2);bore.add(apron);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
@@ -1452,13 +1452,13 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-run-3',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-15x-1',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
       // Turned 180 so the pond and waterfall sit at the far end; transform
       // derived from the measured meadow footprint (x -110..90, z -150..-10).
-      const GARDEN_SCALE=.2,GARDEN_TX=64,GARDEN_TY=.05,GARDEN_TZ=-2.8;
+      const GARDEN_SCALE=.3,GARDEN_TX=87.5,GARDEN_TY=.05,GARDEN_TZ=-10.8;
       // The model's skybox and sea ride along as a second mount, scaled and
       // placed so the dome arches over the whole meadow and its western rim
       // still stops short of the arcade: outside the door it is all garden
@@ -1483,8 +1483,8 @@ function installChaoGardenModel(){
       // outside the shell, never inside the building — while the whole
       // meadow, the waterfall included, fits under it. The vertical axis is
       // scaled separately so the cliff tops stay beneath the clouds.
-      skyMount.scale.set(.0582,.079,.0582);
-      skyMount.position.set(80,-.5,13.2);
+      skyMount.scale.set(.0949,.115,.0949);
+      skyMount.position.set(103,-.5,13.2);
       skyMount.name='chao-garden-sky';
       scene.add(skyMount);
       scene.updateWorldMatrix(true,true);
@@ -1494,7 +1494,7 @@ function installChaoGardenModel(){
       // whole facets out of the visible sky.
       renderer.localClippingEnabled=true;
       const boreNotch=[
-        new THREE.Plane(new THREE.Vector3(1,0,0),-62),
+        new THREE.Plane(new THREE.Vector3(1,0,0),-63.5),
         new THREE.Plane(new THREE.Vector3(0,0,1),-15.8),
         new THREE.Plane(new THREE.Vector3(0,0,-1),10.6),
         new THREE.Plane(new THREE.Vector3(0,1,0),-8)
@@ -1518,7 +1518,7 @@ function installChaoGardenModel(){
         const tall=(node.geometry.boundingBox.max.y-node.geometry.boundingBox.min.y)>2;
         if(!tall)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const inner=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return Math.hypot(skyVertex.x-80,skyVertex.z-13.2)<34.9};
+        const inner=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return Math.hypot(skyVertex.x-103,skyVertex.z-13.2)<57};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
           if(inner(a)||inner(b)||inner(c))continue;
@@ -1532,7 +1532,7 @@ function installChaoGardenModel(){
       source.traverse(node=>{
         if(!node.isMesh||!node.geometry?.index)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<60.3&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
+        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<61.8&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
           if(west(a)||west(b)||west(c))continue;
@@ -3107,7 +3107,7 @@ function updateFollowCamera(){
   }
   // Inside the garden bore the camera goes first-person no matter the mode:
   // any chase offset ends up in the rock or out in the void.
-  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<60.4&&Math.abs(playerPosition.z-13.2)<1.7;
+  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<61.9&&Math.abs(playerPosition.z-13.2)<1.7;
   if(cameraMode==='first-person'||inGardenBore){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
@@ -3224,11 +3224,11 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:62};
+const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.5};
 // The walkable meadow, measured row by row off the model's flat grass (world
 // z ascending; [z, minX, maxX], already inset 0.4 m from the true edge). The
 // fence IS the grass edge — the same table stands in the server and worker.
-const CHAO_MEADOW_ROWS=[[-7.4,44.4,85.6],[-6.6,44.4,93.6],[-5.8,44.8,94.8],[-5,44.8,96],[-4.2,44.4,97.2],[-3.4,44.4,98],[-2.6,44.4,98],[-1.8,44.4,90.4],[-1,44.4,89.6],[-0.2,44.4,89.6],[0.6,44.4,89.6],[1.4,44.4,90],[2.2,44,90],[3,44,90],[3.8,44,98],[4.6,43.6,98.4],[5.4,43.6,98.4],[6.2,43.2,98.4],[7,43.2,98.4],[7.8,43.2,98.4],[8.6,42.8,98.4],[9.4,42.8,98.4],[10.2,42.4,98.4],[11,42.4,98.4],[11.8,42,98.4],[12.6,42,98.4],[13.4,42,96.8],[14.2,42.8,95.6],[15,43.6,95.2],[15.8,44,94.8],[16.6,44.4,94.4],[17.4,44.4,94.4],[18.2,44.4,94],[19,44.8,93.6],[19.8,44.8,93.2],[20.6,44.8,93.6],[21.4,44.4,93.6],[22.2,44.4,93.6],[23,44,93.6],[23.8,44,93.6],[24.6,44.8,93.6],[25.4,46.4,93.6],[26.2,46.8,93.6],[27,46.8,94],[27.8,47.2,94.8],[28.6,47.2,95.2],[29.4,50.4,95.2],[30.2,58.4,83.2],[31,58.8,83.2],[31.8,59.6,83.2],[32.2,60,83.2]];
+const CHAO_MEADOW_ROWS=[[-18.3,57.5,120.5],[-17.1,57.5,132.5],[-15.9,57.5,134.3],[-14.7,58.1,136.1],[-13.5,57.5,137.9],[-12.3,57.5,139.1],[-11.1,57.5,139.1],[-9.9,57.5,139.1],[-8.7,57.5,127.7],[-7.5,57.5,126.5],[-6.3,57.5,126.5],[-5.1,57.5,127.1],[-3.9,56.9,127.1],[-2.7,56.9,127.1],[-1.5,56.9,139.1],[-0.3,56.3,139.7],[0.9,56.3,139.7],[2.1,55.7,139.7],[3.3,55.7,139.7],[4.5,55.7,139.7],[5.7,55.1,139.7],[6.9,55.1,139.7],[8.1,54.5,139.7],[9.3,54.5,139.7],[10.5,53.9,139.7],[11.7,53.9,139.7],[12.9,53.9,139.7],[14.1,53.9,137.3],[15.3,55.1,135.5],[16.5,56.3,134.9],[17.7,56.9,134.3],[18.9,57.5,133.7],[20.1,57.5,133.7],[21.3,57.5,133.1],[22.5,58.1,132.5],[23.7,58.1,132.5],[24.9,57.5,132.5],[26.1,57.5,132.5],[27.3,56.9,132.5],[28.5,56.9,132.5],[29.7,56.9,132.5],[30.9,58.1,132.5],[32.1,60.5,132.5],[33.3,61.1,133.1],[34.5,61.1,134.3],[35.7,61.7,134.9],[36.9,61.7,134.9],[38.1,66.5,134.9],[39.3,78.5,116.9],[40.5,79.1,116.9],[41.7,80.3,116.9],[42.3,80.9,116.9]];
 function insideChaoMeadow(x,z){
   const rows=CHAO_MEADOW_ROWS;
   if(z<rows[0][0]||z>rows[rows.length-1][0])return false;
