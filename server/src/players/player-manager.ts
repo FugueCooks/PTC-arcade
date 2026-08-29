@@ -48,8 +48,9 @@ const PARTITION_COLLISION_HALF_WIDTH = 0.52;
 // south and the unbuilt bottom room absorbs the squeeze, so the two partition
 // walls no longer mirror each other. Matches arcade.js.
 const OPEN_DOOR_Z_WEST = [-25.2, -8, 8, 25.2];
-const OPEN_DOOR_Z_EAST = [-25.2, -3.6, 13.2, 27.6];
-const EAST_WALL_Z: Record<string, number> = { '-16.8': -12, '0': 4.8, '16.8': 21.6 };
+const OPEN_DOOR_Z_EAST = [-25.2, 13.2];
+const EAST_WALL_Z: Record<string, number> = { '-16.8': -12 };
+const EAST_REMOVED_WALL_Z = new Set([0, 16.8]);
 // The top row's front wall, with a doorway into each of its four rooms, and the
 // walls between them. The row was shut by the world bound until its barriers
 // came down, so none of this needed enforcing before.
@@ -76,14 +77,17 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { cx: 32.4, cz: 13.2, ax: 10.2, az: 7.8, laneHalfWidth: 1.5, doorZ: 13.2 };
+const CHAO_GARDEN = { cx: 27.6, cz: 16.8, ax: 5.5, az: 4.6, laneHalfWidth: 1.05, doorZ: 13.2, laneEndX: 25 };
 function insideChaoGarden(x: number, z: number): boolean {
   const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
   const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
   return dx * dx + dz * dz <= 1;
 }
 function inChaoGardenLane(x: number, z: number): boolean {
-  return Math.abs(z - CHAO_GARDEN.doorZ) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.cx - CHAO_GARDEN.ax * 0.5;
+  return Math.abs(z - CHAO_GARDEN.doorZ) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.laneEndX;
+}
+function inChaoGardenZone(x: number, z: number): boolean {
+  return x > PARTITION_WALL_X && z > -12 && z < 33.6;
 }
 function insidePokemonBowl(x: number, z: number): boolean {
   const dx = (x - POKEBOWL.cx) / POKEBOWL.ax;
@@ -132,6 +136,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
       // stadium's wall across the old band pocket into its plaza.
       if (dividerZ === -33.6 && Math.min(fromX, toX) > 0) continue;
       // The east column's dividers all stand at their re-planned lines.
+      if (Math.min(fromX, toX) > 0 && EAST_REMOVED_WALL_Z.has(dividerZ)) continue;
       const wallZ = (Math.min(fromX, toX) > 0 && EAST_WALL_Z[String(dividerZ)] !== undefined) ? EAST_WALL_Z[String(dividerZ)] : dividerZ;
       if (Math.abs(toZ - wallZ) < PARTITION_COLLISION_HALF_WIDTH) return true;
       if ((fromZ - wallZ) * (toZ - wallZ) < 0) return true;
@@ -142,9 +147,9 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // jumbotron, and there is no way through a jumbotron.
   if (insidePokemonBowl(fromX, fromZ) !== insidePokemonBowl(toX, toZ)
     && !(inPokemonTunnelLane(fromX, fromZ) || inPokemonTunnelLane(toX, toZ))) return true;
-  // The Chao Garden's cliffs.
-  if (insideChaoGarden(fromX, fromZ) !== insideChaoGarden(toX, toZ)
-    && !(inChaoGardenLane(fromX, fromZ) || inChaoGardenLane(toX, toZ))) return true;
+  // The Chao Garden: the whole zone is open sea except the pier lane and the
+  // island's grass bowl, and the cliff edge does not negotiate.
+  if (inChaoGardenZone(toX, toZ) && !insideChaoGarden(toX, toZ) && !inChaoGardenLane(toX, toZ)) return true;
   // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
   if (toX > SILENT_EAST_X && toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
@@ -162,7 +167,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     if (crossing >= 0 && crossing <= 1 && crossingX < SILENT_EAST_X && !throughSilentDoor(crossingX)) return true;
   }
   // The stadium's south wall, with the entrance doorway at its centre.
-  const throughStadiumDoor = (x: number) => Math.abs(x - POKEMON_DOOR_X) < ROOM_DOOR_CLEARANCE;
+  const throughStadiumDoor = (x: number) => Math.abs(x - POKEMON_DOOR_X) < ROOM_DOOR_CLEARANCE || Math.abs(x - 18) < ROOM_DOOR_CLEARANCE;
   if (toX > POKEMON_WEST_X && !throughStadiumDoor(toX) && Math.abs(toZ - POKEMON_SOUTH_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if ((fromZ - POKEMON_SOUTH_Z) * (toZ - POKEMON_SOUTH_Z) < 0) {
     const crossing = (POKEMON_SOUTH_Z - fromZ) / (toZ - fromZ);
@@ -187,6 +192,11 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
       if (Math.abs(toX - dividerX) < PARTITION_COLLISION_HALF_WIDTH) return true;
       if ((fromX - dividerX) * (toX - dividerX) < 0) return true;
     }
+  }
+  // The Metroid room's west wall, shared with the Final Fantasy room.
+  if (Math.max(fromZ, toZ) < POKEMON_SOUTH_Z && Math.max(fromX, toX) > 0) {
+    if (Math.abs(toX - POKEMON_WEST_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
+    if ((fromX - POKEMON_WEST_X) * (toX - POKEMON_WEST_X) < 0) return true;
   }
   return false;
 }
