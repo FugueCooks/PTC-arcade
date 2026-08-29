@@ -17,6 +17,7 @@ const requiredPrizeModels = new Set([
   'pepe-the-frog.optimized.glb',
   'pudgy-penguin.optimized.glb'
 ]);
+const requiredEnvironmentModels = new Set(['chao-garden.glb']);
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
@@ -39,6 +40,7 @@ await copyTree('assets', (relative, info) => {
     // covers the prize display.
     if (normalized.startsWith('assets/models/controllers/')) return true;
     if (normalized.startsWith('assets/models/megaman/')) return true;
+    if (requiredEnvironmentModels.has(path.basename(normalized))) return true;
     return requiredPrizeModels.has(path.basename(normalized));
   }
   if (normalized.startsWith('assets/avatars/models/') && info.isFile()) {

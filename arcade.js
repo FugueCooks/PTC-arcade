@@ -994,7 +994,8 @@ hangMuralWalls([
 // dome carry the stands, so this room does not go through themeRoom at all.
 buildPokemonStadium(POKEMON_CENTER_X,-108.45);
 /**
- * The Sonic room is the Chao Garden.
+ * Legacy procedural Chao Garden retained as a rollback path while the supplied
+ * environment model is verified. It is no longer invoked at runtime.
  *
  * Like the stadium, it is the place itself rather than a room with pictures of
  * it: a grass meadow ringed by cliffs, a stretch of open sea where the cliffs
@@ -1213,7 +1214,7 @@ function buildChaoGarden(centerX,centerZ){
   foam.rotation.x=-Math.PI/2;foam.scale.set(1.15,.6,1);foam.position.set(poolX+1.35,.06,poolZ-1.1);scene.add(foam);
   // The palms, boulders and cliff columns are real models now, generated in
   // Blender on this machine and loaded lazily on approach — see
-  // installChaoGardenProps below.
+  // Superseded by the complete supplied environment model below.
   // Fruit on the grass, the garden's own colours.
   const fruitColours=[0xffd23e,0xff8c3a,0xff5fae,0xa06cff];
   const fruitGeometry=new THREE.SphereGeometry(.13,10,8);
@@ -1231,14 +1232,23 @@ function buildChaoGarden(centerX,centerZ){
     scene.add(sun);managedSceneLights.push(sun);
   }
 }
-// The Sonic room moved to the east column's blank middle room; the Pokemon
-// Center grew into the room it left.
-buildChaoGarden(ANNEX_ROOM_CENTER_X,13.2);
-/**
- * The garden's modelled props: palms, boulders, and the columnar stone the
- * waterfall pours over, generated in Blender (tools/make-chao-props.py) as one
- * small GLB and cloned into place. Loaded on approach like the statues.
- */
+// The supplied scene now owns every visible part of the garden. A small floor
+// disc remains only while its 2.38 MiB GLB is loading (or if it ever fails), and
+// the two managed lights keep the room readable without accepting model lights.
+const chaoGardenFallback=new THREE.Mesh(
+  new THREE.CircleGeometry(1,48),
+  new THREE.MeshStandardMaterial({color:0x215f31,emissive:0x123b20,emissiveIntensity:.4,roughness:.92})
+);
+chaoGardenFallback.name='chao-garden-loading-floor';
+chaoGardenFallback.rotation.x=-Math.PI/2;
+chaoGardenFallback.scale.set(10.05,7.65,1);
+chaoGardenFallback.position.set(ANNEX_ROOM_CENTER_X,.025,13.2);
+scene.add(chaoGardenFallback);
+for(const [lx,lz] of [[-2.5,1.5],[4.8,-3.2]]){
+  const sun=new THREE.PointLight(0xfff3d0,4.8,16,2);
+  sun.position.set(ANNEX_ROOM_CENTER_X+lx,3.6,13.2+lz);
+  scene.add(sun);managedSceneLights.push(sun);
+}
 /**
  * The Silent Hill buildings: a supplied SH1 building model, cloned along both
  * streets in place of the generated brick boxes. Its measured world box is
@@ -1357,37 +1367,51 @@ function installSilentHillBuildings(){
     },undefined,error=>console.warn('Silent Hill buildings could not load.',error));
   }catch(error){console.warn('Silent Hill building loader could not initialize.',error)}})();
 }
-function installChaoGardenProps(){
+function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-props.glb?v=chao-props-2',gltf=>{
-      const source=gltf.scene;
-      const take=name=>{const found=source.getObjectByName(name);if(found)found.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});return found};
-      const palm=take('Palm'),rocks=[take('RockA'),take('RockB'),take('RockC')],column=take('CliffColumn');
-      const cx=CHAO_GARDEN.cx,cz=CHAO_GARDEN.cz;
-      if(palm)for(const [dx,dz,scale,turn] of [[-4.8,2.8,1.05,.3],[-2.4,-4.6,1.2,2.1],[1.8,4.8,1.1,4],[-7,-2.8,.95,1.2],[4,2.4,1.15,5.2],[-.8,-2.2,1.25,2.8],[2.6,-6.2,1,3.6]]){
-        const tree=palm.clone(true);
-        tree.position.set(cx+dx,0,cz+dz);tree.scale.setScalar(scale);tree.rotation.y=turn;
-        scene.add(tree);
-      }
-      if(column){
-        // Two flank the mouth where the cliffs part, two carry the waterfall.
-        for(const [dx,dz,scale,turn] of [[-9.7,3,1.05,.4],[-9.4,-3.2,1.15,2],[6.4,-5.6,1.35,1.1],[4.4,-6.9,1.2,2.6]]){
-          const stack=column.clone(true);
-          stack.position.set(cx+dx,0,cz+dz);stack.scale.setScalar(scale);stack.rotation.y=turn;
-          scene.add(stack);
-        }
-      }
-      for(let i=0;i<9;i++){
-        const rock=rocks[i%3];if(!rock)continue;
-        const angle=i*2.399,radius=7.4+(i%3)*1.1;
-        const boulder=rock.clone(true);
-        boulder.position.set(cx+Math.cos(angle)*radius,0,cz+Math.sin(angle)*radius);
-        boulder.scale.setScalar(.7+(i%4)*.28);boulder.rotation.y=i*1.3;
-        scene.add(boulder);
-      }
-    },undefined,error=>console.warn('The Chao Garden props could not load.',error));
-  }catch(error){console.warn('The Chao Garden prop loader could not initialize.',error)}})();
+    loader.load('assets/models/chao-garden.glb?v=chao-garden-2',gltf=>{
+      const source=gltf.scene,mount=new THREE.Group(),discard=[];
+      // The SA2 garden faces local -Z. Turn that opening toward the room's
+      // west-side doorway, then fit the rotated result in world coordinates.
+      source.rotation.y=Math.PI/2;mount.add(source);
+      source.updateWorldMatrix(true,true);
+      const candidateBounds=new THREE.Box3(),candidateSize=new THREE.Vector3(),candidateCenter=new THREE.Vector3();
+      source.traverse(node=>{
+        if(node.isCamera||node.isLight)discard.push(node);
+        if(!node.isMesh)return;
+        node.castShadow=false;node.receiveShadow=false;
+        candidateBounds.setFromObject(node);candidateBounds.getSize(candidateSize);candidateBounds.getCenter(candidateCenter);
+        // This Sketchfab scene includes a 300-unit ocean, far-island cards,
+        // and decorative rocks placed far beyond the playable garden. They
+        // would cross arcade walls and make the useful island render tiny.
+        if(Math.max(candidateSize.x,candidateSize.z)>80||Math.hypot(candidateCenter.x,candidateCenter.z)>20)discard.push(node);
+      });
+      discard.forEach(node=>node.removeFromParent());
+      source.updateWorldMatrix(true,true);
+      const bounds=new THREE.Box3().setFromObject(source),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+      if(!Number.isFinite(size.x)||!Number.isFinite(size.y)||!Number.isFinite(size.z)||Math.min(size.x,size.y,size.z)<=0)throw new Error('Chao Garden model bounds are invalid.');
+      // Anchor to the authored walkable grass surface. The island's cliff mesh
+      // extends far below it, so grounding the overall Box3 would lift the
+      // whole garden several metres above the arcade floor.
+      let groundY=null,groundArea=-1;
+      source.traverse(node=>{
+        if(!node.isMesh)return;
+        candidateBounds.setFromObject(node);candidateBounds.getSize(candidateSize);
+        const area=candidateSize.x*candidateSize.z,flatness=candidateSize.y/Math.max(candidateSize.x,candidateSize.z,1);
+        if(node.name.startsWith('Plane.006_Material.004')){groundArea=Infinity;groundY=candidateBounds.max.y}
+        else if(groundArea!==Infinity&&flatness<.08&&area>groundArea){groundArea=area;groundY=candidateBounds.max.y}
+      });
+      if(groundY===null)groundY=bounds.min.y;
+      // Fill the same authoritative ellipse the procedural cove used. Scale
+      // the unrotated mount so nonuniform X/Z fitting stays world-aligned.
+      const scaleX=CHAO_GARDEN.ax*1.96/size.x,scaleZ=CHAO_GARDEN.az*1.96/size.z,scaleY=Math.min(scaleX,scaleZ);
+      mount.scale.set(scaleX,scaleY,scaleZ);
+      mount.position.set(CHAO_GARDEN.cx-center.x*scaleX,.035-groundY*scaleY,CHAO_GARDEN.cz-center.z*scaleZ);
+      mount.name='chao-garden-environment';mount.userData.chaoGarden=true;
+      scene.add(mount);chaoGardenFallback.visible=false;
+    },undefined,error=>console.warn('The Chao Garden model could not load.',error));
+  }catch(error){console.warn('The Chao Garden model loader could not initialize.',error)}})();
 }
 /**
  * The Silent Hill room: an empty city block in dense fog.
@@ -2417,7 +2441,7 @@ async function installFurthermoreModel(){try{const loader=await getOptimizedGltf
 async function installEnterpriseModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/enterprise.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('enterprise-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.76/Math.max(size.x,size.y,size.z));model.rotation.y=Math.PI/2;model.position.y=.02;slot.add(model);},undefined,error=>console.warn('Enterprise model could not load.',error));}catch(error){console.warn('Enterprise model loader could not initialize.',error)}}
 async function installKurackModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/kurack.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('kurack-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.72/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.rotation.y=Math.PI*1.5;model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y=-scaledBounds.min.y-.18;slot.add(model);},undefined,error=>console.warn('Kurack model could not load.',error));}catch(error){console.warn('Kurack model loader could not initialize.',error)}}
 async function installGangsterPepe(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-gangster-animated.optimized.glb?v=meshopt-1',gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.016/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;gangsterPepeMount.add(model);if(gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());animatedMixers.push(mixer);}},undefined,error=>console.warn('Animated gangster Pepe model could not load.',error));}catch(error){console.warn('Animated gangster Pepe loader could not initialize.',error)}}
-let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenPropsStarted=false,silentHillBuildingsStarted=false,pokemonCenterStarted=false,nextHeavyAssetCheck=0;
+let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenModelStarted=false,silentHillBuildingsStarted=false,pokemonCenterStarted=false,nextHeavyAssetCheck=0;
 // Real controllers on the deck instead of a generic stick and four buttons.
 // Each model loads once per system and is cloned onto every cabinet of that
 // system; clones share geometry and materials, so the cost is one upload each.
@@ -2478,7 +2502,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenPropsStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenPropsStarted=true;installChaoGardenProps();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenModelStarted=true;installChaoGardenModel();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
