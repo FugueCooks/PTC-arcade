@@ -696,7 +696,7 @@ function buildPokemonStadium(centerX,arenaCz){
    * scale in a group and scaled three times, so the whole stage grows
    * together, exactly as drawn.
    */
-  const tunnelMaterial=new THREE.MeshStandardMaterial({color:0x0a0f1a,roughness:.7,metalness:.25,side:THREE.DoubleSide});
+  const tunnelMaterial=new THREE.MeshStandardMaterial({color:0x141b29,emissive:0x0c1322,emissiveIntensity:.55,roughness:.7,metalness:.25,side:THREE.DoubleSide});
   const tunnelTrim=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.2,metalness:.4,roughness:.3});
   const TUNNEL_HALF_W=1.7;
   const TUNNEL_MOUTH_Z=-42.0;
@@ -713,14 +713,39 @@ function buildPokemonStadium(centerX,arenaCz){
   roof.position.set(centerX,2.82,tunnelZ);scene.add(roof);
   // Its own floor: past the building the concourse is a gangway over the
   // void, and it lands on the floating platform itself.
-  const gangway=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2+.48,.2,TUNNEL_LENGTH),tunnelMaterial);
+  const deckCanvas=document.createElement('canvas');deckCanvas.width=128;deckCanvas.height=128;
+  const dk=deckCanvas.getContext('2d');
+  dk.fillStyle='#12161f';dk.fillRect(0,0,128,128);
+  for(let y=6;y<128;y+=16){dk.fillStyle='#1a2030';dk.fillRect(0,y,128,5)}
+  dk.fillStyle='#233044';dk.fillRect(60,0,8,128);
+  const deckTexture=new THREE.CanvasTexture(deckCanvas);deckTexture.colorSpace=THREE.SRGBColorSpace;
+  deckTexture.wrapT=THREE.RepeatWrapping;deckTexture.repeat.set(1,Math.round(TUNNEL_LENGTH/2.6));
+  const gangway=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2+.48,.2,TUNNEL_LENGTH),
+    new THREE.MeshStandardMaterial({map:deckTexture,roughness:.6,metalness:.3}));
   gangway.position.set(centerX,-.1,tunnelZ);scene.add(gangway);
   // Recessed ceiling panels down the run, so the long walk reads lit from
   // inside and the far end glows before the bowl opens.
-  const tunnelPanelMaterial=new THREE.MeshBasicMaterial({color:0xd9ecff});
+  const tunnelPanelMaterial=new THREE.MeshBasicMaterial({color:0x9db8cc});
   for(let z=TUNNEL_EXIT_Z+1;z<TUNNEL_MOUTH_Z-1;z+=1.9){
-    const panel=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.4),tunnelPanelMaterial);
-    panel.rotation.x=Math.PI/2;panel.position.set(centerX,2.69,z);scene.add(panel);
+    const panel=new THREE.Mesh(new THREE.PlaneGeometry(.8,.3),tunnelPanelMaterial);
+    panel.rotation.x=Math.PI/2;panel.position.set(centerX,2.79,z);scene.add(panel);
+  }
+  // Structural ribs down the run, a second accent line above the handrail,
+  // and a treadplate deck: the bare tube read as unfinished, and a player is
+  // inside it for forty metres now.
+  const ribMaterial=new THREE.MeshStandardMaterial({color:0x141b2c,emissive:0x0b1424,emissiveIntensity:.5,metalness:.6,roughness:.4});
+  for(let z=TUNNEL_EXIT_Z+2.6;z<TUNNEL_MOUTH_Z-1.4;z+=4.6){
+    for(const side of [-1,1]){
+      const post=new THREE.Mesh(new THREE.BoxGeometry(.18,2.62,.34),ribMaterial);
+      post.position.set(centerX+side*(TUNNEL_HALF_W-.09),1.31,z);scene.add(post);
+    }
+    const lintel=new THREE.Mesh(new THREE.BoxGeometry(TUNNEL_HALF_W*2,.2,.34),ribMaterial);
+    lintel.position.set(centerX,2.6,z);scene.add(lintel);
+  }
+  for(const side of [-1,1]){
+    const accent=new THREE.Mesh(new THREE.BoxGeometry(.03,.05,TUNNEL_LENGTH-.4),
+      new THREE.MeshStandardMaterial({color:0xbfd9e8,emissive:0x9db8cc,emissiveIntensity:.5,metalness:.3,roughness:.4}));
+    accent.position.set(centerX+side*(TUNNEL_HALF_W-.13),2.28,tunnelZ);scene.add(accent);
   }
   const guideMaterial=new THREE.MeshBasicMaterial({color:0x8ff0ff,transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending});
   for(const side of [-1,1]){
@@ -799,18 +824,24 @@ function buildPokemonStadium(centerX,arenaCz){
   })();
   // The tunnel pierces the globe at player scale, so the cut is measured in
   // the arena's local frame at a third of its world size.
-  const cutMouth=(geometry,scaleX,scaleY,scaleZ)=>{
+  // The bowl is fine-meshed, so its mouth is cut where every corner of a
+  // triangle is inside the box; the shell is coarse — its triangles are
+  // six metres wide — so it is cut loose, any corner inside, and the hole
+  // is generous because a dark outer shell with a big hole is invisible
+  // while a shell that seals the tunnel is a wall at the end of the walk.
+  const cutMouth=(geometry,scaleX,scaleY,scaleZ,loose)=>{
     const position=geometry.attributes.position;
     const inMouth=index=>{
       const x=position.getX(index)*scaleX;
       const y=position.getY(index)*scaleY+SPHERE_CY;
       const z=position.getZ(index)*scaleZ;
-      return Math.abs(x)<.8&&y<1.06&&z>9.2&&z<12.6;
+      return loose?(Math.abs(x)<1.3&&y<1.5&&z>8.6):(Math.abs(x)<.8&&y<1.06&&z>9.2&&z<12.6);
     };
     const oldIndex=geometry.index,kept=[];
     for(let i=0;i<oldIndex.count;i+=3){
       const p=oldIndex.getX(i),q=oldIndex.getX(i+1),r=oldIndex.getX(i+2);
-      if(inMouth(p)&&inMouth(q)&&inMouth(r))continue;
+      const gone=loose?(inMouth(p)||inMouth(q)||inMouth(r)):(inMouth(p)&&inMouth(q)&&inMouth(r));
+      if(gone)continue;
       kept.push(p,q,r);
     }
     geometry.setIndex(kept);
@@ -822,7 +853,7 @@ function buildPokemonStadium(centerX,arenaCz){
   bowl.position.set(0,SPHERE_CY,0);
   arena.add(bowl);
   const shellGeometry=new THREE.SphereGeometry(1,48,24);
-  cutMouth(shellGeometry,RX+.38,SPHERE_RY+.2,RZ+.38);
+  cutMouth(shellGeometry,RX+.38,SPHERE_RY+.2,RZ+.38,true);
   const bowlShell=new THREE.Mesh(shellGeometry,
     new THREE.MeshStandardMaterial({color:0x0c1220,emissive:0x0a1425,emissiveIntensity:.35,roughness:.6,metalness:.3}));
   bowlShell.scale.set(RX+.38,SPHERE_RY+.2,RZ+.38);
@@ -1267,15 +1298,21 @@ function installPokemonCenter(){
         }
         geometry.setIndex(kept);
       });
-      // The loose cut tears panels along their diagonals, so a dark header
-      // plate masks the ragged edge above the doorway — a marquee over the
-      // way to the stadium, with the arcade threshold line under it.
-      const marquee=new THREE.Mesh(new THREE.BoxGeometry(4.6,2.5,.14),
-        new THREE.MeshStandardMaterial({color:0x0d1118,emissive:0x0a1220,emissiveIntensity:.5,roughness:.5,metalness:.4}));
-      marquee.position.set(26.6,3.55,-40.5);scene.add(marquee);
-      const marqueeTrim=new THREE.Mesh(new THREE.BoxGeometry(4.4,.08,.06),
-        new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.1,roughness:.3,metalness:.4}));
-      marqueeTrim.position.set(26.6,2.32,-40.46);scene.add(marqueeTrim);
+      // The loose cut tears panels along their diagonals, so the opening is
+      // finished as a portal: jambs down both sides, a header over the top,
+      // and a lit strip under it — a gate, not a hole with a board on it.
+      const portalSteel=new THREE.MeshStandardMaterial({color:0x11161f,emissive:0x0a1220,emissiveIntensity:.5,roughness:.5,metalness:.5});
+      const portalGlow=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.1,roughness:.3,metalness:.4});
+      for(const jx of [25.32,28.85]){
+        const jamb=new THREE.Mesh(new THREE.BoxGeometry(.34,3.3,.5),portalSteel);
+        jamb.position.set(jx,1.65,-40.6);scene.add(jamb);
+        const jambCap=new THREE.Mesh(new THREE.BoxGeometry(.34,.1,.5),portalGlow);
+        jambCap.position.set(jx,3.36,-40.6);scene.add(jambCap);
+      }
+      const lintelPlate=new THREE.Mesh(new THREE.BoxGeometry(4.9,1.9,.5),portalSteel);
+      lintelPlate.position.set(27.08,4.15,-40.6);scene.add(lintelPlate);
+      const lintelTrim=new THREE.Mesh(new THREE.BoxGeometry(3.9,.09,.1),portalGlow);
+      lintelTrim.position.set(27.08,3.22,-40.36);scene.add(lintelTrim);
     },undefined,error=>console.warn('The Pokemon Center could not load.',error));
   }catch(error){console.warn('The Pokemon Center loader could not initialize.',error)}})();
 }
@@ -2778,8 +2815,17 @@ function updateFollowCamera(){
   }
   // Match first-person mouse direction: moving the mouse upward should tilt
   // the view upward instead of lifting the chase camera and looking downward.
-  followOffset.set(0,2.15-pitch*2.1,4.55).applyAxisAngle(upAxis,yaw);
+  // Inside the vomitory the camera ducks with the player and hugs the tube:
+  // the standard offset floated it through the concourse roof, which read as
+  // the tunnel falling apart rather than as a camera artifact.
+  const inVomitory=Math.abs(playerPosition.x-27)<2.2&&playerPosition.z<-41.5&&playerPosition.z>-88.5;
+  if(inVomitory)followOffset.set(0,.72-pitch*1.2,2.5).applyAxisAngle(upAxis,yaw);
+  else followOffset.set(0,2.15-pitch*2.1,4.55).applyAxisAngle(upAxis,yaw);
   camera.position.copy(playerPosition).add(followOffset);
+  if(inVomitory){
+    camera.position.x=Math.max(25.75,Math.min(28.25,camera.position.x));
+    camera.position.y=Math.max(.9,Math.min(2.25,camera.position.y));
+  }
   cameraTarget.set(playerPosition.x,playerPosition.y+.78,playerPosition.z);
   camera.lookAt(cameraTarget);
 }
