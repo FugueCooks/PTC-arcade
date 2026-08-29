@@ -1322,7 +1322,7 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   rockContext.globalAlpha=1;
   const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
   const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
-  const BORE_MIN_X=21.9,BORE_MAX_X=56,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
+  const BORE_MIN_X=21.9,BORE_MAX_X=59.8,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
   for(const side of [-1,1]){
     const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
     wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
@@ -1332,8 +1332,8 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   vault.scale.set(1,1,.95);bore.add(vault);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
-  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(37.6,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
-  boreFloor.position.set(40.4,.03,13.2);bore.add(boreFloor);
+  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(39.4,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
+  boreFloor.position.set(41.3,.03,13.2);bore.add(boreFloor);
   // The mouth: two jambs and a lintel, so the exit reads as carved rock.
   for(const side of [-1,1]){
     const jamb=new THREE.Mesh(new THREE.BoxGeometry(1.5,4.2,1.1),boreRock);
@@ -1469,7 +1469,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-2',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-3',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3050,7 +3050,7 @@ function updateFollowCamera(){
   }
   // Inside the garden bore the camera goes first-person no matter the mode:
   // any chase offset ends up in the rock or out in the void.
-  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<58.2&&Math.abs(playerPosition.z-13.2)<1.7;
+  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<60.1&&Math.abs(playerPosition.z-13.2)<1.7;
   if(cameraMode==='first-person'||inGardenBore){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
@@ -3170,7 +3170,7 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:59};
+const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:61};
 // The fence is the geometry itself, and so is the floor: a step stands
 // wherever a ray straight down finds ground within a stride's climb of the
 // player's feet, and the player's height follows that ground. Slopes and
@@ -3294,7 +3294,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-authored-2';
+const ARCADE_BUILD='garden-authored-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
