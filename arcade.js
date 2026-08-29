@@ -1390,7 +1390,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-door-1',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-door-2',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The doorway opens straight onto grass: the meadow's west edge lands
       // on the partition door, so the step from arcade tile to garden is one
@@ -1432,9 +1432,10 @@ function installChaoGardenModel(){
         if(westBounds.max.x<21.9)westDoomed.push(node);
       });
       westDoomed.forEach(node=>node.removeFromParent());
-      // Inside the shell the garden behaves: overreach below the 5 m walls
-      // pancakes into the partition and the two dividers and hides in them.
-      // Outside the shell nothing is clamped — that is the whole point.
+      // Inside the shell the garden behaves at every height: overreach
+      // pancakes into the partition and the two dividers and hides in them,
+      // so no cliff ever hangs over the hall. Outside the shell nothing is
+      // clamped — that is the whole point.
       const worldVertex=new THREE.Vector3();
       const clampMesh=(node,adjust)=>{
         if(!node.isMesh||!node.geometry?.attributes?.position)return;
@@ -1449,16 +1450,30 @@ function installChaoGardenModel(){
         }
         if(touched){positions.needsUpdate=true;node.geometry.computeBoundingSphere();node.geometry.computeBoundingBox();}
       };
+      const cutMesh=(node,doomedTriangle)=>{
+        if(!node.isMesh||!node.geometry?.index)return;
+        const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
+        const vertexAt=v=>{worldVertex.fromBufferAttribute(positions,v);return node.localToWorld(worldVertex)};
+        for(let i=0;i<index.count;i+=3){
+          const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
+          if(doomedTriangle([vertexAt(a).clone(),vertexAt(b).clone(),vertexAt(c).clone()]))continue;
+          kept.push(a,b,c);
+        }
+        if(kept.length!==index.count)node.geometry.setIndex(kept);
+      };
       source.traverse(node=>clampMesh(node,v=>{
-        if(v.y>=5||v.x>=42.7)return false;
+        if(v.x>=42.7)return false;
         const x=Math.max(v.x,22.02),z=Math.min(Math.max(v.z,5.12),21.28);
         if(x===v.x&&z===v.z)return false;
         v.x=x;v.z=z;return true;
       }));
-      skySource.traverse(node=>clampMesh(node,v=>{
-        if(v.x>=43.4)return false;
-        v.x=43.4;return true;
-      }));
+      // The pancaked sheet on the partition plane would slab the doorway
+      // shut; where it crosses the door band it goes entirely.
+      source.traverse(node=>cutMesh(node,verts=>
+        verts.every(v=>v.x<=22.05)&&verts.some(v=>v.z>11.4&&v.z<15)));
+      // The sky dome and sea keep only their eastern half: a flattened wall
+      // of sky standing over the building is exactly what ruins the arcade.
+      skySource.traverse(node=>cutMesh(node,verts=>verts.some(v=>v.x<43.3)));
       chaoGardenFallback.visible=false;
     },undefined,error=>console.warn('The Chao Garden model could not load.',error));
   }catch(error){console.warn('The Chao Garden model loader could not initialize.',error)}})();
