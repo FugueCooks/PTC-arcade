@@ -942,7 +942,7 @@
       "sizeBytes": 368511,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -965,7 +965,7 @@
       "sizeBytes": 368303,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -988,7 +988,7 @@
       "sizeBytes": 495259,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1011,7 +1011,7 @@
       "sizeBytes": 726756,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1034,7 +1034,7 @@
       "sizeBytes": 726508,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1057,7 +1057,7 @@
       "sizeBytes": 999132,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1080,7 +1080,7 @@
       "sizeBytes": 4807370,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1103,7 +1103,7 @@
       "sizeBytes": 4807532,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1126,7 +1126,7 @@
       "sizeBytes": 5192816,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1149,7 +1149,7 @@
       "sizeBytes": 5192998,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1172,7 +1172,7 @@
       "sizeBytes": 148116,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1195,7 +1195,7 @@
       "sizeBytes": 6791457,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-gb",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "gb-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1218,7 +1218,7 @@
       "sizeBytes": 27924487,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1241,7 +1241,7 @@
       "sizeBytes": 27924476,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1264,7 +1264,7 @@
       "sizeBytes": 50778279,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1287,7 +1287,7 @@
       "sizeBytes": 60760561,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1310,7 +1310,7 @@
       "sizeBytes": 60760448,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1333,7 +1333,7 @@
       "sizeBytes": 110697413,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1356,7 +1356,7 @@
       "sizeBytes": 110699618,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1379,7 +1379,7 @@
       "sizeBytes": 154063144,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [
@@ -1402,7 +1402,7 @@
       "sizeBytes": 153749213,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "ptc-runtime-nds",
+      "emulatorAdapterId": "emulatorjs",
       "inputProfileId": "nds-gamepad",
       "replayCapability": "NONE",
       "assetRequirements": [

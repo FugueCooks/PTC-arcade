@@ -24,8 +24,8 @@ export function chooseNdsAdapter({ adapters, detection }) {
     detection,
     adapterId: RUNTIME_NDS_ADAPTER_ID,
     emulatorKey: 'melondsPresent',
-    fallbackId: null,
-    noAdapterReason: 'runtime-required'
+    fallbackId: 'emulatorjs',
+    noAdapterReason: 'no-nds-adapter'
   });
 }
 

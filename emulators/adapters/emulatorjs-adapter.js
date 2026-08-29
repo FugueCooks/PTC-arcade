@@ -1,7 +1,7 @@
 import { FRAME_SIGNALS, createCapabilities, estimateLoadTimeoutMs, platformOf, preflightAssets } from '../emulator-adapter.js';
 
 /** Platform to EmulatorJS core name. The only place this mapping exists. */
-const CORES = Object.freeze({ psx: 'psx', n64: 'n64', snes: 'snes9x' });
+const CORES = Object.freeze({ psx: 'psx', n64: 'n64', snes: 'snes9x', gb: 'gambatte', gbc: 'gambatte', gba: 'mgba', nds: 'melonds' });
 
 export const EMULATORJS_FRAME_VERSION = 'player.html';
 
@@ -14,7 +14,7 @@ export const EMULATORJS_FRAME_VERSION = 'player.html';
 export function createEmulatorJsAdapter({ runtime } = {}) {
   return {
     id: 'emulatorjs',
-    supportedPlatforms: Object.freeze(['psx', 'n64', 'snes']),
+    supportedPlatforms: Object.freeze(['psx', 'n64', 'snes', 'gb', 'gbc', 'gba', 'nds']),
 
     // EmulatorJS runs behind an iframe that exposes none of these to us. Save
     // states and pause exist inside its own UI, but the adapter cannot drive

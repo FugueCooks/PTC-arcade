@@ -29,8 +29,8 @@ export function chooseGbAdapter({ adapters, detection }) {
     detection,
     adapterId: RUNTIME_GB_ADAPTER_ID,
     emulatorKey: 'vbaPresent',
-    fallbackId: null,
-    noAdapterReason: 'runtime-required'
+    fallbackId: 'emulatorjs',
+    noAdapterReason: 'no-gb-adapter'
   });
 }
 
