@@ -987,11 +987,11 @@ hangMuralWalls([
     {file:'ff-room-mural.webp?v=poke-7',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=poke-7',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
-      backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
+    {file:'ff-room-mural-2.webp?v=poke-7',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+      backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=poke-7',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
-      backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
+    {file:'ff-room-mural-3.webp?v=poke-7',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+      backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
 // Zelda swapped places with Silent Hill: it hangs in the west column's bottom
@@ -1436,7 +1436,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-5',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-6',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
