@@ -67,7 +67,7 @@ void test('status is readable without pairing, and says nothing about the machin
     assert.equal(body.protocolVersion, PROTOCOL_VERSION);
     // PS2 joined GameCube on the native path: the browser core holds 40 f/s
     // on the demanding titles and no caching changes that.
-    assert.deepEqual(body.platforms, ['gamecube', 'ps2']);
+    assert.deepEqual(body.platforms, ['gamecube', 'ps2', 'nds', 'gb', 'gbc', 'gba']);
     assert.equal(body.dolphin.present, true);
 
     const serialized = JSON.stringify(body);
