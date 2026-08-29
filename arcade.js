@@ -1269,33 +1269,46 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   sun.position.set(66+lx,7,13.2+lz);
   scene.add(sun);managedSceneLights.push(sun);
 }
-// The way out is a rough stone bore: from the arcade door, through the old
-// room's dark, out the shell, surfacing at the meadow's edge. Jittered slabs
-// instead of clean boxes so it reads as rock, not corridor.
+// The way out is a stone bore: straight walls and one smooth barrel vault
+// from the arcade door, through the old room's dark, out the shell, and past
+// the sky's rim, surfacing on the meadow. A low-frequency noise map keeps it
+// reading as rock without a single jagged slab.
 {
   const bore=new THREE.Group();bore.name='chao-garden-tunnel';scene.add(bore);
-  const boreRock=new THREE.MeshStandardMaterial({color:0x8f8a82,roughness:.92,metalness:.04});
-  const boreRockDark=new THREE.MeshStandardMaterial({color:0x69645d,roughness:.95,metalness:.03});
-  for(let x=22.2;x<46.6;x+=2.9){
-    const j=((x*37)%10)/10;
-    for(const side of [-1,1]){
-      const slab=new THREE.Mesh(new THREE.BoxGeometry(3.15,3.6+j*.5,.7+j*.3),j>.5?boreRock:boreRockDark);
-      slab.position.set(x,1.8,13.2+side*(2+j*.22));
-      slab.rotation.y=(j-.5)*.14;slab.rotation.z=side*(j-.5)*.05;
-      bore.add(slab);
-    }
-    const cap=new THREE.Mesh(new THREE.BoxGeometry(3.15,.7+j*.3,4.9),j>.5?boreRockDark:boreRock);
-    cap.position.set(x,3.55+j*.25,13.2+(j-.5)*.3);
-    cap.rotation.x=(j-.5)*.08;cap.rotation.y=(j-.5)*.1;
-    bore.add(cap);
+  const rockCanvas=document.createElement('canvas');rockCanvas.width=rockCanvas.height=128;
+  const rockContext=rockCanvas.getContext('2d');
+  rockContext.fillStyle='#8f8a82';rockContext.fillRect(0,0,128,128);
+  for(let i=0;i<340;i++){
+    const shade=118+((i*37)%46);
+    rockContext.fillStyle='rgb('+shade+','+(shade-5)+','+(shade-12)+')';
+    rockContext.globalAlpha=.24;
+    rockContext.beginPath();rockContext.arc((i*53)%128,(i*89)%128,3+(i*29)%9,0,Math.PI*2);rockContext.fill();
   }
-  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(4.6,.08,3.8),boreRockDark);
-  boreFloor.position.set(44.6,.01,13.2);bore.add(boreFloor);
-  for(const x of [27,34.5,42]){
+  rockContext.globalAlpha=1;
+  const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
+  const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
+  const BORE_MIN_X=21.9,BORE_MAX_X=48.6,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
+  for(const side of [-1,1]){
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
+    wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
+  }
+  const vault=new THREE.Mesh(new THREE.CylinderGeometry(2.05,2.05,BORE_LENGTH,22,1,true,0,Math.PI),boreRock);
+  vault.rotation.z=Math.PI/2;vault.scale.y=1;vault.position.set(BORE_CENTER_X,1.95,13.2);
+  vault.scale.set(1,1,.95);bore.add(vault);
+  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
+  boreFloor.position.set(BORE_CENTER_X,.03,13.2);bore.add(boreFloor);
+  // The mouth: two jambs and a lintel, so the exit reads as carved rock.
+  for(const side of [-1,1]){
+    const jamb=new THREE.Mesh(new THREE.BoxGeometry(1.5,4.2,1.1),boreRock);
+    jamb.position.set(BORE_MAX_X-.4,2.1,13.2+side*2.55);jamb.rotation.y=side*.18;bore.add(jamb);
+  }
+  const lintel=new THREE.Mesh(new THREE.BoxGeometry(1.7,1.2,5.9),boreRock);
+  lintel.position.set(BORE_MAX_X-.4,4.15,13.2);lintel.rotation.z=.05;bore.add(lintel);
+  for(const x of [26.5,33.5,40.5,46.5]){
     const bulb=new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.3),new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:2.2}));
-    bulb.position.set(x,2.9,14.6);bore.add(bulb);
+    bulb.position.set(x,2.72,14.15);bore.add(bulb);
     const lantern=new THREE.PointLight(0xffd9a0,2.4,8,1.9);
-    lantern.position.set(x,2.6,13.6);bore.add(lantern);managedSceneLights.push(lantern);
+    lantern.position.set(x,2.5,13.5);bore.add(lantern);managedSceneLights.push(lantern);
   }
 }
 /**
@@ -1419,7 +1432,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-1',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-2',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -1451,13 +1464,32 @@ function installChaoGardenModel(){
       skyMount.name='chao-garden-sky';
       scene.add(skyMount);
       scene.updateWorldMatrix(true,true);
+      // The dome's west rim used to slice across the tunnel mouth, a wall of
+      // sky the player walked through. Its curved shells lose every triangle
+      // reaching west of the mouth; the flat sea lies under the ground and
+      // keeps its full spread.
+      const skyVertex=new THREE.Vector3();
+      skySource.traverse(node=>{
+        if(!node.isMesh||!node.geometry?.index)return;
+        node.geometry.computeBoundingBox();
+        const tall=(node.geometry.boundingBox.max.y-node.geometry.boundingBox.min.y)>2;
+        if(!tall)return;
+        const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
+        const west=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return skyVertex.x<46.8};
+        for(let i=0;i<index.count;i+=3){
+          const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
+          if(west(a)||west(b)||west(c))continue;
+          kept.push(a,b,c);
+        }
+        if(kept.length!==index.count)node.geometry.setIndex(kept);
+      });
       // The model's east cliff ring and ramp would reach back into the
       // building; every triangle that touches the shell's side goes.
       const cutVertex=new THREE.Vector3();
       source.traverse(node=>{
         if(!node.isMesh||!node.geometry?.index)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43};
+        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<48.9&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
           if(west(a)||west(b)||west(c))continue;
@@ -3030,7 +3062,10 @@ function updateFollowCamera(){
     camera.lookAt(followed.position.x,followed.position.y+1,followed.position.z);
     return;
   }
-  if(cameraMode==='first-person'){
+  // Inside the garden bore the camera goes first-person no matter the mode:
+  // any chase offset ends up in the rock or out in the void.
+  const inGardenBore=playerPosition.x>21.8&&playerPosition.x<49&&Math.abs(playerPosition.z-13.2)<1.7;
+  if(cameraMode==='first-person'||inGardenBore){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
     cameraTarget.copy(camera.position).add(lookDirection);
