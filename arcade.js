@@ -57,7 +57,8 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
 const CHAO_EXPANSE={minX:42.7,maxX:102.5,minZ:3,maxZ:64.5};
-const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE];
+const TEMPLE_EXPANSE={minX:-57.2,maxX:-21.6,minZ:17.9,maxZ:32.5};
+const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
   const region=WORLD_REGIONS.find(candidate=>insideRegion(candidate,previousX,previousZ))??WORLD_BOUNDS;
@@ -325,7 +326,7 @@ const MEGAMAN_ROOM_WEST_X=-SHELL_HALF_WIDTH,MEGAMAN_ROOM_CENTER_X=-ANNEX_ROOM_CE
 const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MAX_Z+NORTH_ROW_MIN_Z)/2;
 // The west shell opens where Silent Hill spills out of the building; the
 // wall resumes at the fog's south line and runs to the back of the building.
-box(.3,5,92.4,0x180d31,-SHELL_HALF_WIDTH,2.5,4.2);
+box(.3,5,59.9,0x180d31,-SHELL_HALF_WIDTH,2.5,-12.05);box(.3,5,17.9,0x180d31,-SHELL_HALF_WIDTH,2.5,41.45);
 box(.3,5,78.4,0x180d31,SHELL_HALF_WIDTH,2.5,-28);
 box(.3,5,35.2,0x180d31,SHELL_HALF_WIDTH,2.5,32.8);
 // The north wall runs on across the annex, which closes its own west and
@@ -1475,20 +1476,23 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=temple-1',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=temple-2',gltf=>{
       const temple=gltf.scene;
+      // one stray untextured fragment of the deleted entrance door survives in
+      // the bake as a black box on the sill; nothing untextured belongs here
+      const doomed=[];
       temple.traverse(node=>{
         if(!node.isMesh)return;
+        const first=Array.isArray(node.material)?node.material[0]:node.material;
+        if(!first.map){doomed.push(node);return}
         node.castShadow=false;node.receiveShadow=false;
         const materials=Array.isArray(node.material)?node.material:[node.material];
         const swapped=materials.map(material=>new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),transparent:material.transparent,opacity:material.opacity,side:material.side}));
         node.material=Array.isArray(node.material)?swapped:swapped[0];
       });
-      temple.rotation.y=Math.PI/2;
-      temple.scale.setScalar(1.06);
+      doomed.forEach(node=>node.removeFromParent());
       const mount=new THREE.Group();
       mount.add(temple);
-      mount.position.set(-31.1,-.955,25.2);
       scene.add(mount);
       templeMount=mount;
     },undefined,error=>console.warn('Temple of Time failed to load:',error));
@@ -1501,12 +1505,12 @@ function templeGroundAt(x,z,feetY){
   templeRay.far=6;
   for(const hit of templeRay.intersectObject(templeMount,true)){
     const y=hit.point.y;
-    if(y>-.5&&y<=feetY+1.9)return y;
+    if(y>-2.6&&y<=feetY+1.9)return y;
   }
   return null;
 }
-function resolveTempleFloor(){
-  const inRoom=playerPosition.x>-43.2&&playerPosition.x<-21.6&&playerPosition.z>16.8&&playerPosition.z<33.6;
+function resolveTempleFloor(previousX,previousZ){
+  const inRoom=playerPosition.x>-57.4&&playerPosition.x<-21.6&&playerPosition.z>16.8&&playerPosition.z<33.6;
   if(!inRoom){
     if(templeSettle){
       playerPosition.y+=(1.65-playerPosition.y)*.3;
@@ -1516,7 +1520,12 @@ function resolveTempleFloor(){
   }
   templeSettle=true;
   const ground=templeGroundAt(playerPosition.x,playerPosition.z,playerPosition.y-1.65);
-  playerPosition.y+=((ground??0)+1.65-playerPosition.y)*.35;
+  if(ground===null){
+    if(playerPosition.x<-43.2){playerPosition.x=previousX;playerPosition.z=previousZ;return}
+    playerPosition.y+=(1.65-playerPosition.y)*.35;
+    return;
+  }
+  playerPosition.y+=(ground+1.65-playerPosition.y)*.35;
 }
 function installSilentHillBuildings(){
   void (async()=>{try{
@@ -1617,7 +1626,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-1',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-2',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1695,7 +1704,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=temple-1',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=temple-2',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3602,7 +3611,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-1';
+const ARCADE_BUILD='temple-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -3638,6 +3647,6 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor();resolveTopRowCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
