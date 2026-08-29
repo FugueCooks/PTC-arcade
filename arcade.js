@@ -1273,6 +1273,12 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
 // reading as rock without a single jagged slab.
 {
   const bore=new THREE.Group();bore.name='chao-garden-tunnel';scene.add(bore);
+  // The old garden room is sealed off from the bore by two full walls, floor
+  // to ceiling: the tunnel is a corridor through solid building, not a tube
+  // crossing a dark room a player could end up beside.
+  for(const wallZ of [10.75,15.65]){
+    const seal=box(21.1,5,.3,0x11182c,32.15,2.5,wallZ,.05);seal.receiveShadow=true;
+  }
   const rockCanvas=document.createElement('canvas');rockCanvas.width=rockCanvas.height=128;
   const rockContext=rockCanvas.getContext('2d');
   rockContext.fillStyle='#8f8a82';rockContext.fillRect(0,0,128,128);
@@ -1430,7 +1436,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-4',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-5',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
