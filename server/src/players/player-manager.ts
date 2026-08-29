@@ -32,7 +32,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
-  if (x >= 42.7 && x <= 73.2 && z >= 2.6 && z <= 23.8) return true;
+  if (x >= 42.7 && x <= 86.5 && z >= -1.5 && z <= 27.5) return true;
   // The arena's own region, north of the building. Matches POKEMON_EXPANSE
   // in arcade.js.
   return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;
@@ -79,7 +79,7 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { cx: 37.8, cz: 13.2, ax: 15.9, az: 10.5, laneHalfWidth: 1.5, doorZ: 13.2 };
+const CHAO_GARDEN = { cx: 66, cz: 13.2, ax: 20, az: 14, laneHalfWidth: 1.5, doorZ: 13.2 };
 function insideChaoGarden(x: number, z: number): boolean {
   const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
   const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
@@ -145,9 +145,11 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // jumbotron, and there is no way through a jumbotron.
   if (insidePokemonBowl(fromX, fromZ) !== insidePokemonBowl(toX, toZ)
     && !(inPokemonTunnelLane(fromX, fromZ) || inPokemonTunnelLane(toX, toZ))) return true;
-  // The Chao Garden's cliffs.
-  if (insideChaoGarden(fromX, fromZ) !== insideChaoGarden(toX, toZ)
-    && !(inChaoGardenLane(fromX, fromZ) || inChaoGardenLane(toX, toZ))) return true;
+  // The Chao Garden: the tunnel bore is the only road through the old room,
+  // and past the shell the cliff-edge ellipse is the only fence.
+  if (toX > PARTITION_WALL_X && toX <= 42.7 && toZ > 4.8 && toZ < 21.6
+    && !inChaoGardenLane(toX, toZ)) return true;
+  if (toX > 42.7 && !insideChaoGarden(toX, toZ) && !inChaoGardenLane(toX, toZ)) return true;
   // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
   if (toX > SILENT_EAST_X && toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;

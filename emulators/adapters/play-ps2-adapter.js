@@ -1,6 +1,6 @@
 import { FRAME_SIGNALS, createCapabilities, estimateLoadTimeoutMs, preflightAssets } from '../emulator-adapter.js';
 
-export const PLAY_FRAME_SRC = 'emulators/play/index.html?v=garden-door-2';
+export const PLAY_FRAME_SRC = 'emulators/play/index.html?v=garden-tunnel-1';
 
 /**
  * Milestone 11.5 — thin wrapper around the existing experimental Play! PS2 core.

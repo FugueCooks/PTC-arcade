@@ -56,7 +56,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // The Chao Garden meadow spills out of the building's east wall the way
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
-const CHAO_EXPANSE={minX:42.7,maxX:73.2,minZ:2.6,maxZ:23.8};
+const CHAO_EXPANSE={minX:42.7,maxX:86.5,minZ:-1.5,maxZ:27.5};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -323,8 +323,8 @@ const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MA
 // The west shell opens where Silent Hill spills out of the building; the
 // wall resumes at the fog's south line and runs to the back of the building.
 box(.3,5,92.4,0x180d31,-SHELL_HALF_WIDTH,2.5,4.2);
-box(.3,5,72,0x180d31,SHELL_HALF_WIDTH,2.5,-31.2);
-box(.3,5,28.8,0x180d31,SHELL_HALF_WIDTH,2.5,36);
+box(.3,5,78.4,0x180d31,SHELL_HALF_WIDTH,2.5,-28);
+box(.3,5,35.2,0x180d31,SHELL_HALF_WIDTH,2.5,32.8);
 // The north wall runs on across the annex, which closes its own west and
 // south sides.
 // The north wall parts where the stadium concourse runs out to the globe.
@@ -1261,13 +1261,42 @@ const chaoGardenFallback=new THREE.Mesh(
 );
 chaoGardenFallback.name='chao-garden-loading-floor';
 chaoGardenFallback.rotation.x=-Math.PI/2;
-chaoGardenFallback.scale.set(15.9,10.5,1);
-chaoGardenFallback.position.set(37.8,.025,13.2);
+chaoGardenFallback.scale.set(20,14,1);
+chaoGardenFallback.position.set(66,.025,13.2);
 scene.add(chaoGardenFallback);
-for(const [lx,lz] of [[-11,-5],[-11,5],[0,-6],[0,6],[10,0],[14,-6],[-15.5,0]]){
-  const sun=new THREE.PointLight(0xfff3d0,6.4,30,1.8);
-  sun.position.set(37.8+lx,6.2,13.2+lz);
+for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
+  const sun=new THREE.PointLight(0xfff3d0,7,38,1.8);
+  sun.position.set(66+lx,7,13.2+lz);
   scene.add(sun);managedSceneLights.push(sun);
+}
+// The way out is a rough stone bore: from the arcade door, through the old
+// room's dark, out the shell, surfacing at the meadow's edge. Jittered slabs
+// instead of clean boxes so it reads as rock, not corridor.
+{
+  const bore=new THREE.Group();bore.name='chao-garden-tunnel';scene.add(bore);
+  const boreRock=new THREE.MeshStandardMaterial({color:0x8f8a82,roughness:.92,metalness:.04});
+  const boreRockDark=new THREE.MeshStandardMaterial({color:0x69645d,roughness:.95,metalness:.03});
+  for(let x=22.2;x<46.6;x+=2.9){
+    const j=((x*37)%10)/10;
+    for(const side of [-1,1]){
+      const slab=new THREE.Mesh(new THREE.BoxGeometry(3.15,3.6+j*.5,.7+j*.3),j>.5?boreRock:boreRockDark);
+      slab.position.set(x,1.8,13.2+side*(2+j*.22));
+      slab.rotation.y=(j-.5)*.14;slab.rotation.z=side*(j-.5)*.05;
+      bore.add(slab);
+    }
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(3.15,.7+j*.3,4.9),j>.5?boreRockDark:boreRock);
+    cap.position.set(x,3.55+j*.25,13.2+(j-.5)*.3);
+    cap.rotation.x=(j-.5)*.08;cap.rotation.y=(j-.5)*.1;
+    bore.add(cap);
+  }
+  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(4.6,.08,3.8),boreRockDark);
+  boreFloor.position.set(44.6,.01,13.2);bore.add(boreFloor);
+  for(const x of [27,34.5,42]){
+    const bulb=new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.3),new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:2.2}));
+    bulb.position.set(x,2.9,14.6);bore.add(bulb);
+    const lantern=new THREE.PointLight(0xffd9a0,2.4,8,1.9);
+    lantern.position.set(x,2.6,13.6);bore.add(lantern);managedSceneLights.push(lantern);
+  }
 }
 /**
  * The Silent Hill buildings: a supplied SH1 building model, cloned along both
@@ -1390,18 +1419,17 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-door-2',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-1',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
-      // The doorway opens straight onto grass: the meadow's west edge lands
-      // on the partition door, so the step from arcade tile to garden is one
-      // stride. The model's cliff ring falls behind the wall and is dropped
-      // whole; its side cliffs pancake along the dividers, so the old room's
-      // walls read as rock. Transform derived from the measured meadow
-      // footprint (x -110..90, z -150..-10 at y~0).
-      const GARDEN_SCALE=.16,GARDEN_TX=36.1,GARDEN_TY=.05,GARDEN_TZ=.4;
-      // The model's own skybox and sea ship too, as a second mount: a dome
-      // whose west face is pushed just outside the shell so no other room
-      // ever sees a slice of sky through its walls.
+      // The garden lives wholly outside the building: the tunnel surfaces at
+      // the meadow's west edge and nothing green or rocky crosses the shell.
+      // Turned 180 so the pond and waterfall sit at the far end; transform
+      // derived from the measured meadow footprint (x -110..90, z -150..-10).
+      const GARDEN_SCALE=.2,GARDEN_TX=64,GARDEN_TY=.05,GARDEN_TZ=-2.8;
+      // The model's skybox and sea ride along as a second mount, scaled and
+      // placed so the dome arches over the whole meadow and its western rim
+      // still stops short of the arcade: outside the door it is all garden
+      // and sky, and from the arcade it is all wall.
       const skySource=gltf.scene.clone(true),skyMount=new THREE.Group();
       const bounds=new THREE.Box3(),size=new THREE.Vector3();
       const isFarField=node=>{bounds.setFromObject(node);bounds.getSize(size);return Math.max(size.x,size.y,size.z)>500};
@@ -1418,62 +1446,25 @@ function installChaoGardenModel(){
       mount.name='chao-garden-environment';mount.userData.chaoGarden=true;
       scene.add(mount);
       skySource.rotation.y=Math.PI;skyMount.add(skySource);
-      skyMount.scale.setScalar(.057);
-      skyMount.position.set(58,-.5,13.2);
+      skyMount.scale.setScalar(.08);
+      skyMount.position.set(95,-.5,13.2);
       skyMount.name='chao-garden-sky';
       scene.add(skyMount);
       scene.updateWorldMatrix(true,true);
-      // The ring and the rise land entirely west of the partition now, in
-      // ground the hall owns: any mesh wholly behind the wall goes, cleanly.
-      const westBounds=new THREE.Box3(),westDoomed=[];
+      // The model's east cliff ring and ramp would reach back into the
+      // building; every triangle that touches the shell's side goes.
+      const cutVertex=new THREE.Vector3();
       source.traverse(node=>{
-        if(!node.isMesh)return;
-        westBounds.setFromObject(node);
-        if(westBounds.max.x<21.9)westDoomed.push(node);
-      });
-      westDoomed.forEach(node=>node.removeFromParent());
-      // Inside the shell the garden behaves at every height: overreach
-      // pancakes into the partition and the two dividers and hides in them,
-      // so no cliff ever hangs over the hall. Outside the shell nothing is
-      // clamped — that is the whole point.
-      const worldVertex=new THREE.Vector3();
-      const clampMesh=(node,adjust)=>{
-        if(!node.isMesh||!node.geometry?.attributes?.position)return;
-        const positions=node.geometry.attributes.position;
-        let touched=false;
-        for(let i=0;i<positions.count;i++){
-          worldVertex.fromBufferAttribute(positions,i);
-          node.localToWorld(worldVertex);
-          if(!adjust(worldVertex))continue;
-          node.worldToLocal(worldVertex);
-          positions.setXYZ(i,worldVertex.x,worldVertex.y,worldVertex.z);touched=true;
-        }
-        if(touched){positions.needsUpdate=true;node.geometry.computeBoundingSphere();node.geometry.computeBoundingBox();}
-      };
-      const cutMesh=(node,doomedTriangle)=>{
         if(!node.isMesh||!node.geometry?.index)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const vertexAt=v=>{worldVertex.fromBufferAttribute(positions,v);return node.localToWorld(worldVertex)};
+        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
-          if(doomedTriangle([vertexAt(a).clone(),vertexAt(b).clone(),vertexAt(c).clone()]))continue;
+          if(west(a)||west(b)||west(c))continue;
           kept.push(a,b,c);
         }
         if(kept.length!==index.count)node.geometry.setIndex(kept);
-      };
-      source.traverse(node=>clampMesh(node,v=>{
-        if(v.x>=42.7)return false;
-        const x=Math.max(v.x,22.02),z=Math.min(Math.max(v.z,5.12),21.28);
-        if(x===v.x&&z===v.z)return false;
-        v.x=x;v.z=z;return true;
-      }));
-      // The pancaked sheet on the partition plane would slab the doorway
-      // shut; where it crosses the door band it goes entirely.
-      source.traverse(node=>cutMesh(node,verts=>
-        verts.every(v=>v.x<=22.05)&&verts.some(v=>v.z>11.4&&v.z<15)));
-      // The sky dome and sea keep only their eastern half: a flattened wall
-      // of sky standing over the building is exactly what ruins the arcade.
-      skySource.traverse(node=>cutMesh(node,verts=>verts.some(v=>v.x<43.3)));
+      });
       chaoGardenFallback.visible=false;
     },undefined,error=>console.warn('The Chao Garden model could not load.',error));
   }catch(error){console.warn('The Chao Garden model loader could not initialize.',error)}})();
@@ -3155,20 +3146,24 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={cx:37.8,cz:13.2,ax:15.9,az:10.5,laneHalfWidth:1.5,doorZ:13.2};
+const CHAO_GARDEN={cx:66,cz:13.2,ax:20,az:14,laneHalfWidth:1.5,doorZ:13.2};
 function resolveChaoGardenCollisions(previousX,previousZ){
+  // Three stretches, one rule each: the tunnel holds you to its bore, the
+  // meadow holds you inside the cliff-edge ellipse, and the lane stitches
+  // them together. A step that lands on none of them goes back where it was.
   if(playerPosition.x<21.6)return;
-  if(playerPosition.x<42.7&&(playerPosition.z<4.8||playerPosition.z>21.6))return;
-  if(Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5)return;
+  const inLane=Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5;
+  if(playerPosition.x<42.7){
+    if(playerPosition.z<4.8||playerPosition.z>21.6)return;
+    if(!inLane){playerPosition.x=previousX;playerPosition.z=previousZ}
+    return;
+  }
+  if(inLane)return;
   const dx=(playerPosition.x-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,dz=(playerPosition.z-CHAO_GARDEN.cz)/CHAO_GARDEN.az;
-  const now=dx*dx+dz*dz;
-  const pdx=(previousX-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,pdz=(previousZ-CHAO_GARDEN.cz)/CHAO_GARDEN.az;
-  const before=pdx*pdx+pdz*pdz;
-  if((before<=1)===(now<=1))return;
-  const scale=(before<=1?.995:1.005)/Math.sqrt(now);
-  playerPosition.x=CHAO_GARDEN.cx+(playerPosition.x-CHAO_GARDEN.cx)*scale;
-  playerPosition.z=CHAO_GARDEN.cz+(playerPosition.z-CHAO_GARDEN.cz)*scale;
+  if(dx*dx+dz*dz<=1)return;
+  playerPosition.x=previousX;playerPosition.z=previousZ;
 }
+
 function resolvePokemonBowlCollisions(previousX,previousZ){
   if(playerPosition.z>-70)return;
   // The tunnel lane, on the doorway side only: the matching band of ellipse on

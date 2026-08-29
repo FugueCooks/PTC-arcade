@@ -75,7 +75,7 @@ void test('the floor is the main rectangle plus the Silent Hill expanse, in all 
   assert.deepEqual(arena, { minX: -12, maxX: 66, minZ: -138.6, maxZ: -42.5 });
   // The garden meadow hangs off the east wall, its own region.
   const garden = clientRegion('CHAO_EXPANSE');
-  assert.deepEqual(garden, { minX: 42.7, maxX: 73.2, minZ: 2.6, maxZ: 23.8 });
+  assert.deepEqual(garden, { minX: 42.7, maxX: 86.5, minZ: -1.5, maxZ: 27.5 });
   assert.equal(garden.minX, clientBounds.maxX, 'the garden must meet the main rectangle');
   // Both authorities carry the same numbers, so no region drifts at a seam.
   for (const [name, source] of [['server', server], ['worker', worker]] as const) {
@@ -83,7 +83,7 @@ void test('the floor is the main rectangle plus the Silent Hill expanse, in all 
       `${name} must enforce the Silent Hill expanse`);
     assert.ok(source.includes('return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;'),
       `${name} must enforce the arena expanse`);
-    assert.ok(source.includes('if (x >= 42.7 && x <= 73.2 && z >= 2.6 && z <= 23.8) return true;'),
+    assert.ok(source.includes('if (x >= 42.7 && x <= 86.5 && z >= -1.5 && z <= 27.5) return true;'),
       `${name} must enforce the garden expanse`);
   }
 });
