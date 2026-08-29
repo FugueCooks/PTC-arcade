@@ -1346,15 +1346,26 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   header.position.set(22.5,4.25,13.2);bore.add(header);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(41.4,.06,5.6),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
   boreFloor.position.set(42.3,.03,13.2);bore.add(boreFloor);
-  // The flared mouth: rock slabs line the funnel so the cut cliff never
-  // shows its hollow inside, and the tube opens out like a natural portal.
-  for(const side of [-1,1]){
-    const flare=new THREE.Mesh(new THREE.BoxGeometry(5.2,4.6,.7),boreRock);
-    flare.position.set(59.6,2.1,13.2+side*2.9);
-    flare.rotation.y=side*-.28;bore.add(flare);
+  // The mouth is a mound of marble-toned boulders, oversized and sunk so
+  // nothing floats and nothing peeks through from behind.
+  const portalRock=new THREE.MeshBasicMaterial({map:rockTexture,color:0xc9d3dd,fog:false});
+  const portalPieces=[
+    [59.8,1.6,9.4, 5.6,7.4,4.6, .34,-.12],
+    [59.8,1.6,17.0, 5.6,7.4,4.6, -.34,.12],
+    [59.4,5.7,13.2, 7.8,4.6,7.4, .1,.05],
+    [61.4,2.2,16.9, 4.6,5.8,4.2, -.5,0],
+    [61.4,2.2,9.6, 4.6,5.8,4.2, .5,0],
+    [58.6,7.8,13.2, 6.4,3.8,6.2, -.15,-.06]
+  ];
+  for(const [px,py,pz,sx,sy,sz,ry,rz] of portalPieces){
+    const boulder=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),portalRock);
+    boulder.position.set(px,py,pz);
+    boulder.rotation.set(0,ry,rz);
+    bore.add(boulder);
   }
-  const flareTop=new THREE.Mesh(new THREE.BoxGeometry(5.4,.8,7.6),boreRock);
-  flareTop.position.set(59.7,4.35,13.2);flareTop.rotation.z=.04;bore.add(flareTop);
+  // a stone exit pad wide enough that no sea sliver survives beside the path
+  const exitPad=new THREE.Mesh(new THREE.BoxGeometry(7.2,.07,8.2),new THREE.MeshBasicMaterial({map:rockTexture,color:0xb9c4cf,fog:false}));
+  exitPad.position.set(59.6,.028,13.2);bore.add(exitPad);
   for(const x of [26.5,33.5,40.5,46.5,51.6,57.2]){
     const bulb=new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.3),new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:2.2}));
     bulb.position.set(x,2.72,14.15);bore.add(bulb);
@@ -1556,7 +1567,7 @@ function installChaoGardenEggs(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-5',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-6',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3471,7 +3482,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-exact-5';
+const ARCADE_BUILD='garden-exact-6';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
