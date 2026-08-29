@@ -13,7 +13,7 @@ void test('the supplied Chao Garden GLB replaces the procedural runtime garden',
 
   assert.equal(modelStats.size, 2_493_028, 'the copied Sonic Adventure 2 GLB should remain intact');
   assert.match(arcade, /function installChaoGardenModel\(\)/);
-  assert.match(arcade, /assets\/models\/chao-garden\.glb\?v=chao-garden-2/);
+  assert.match(arcade, /assets\/models\/chao-garden\.glb\?v=gba-row-1/);
   assert.doesNotMatch(arcade, /buildChaoGarden\(ANNEX_ROOM_CENTER_X,13\.2\)/,
     'the retained rollback builder must not instantiate the old garden');
   assert.doesNotMatch(arcade, /assets\/models\/chao-garden-props\.glb/);

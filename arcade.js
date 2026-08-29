@@ -1370,7 +1370,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden.glb?v=chao-garden-2',gltf=>{
+    loader.load('assets/models/chao-garden.glb?v=gba-row-1',gltf=>{
       const source=gltf.scene,mount=new THREE.Group(),discard=[];
       // The SA2 garden faces local -Z. Turn that opening toward the room's
       // west-side doorway, then fit the rotated result in world coordinates.
@@ -1471,19 +1471,9 @@ function buildSilentHillBlock(){
     const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.19,.19,.14,10),tyre);
     wheel.rotation.z=Math.PI/2;wheel.position.set(CX+.9+dx,.19,CZ+1.2+dz);scene.add(wheel);
   }
-  // Dead streetlamps and poles: silhouettes for the fog to swallow.
-  const ironwork=new THREE.MeshStandardMaterial({color:0x17191c,roughness:.7,metalness:.5});
-  for(const [x,z,lamp] of [[-41.2,-64,true],[-41.2,-55,true],[-23.7,-61,true],[-41.2,-46,true],[-23.7,-44.5,true],[-23.7,-52,true],[-30.4,-65.8,true],[-23.7,-66,false],[-41.2,-50.5,false],[-34.6,-43.4,false],[-47,-46.6,true],[-53,-57.4,true],[-59.5,-46.6,true],[-63.6,-52,true],[-50,-57.4,false]]){
-    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,lamp?3.6:4.6,7),ironwork);
-    pole.position.set(x,(lamp?3.6:4.6)/2,z);scene.add(pole);
-    if(lamp){
-      const head=new THREE.Mesh(new THREE.BoxGeometry(.34,.16,.2),ironwork);
-      head.position.set(x+(x<CX?.24:-.24),3.62,z);scene.add(head);
-      const glow=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),
-        new THREE.MeshBasicMaterial({color:0xd9dcc4,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}));
-      glow.position.copy(head.position);glow.position.y-=.12;scene.add(glow);
-    }
-  }
+  // The streetlamps and their wires are gone: bare grey sticks floating in
+  // fog read as debug geometry, not a dead town. The fog and the buildings
+  // carry the street on their own.
   // The fog: a soft radial billboard, layered standing and lying down. Static,
   // unlit, additive-free — grey on grey is what makes it read as weather.
   const fogCanvas=document.createElement('canvas');fogCanvas.width=128;fogCanvas.height=128;
@@ -1567,14 +1557,6 @@ function buildSilentHillBlock(){
     line.rotation.x=-Math.PI/2;line.rotation.z=1.2;
     line.rotation.z=Math.PI/2;
     line.position.set(-62.2,.03,-56+i*2.05);scene.add(line);
-  }
-  // Sagging wires between the poles, for the fog to hang from.
-  const wireMaterial=new THREE.MeshBasicMaterial({color:0x0c0e10});
-  for(const [x1,z1,x2,z2] of [[-41.2,-64,-23.7,-61],[-41.2,-55,-41.2,-46],[-23.7,-52,-23.7,-44.5],[-47,-46.6,-53,-57.4],[-59.5,-46.6,-63.6,-52]]){
-    const length=Math.hypot(x2-x1,z2-z1);
-    const wire=new THREE.Mesh(new THREE.BoxGeometry(.025,.025,length),wireMaterial);
-    wire.position.set((x1+x2)/2,3.32,(z1+z2)/2);
-    wire.rotation.y=Math.atan2(x2-x1,z2-z1);wire.rotation.x=.04;scene.add(wire);
   }
 }
 buildSilentHillBlock();
@@ -1912,16 +1894,29 @@ function makeModelCabinet(id,name,x,z,hue,system,model){
     const rail=new THREE.Mesh(railGeometry,underglowMat);rail.scale.set(railScale,1,railScale);rail.position.set(px,.106,pz);g.add(rail);
   }
   const floorGlow=new THREE.PointLight(hue,1.3,3,2);floorGlow.position.set(0,.14,0);g.add(floorGlow);
-  const plate=new THREE.Mesh(new THREE.PlaneGeometry(1.9,.58),new THREE.MeshBasicMaterial({map:cabinetMarqueeTexture(name,hue,system),side:THREE.DoubleSide}));
-  plate.position.set(0,model.plateY??3.4,.1);g.add(plate);
+  if(!model.noPlate){
+    const plate=new THREE.Mesh(new THREE.PlaneGeometry(1.9,.58),new THREE.MeshBasicMaterial({map:cabinetMarqueeTexture(name,hue,system),side:THREE.DoubleSide}));
+    plate.position.set(0,model.plateY??3.4,.1);g.add(plate);
+  }
+  // Key art instead of a text marquee where the user supplied it: a standing
+  // pad on the floor in front of the machine, or a banner across the machine's
+  // blank top. Both load lazily and simply stay absent until their file exists.
+  const artPlane=(art,place)=>{if(!art)return;cabinetArtLoader.load('assets/art/pokemon/'+art.file+'.jpg?v=poke-mats-1',texture=>{
+    texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
+    const aspect=texture.image.height/texture.image.width;
+    const mesh=new THREE.Mesh(new THREE.PlaneGeometry(art.w,art.w*aspect),new THREE.MeshBasicMaterial({map:texture}));
+    place(mesh,aspect);g.add(mesh);
+  },undefined,()=>{});};
+  artPlane(model.mat,mesh=>{mesh.rotation.x=-Math.PI/2;mesh.position.set(0,.025,model.matZ??1.35)});
+  artPlane(model.top,mesh=>{mesh.position.set(0,model.top.y,model.top.z);mesh.rotation.x=model.top.tilt??0});
   const statusMaterial=new THREE.MeshStandardMaterial({color:0x50ff9a,emissive:0x50ff9a,emissiveIntensity:2.4});
-  const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(1.05,(model.plateY??3.4)-.02,.1);g.add(statusLight);
+  const statusLight=new THREE.Mesh(cabinetGeometry.statusLight,statusMaterial);statusLight.position.set(1.05,model.statusY??(model.plateY??3.4)-.02,.1);g.add(statusLight);
   const screen=new THREE.Mesh(new THREE.PlaneGeometry(.72,.54),new THREE.MeshBasicMaterial({color:0x050710}));
   screen.position.set(0,1.4,model.screenZ??.2);screen.visible=false;g.add(screen);
   void loadPokemonMachine(model.file).then(source=>{
     const body=source.clone(true);
     body.scale.setScalar(model.scale);
-    body.position.y=(model.lift??0)+.1;
+    body.position.y=(model.lift??0)+.1;body.position.z=model.offsetZ??0;
     g.add(body);
   }).catch(error=>console.warn('A Pokemon machine model could not load.',error));
   scene.add(g);
@@ -2198,22 +2193,23 @@ for(const [index,x,z,rotation,hue] of n64CabinetLayout){
 const POKEMON_MACHINE_MODELS={
   gb:{file:'assets/models/pokemon/gameboy-cabinet.glb?v=poke-machines-1',scale:.17,plateY:3.35,plinthScale:1.15},
   arc:{file:'assets/models/pokemon/pokemon-arcade-cabinet.glb?v=poke-machines-1',scale:.374,plateY:3.9,plinthScale:1.15},
-  ds:{file:'assets/models/pokemon/nds-cabinet.glb?v=poke-machines-1',scale:.22,plateY:2.6,plinthScale:1.6}
+  ds:{file:'assets/models/pokemon/nds-cabinet.glb?v=poke-machines-1',scale:.22,plateY:2.6,plinthScale:1.6},
+  gbasp:{file:'assets/models/pokemon/gba-sp-cabinet.glb?v=poke-machines-2',scale:.5,plateY:2.6,plinthScale:1.15,lift:.61,offsetZ:-.48}
 };
 const POKEMON_MACHINE_ROW=[
-  ['gameboy-cabinet-01','gb',1.46,0xff5f5f],
-  ['gameboy-cabinet-02','gb',3.5,0x5f8cff],
-  ['n64-cabinet-01','arc',5.49,0xffd23e],
-  ['gameboy-cabinet-03','gb',7.49,0xffe45f],
+  ['gameboy-cabinet-01','gb',1.46,0xff5f5f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-red-mat',w:1.8}}],
+  ['gameboy-cabinet-02','gb',3.5,0x5f8cff,{noPlate:true,statusY:3.06,mat:{file:'pokemon-blue-mat',w:1.8}}],
+  ['n64-cabinet-01','arc',5.49,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner',w:1.07,y:1.93,z:.56,tilt:-.08}}],
+  ['gameboy-cabinet-03','gb',7.49,0xffe45f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-yellow-mat',w:1.8}}],
   ['gameboy-cabinet-04','gb',9.52,0xd9b44a],
   ['gameboy-cabinet-05','gb',11.54,0xc8ccd4],
   ['gameboy-cabinet-06','gb',13.57,0x8ee6ff],
-  ['gameboy-cabinet-07','gb',15.6,0xd45f5f],
-  ['gameboy-cabinet-08','gb',17.63,0x4a8cd4],
-  ['gameboy-cabinet-09','gb',19.66,0xff8c5f],
-  ['gameboy-cabinet-10','gb',21.7,0x7dff67],
-  ['gameboy-cabinet-11','gb',23.73,0xb08cff],
-  ['gameboy-cabinet-12','gb',25.76,0x4ad48c],
+  ['gameboy-cabinet-07','gbasp',15.6,0xd45f5f],
+  ['gameboy-cabinet-08','gbasp',17.63,0x4a8cd4],
+  ['gameboy-cabinet-09','gbasp',19.66,0xff8c5f],
+  ['gameboy-cabinet-10','gbasp',21.7,0x7dff67],
+  ['gameboy-cabinet-11','gbasp',23.73,0xb08cff],
+  ['gameboy-cabinet-12','gbasp',25.76,0x4ad48c],
   ['nds-cabinet-01','ds',28.4,0x8cb4ff],
   ['nds-cabinet-02','ds',31.65,0xffb4d9],
   ['nds-cabinet-03','ds',34.9,0xd9d9e6],
@@ -2224,10 +2220,10 @@ const POKEMON_MACHINE_ROW=[
   ['nds-cabinet-08','ds',51.15,0x5f5f74],
   ['nds-cabinet-09','ds',54.4,0xfafaff]
 ];
-for(const [cabinetId,kind,rowX,hue] of POKEMON_MACHINE_ROW){
+for(const [cabinetId,kind,rowX,hue,opts] of POKEMON_MACHINE_ROW){
   const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
   const label=hosted?hosted.name.toUpperCase():cabinetId.toUpperCase();
-  const model=POKEMON_MACHINE_MODELS[kind];
+  const model=opts?{...POKEMON_MACHINE_MODELS[kind],...opts}:POKEMON_MACHINE_MODELS[kind];
   makeModelCabinet(cabinetId,label,rowX,-127.2,hue,hosted?.system??(kind==='ds'?'nds':'gb'),model);
   configureHostedCabinet(cabinetId);
 }
