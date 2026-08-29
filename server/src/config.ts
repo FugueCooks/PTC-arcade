@@ -58,6 +58,9 @@ export interface ServerConfig {
   solanaAppDomain: string;
   solanaAppUri: string;
   solanaRpcUrl?: string;
+  /** The arcade token on pump.fun. Unset means the token features stand down. */
+  pumpTokenMint?: string;
+  pumpTokenSymbol: string;
   multiplayerTicketSecret?: string;
   multiplayerTicketTtlMs: number;
   operationsBootstrapSecret?: string;
@@ -130,6 +133,8 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     operationsOperators: environment.OPERATIONS_OPERATORS,
     operationsSessionTtlMs: seconds(environment.OPERATIONS_SESSION_TTL_SECONDS, 28_800, 300, 86_400),
     solanaNetwork: solanaNetwork(environment.SOLANA_NETWORK),
+    pumpTokenMint: environment.PUMP_TOKEN_MINT?.trim() || undefined,
+    pumpTokenSymbol: environment.PUMP_TOKEN_SYMBOL?.trim() || 'PTC',
     solanaAppDomain: appDomain(environment.SOLANA_APP_DOMAIN, environment.PUBLIC_APP_ORIGIN),
     solanaAppUri: publicUrl(environment.SOLANA_APP_URI ?? environment.PUBLIC_APP_ORIGIN) ?? 'http://localhost:8080',
     solanaRpcUrl: publicUrl(environment.SOLANA_RPC_URL),

@@ -21,6 +21,8 @@ import { createLogger } from './logging/logger.js';
 import { RuntimeMetrics } from './metrics/metrics.js';
 import { HealthService } from './health/health-service.js';
 import { installOperationalRoutes } from './http/operational-routes.js';
+import { installTokenRoutes } from './http/token-routes.js';
+import { TokenService } from './token/token-service.js';
 import { DrainController } from './shutdown/drain-controller.js';
 import { InMemoryRoomDirectory } from './rooms/room-directory.js';
 import { RoomLifecycleService } from './rooms/room-lifecycle-service.js';
@@ -223,6 +225,7 @@ const roomPlacement = new RoomPlacementService(rooms, roomDirectory, roomLifecyc
 const reconnectDirectory = redisBootstrapped && redis ? new RedisReconnectDirectory(redis.client, redisKeys) : new InMemoryReconnectDirectory();
 
 installOperationalRoutes(app, config, health, metrics, startedAt);
+installTokenRoutes(app, new TokenService({ mint: config.pumpTokenMint, symbol: config.pumpTokenSymbol, rpcUrl: config.solanaRpcUrl }));
 app.use(express.json({ limit: '16kb' }));
 // A refused mutation is either a real cross-site attempt or a misconfigured
 // PUBLIC_APP_ORIGIN, and the two are indistinguishable from the browser. Logged
