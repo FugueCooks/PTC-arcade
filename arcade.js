@@ -1282,8 +1282,8 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   skyGradient.addColorStop(.8,'#93b3d8');skyGradient.addColorStop(1,'#c9d8e8');
   skyContext.fillStyle=skyGradient;skyContext.fillRect(0,0,64,512);
   const skyTexture=new THREE.CanvasTexture(skyCanvas);skyTexture.colorSpace=THREE.SRGBColorSpace;
-  const dome=new THREE.Mesh(new THREE.SphereGeometry(37.6,64,32),new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide,fog:false}));
-  dome.position.set(81,-.5,33.7);dome.scale.y=.72;
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(70,64,32),new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide,fog:false}));
+  dome.position.set(113,-.5,36);dome.scale.y=.72;
   // the corridor notch: fine mesh, so the hole is small and hides in the rock
   const domePositions=dome.geometry.attributes.position,domeIndex=dome.geometry.index,keptSky=[];
   const domeVertex=new THREE.Vector3();
@@ -1295,8 +1295,8 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   }
   dome.geometry.setIndex(keptSky);
   scene.add(dome);
-  const sea=new THREE.Mesh(new THREE.CircleGeometry(37.4,48),new THREE.MeshStandardMaterial({color:0x1c4d8f,roughness:.35,metalness:.1}));
-  sea.rotation.x=-Math.PI/2;sea.position.set(81,-2.4,33.7);scene.add(sea);
+  const sea=new THREE.Mesh(new THREE.CircleGeometry(69.5,48),new THREE.MeshStandardMaterial({color:0x1c4d8f,roughness:.35,metalness:.1}));
+  sea.rotation.x=-Math.PI/2;sea.position.set(113,-2.4,36);scene.add(sea);
 }
 // The way out is a stone bore: straight walls and one smooth barrel vault
 // from the arcade door, through the old room's dark, out the shell, and past
@@ -1322,7 +1322,7 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   rockContext.globalAlpha=1;
   const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
   const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
-  const BORE_MIN_X=21.9,BORE_MAX_X=59.8,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
+  const BORE_MIN_X=21.9,BORE_MAX_X=57.6,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
   for(const side of [-1,1]){
     const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
     wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
@@ -1334,13 +1334,15 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   header.position.set(22.5,4.25,13.2);bore.add(header);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(39.4,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
   boreFloor.position.set(41.3,.03,13.2);bore.add(boreFloor);
-  // The mouth: two jambs and a lintel, so the exit reads as carved rock.
+  // The flared mouth: rock slabs line the funnel so the cut cliff never
+  // shows its hollow inside, and the tube opens out like a natural portal.
   for(const side of [-1,1]){
-    const jamb=new THREE.Mesh(new THREE.BoxGeometry(1.5,4.2,1.1),boreRock);
-    jamb.position.set(BORE_MAX_X-.4,2.1,13.2+side*2.55);jamb.rotation.y=side*.18;bore.add(jamb);
+    const flare=new THREE.Mesh(new THREE.BoxGeometry(5.2,4.6,.7),boreRock);
+    flare.position.set(59.6,2.1,13.2+side*2.9);
+    flare.rotation.y=side*-.28;bore.add(flare);
   }
-  const lintel=new THREE.Mesh(new THREE.BoxGeometry(1.7,1.2,5.9),boreRock);
-  lintel.position.set(BORE_MAX_X-.4,4.15,13.2);lintel.rotation.z=.05;bore.add(lintel);
+  const flareTop=new THREE.Mesh(new THREE.BoxGeometry(5.4,.8,7.6),boreRock);
+  flareTop.position.set(59.7,4.35,13.2);flareTop.rotation.z=.04;bore.add(flareTop);
   for(const x of [26.5,33.5,40.5,46.5,51.6,57.2]){
     const bulb=new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.3),new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:2.2}));
     bulb.position.set(x,2.72,14.15);bore.add(bulb);
@@ -1469,7 +1471,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-3',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-4',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3294,7 +3296,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-authored-3';
+const ARCADE_BUILD='garden-authored-4';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
