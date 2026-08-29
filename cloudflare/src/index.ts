@@ -30,7 +30,7 @@ const ROOM_ID = 'main';
 const PROTOCOL_VERSION = 1;
 const PLAYER_HEIGHT = 1.65;
 const RECONNECT_GRACE_MS = 10_000;
-const MAX_SPEED_PER_SECOND = 10.5;
+const MAX_SPEED_PER_SECOND = 16;
 const MOVEMENT_PACKET_MS = 50;
 const MOVEMENT_TOLERANCE = 0.3;
 const MIN_WORLD_X = -42.7;
@@ -80,7 +80,7 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 62 };
 // The walkable meadow, measured row by row off the model's flat grass.
 // Matches CHAO_MEADOW_ROWS in arcade.js exactly.
-const CHAO_MEADOW_ROWS: Array<[number, number, number]> = [[-0.8,62.4,87.6],[1.2,58.4,87.6],[3.2,54.4,85.6],[5.2,50.4,85.6],[7.2,46.4,85.6],[9.2,46.4,87.6],[11.2,44.4,85.6],[13.2,46.4,85.6],[15.2,46.4,83.6],[17.2,46.4,83.6],[19.2,46.4,83.6],[21.2,46.4,83.6],[23.2,46.4,81.6],[25.2,48.4,79.6],[27.2,48.4,77.6],[29.2,60.4,77.6],[31.2,62.4,77.6]];
+const CHAO_MEADOW_ROWS: Array<[number, number, number]> = [[-5.8,46,94],[-4.8,46,95],[-3.8,46,96],[-2.8,46,90],[-1.8,46,89],[-0.8,45,89],[0.2,45,89],[1.2,45,89],[2.2,45,89],[3.2,45,89],[4.2,45,90],[5.2,45,91],[6.2,44,91],[7.2,44,90],[8.2,44,90],[9.2,44,89],[10.2,44,90],[11.2,43,90],[12.2,43,90],[13.2,44,91],[14.2,45,94],[15.2,45,94],[16.2,45,94],[17.2,46,93],[18.2,46,93],[19.2,46,93],[20.2,46,93],[21.2,46,93],[22.2,45,94],[23.2,45,94],[24.2,46,94],[25.2,47,95],[26.2,48,95],[27.2,48,95],[28.2,48,95],[29.2,59,95],[30.2,60,83],[31.2,61,83]];
 function insideChaoMeadow(x: number, z: number): boolean {
   const rows = CHAO_MEADOW_ROWS;
   if (z < rows[0][0] || z > rows[rows.length - 1][0]) return false;
@@ -681,7 +681,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
-  if (x >= 42.7 && x <= 88 && z >= -1.2 && z <= 31.5) return true;
+  if (x >= 42.7 && x <= 96.3 && z >= -6 && z <= 31.5) return true;
   // The arena's own region, north of the building. Matches POKEMON_EXPANSE
   // in arcade.js.
   return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;
