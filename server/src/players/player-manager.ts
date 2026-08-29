@@ -79,7 +79,7 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 61 };
+const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 63.2 };
 // Past the shell the client fences against the garden's real geometry; the
 // authoritative copies hold the outer rectangle and the bore, which is what
 // they can state without the model.

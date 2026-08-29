@@ -1277,10 +1277,22 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
 {
   const skyCanvas=document.createElement('canvas');skyCanvas.width=64;skyCanvas.height=512;
   const skyContext=skyCanvas.getContext('2d');
+  skyCanvas.width=512;
   const skyGradient=skyContext.createLinearGradient(0,0,0,512);
-  skyGradient.addColorStop(0,'#1c2f6e');skyGradient.addColorStop(.45,'#3f63b0');
-  skyGradient.addColorStop(.8,'#93b3d8');skyGradient.addColorStop(1,'#c9d8e8');
-  skyContext.fillStyle=skyGradient;skyContext.fillRect(0,0,64,512);
+  skyGradient.addColorStop(0,'#2050c8');skyGradient.addColorStop(.5,'#3f7ade');
+  skyGradient.addColorStop(.82,'#9fd0f2');skyGradient.addColorStop(1,'#d9ecf8');
+  skyContext.fillStyle=skyGradient;skyContext.fillRect(0,0,512,512);
+  // puffy clouds, drawn as clustered soft ellipses in the sky's middle band
+  for(let cloud=0;cloud<14;cloud++){
+    const cx=(cloud*167)%512,cy=140+((cloud*97)%160),puffs=4+cloud%4;
+    for(let puff=0;puff<puffs;puff++){
+      const px=cx+((puff*53)%60)-30,py=cy+((puff*37)%22)-11,r=16+((cloud+puff)*29)%18;
+      const glow=skyContext.createRadialGradient(px,py,r*.2,px,py,r);
+      glow.addColorStop(0,'rgba(255,255,255,.95)');glow.addColorStop(.7,'rgba(255,255,255,.55)');glow.addColorStop(1,'rgba(255,255,255,0)');
+      skyContext.fillStyle=glow;
+      skyContext.beginPath();skyContext.ellipse(px,py,r*1.5,r,0,0,Math.PI*2);skyContext.fill();
+    }
+  }
   const skyTexture=new THREE.CanvasTexture(skyCanvas);skyTexture.colorSpace=THREE.SRGBColorSpace;
   const dome=new THREE.Mesh(new THREE.SphereGeometry(70,64,32),new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide,fog:false}));
   dome.position.set(113,-.5,36);dome.scale.y=.72;
@@ -1295,7 +1307,7 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   }
   dome.geometry.setIndex(keptSky);
   scene.add(dome);
-  const sea=new THREE.Mesh(new THREE.CircleGeometry(69.5,48),new THREE.MeshStandardMaterial({color:0x1c4d8f,roughness:.35,metalness:.1}));
+  const sea=new THREE.Mesh(new THREE.CircleGeometry(69.5,48),new THREE.MeshBasicMaterial({color:0x3f8fd6,fog:false}));
   sea.rotation.x=-Math.PI/2;sea.position.set(113,-2.4,36);scene.add(sea);
 }
 // The way out is a stone bore: straight walls and one smooth barrel vault
@@ -1332,8 +1344,8 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   vault.scale.set(1,1,.95);bore.add(vault);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
-  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(39.4,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
-  boreFloor.position.set(41.3,.03,13.2);bore.add(boreFloor);
+  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(41.4,.06,5.6),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
+  boreFloor.position.set(42.3,.03,13.2);bore.add(boreFloor);
   // The flared mouth: rock slabs line the funnel so the cut cliff never
   // shows its hollow inside, and the tube opens out like a natural portal.
   for(const side of [-1,1]){
@@ -1468,10 +1480,57 @@ function installSilentHillBuildings(){
     },undefined,error=>console.warn('Silent Hill buildings could not load.',error));
   }catch(error){console.warn('Silent Hill building loader could not initialize.',error)}})();
 }
+function installChaoGardenFlora(){
+  // Palms from the old procedural garden's prop file, and flower billboards,
+  // seated on the real ground by the same ray the walk uses. All full-bright.
+  void (async()=>{try{
+    const loader=await getOptimizedGltfLoader();
+    loader.load('assets/models/chao-garden-props.glb?v=chao-props-2',gltf=>{
+      const palm=gltf.scene.getObjectByName('Palm');
+      if(!palm)return;
+      palm.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material[0]:o.material;o.material=new THREE.MeshBasicMaterial({map:m.map??null,color:m.color?.clone()??new THREE.Color(0x3da53c),fog:false});o.castShadow=false;o.receiveShadow=false}});
+      for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,51,1.4,1.8]]){
+        const ground=chaoGroundAt(px,pz,9);
+        if(ground===null)continue;
+        const tree=palm.clone(true);
+        tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
+        scene.add(tree);
+      }
+    },undefined,()=>{});
+  }catch(error){console.warn('Garden palms could not load.',error)}})();
+  const flowerCanvas=document.createElement('canvas');flowerCanvas.width=flowerCanvas.height=64;
+  const flowerContext=flowerCanvas.getContext('2d');
+  const flowerColours=['#ff7fc4','#8fa8ff','#fff2f7','#ffd25f'];
+  flowerContext.clearRect(0,0,64,64);
+  for(let i=0;i<4;i++){
+    const fx=16+(i%2)*30,fy=16+Math.floor(i/2)*30;
+    flowerContext.fillStyle=flowerColours[i];
+    for(let petal=0;petal<5;petal++){
+      const angle=petal*Math.PI*2/5;
+      flowerContext.beginPath();flowerContext.ellipse(fx+Math.cos(angle)*6,fy+Math.sin(angle)*6,5,5,0,0,Math.PI*2);flowerContext.fill();
+    }
+    flowerContext.fillStyle='#ffe97a';
+    flowerContext.beginPath();flowerContext.arc(fx,fy,3.6,0,Math.PI*2);flowerContext.fill();
+  }
+  const flowerTexture=new THREE.CanvasTexture(flowerCanvas);flowerTexture.colorSpace=THREE.SRGBColorSpace;
+  const flowerMaterial=new THREE.MeshBasicMaterial({map:flowerTexture,transparent:true,side:THREE.DoubleSide,fog:false});
+  for(let i=0;i<26;i++){
+    const fx=63+((i*173)%370)/10,fz=6+((i*257)%480)/10;
+    const ground=chaoGroundAt(fx,fz,9);
+    if(ground===null)continue;
+    const patch=new THREE.Group();
+    for(const spin of [0,Math.PI/2]){
+      const quad=new THREE.Mesh(new THREE.PlaneGeometry(.55,.4),flowerMaterial);
+      quad.rotation.y=spin;quad.position.y=.2;patch.add(quad);
+    }
+    patch.position.set(fx,ground,fz);patch.rotation.y=i*1.7;
+    scene.add(patch);
+  }
+}
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-4',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-5',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1480,12 +1539,21 @@ function installChaoGardenModel(){
         if(node.isCamera||node.isLight){doomed.push(node);return}
         if(!node.isMesh)return;
         node.castShadow=false;node.receiveShadow=false;
+        // The reference look is the Dreamcast's: textures at full brightness,
+        // no scene lighting, no arcade fog. One material swap gets all of it.
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        const replaced=materials.map(material=>{
+          const bright=new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),transparent:material.transparent,opacity:material.opacity,side:material.side,fog:false});
+          return bright;
+        });
+        node.material=Array.isArray(node.material)?replaced:replaced[0];
       });
       doomed.forEach(node=>node.removeFromParent());
       source.name='chao-garden-environment';
       scene.add(source);
       chaoGardenMount=source;
       chaoGardenFallback.visible=false;
+      installChaoGardenFlora();
     },undefined,error=>console.warn('The Chao Garden model could not load.',error));
   }catch(error){console.warn('The Chao Garden model loader could not initialize.',error)}})();
 }
@@ -3172,7 +3240,7 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:61};
+const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.2};
 // The fence is the geometry itself, and so is the floor: a step stands
 // wherever a ray straight down finds ground within a stride's climb of the
 // player's feet, and the player's height follows that ground. Slopes and
@@ -3296,7 +3364,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-authored-4';
+const ARCADE_BUILD='garden-authored-5';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
