@@ -1295,7 +1295,7 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   }
   const skyTexture=new THREE.CanvasTexture(skyCanvas);skyTexture.colorSpace=THREE.SRGBColorSpace;
   const dome=new THREE.Mesh(new THREE.SphereGeometry(70,64,32),new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide,fog:false}));
-  dome.position.set(113,-.5,36);dome.scale.y=.72;
+  dome.position.set(113,-.5,43);dome.scale.y=.72;
   // the corridor notch: fine mesh, so the hole is small and hides in the rock
   const domePositions=dome.geometry.attributes.position,domeIndex=dome.geometry.index,keptSky=[];
   const domeVertex=new THREE.Vector3();
@@ -1308,7 +1308,7 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   dome.geometry.setIndex(keptSky);
   scene.add(dome);
   const sea=new THREE.Mesh(new THREE.CircleGeometry(69.5,48),new THREE.MeshBasicMaterial({color:0x3f8fd6,fog:false}));
-  sea.rotation.x=-Math.PI/2;sea.position.set(113,-2.4,36);scene.add(sea);
+  sea.rotation.x=-Math.PI/2;sea.position.set(113,-2.4,43);scene.add(sea);
 }
 // The way out is a stone bore: straight walls and one smooth barrel vault
 // from the arcade door, through the old room's dark, out the shell, and past
@@ -1571,7 +1571,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=garden-cast-1',gltf=>resolve(gltf.scene),undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=garden-cast-2',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1585,9 +1585,19 @@ function installChaoGardenCast(){
     node.material=Array.isArray(node.material)?swapped:swapped[0];
   });
   const place=(file,options)=>{
-    void loadSonicModel(file).then(source=>{
-      const model=source.clone(true);
+    void loadSonicModel(file).then(gltf=>{
+      // a skinned rig cannot survive a naive clone, and each is placed once
+      // anyway; static props clone freely
+      const skinned=Boolean(gltf.scene.getObjectByProperty('type','SkinnedMesh'));
+      const model=skinned?gltf.scene:gltf.scene.clone(true);
       brighten(model);
+      // skinned bounds confuse the culler into hiding whole characters
+      model.traverse(node=>{if(node.isMesh)node.frustumCulled=false});
+      if(gltf.animations.length){
+        const mixer=new THREE.AnimationMixer(model);
+        mixer.clipAction(gltf.animations[0]).play();
+        animatedMixers.push(mixer);
+      }
       const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
       const scale=options.height/Math.max(size.y,.001);
       const holder=new THREE.Group();
@@ -1610,7 +1620,8 @@ function installChaoGardenCast(){
   // the four hedgehogs and the fox
   place('amy.glb',{x:69,z:16,height:1.42,rotY:2.4});
   place('shadow.glb',{x:91,z:27,height:1.45,rotY:-2});
-  place('tails.glb',{x:77,z:57,height:1.35,rotY:0});
+  place('tails.glb',{x:75,z:50,height:1.35,rotY:0});
+  place('sonic.glb',{x:81,z:12,height:1.5,rotY:2.9});
   // Silver hangs just off the west cliff lip, mid-jump toward the meadow
   const silverLip=chaoGroundAt(57.4,26,20);
   place('silver.glb',{x:59.2,z:26,y:(silverLip??5)+0.5,height:1.45,rotY:-Math.PI/2});
@@ -1631,7 +1642,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-cast-1',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-cast-2',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3538,7 +3549,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-cast-1';
+const ARCADE_BUILD='garden-cast-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
