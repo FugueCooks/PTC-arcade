@@ -1315,6 +1315,12 @@ for(const [lx,lz] of [[-21,-12],[-21,12],[0,-15],[0,15],[19.5,0],[27,-12],[-28.5
   apron.position.set(52.8,.05,13.2);bore.add(apron);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
+  for(const [bz,bd] of [[21.8,12.8],[4.6,12.8]]){
+    const backdrop=new THREE.Mesh(new THREE.BoxGeometry(.9,14,bd),boreRock);
+    backdrop.position.set(43.4,7,bz);bore.add(backdrop);
+  }
+  const backdropTop=new THREE.Mesh(new THREE.BoxGeometry(.9,9.8,5.4),boreRock);
+  backdropTop.position.set(43.4,9.3,13.2);bore.add(backdropTop);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
   boreFloor.scale.z=1.65;boreFloor.position.set(BORE_CENTER_X,.03,13.2);bore.add(boreFloor);
   // The mouth: two jambs and a lintel, so the exit reads as carved rock.
@@ -1452,7 +1458,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-ray-1',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-ray-2',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -3225,19 +3231,22 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
 const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.5};
-// The fence is the geometry itself: a step in the garden stands wherever a
-// ray straight down finds real ground at a standable height. Grass, shelves,
-// pond shallows and slopes all pass; open sea and cliff walls do not.
+// The fence is the geometry itself, and so is the floor: a step stands
+// wherever a ray straight down finds ground within a stride's climb of the
+// player's feet, and the player's height follows that ground. Slopes and
+// shelves are walked, sheer cliffs and open sea are refused.
 let chaoGardenMount=null;
 const chaoGroundRay=new THREE.Raycaster();
 const chaoGroundOrigin=new THREE.Vector3(),chaoGroundDown=new THREE.Vector3(0,-1,0);
-function insideChaoMeadow(x,z){
-  if(!chaoGardenMount)return false;
-  chaoGroundOrigin.set(x,40,z);
+function chaoGroundAt(x,z,feetY){
+  chaoGroundOrigin.set(x,42,z);
   chaoGroundRay.set(chaoGroundOrigin,chaoGroundDown);
   const hits=chaoGroundRay.intersectObject(chaoGardenMount,true);
-  for(const hit of hits){if(hit.point.y>-3.5&&hit.point.y<8.5)return true}
-  return false;
+  for(const hit of hits){
+    const groundY=hit.point.y;
+    if(groundY>-3.5&&groundY<=feetY+1.6)return groundY;
+  }
+  return null;
 }
 function resolveChaoGardenCollisions(previousX,previousZ){
   // The bore is the only road through the old room, and past the shell the
@@ -3248,10 +3257,22 @@ function resolveChaoGardenCollisions(previousX,previousZ){
   if(playerPosition.x<42.7){
     if(playerPosition.z<4.8||playerPosition.z>21.6)return;
     if(!inLane){playerPosition.x=previousX;playerPosition.z=previousZ}
+    else playerPosition.y+=(1.65-playerPosition.y)*.35;
     return;
   }
-  if(inLane||insideChaoMeadow(playerPosition.x,playerPosition.z))return;
-  playerPosition.x=previousX;playerPosition.z=previousZ;
+  if(!chaoGardenMount){
+    if(!inLane){playerPosition.x=previousX;playerPosition.z=previousZ}
+    return;
+  }
+  const ground=chaoGroundAt(playerPosition.x,playerPosition.z,playerPosition.y-1.65);
+  if(ground===null){
+    // the bore floor and apron are not part of the model: the lane carries
+    // the player over them at arcade height
+    if(inLane){playerPosition.y+=(1.65-playerPosition.y)*.35;return}
+    playerPosition.x=previousX;playerPosition.z=previousZ;
+    return;
+  }
+  playerPosition.y+=(ground+1.65-playerPosition.y)*.35;
 }
 
 
