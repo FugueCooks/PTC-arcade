@@ -1299,6 +1299,8 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   const vault=new THREE.Mesh(new THREE.CylinderGeometry(2.05,2.05,BORE_LENGTH,22,1,true,0,Math.PI),boreRock);
   vault.rotation.z=Math.PI/2;vault.scale.y=1;vault.position.set(BORE_CENTER_X,1.95,13.2);
   vault.scale.set(1,1,.95);bore.add(vault);
+  const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
+  header.position.set(22.5,4.25,13.2);bore.add(header);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
   boreFloor.scale.z=1.65;boreFloor.position.set(BORE_CENTER_X,.03,13.2);bore.add(boreFloor);
   // The mouth: two jambs and a lintel, so the exit reads as carved rock.
@@ -1436,7 +1438,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-6',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-7',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -3068,7 +3070,7 @@ function updateFollowCamera(){
   }
   // Inside the garden bore the camera goes first-person no matter the mode:
   // any chase offset ends up in the rock or out in the void.
-  const inGardenBore=playerPosition.x>21.8&&playerPosition.x<60.4&&Math.abs(playerPosition.z-13.2)<1.7;
+  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<60.4&&Math.abs(playerPosition.z-13.2)<1.7;
   if(cameraMode==='first-person'||inGardenBore){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
