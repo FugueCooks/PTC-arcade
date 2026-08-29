@@ -77,14 +77,22 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { cx: 66, cz: 13.2, ax: 20, az: 14, laneHalfWidth: 1.5, doorZ: 13.2 };
-function insideChaoGarden(x: number, z: number): boolean {
-  const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
-  const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
-  return dx * dx + dz * dz <= 1;
+const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 62 };
+// The walkable meadow, measured row by row off the model's flat grass.
+// Matches CHAO_MEADOW_ROWS in arcade.js exactly.
+const CHAO_MEADOW_ROWS: Array<[number, number, number]> = [[-0.8,62.4,87.6],[1.2,58.4,87.6],[3.2,54.4,85.6],[5.2,50.4,85.6],[7.2,46.4,85.6],[9.2,46.4,87.6],[11.2,44.4,85.6],[13.2,46.4,85.6],[15.2,46.4,83.6],[17.2,46.4,83.6],[19.2,46.4,83.6],[21.2,46.4,83.6],[23.2,46.4,81.6],[25.2,48.4,79.6],[27.2,48.4,77.6],[29.2,60.4,77.6],[31.2,62.4,77.6]];
+function insideChaoMeadow(x: number, z: number): boolean {
+  const rows = CHAO_MEADOW_ROWS;
+  if (z < rows[0][0] || z > rows[rows.length - 1][0]) return false;
+  let i = 0;
+  while (rows[i + 1][0] < z) i++;
+  const [z0, min0, max0] = rows[i];
+  const [z1, min1, max1] = rows[i + 1];
+  const t = (z - z0) / (z1 - z0);
+  return x >= min0 + (min1 - min0) * t && x <= max0 + (max1 - max0) * t;
 }
 function inChaoGardenLane(x: number, z: number): boolean {
-  return Math.abs(z - CHAO_GARDEN.doorZ) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.cx - CHAO_GARDEN.ax * 0.5;
+  return Math.abs(z - CHAO_GARDEN.doorZ) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.laneEndX;
 }
 function insidePokemonBowl(x: number, z: number): boolean {
   const dx = (x - POKEBOWL.cx) / POKEBOWL.ax;
@@ -673,7 +681,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
-  if (x >= 42.7 && x <= 86.5 && z >= -1.5 && z <= 27.5) return true;
+  if (x >= 42.7 && x <= 88 && z >= -1.2 && z <= 31.5) return true;
   // The arena's own region, north of the building. Matches POKEMON_EXPANSE
   // in arcade.js.
   return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;
@@ -689,7 +697,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     // The Pokemon Center's storefront: the east wall is open from the old
     // plaza door to the column's end. Matches arcade.js.
     const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE)
-      || (wallX > 0 && z > -33.7 && z < -23.6);
+      || (wallX > 0 && z > -33.7 && z < -12.1);
     if (!throughDoor(toZ) && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
@@ -720,7 +728,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // and past the shell the cliff-edge ellipse is the only fence.
   if (toX > PARTITION_WALL_X && toX <= 42.7 && toZ > 4.8 && toZ < 21.6
     && !inChaoGardenLane(toX, toZ)) return true;
-  if (toX > 42.7 && !insideChaoGarden(toX, toZ) && !inChaoGardenLane(toX, toZ)) return true;
+  if (toX > 42.7 && !insideChaoMeadow(toX, toZ) && !inChaoGardenLane(toX, toZ)) return true;
   // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
   if (toX > SILENT_EAST_X && toX < POKEMON_WEST_X && !throughTopRowDoor(toX) && Math.abs(toZ - TOP_ROW_WALL_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;

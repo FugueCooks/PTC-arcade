@@ -56,7 +56,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // The Chao Garden meadow spills out of the building's east wall the way
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
-const CHAO_EXPANSE={minX:42.7,maxX:86.5,minZ:-1.5,maxZ:27.5};
+const CHAO_EXPANSE={minX:42.7,maxX:88,minZ:-1.2,maxZ:31.5};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -193,9 +193,7 @@ ceilingShape.moveTo(-43.2,-58.8);ceilingShape.lineTo(43.2,-58.8);ceilingShape.li
 // building's ceiling. Local y is world z plus the plane's offset, as above.
 // The garden moved a room north, and the Pokemon Center that took its old
 // room fits under the ceiling, so the hole moved with the sky.
-const gardenHole=new THREE.Path();
-gardenHole.moveTo(21.6,4.8);gardenHole.lineTo(43.2,4.8);gardenHole.lineTo(43.2,21.6);gardenHole.lineTo(21.6,21.6);gardenHole.closePath();
-ceilingShape.holes.push(gardenHole);
+// The old garden room is the tunnel's dark now: its ceiling hole is gone.
 // The third hole is Silent Hill's: its facades rise past the ceiling and its
 // sky is the dark the fog fades into. The block mirrors the stadium in the
 // top row's west corner, so its hole mirrors the stadium's.
@@ -360,7 +358,7 @@ const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_W
 const PARTITION_WALL_SEGMENTS_WEST=[[-30.2,6.8],[-16.6,14],[0,12.8],[16.6,14],[30.2,6.8]];
 // The first east segment is gone: the Pokemon Center fronts the hall through
 // where it stood, one wide opening with the old plaza doorway.
-const PARTITION_WALL_SEGMENTS_EAST=[[-14.4,18.4],[4.8,13.6],[20.4,11.2],[31.4,4.4]];
+const PARTITION_WALL_SEGMENTS_EAST=[[-8.6,6.8],[4.8,13.6],[20.4,11.2],[31.4,4.4]];
 function buildPartitionWall(wallX,accent,segments){
   for(const [centerZ,depth] of segments){
     const wall=box(PARTITION_WALL_HALF_THICKNESS*2,5,depth,0x111425,wallX,2.5,centerZ,.08);wall.receiveShadow=true;
@@ -1004,8 +1002,8 @@ hangMuralWalls([
   {file:'zelda-room-mural.webp?v=zelda-1',span:21.3,at:new THREE.Vector3(-32.4,2.5,33.34),
     backing:()=>box(21.3,5,.08,0x050711,-32.4,2.5,33.41,.12),
     rotation:Math.PI,normal:new THREE.Vector3(0,0,-1),along:new THREE.Vector3(-1,0,0),count:5},
-  {file:'zelda-room-mural-2.webp?v=zelda-1',span:16.4,at:new THREE.Vector3(-32.4,2.5,17.12),
-    backing:()=>box(16.4,5,.08,0x050711,-32.4,2.5,16.99,.12),
+  {file:'zelda-room-mural-2.webp?v=zelda-1',span:21.3,at:new THREE.Vector3(-32.4,2.5,17.12),
+    backing:()=>box(21.3,5,.08,0x050711,-32.4,2.5,16.99,.12),
     rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:4},
   {file:'zelda-room-mural-3.webp?v=zelda-1',span:16.5,at:new THREE.Vector3(-42.88,2.5,25.2),
     backing:()=>box(.08,5,16.5,0x050711,-43.01,2.5,25.2,.12),
@@ -1287,7 +1285,7 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   rockContext.globalAlpha=1;
   const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
   const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
-  const BORE_MIN_X=21.9,BORE_MAX_X=53.4,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
+  const BORE_MIN_X=21.9,BORE_MAX_X=60,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
   for(const side of [-1,1]){
     const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
     wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
@@ -1304,7 +1302,7 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   }
   const lintel=new THREE.Mesh(new THREE.BoxGeometry(1.7,1.2,5.9),boreRock);
   lintel.position.set(BORE_MAX_X-.4,4.15,13.2);lintel.rotation.z=.05;bore.add(lintel);
-  for(const x of [26.5,33.5,40.5,46.5,51.6]){
+  for(const x of [26.5,33.5,40.5,46.5,51.6,57.2]){
     const bulb=new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.3),new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:2.2}));
     bulb.position.set(x,2.72,14.15);bore.add(bulb);
     const lantern=new THREE.PointLight(0xffd9a0,2.4,8,1.9);
@@ -1432,7 +1430,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-3',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-4',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -1475,7 +1473,7 @@ function installChaoGardenModel(){
         const tall=(node.geometry.boundingBox.max.y-node.geometry.boundingBox.min.y)>2;
         if(!tall)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return skyVertex.x<52};
+        const west=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return skyVertex.x<60.5};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
           if(west(a)||west(b)||west(c))continue;
@@ -1489,7 +1487,7 @@ function installChaoGardenModel(){
       source.traverse(node=>{
         if(!node.isMesh||!node.geometry?.index)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<53.7&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
+        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<60.3&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
           if(west(a)||west(b)||west(c))continue;
@@ -1699,7 +1697,7 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   // The east column's plate stops at the garden's new room: its sky dome
   // rises through the hole cut for it. The old garden room is the Pokemon
   // Center's plaza now, covered by the main ceiling like any other room.
-  else{box(ROOM_SPAN,.12,16.8,0x090b18,roomX,5.08,-3.6,.08);box(ROOM_SPAN,.12,12,0x090b18,roomX,5.08,27.6,.08);}
+  else{box(ROOM_SPAN,.12,16.8,0x090b18,roomX,5.08,-3.6,.08);box(ROOM_SPAN,.12,16.8,0x090b18,roomX,5.08,13.2,.08);box(ROOM_SPAN,.12,12,0x090b18,roomX,5.08,27.6,.08);}
   for(const wallZ of [SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z]){
     // The east column's end wall is gone: the Pokemon Center runs from the
     // stadium's wall across the old band pocket into its plaza.
@@ -1707,7 +1705,7 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
     // The east column's dividers all moved with the garden's growth: full
     // rooms follow it, and the bottom room absorbs the squeeze.
     const wallAt=(!west&&EAST_WALL_Z[String(wallZ)]!==undefined)?EAST_WALL_Z[String(wallZ)]:wallZ;
-    const wall=box(ROOM_SPAN,5,.3,0x11182c,roomX,2.5,wallAt,.05);wall.receiveShadow=true;
+    const wall=box(ROOM_SPAN-.4,5,.3,0x11182c,roomX+(west?-.2:.2),2.5,wallAt,.05);wall.receiveShadow=true;
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
     // The Chao Garden lights itself — suns and sky — so its new slot takes
@@ -3064,7 +3062,7 @@ function updateFollowCamera(){
   }
   // Inside the garden bore the camera goes first-person no matter the mode:
   // any chase offset ends up in the rock or out in the void.
-  const inGardenBore=playerPosition.x>21.8&&playerPosition.x<53.8&&Math.abs(playerPosition.z-13.2)<1.7;
+  const inGardenBore=playerPosition.x>21.8&&playerPosition.x<60.4&&Math.abs(playerPosition.z-13.2)<1.7;
   if(cameraMode==='first-person'||inGardenBore){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
@@ -3122,7 +3120,7 @@ function resolvePartitionWallCollisions(previousX,previousZ){
     if(doors.some(doorZ=>Math.abs(crossingZ-doorZ)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS))continue;
     // The Pokemon Center's storefront: the east wall is open from the old
     // plaza door to the column's end.
-    if(wallX===N64_WALL_X&&crossingZ>-33.7&&crossingZ<-23.6)continue;
+    if(wallX===N64_WALL_X&&crossingZ>-33.7&&crossingZ<-12.1)continue;
     const leftFace=wallX-PARTITION_WALL_HALF_THICKNESS-PLAYER_COLLISION_RADIUS;
     const rightFace=wallX+PARTITION_WALL_HALF_THICKNESS+PLAYER_COLLISION_RADIUS;
     if(previousX<wallX&&playerPosition.x>leftFace)playerPosition.x=leftFace;
@@ -3181,23 +3179,34 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={cx:66,cz:13.2,ax:20,az:14,laneHalfWidth:1.5,doorZ:13.2};
+const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:62};
+// The walkable meadow, measured row by row off the model's flat grass (world
+// z ascending; [z, minX, maxX], already inset 0.4 m from the true edge). The
+// fence IS the grass edge — the same table stands in the server and worker.
+const CHAO_MEADOW_ROWS=[[-0.8,62.4,87.6],[1.2,58.4,87.6],[3.2,54.4,85.6],[5.2,50.4,85.6],[7.2,46.4,85.6],[9.2,46.4,87.6],[11.2,44.4,85.6],[13.2,46.4,85.6],[15.2,46.4,83.6],[17.2,46.4,83.6],[19.2,46.4,83.6],[21.2,46.4,83.6],[23.2,46.4,81.6],[25.2,48.4,79.6],[27.2,48.4,77.6],[29.2,60.4,77.6],[31.2,62.4,77.6]];
+function insideChaoMeadow(x,z){
+  const rows=CHAO_MEADOW_ROWS;
+  if(z<rows[0][0]||z>rows[rows.length-1][0])return false;
+  let i=0;while(rows[i+1][0]<z)i++;
+  const [z0,min0,max0]=rows[i],[z1,min1,max1]=rows[i+1];
+  const t=(z-z0)/(z1-z0);
+  return x>=min0+(min1-min0)*t&&x<=max0+(max1-max0)*t;
+}
 function resolveChaoGardenCollisions(previousX,previousZ){
-  // Three stretches, one rule each: the tunnel holds you to its bore, the
-  // meadow holds you inside the cliff-edge ellipse, and the lane stitches
-  // them together. A step that lands on none of them goes back where it was.
+  // The bore is the only road through the old room, and past the shell the
+  // measured grass edge is the only fence. A step that lands on neither goes
+  // back where it began.
   if(playerPosition.x<21.6)return;
-  const inLane=Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5;
+  const inLane=Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.laneEndX;
   if(playerPosition.x<42.7){
     if(playerPosition.z<4.8||playerPosition.z>21.6)return;
     if(!inLane){playerPosition.x=previousX;playerPosition.z=previousZ}
     return;
   }
-  if(inLane)return;
-  const dx=(playerPosition.x-CHAO_GARDEN.cx)/CHAO_GARDEN.ax,dz=(playerPosition.z-CHAO_GARDEN.cz)/CHAO_GARDEN.az;
-  if(dx*dx+dz*dz<=1)return;
+  if(inLane||insideChaoMeadow(playerPosition.x,playerPosition.z))return;
   playerPosition.x=previousX;playerPosition.z=previousZ;
 }
+
 
 function resolvePokemonBowlCollisions(previousX,previousZ){
   if(playerPosition.z>-70)return;
