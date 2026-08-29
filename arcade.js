@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-3';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-4';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .026);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 100);
 camera.position.set(0, 1.65, 11);
@@ -847,7 +847,7 @@ function buildPokemonStadium(centerX,arenaCz){
     geometry.setIndex(kept);
   };
   const bowlGeometry=new THREE.SphereGeometry(1,96,56);
-  cutMouth(bowlGeometry,RX+.15,SPHERE_RY,RZ+.15);
+  cutMouth(bowlGeometry,RX+.15,SPHERE_RY,RZ+.15,true);
   const bowl=new THREE.Mesh(bowlGeometry,new THREE.MeshBasicMaterial({map:sphereTexture,side:THREE.BackSide}));
   bowl.scale.set(RX+.15,SPHERE_RY,RZ+.15);
   bowl.position.set(0,SPHERE_CY,0);
@@ -965,13 +965,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=poke-3',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=poke-4',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=poke-3',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
+    {file:'ff-room-mural-2.webp?v=poke-4',span:16.4,at:new THREE.Vector3(10.54,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,10.61,2.5,-58.8,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=poke-3',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
+    {file:'ff-room-mural-3.webp?v=poke-4',span:16.4,at:new THREE.Vector3(-21.34,2.5,-58.8),
       backing:()=>box(.08,5,16.4,0x050711,-21.41,2.5,-58.8,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -1303,7 +1303,9 @@ function installPokemonCenter(){
       // and a lit strip under it — a gate, not a hole with a board on it.
       const portalSteel=new THREE.MeshStandardMaterial({color:0x11161f,emissive:0x0a1220,emissiveIntensity:.5,roughness:.5,metalness:.5});
       const portalGlow=new THREE.MeshStandardMaterial({color:0x4fd9ff,emissive:0x4fd9ff,emissiveIntensity:1.1,roughness:.3,metalness:.4});
-      for(const jx of [25.32,28.85]){
+      // The jambs sit exactly on the collision corridor: a doorway that
+      // shows wider than it walks is an invisible wall wearing a frame.
+      for(const jx of [25.7,28.45]){
         const jamb=new THREE.Mesh(new THREE.BoxGeometry(.34,3.3,.5),portalSteel);
         jamb.position.set(jx,1.65,-40.6);scene.add(jamb);
         const jambCap=new THREE.Mesh(new THREE.BoxGeometry(.34,.1,.5),portalGlow);
@@ -1311,7 +1313,7 @@ function installPokemonCenter(){
       }
       const lintelPlate=new THREE.Mesh(new THREE.BoxGeometry(4.9,1.9,.5),portalSteel);
       lintelPlate.position.set(27.08,4.15,-40.6);scene.add(lintelPlate);
-      const lintelTrim=new THREE.Mesh(new THREE.BoxGeometry(3.9,.09,.1),portalGlow);
+      const lintelTrim=new THREE.Mesh(new THREE.BoxGeometry(2.4,.09,.1),portalGlow);
       lintelTrim.position.set(27.08,3.22,-40.36);scene.add(lintelTrim);
       // The loose cut tears the whole east stretch of the wall away, and the
       // black gap it left read as walkable while the arcade wall behind it
@@ -1320,7 +1322,7 @@ function installPokemonCenter(){
       // like its unlit bake, leaving only the framed doorway.
       const centerWall=new THREE.MeshBasicMaterial({color:0xf2dfa6});
       const centerWainscot=new THREE.MeshBasicMaterial({color:0xd97a4e});
-      for(const [wx,ww] of [[24.62,1.4],[31.2,4.7]]){
+      for(const [wx,ww] of [[24.75,1.75],[31.3,5.2]]){
         const fill=new THREE.Mesh(new THREE.BoxGeometry(ww,4,.34),centerWall);
         fill.position.set(wx,2,-40.82);scene.add(fill);
         const skirt=new THREE.Mesh(new THREE.BoxGeometry(ww,.85,.1),centerWainscot);
@@ -1466,37 +1468,37 @@ function buildSilentHillBlock(){
   puff.addColorStop(0,'rgba(168,175,178,.75)');puff.addColorStop(.6,'rgba(160,168,172,.35)');puff.addColorStop(1,'rgba(160,168,172,0)');
   fg.fillStyle=puff;fg.fillRect(0,0,128,128);
   const fogTexture=new THREE.CanvasTexture(fogCanvas);fogTexture.colorSpace=THREE.SRGBColorSpace;
-  const fogMaterial=new THREE.MeshBasicMaterial({map:fogTexture,transparent:true,opacity:.44,depthWrite:false,side:THREE.DoubleSide});
-  const fogGeometry=new THREE.PlaneGeometry(7,4.2);
-  for(let i=0;i<40;i++){
+  const fogMaterial=new THREE.MeshBasicMaterial({map:fogTexture,transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide});
+  const fogGeometry=new THREE.PlaneGeometry(7.5,6.5);
+  for(let i=0;i<70;i++){
     const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
-    sheet.position.set(CX+((i*73)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+1+((i*127)%230)/10);
+    sheet.position.set(CX+((i*73)%180)/10-9,(i%3)*1.5+1.7,MIN_Z+1+((i*127)%230)/10);
     sheet.rotation.y=(i*2.399)%Math.PI;
     sheet.renderOrder=3;scene.add(sheet);
   }
   // The back of the block drowns deepest, and the whole annex drowns with
   // it: standing sheets across both, thickening toward the lot.
-  for(let i=0;i<14;i++){
+  for(let i=0;i<22;i++){
     const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
-    sheet.position.set(CX+((i*67)%180)/10-9,(i%3)*1.1+1.2,MIN_Z+.6+((i*113)%60)/10);
+    sheet.position.set(CX+((i*67)%180)/10-9,(i%3)*1.5+1.7,MIN_Z+.6+((i*113)%60)/10);
     sheet.rotation.y=(i*1.93)%Math.PI;
     sheet.renderOrder=3;scene.add(sheet);
   }
-  for(let i=0;i<30;i++){
+  for(let i=0;i<55;i++){
     const sheet=new THREE.Mesh(fogGeometry,fogMaterial);
-    sheet.position.set(-64+((i*73)%200)/10,(i%3)*1.1+1.2,-66+((i*127)%230)/10);
+    sheet.position.set(-64+((i*73)%200)/10,(i%3)*1.5+1.7,-66+((i*127)%230)/10);
     sheet.rotation.y=(i*2.399)%Math.PI;
     sheet.renderOrder=3;scene.add(sheet);
   }
   const mistGeometry=new THREE.PlaneGeometry(9,6.5);
-  for(let i=0;i<16;i++){
+  for(let i=0;i<24;i++){
     const mist=new THREE.Mesh(mistGeometry,fogMaterial);
     mist.rotation.x=-Math.PI/2;mist.rotation.z=(i*1.7)%Math.PI;
     mist.position.set(CX+((i*89)%220)/10-8,.5+(i%2)*.35,MIN_Z+2+((i*151)%220)/10);
     mist.renderOrder=3;scene.add(mist);
   }
   // The annex's own ground mist, lying across the cross-street and the lot.
-  for(let i=0;i<10;i++){
+  for(let i=0;i<16;i++){
     const mist=new THREE.Mesh(mistGeometry,fogMaterial);
     mist.rotation.x=-Math.PI/2;mist.rotation.z=(i*1.7)%Math.PI;
     mist.position.set(-63+((i*89)%190)/10,.5+(i%2)*.35,-65+((i*151)%210)/10);
@@ -2644,7 +2646,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-3')
+  import('./emulators/disc-range-cache.js?v=poke-4')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -2664,7 +2666,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-3')
+  import('./emulators/disc-range-cache.js?v=poke-4')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -2993,7 +2995,7 @@ function resolveTopRowCollisions(previousX,previousZ){
     // Silent Hill's south wall, with the entrance at its centre.
     const northFace=SILENT_SOUTH_Z-wallGap,southFace=SILENT_SOUTH_Z+wallGap;
     if(playerPosition.z>northFace&&playerPosition.z<southFace
-      &&Math.abs(playerPosition.x-SILENT_DOOR_X)>=ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS){
+      &&Math.abs(playerPosition.x-SILENT_DOOR_X)>=1.72-PLAYER_COLLISION_RADIUS){
       if(previousZ<SILENT_SOUTH_Z)playerPosition.z=northFace;else playerPosition.z=southFace;
       return;
     }

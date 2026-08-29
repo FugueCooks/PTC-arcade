@@ -725,7 +725,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     if (crossing >= 0 && crossing <= 1 && crossingX > SILENT_EAST_X && crossingX < POKEMON_WEST_X && !throughTopRowDoor(crossingX)) return true;
   }
   // Silent Hill's south wall, with the entrance doorway at its centre.
-  const throughSilentDoor = (x: number) => Math.abs(x - SILENT_DOOR_X) < ROOM_DOOR_CLEARANCE;
+  const throughSilentDoor = (x: number) => Math.abs(x - SILENT_DOOR_X) < 1.38;
   if (toX < SILENT_EAST_X && !throughSilentDoor(toX) && Math.abs(toZ - SILENT_SOUTH_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if ((fromZ - SILENT_SOUTH_Z) * (toZ - SILENT_SOUTH_Z) < 0) {
     const crossing = (SILENT_SOUTH_Z - fromZ) / (toZ - fromZ);
