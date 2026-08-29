@@ -1252,7 +1252,7 @@ function buildChaoGarden(centerX,centerZ){
 }
 // The garden mounts are declared ahead of everything that assigns them: the
 // bore group is built right here at module evaluation.
-let chaoGardenMount=null,chaoBoreGroup=null;
+let chaoGardenMount=null,chaoBoreGroup=null,chaoRockTexture=null;
 // The supplied SA1-style garden model owns the room now. A grass disc holds
 // the floor while its GLB loads, and the suns stay because the model brings
 // no lights of its own.
@@ -1332,7 +1332,7 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
     rockContext.beginPath();rockContext.arc((i*53)%128,(i*89)%128,3+(i*29)%9,0,Math.PI*2);rockContext.fill();
   }
   rockContext.globalAlpha=1;
-  const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
+  const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);chaoRockTexture=rockTexture;
   const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
   const BORE_MIN_X=21.9,BORE_MAX_X=57.6,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
   for(const side of [-1,1]){
@@ -1489,8 +1489,8 @@ function installChaoGardenFlora(){
       const palm=gltf.scene.getObjectByName('Palm');
       if(!palm)return;
       palm.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material[0]:o.material;o.material=new THREE.MeshBasicMaterial({map:m.map??null,color:m.color?.clone()??new THREE.Color(0x3da53c),fog:false});o.castShadow=false;o.receiveShadow=false}});
-      for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,51,1.4,1.8],[66,57,1.35,2.4],[74,60,1.2,4.6],[85,58,1.45,1.3],[92,61,1.25,3.1],[70,63,1.15,5.5]]){
-        const ground=chaoGroundAt(px,pz,26)??.25;
+      for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,51,1.4,1.8],[64,50,1.35,2.4],[72,52,1.2,4.6],[86,52,1.45,1.3],[94,53,1.25,3.1],[68,47,1.15,5.5]]){
+        const ground=chaoGroundAt(px,pz,6)??.25;
         const tree=palm.clone(true);
         tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
         scene.add(tree);
@@ -1514,7 +1514,7 @@ function installChaoGardenFlora(){
   const flowerTexture=new THREE.CanvasTexture(flowerCanvas);flowerTexture.colorSpace=THREE.SRGBColorSpace;
   const flowerMaterial=new THREE.MeshBasicMaterial({map:flowerTexture,transparent:true,side:THREE.DoubleSide,fog:false});
   for(let i=0;i<26;i++){
-    const fx=63+((i*173)%370)/10,fz=6+((i*257)%480)/10;
+    const fx=63+((i*173)%370)/10,fz=6+((i*257)%440)/10;
     const ground=chaoGroundAt(fx,fz,9)??.25;
     const patch=new THREE.Group();
     for(const spin of [0,Math.PI/2]){
@@ -1542,10 +1542,10 @@ function installChaoGardenEggs(){
   const eggGeometry=new THREE.SphereGeometry(.34,18,14);
   eggColours.forEach((colour,index)=>{
     const egg=new THREE.Mesh(eggGeometry,new THREE.MeshBasicMaterial({map:speckleTexture,color:colour,fog:false}));
-    const ex=64+((index*211)%330)/10,ez=8+((index*307)%460)/10;
+    const ex=64+((index*211)%330)/10,ez=8+((index*307)%420)/10;
     const ground=chaoGroundAt(ex,ez,9)??.25;
     egg.scale.set(1,1.32,1);
-    egg.position.set(ex,ground+.44,ez);
+    egg.position.set(ex,ground+.4,ez);
     egg.rotation.set(((index*73)%10-5)*.03,index*1.3,((index*41)%10-5)*.03);
     scene.add(egg);
   });
@@ -1553,7 +1553,7 @@ function installChaoGardenEggs(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-3',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-4',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1616,15 +1616,27 @@ function installChaoGardenModel(){
         if(fallsFound)fallsBox.union(pieceBox);else{fallsBox.copy(pieceBox);fallsFound=true}
       });
       if(fallsFound){
+        const fallsCentreX=(fallsBox.min.x+fallsBox.max.x)/2;
         const fallsWidth=(fallsBox.max.x-fallsBox.min.x)*.62;
-        const fallsHeight=fallsBox.max.y-fallsBox.min.y+2;
+        const fallsTop=fallsBox.max.y-3;
+        const fallsHeight=fallsTop-fallsBox.min.y;
         const curtainMaterial=new THREE.MeshBasicMaterial({map:waterTexture,transparent:true,opacity:.62,depthWrite:false,side:THREE.DoubleSide,fog:false});
         const curtain=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth,fallsHeight),curtainMaterial);
-        curtain.position.set((fallsBox.min.x+fallsBox.max.x)/2,(fallsBox.min.y+fallsBox.max.y)/2,fallsBox.min.z-.35);
+        curtain.position.set(fallsCentreX,fallsBox.min.y+fallsHeight/2,fallsBox.min.z-.35);
         scene.add(curtain);
-        const rill=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth*.3,fallsHeight*.8),curtainMaterial);
-        rill.position.set(fallsBox.min.x+fallsWidth*.2,(fallsBox.min.y+fallsBox.max.y)/2-1,fallsBox.min.z-.55);
+        const rill=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth*.3,fallsHeight*.75),curtainMaterial);
+        rill.position.set(fallsBox.min.x+fallsWidth*.2,fallsBox.min.y+fallsHeight*.4,fallsBox.min.z-.55);
         scene.add(rill);
+        // the headwall: the water needed somewhere to fall FROM. A broad
+        // marble-toned summit closes the cliff top behind and above the
+        // curtain so every stream begins at rock.
+        const headwallMaterial=new THREE.MeshBasicMaterial({map:chaoRockTexture,color:0xc9d3dd,fog:false});
+        const headwall=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+14,11,10),headwallMaterial);
+        headwall.position.set(fallsCentreX,fallsTop+3.2,fallsBox.min.z+5.4);
+        scene.add(headwall);
+        const summitLedge=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+18,4,16),headwallMaterial);
+        summitLedge.position.set(fallsCentreX,fallsTop+8.4,fallsBox.min.z+9);
+        scene.add(summitLedge);
       }
       chaoGardenFallback.visible=false;
       installChaoGardenFlora();
@@ -3439,7 +3451,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-exact-3';
+const ARCADE_BUILD='garden-exact-4';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
