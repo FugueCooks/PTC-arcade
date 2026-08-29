@@ -117,6 +117,8 @@ export async function startRuntime({ origin = ARCADE_ORIGIN, log = consoleLog } 
     version: VERSION,
     dolphinAvailable: () => discovered.ok,
     pcsx2Available: () => pcsx2.ok,
+    melondsAvailable: () => melonds.ok,
+    vbaAvailable: () => vba.ok,
     // Printed where only somebody at this machine can read it. That is the
     // entire reason a background page cannot pair itself.
     onPairingCode: (code) => {

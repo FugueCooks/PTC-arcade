@@ -33,7 +33,7 @@ export const ALLOWED_ORIGINS = Object.freeze([
 ]);
 
 /** Platforms the runtime claims. GameCube first; others follow the same path. */
-export const RUNTIME_PLATFORMS = Object.freeze(['gamecube', 'ps2']);
+export const RUNTIME_PLATFORMS = Object.freeze(['gamecube', 'ps2', 'nds', 'gb', 'gbc', 'gba']);
 
 export const RUNTIME_ADAPTER_ID = 'ptc-runtime-gamecube';
 export const RUNTIME_PS2_ADAPTER_ID = 'ptc-runtime-ps2';
