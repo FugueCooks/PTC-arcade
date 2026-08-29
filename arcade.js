@@ -1315,12 +1315,6 @@ for(const [lx,lz] of [[-21,-12],[-21,12],[0,-15],[0,15],[19.5,0],[27,-12],[-28.5
   apron.position.set(52.8,.05,13.2);bore.add(apron);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
-  for(const [bz,bd] of [[21.8,12.8],[4.6,12.8]]){
-    const backdrop=new THREE.Mesh(new THREE.BoxGeometry(.9,14,bd),boreRock);
-    backdrop.position.set(43.4,7,bz);bore.add(backdrop);
-  }
-  const backdropTop=new THREE.Mesh(new THREE.BoxGeometry(.9,9.8,5.4),boreRock);
-  backdropTop.position.set(43.4,9.3,13.2);bore.add(backdropTop);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
   boreFloor.scale.z=1.65;boreFloor.position.set(BORE_CENTER_X,.03,13.2);bore.add(boreFloor);
   // The mouth: two jambs and a lintel, so the exit reads as carved rock.
@@ -1458,46 +1452,12 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-ray-2',gltf=>{
-      const source=gltf.scene,mount=new THREE.Group();
-      // The garden lives wholly outside the building: the tunnel surfaces at
-      // the meadow's west edge and nothing green or rocky crosses the shell.
-      // Turned 180 so the pond and waterfall sit at the far end; transform
-      // derived from the measured meadow footprint (x -110..90, z -150..-10).
-      const GARDEN_SCALE=.3,GARDEN_TX=87.5,GARDEN_TY=.05,GARDEN_TZ=-10.8;
-      // The model's skybox and sea ride along as a second mount, scaled and
-      // placed so the dome arches over the whole meadow and its western rim
-      // still stops short of the arcade: outside the door it is all garden
-      // and sky, and from the arcade it is all wall.
-      const skySource=gltf.scene.clone(true),skyMount=new THREE.Group();
+    loader.load('assets/models/chao-garden-3.glb?v=garden-baked-1',gltf=>{
+      // Everything hard about this model is baked into the file now: world
+      // transform, the flattened walkable ground, the clean rock cap on the
+      // west cut, and the carved tunnel corridor. The runtime just mounts it.
+      const source=gltf.scene,doomed=[];
       const bounds=new THREE.Box3(),size=new THREE.Vector3();
-      const isFarField=node=>{bounds.setFromObject(node);bounds.getSize(size);return Math.max(size.x,size.y,size.z)>500};
-      const cull=(root,keepFar)=>{const doomed=[];root.traverse(node=>{
-        if(node.isCamera||node.isLight){doomed.push(node);return}
-        if(!node.isMesh)return;
-        node.castShadow=false;node.receiveShadow=false;
-        if(isFarField(node)!==keepFar)doomed.push(node);
-      });doomed.forEach(node=>node.removeFromParent())};
-      cull(source,false);cull(skySource,true);
-      source.rotation.y=Math.PI;mount.add(source);
-      mount.scale.setScalar(GARDEN_SCALE);
-      mount.position.set(GARDEN_TX,GARDEN_TY,GARDEN_TZ);
-      mount.name='chao-garden-environment';mount.userData.chaoGarden=true;
-      scene.add(mount);chaoGardenMount=mount;
-      skySource.rotation.y=Math.PI;skyMount.add(skySource);
-      // Sized and centred so the dome's west rim lands at x=43.5 — just
-      // outside the shell, never inside the building — while the whole
-      // meadow, the waterfall included, fits under it. The vertical axis is
-      // scaled separately so the cliff tops stay beneath the clouds.
-      skyMount.scale.set(.0949,.115,.0949);
-      skyMount.position.set(103,-.5,13.2);
-      skyMount.name='chao-garden-sky';
-      scene.add(skyMount);
-      scene.updateWorldMatrix(true,true);
-      // The dome's west rim passes through the bore's interior air where the
-      // tunnel pierces it. Local clipping notches the sky along exactly the
-      // tunnel corridor — a slot the tunnel itself hides — instead of cutting
-      // whole facets out of the visible sky.
       renderer.localClippingEnabled=true;
       const boreNotch=[
         new THREE.Plane(new THREE.Vector3(1,0,0),-63.5),
@@ -1505,47 +1465,22 @@ function installChaoGardenModel(){
         new THREE.Plane(new THREE.Vector3(0,0,-1),10.6),
         new THREE.Plane(new THREE.Vector3(0,1,0),-8)
       ];
-      skySource.traverse(node=>{
-        if(!node.isMesh)return;
-        const materials=Array.isArray(node.material)?node.material:[node.material];
-        for(const material of materials){
-          material.clippingPlanes=boreNotch;
-          material.clipIntersection=true;
-        }
-      });
-      // The sky ships with an inner cloud band that would drape across the
-      // meadow itself; everything of the tall sky shells inside the dome's
-      // own radius goes, and only the outermost shell remains. The flat sea
-      // lies under the ground and keeps its full spread.
-      const skyVertex=new THREE.Vector3();
-      skySource.traverse(node=>{
-        if(!node.isMesh||!node.geometry?.index)return;
-        node.geometry.computeBoundingBox();
-        const tall=(node.geometry.boundingBox.max.y-node.geometry.boundingBox.min.y)>2;
-        if(!tall)return;
-        const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const inner=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return Math.hypot(skyVertex.x-103,skyVertex.z-13.2)<57};
-        for(let i=0;i<index.count;i+=3){
-          const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
-          if(inner(a)||inner(b)||inner(c))continue;
-          kept.push(a,b,c);
-        }
-        if(kept.length!==index.count)node.geometry.setIndex(kept);
-      });
-      // The model's east cliff ring and ramp would reach back into the
-      // building; every triangle that touches the shell's side goes.
-      const cutVertex=new THREE.Vector3();
       source.traverse(node=>{
-        if(!node.isMesh||!node.geometry?.index)return;
-        const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<61.8&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
-        for(let i=0;i<index.count;i+=3){
-          const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
-          if(west(a)||west(b)||west(c))continue;
-          kept.push(a,b,c);
+        if(node.isCamera||node.isLight){doomed.push(node);return}
+        if(!node.isMesh)return;
+        node.castShadow=false;node.receiveShadow=false;
+        // The sky dome is the one mesh taller than any cliff; it gets the
+        // clipping notch so its rim never shows inside the tunnel.
+        bounds.setFromObject(node);bounds.getSize(size);
+        if(size.y>50){
+          const materials=Array.isArray(node.material)?node.material:[node.material];
+          for(const material of materials){material.clippingPlanes=boreNotch;material.clipIntersection=true}
         }
-        if(kept.length!==index.count)node.geometry.setIndex(kept);
       });
+      doomed.forEach(node=>node.removeFromParent());
+      source.name='chao-garden-environment';
+      scene.add(source);
+      chaoGardenMount=source;
       chaoGardenFallback.visible=false;
     },undefined,error=>console.warn('The Chao Garden model could not load.',error));
   }catch(error){console.warn('The Chao Garden model loader could not initialize.',error)}})();
