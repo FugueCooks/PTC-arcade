@@ -73,12 +73,18 @@ void test('the floor is the main rectangle plus the Silent Hill expanse, in all 
   // The arena hangs in the void north of the building, its own region.
   const arena = clientRegion('POKEMON_EXPANSE');
   assert.deepEqual(arena, { minX: -12, maxX: 66, minZ: -138.6, maxZ: -42.5 });
+  // The garden meadow hangs off the east wall, its own region.
+  const garden = clientRegion('CHAO_EXPANSE');
+  assert.deepEqual(garden, { minX: 42.7, maxX: 73.2, minZ: 2.6, maxZ: 23.8 });
+  assert.equal(garden.minX, clientBounds.maxX, 'the garden must meet the main rectangle');
   // Both authorities carry the same numbers, so no region drifts at a seam.
   for (const [name, source] of [['server', server], ['worker', worker]] as const) {
     assert.ok(source.includes('if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;'),
       `${name} must enforce the Silent Hill expanse`);
     assert.ok(source.includes('return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;'),
       `${name} must enforce the arena expanse`);
+    assert.ok(source.includes('if (x >= 42.7 && x <= 73.2 && z >= 2.6 && z <= 23.8) return true;'),
+      `${name} must enforce the garden expanse`);
   }
 });
 
@@ -99,7 +105,7 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
 
     // The floor is a union now: the main rectangle, the Silent Hill annex,
     // and the arena in the void — a cabinet in any of them can be walked to.
-    const regions = [clientBounds, clientRegion('SILENT_HILL_EXPANSE'), clientRegion('POKEMON_EXPANSE')];
+    const regions = [clientBounds, clientRegion('SILENT_HILL_EXPANSE'), clientRegion('POKEMON_EXPANSE'), clientRegion('CHAO_EXPANSE')];
     const reachable = (x: number, z: number) =>
       regions.some((region) => x >= region.minX && x <= region.maxX && z >= region.minZ && z <= region.maxZ);
 

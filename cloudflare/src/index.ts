@@ -77,7 +77,7 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { cx: 32.9, cz: 13.2, ax: 9.2, az: 5.9, laneHalfWidth: 1.5, doorZ: 13.2 };
+const CHAO_GARDEN = { cx: 58, cz: 13.2, ax: 15, az: 10.5, laneHalfWidth: 1.5, doorZ: 13.2 };
 function insideChaoGarden(x: number, z: number): boolean {
   const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
   const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
@@ -671,6 +671,9 @@ function isInsideWorld(x: number, z: number): boolean {
   // the building's west wall, over ground nothing else uses. Matches
   // SILENT_HILL_EXPANSE in arcade.js.
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
+  // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
+  // arcade.js.
+  if (x >= 42.7 && x <= 73.2 && z >= 2.6 && z <= 23.8) return true;
   // The arena's own region, north of the building. Matches POKEMON_EXPANSE
   // in arcade.js.
   return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;
