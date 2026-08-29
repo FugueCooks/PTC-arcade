@@ -1490,8 +1490,7 @@ function installChaoGardenFlora(){
       if(!palm)return;
       palm.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material[0]:o.material;o.material=new THREE.MeshBasicMaterial({map:m.map??null,color:m.color?.clone()??new THREE.Color(0x3da53c),fog:false});o.castShadow=false;o.receiveShadow=false}});
       for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,51,1.4,1.8],[66,57,1.35,2.4],[74,60,1.2,4.6],[85,58,1.45,1.3],[92,61,1.25,3.1],[70,63,1.15,5.5]]){
-        const ground=chaoGroundAt(px,pz,26);
-        if(ground===null)continue;
+        const ground=chaoGroundAt(px,pz,26)??.25;
         const tree=palm.clone(true);
         tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
         scene.add(tree);
@@ -1516,8 +1515,7 @@ function installChaoGardenFlora(){
   const flowerMaterial=new THREE.MeshBasicMaterial({map:flowerTexture,transparent:true,side:THREE.DoubleSide,fog:false});
   for(let i=0;i<26;i++){
     const fx=63+((i*173)%370)/10,fz=6+((i*257)%480)/10;
-    const ground=chaoGroundAt(fx,fz,9);
-    if(ground===null)continue;
+    const ground=chaoGroundAt(fx,fz,9)??.25;
     const patch=new THREE.Group();
     for(const spin of [0,Math.PI/2]){
       const quad=new THREE.Mesh(new THREE.PlaneGeometry(.55,.4),flowerMaterial);
@@ -1527,10 +1525,35 @@ function installChaoGardenFlora(){
     scene.add(patch);
   }
 }
+function installChaoGardenEggs(){
+  // Chao eggs: the garden's whole point. Speckled shells in the classic
+  // colours, seated on the lawn.
+  const speckleCanvas=document.createElement('canvas');speckleCanvas.width=speckleCanvas.height=64;
+  const speckleContext=speckleCanvas.getContext('2d');
+  speckleContext.fillStyle='#ffffff';speckleContext.fillRect(0,0,64,64);
+  speckleContext.globalAlpha=.5;
+  for(let i=0;i<26;i++){
+    speckleContext.fillStyle=i%2?'#00000022':'#00000014';
+    speckleContext.beginPath();speckleContext.arc((i*37)%64,(i*53)%64,2.4+(i%3),0,Math.PI*2);speckleContext.fill();
+  }
+  speckleContext.globalAlpha=1;
+  const speckleTexture=new THREE.CanvasTexture(speckleCanvas);speckleTexture.colorSpace=THREE.SRGBColorSpace;
+  const eggColours=[0xfff8ea,0xbfe8c9,0xffc9dd,0xbcd4ff,0xffe08a,0xd9c2f0,0xfff8ea,0xc9f0ee,0xffd9b0];
+  const eggGeometry=new THREE.SphereGeometry(.34,18,14);
+  eggColours.forEach((colour,index)=>{
+    const egg=new THREE.Mesh(eggGeometry,new THREE.MeshBasicMaterial({map:speckleTexture,color:colour,fog:false}));
+    const ex=64+((index*211)%330)/10,ez=8+((index*307)%460)/10;
+    const ground=chaoGroundAt(ex,ez,9)??.25;
+    egg.scale.set(1,1.32,1);
+    egg.position.set(ex,ground+.44,ez);
+    egg.rotation.set(((index*73)%10-5)*.03,index*1.3,((index*41)%10-5)*.03);
+    scene.add(egg);
+  });
+}
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-2',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-3',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1552,6 +1575,7 @@ function installChaoGardenModel(){
       const waterTexture=new THREE.CanvasTexture(waterCanvas);
       waterTexture.wrapS=waterTexture.wrapT=THREE.RepeatWrapping;waterTexture.repeat.set(3,1.4);
       waterTexture.colorSpace=THREE.SRGBColorSpace;
+      beforeRenderCallbacks.push((now,delta)=>{waterTexture.offset.y-=delta*.32});
       const source=gltf.scene,doomed=[];
       source.traverse(node=>{
         if(node.isCamera||node.isLight){doomed.push(node);return}
@@ -1579,8 +1603,32 @@ function installChaoGardenModel(){
       source.name='chao-garden-environment';
       scene.add(source);
       chaoGardenMount=source;
+      // The authored falls leave gaps between tiers; one continuous curtain,
+      // sized off the tall water geometry itself, completes the drop.
+      const fallsBox=new THREE.Box3(),pieceBox=new THREE.Box3();
+      let fallsFound=false;
+      source.traverse(node=>{
+        if(!node.isMesh)return;
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        if(!materials.some(material=>material.map===waterTexture))return;
+        pieceBox.setFromObject(node);
+        if(pieceBox.max.y-pieceBox.min.y<8)return;
+        if(fallsFound)fallsBox.union(pieceBox);else{fallsBox.copy(pieceBox);fallsFound=true}
+      });
+      if(fallsFound){
+        const fallsWidth=(fallsBox.max.x-fallsBox.min.x)*.62;
+        const fallsHeight=fallsBox.max.y-fallsBox.min.y+2;
+        const curtainMaterial=new THREE.MeshBasicMaterial({map:waterTexture,transparent:true,opacity:.62,depthWrite:false,side:THREE.DoubleSide,fog:false});
+        const curtain=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth,fallsHeight),curtainMaterial);
+        curtain.position.set((fallsBox.min.x+fallsBox.max.x)/2,(fallsBox.min.y+fallsBox.max.y)/2,fallsBox.min.z-.35);
+        scene.add(curtain);
+        const rill=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth*.3,fallsHeight*.8),curtainMaterial);
+        rill.position.set(fallsBox.min.x+fallsWidth*.2,(fallsBox.min.y+fallsBox.max.y)/2-1,fallsBox.min.z-.55);
+        scene.add(rill);
+      }
       chaoGardenFallback.visible=false;
       installChaoGardenFlora();
+      installChaoGardenEggs();
     },undefined,error=>console.warn('The Chao Garden model could not load.',error));
   }catch(error){console.warn('The Chao Garden model loader could not initialize.',error)}})();
 }
@@ -3391,7 +3439,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-exact-2';
+const ARCADE_BUILD='garden-exact-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
