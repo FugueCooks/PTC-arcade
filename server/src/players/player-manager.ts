@@ -32,7 +32,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
-  if (x >= 42.7 && x <= 140 && z >= -18.6 && z <= 49.5) return true;
+  if (x >= 42.7 && x <= 102.5 && z >= 3 && z <= 64.5) return true;
   // The arena's own region, north of the building. Matches POKEMON_EXPANSE
   // in arcade.js.
   return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;
@@ -79,7 +79,7 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 63.5 };
+const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 59 };
 // Past the shell the client fences against the garden's real geometry; the
 // authoritative copies hold the outer rectangle and the bore, which is what
 // they can state without the model.
@@ -126,7 +126,9 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // The walls between the rooms in a column. None of them has a doorway: every
   // room is entered from the hall.
   const inSideColumn = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
-    && Math.min(fromX, toX) >= ANNEX_MIN_X;
+    && Math.min(fromX, toX) >= ANNEX_MIN_X
+    // the dividers stop at the shell: unbounded they cut across the garden
+    && Math.max(Math.abs(fromX), Math.abs(toX)) < 43.2;
   if (inSideColumn) {
     for (const dividerZ of SIDE_ROOM_DIVIDER_Z) {
       // The east column's end wall is open: the Pokemon Center runs from the

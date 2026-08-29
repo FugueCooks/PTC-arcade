@@ -56,7 +56,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // The Chao Garden meadow spills out of the building's east wall the way
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
-const CHAO_EXPANSE={minX:42.7,maxX:140,minZ:-18.6,maxZ:49.5};
+const CHAO_EXPANSE={minX:42.7,maxX:102.5,minZ:3,maxZ:64.5};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -1262,13 +1262,41 @@ const chaoGardenFallback=new THREE.Mesh(
 );
 chaoGardenFallback.name='chao-garden-loading-floor';
 chaoGardenFallback.rotation.x=-Math.PI/2;
-chaoGardenFallback.scale.set(30,21,1);
-chaoGardenFallback.position.set(96,.025,13.2);
+chaoGardenFallback.scale.set(21,29,1);
+chaoGardenFallback.position.set(80,.025,33);
 scene.add(chaoGardenFallback);
-for(const [lx,lz] of [[-21,-12],[-21,12],[0,-15],[0,15],[19.5,0],[27,-12],[-28.5,0],[38,8],[38,-8]]){
+for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],[94,48],[64,34],[90,10]]){
   const sun=new THREE.PointLight(0xfff3d0,8.4,46,1.8);
-  sun.position.set(96+lx,8.5,13.2+lz);
+  sun.position.set(sx,8.5,sz);
   scene.add(sun);managedSceneLights.push(sun);
+}
+// The garden's own sky: a fine-meshed dome and sea disc built here, sized so
+// the dome's west rim tucks against the shell and a small notch over the
+// corridor keeps it out of the tunnel's air. Replaces the model's coarse
+// skybox, whose facets were the size of the sky itself.
+{
+  const skyCanvas=document.createElement('canvas');skyCanvas.width=64;skyCanvas.height=512;
+  const skyContext=skyCanvas.getContext('2d');
+  const skyGradient=skyContext.createLinearGradient(0,0,0,512);
+  skyGradient.addColorStop(0,'#1c2f6e');skyGradient.addColorStop(.45,'#3f63b0');
+  skyGradient.addColorStop(.8,'#93b3d8');skyGradient.addColorStop(1,'#c9d8e8');
+  skyContext.fillStyle=skyGradient;skyContext.fillRect(0,0,64,512);
+  const skyTexture=new THREE.CanvasTexture(skyCanvas);skyTexture.colorSpace=THREE.SRGBColorSpace;
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(37.6,64,32),new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide,fog:false}));
+  dome.position.set(81,-.5,33.7);dome.scale.y=.72;
+  // the corridor notch: fine mesh, so the hole is small and hides in the rock
+  const domePositions=dome.geometry.attributes.position,domeIndex=dome.geometry.index,keptSky=[];
+  const domeVertex=new THREE.Vector3();
+  const inCorridor=v=>{domeVertex.fromBufferAttribute(domePositions,v);domeVertex.multiply(dome.scale).add(dome.position);return domeVertex.x<58.5&&Math.abs(domeVertex.z-13.2)<3.4&&domeVertex.y<6};
+  for(let i=0;i<domeIndex.count;i+=3){
+    const a=domeIndex.getX(i),b=domeIndex.getX(i+1),c=domeIndex.getX(i+2);
+    if(inCorridor(a)||inCorridor(b)||inCorridor(c))continue;
+    keptSky.push(a,b,c);
+  }
+  dome.geometry.setIndex(keptSky);
+  scene.add(dome);
+  const sea=new THREE.Mesh(new THREE.CircleGeometry(37.4,48),new THREE.MeshStandardMaterial({color:0x1c4d8f,roughness:.35,metalness:.1}));
+  sea.rotation.x=-Math.PI/2;sea.position.set(81,-2.4,33.7);scene.add(sea);
 }
 // The way out is a stone bore: straight walls and one smooth barrel vault
 // from the arcade door, through the old room's dark, out the shell, and past
@@ -1294,7 +1322,7 @@ for(const [lx,lz] of [[-21,-12],[-21,12],[0,-15],[0,15],[19.5,0],[27,-12],[-28.5
   rockContext.globalAlpha=1;
   const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
   const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
-  const BORE_MIN_X=21.9,BORE_MAX_X=61.5,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
+  const BORE_MIN_X=21.9,BORE_MAX_X=56,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
   for(const side of [-1,1]){
     const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
     wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
@@ -1302,24 +1330,10 @@ for(const [lx,lz] of [[-21,-12],[-21,12],[0,-15],[0,15],[19.5,0],[27,-12],[-28.5
   const vault=new THREE.Mesh(new THREE.CylinderGeometry(2.05,2.05,BORE_LENGTH,22,1,true,0,Math.PI),boreRock);
   vault.rotation.z=Math.PI/2;vault.scale.y=1;vault.position.set(BORE_CENTER_X,1.95,13.2);
   vault.scale.set(1,1,.95);bore.add(vault);
-  // The carve that clears the bore's run through the meadow exposed the sea
-  // below; a grass apron patches the notch so the green reads as one lawn.
-  const grassCanvas=document.createElement('canvas');grassCanvas.width=grassCanvas.height=128;
-  const grassContext=grassCanvas.getContext('2d');
-  grassContext.fillStyle='#3da53c';grassContext.fillRect(0,0,128,128);
-  for(let i=0;i<420;i++){
-    grassContext.fillStyle=i%2?'#348f33':'#4cbb4a';
-    grassContext.globalAlpha=.3;
-    grassContext.beginPath();grassContext.arc((i*61)%128,(i*97)%128,2+(i*31)%6,0,Math.PI*2);grassContext.fill();
-  }
-  grassContext.globalAlpha=1;
-  const grassTexture=new THREE.CanvasTexture(grassCanvas);grassTexture.wrapS=grassTexture.wrapT=THREE.RepeatWrapping;grassTexture.repeat.set(9,4);
-  const apron=new THREE.Mesh(new THREE.BoxGeometry(20.6,.05,7.5),new THREE.MeshStandardMaterial({map:grassTexture,roughness:.95,metalness:0}));
-  apron.position.set(52.8,.05,13.2);bore.add(apron);
   const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
   header.position.set(22.5,4.25,13.2);bore.add(header);
-  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
-  boreFloor.scale.z=1.65;boreFloor.position.set(BORE_CENTER_X,.03,13.2);bore.add(boreFloor);
+  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(37.6,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
+  boreFloor.position.set(40.4,.03,13.2);bore.add(boreFloor);
   // The mouth: two jambs and a lintel, so the exit reads as carved rock.
   for(const side of [-1,1]){
     const jamb=new THREE.Mesh(new THREE.BoxGeometry(1.5,4.2,1.1),boreRock);
@@ -1455,7 +1469,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-baked-4',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-1',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3036,7 +3050,7 @@ function updateFollowCamera(){
   }
   // Inside the garden bore the camera goes first-person no matter the mode:
   // any chase offset ends up in the rock or out in the void.
-  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<61.9&&Math.abs(playerPosition.z-13.2)<1.7;
+  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<58.2&&Math.abs(playerPosition.z-13.2)<1.7;
   if(cameraMode==='first-person'||inGardenBore){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
@@ -3111,6 +3125,9 @@ function resolvePartitionWallCollisions(previousX,previousZ){
 const SIDE_ROOM_DIVIDER_Z=[SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z];
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
+  // The dividers live between the partition and the shell and nowhere else:
+  // unbounded, they cut invisible walls across the garden expanse.
+  if(Math.abs(playerPosition.x)>=SHELL_HALF_WIDTH)return;
   for(const dividerZ of SIDE_ROOM_DIVIDER_Z){
     // The east column's end wall is open: the Pokemon Center spans it.
     if(dividerZ===SIDE_COLUMN_MIN_Z&&playerPosition.x>0)continue;
@@ -3153,7 +3170,7 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.5};
+const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:59};
 // The fence is the geometry itself, and so is the floor: a step stands
 // wherever a ray straight down finds ground within a stride's climb of the
 // player's feet, and the player's height follows that ground. Slopes and
@@ -3277,7 +3294,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-baked-4';
+const ARCADE_BUILD='garden-authored-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
