@@ -1283,10 +1283,10 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   skyGradient.addColorStop(.82,'#9fd0f2');skyGradient.addColorStop(1,'#d9ecf8');
   skyContext.fillStyle=skyGradient;skyContext.fillRect(0,0,512,512);
   // puffy clouds, drawn as clustered soft ellipses in the sky's middle band
-  for(let cloud=0;cloud<14;cloud++){
-    const cx=(cloud*167)%512,cy=140+((cloud*97)%160),puffs=4+cloud%4;
+  for(let cloud=0;cloud<16;cloud++){
+    const cx=(cloud*167)%512,cy=196+((cloud*97)%78),puffs=5+cloud%4;
     for(let puff=0;puff<puffs;puff++){
-      const px=cx+((puff*53)%60)-30,py=cy+((puff*37)%22)-11,r=16+((cloud+puff)*29)%18;
+      const px=cx+((puff*53)%84)-42,py=cy+((puff*37)%26)-13,r=20+((cloud+puff)*29)%26;
       const glow=skyContext.createRadialGradient(px,py,r*.2,px,py,r);
       glow.addColorStop(0,'rgba(255,255,255,.95)');glow.addColorStop(.7,'rgba(255,255,255,.55)');glow.addColorStop(1,'rgba(255,255,255,0)');
       skyContext.fillStyle=glow;
@@ -1489,8 +1489,8 @@ function installChaoGardenFlora(){
       const palm=gltf.scene.getObjectByName('Palm');
       if(!palm)return;
       palm.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material[0]:o.material;o.material=new THREE.MeshBasicMaterial({map:m.map??null,color:m.color?.clone()??new THREE.Color(0x3da53c),fog:false});o.castShadow=false;o.receiveShadow=false}});
-      for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,51,1.4,1.8]]){
-        const ground=chaoGroundAt(px,pz,9);
+      for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[74,45,1.4,1.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[88,45,1.5,2.7],[78,30,1.2,3.9],[95,51,1.4,1.8],[66,57,1.35,2.4],[74,60,1.2,4.6],[85,58,1.45,1.3],[92,61,1.25,3.1],[70,63,1.15,5.5]]){
+        const ground=chaoGroundAt(px,pz,26);
         if(ground===null)continue;
         const tree=palm.clone(true);
         tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
@@ -1530,7 +1530,7 @@ function installChaoGardenFlora(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-authored-6',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-exact-1',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1543,7 +1543,19 @@ function installChaoGardenModel(){
         // no scene lighting, no arcade fog. One material swap gets all of it.
         const materials=Array.isArray(node.material)?node.material:[node.material];
         const replaced=materials.map(material=>{
-          const bright=new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),transparent:material.transparent,opacity:material.opacity,side:THREE.DoubleSide,fog:false});
+          const name=material.name||'';
+          const isWater=/0012|0013|0033/.test(name);
+          const isRock=/0011|0014|0032/.test(name);
+          const bright=new THREE.MeshBasicMaterial({
+            map:material.map??null,
+            // the reference's cliffs are cool white marble and its falls are
+            // pale translucent streams; tint multipliers get both from the
+            // same warm source textures
+            color:isWater?new THREE.Color(0xdff2fa):(isRock?new THREE.Color(0xc9d3dd):(material.color?.clone()??new THREE.Color(0xffffff))),
+            transparent:isWater||material.transparent,
+            opacity:isWater?.72:material.opacity,
+            depthWrite:!isWater,
+            side:THREE.DoubleSide,fog:false});
           return bright;
         });
         node.material=Array.isArray(node.material)?replaced:replaced[0];
@@ -3364,7 +3376,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='garden-authored-6';
+const ARCADE_BUILD='garden-exact-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
