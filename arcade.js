@@ -1287,7 +1287,7 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   rockContext.globalAlpha=1;
   const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);
   const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
-  const BORE_MIN_X=21.9,BORE_MAX_X=48.6,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
+  const BORE_MIN_X=21.9,BORE_MAX_X=53.4,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
   for(const side of [-1,1]){
     const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
     wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
@@ -1296,7 +1296,7 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   vault.rotation.z=Math.PI/2;vault.scale.y=1;vault.position.set(BORE_CENTER_X,1.95,13.2);
   vault.scale.set(1,1,.95);bore.add(vault);
   const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH+.8,.06,4.2),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
-  boreFloor.position.set(BORE_CENTER_X,.03,13.2);bore.add(boreFloor);
+  boreFloor.scale.z=1.65;boreFloor.position.set(BORE_CENTER_X,.03,13.2);bore.add(boreFloor);
   // The mouth: two jambs and a lintel, so the exit reads as carved rock.
   for(const side of [-1,1]){
     const jamb=new THREE.Mesh(new THREE.BoxGeometry(1.5,4.2,1.1),boreRock);
@@ -1304,7 +1304,7 @@ for(const [lx,lz] of [[-14,-8],[-14,8],[0,-10],[0,10],[13,0],[18,-8],[-19,0]]){
   }
   const lintel=new THREE.Mesh(new THREE.BoxGeometry(1.7,1.2,5.9),boreRock);
   lintel.position.set(BORE_MAX_X-.4,4.15,13.2);lintel.rotation.z=.05;bore.add(lintel);
-  for(const x of [26.5,33.5,40.5,46.5]){
+  for(const x of [26.5,33.5,40.5,46.5,51.6]){
     const bulb=new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.3),new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:2.2}));
     bulb.position.set(x,2.72,14.15);bore.add(bulb);
     const lantern=new THREE.PointLight(0xffd9a0,2.4,8,1.9);
@@ -1432,7 +1432,7 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-2',gltf=>{
+    loader.load('assets/models/chao-garden-2.glb?v=garden-tunnel-3',gltf=>{
       const source=gltf.scene,mount=new THREE.Group();
       // The garden lives wholly outside the building: the tunnel surfaces at
       // the meadow's west edge and nothing green or rocky crosses the shell.
@@ -1475,7 +1475,7 @@ function installChaoGardenModel(){
         const tall=(node.geometry.boundingBox.max.y-node.geometry.boundingBox.min.y)>2;
         if(!tall)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return skyVertex.x<46.8};
+        const west=v=>{skyVertex.fromBufferAttribute(positions,v);node.localToWorld(skyVertex);return skyVertex.x<52};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
           if(west(a)||west(b)||west(c))continue;
@@ -1489,7 +1489,7 @@ function installChaoGardenModel(){
       source.traverse(node=>{
         if(!node.isMesh||!node.geometry?.index)return;
         const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
-        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<48.9&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
+        const west=v=>{cutVertex.fromBufferAttribute(positions,v);node.localToWorld(cutVertex);return cutVertex.x<43||(cutVertex.x<53.7&&Math.abs(cutVertex.z-13.2)<3.4&&cutVertex.y<5.2)};
         for(let i=0;i<index.count;i+=3){
           const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
           if(west(a)||west(b)||west(c))continue;
@@ -3064,7 +3064,7 @@ function updateFollowCamera(){
   }
   // Inside the garden bore the camera goes first-person no matter the mode:
   // any chase offset ends up in the rock or out in the void.
-  const inGardenBore=playerPosition.x>21.8&&playerPosition.x<49&&Math.abs(playerPosition.z-13.2)<1.7;
+  const inGardenBore=playerPosition.x>21.8&&playerPosition.x<53.8&&Math.abs(playerPosition.z-13.2)<1.7;
   if(cameraMode==='first-person'||inGardenBore){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
