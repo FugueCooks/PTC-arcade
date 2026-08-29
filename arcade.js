@@ -1272,7 +1272,7 @@ for(const [lx,lz] of [[-21,-12],[-21,12],[0,-15],[0,15],[19.5,0],[27,-12],[-28.5
 // the sky's rim, surfacing on the meadow. A low-frequency noise map keeps it
 // reading as rock without a single jagged slab.
 {
-  const bore=new THREE.Group();bore.name='chao-garden-tunnel';scene.add(bore);
+  const bore=new THREE.Group();bore.name='chao-garden-tunnel';scene.add(bore);chaoBoreGroup=bore;
   // The old garden room is sealed off from the bore by two full walls, floor
   // to ceiling: the tunnel is a corridor through solid building, not a tube
   // crossing a dark room a player could end up beside.
@@ -1452,30 +1452,15 @@ function installSilentHillBuildings(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=garden-baked-1',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=garden-baked-2',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
       const source=gltf.scene,doomed=[];
-      const bounds=new THREE.Box3(),size=new THREE.Vector3();
-      renderer.localClippingEnabled=true;
-      const boreNotch=[
-        new THREE.Plane(new THREE.Vector3(1,0,0),-63.5),
-        new THREE.Plane(new THREE.Vector3(0,0,1),-15.8),
-        new THREE.Plane(new THREE.Vector3(0,0,-1),10.6),
-        new THREE.Plane(new THREE.Vector3(0,1,0),-8)
-      ];
       source.traverse(node=>{
         if(node.isCamera||node.isLight){doomed.push(node);return}
         if(!node.isMesh)return;
         node.castShadow=false;node.receiveShadow=false;
-        // The sky dome is the one mesh taller than any cliff; it gets the
-        // clipping notch so its rim never shows inside the tunnel.
-        bounds.setFromObject(node);bounds.getSize(size);
-        if(size.y>50){
-          const materials=Array.isArray(node.material)?node.material:[node.material];
-          for(const material of materials){material.clippingPlanes=boreNotch;material.clipIntersection=true}
-        }
       });
       doomed.forEach(node=>node.removeFromParent());
       source.name='chao-garden-environment';
@@ -3170,16 +3155,16 @@ const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.5};
 // wherever a ray straight down finds ground within a stride's climb of the
 // player's feet, and the player's height follows that ground. Slopes and
 // shelves are walked, sheer cliffs and open sea are refused.
-let chaoGardenMount=null;
+let chaoGardenMount=null,chaoBoreGroup=null;
 const chaoGroundRay=new THREE.Raycaster();
 const chaoGroundOrigin=new THREE.Vector3(),chaoGroundDown=new THREE.Vector3(0,-1,0);
 function chaoGroundAt(x,z,feetY){
   chaoGroundOrigin.set(x,42,z);
   chaoGroundRay.set(chaoGroundOrigin,chaoGroundDown);
-  const hits=chaoGroundRay.intersectObject(chaoGardenMount,true);
+  const hits=chaoBoreGroup?chaoGroundRay.intersectObjects([chaoGardenMount,chaoBoreGroup],true):chaoGroundRay.intersectObject(chaoGardenMount,true);
   for(const hit of hits){
     const groundY=hit.point.y;
-    if(groundY>-3.5&&groundY<=feetY+1.6)return groundY;
+    if(groundY>-3.5&&groundY<=feetY+1.9)return groundY;
   }
   return null;
 }
