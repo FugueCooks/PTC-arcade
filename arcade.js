@@ -1247,9 +1247,23 @@ function buildChaoGarden(centerX,centerZ){
     scene.add(sun);managedSceneLights.push(sun);
   }
 }
-// The Sonic room moved to the east column's blank middle room; the Pokemon
-// Center grew into the room it left.
-buildChaoGarden(ANNEX_ROOM_CENTER_X,13.2);
+// The supplied SA1-style garden model owns the room now. A grass disc holds
+// the floor while its GLB loads, and the suns stay because the model brings
+// no lights of its own.
+const chaoGardenFallback=new THREE.Mesh(
+  new THREE.CircleGeometry(1,48),
+  new THREE.MeshStandardMaterial({color:0x215f31,emissive:0x123b20,emissiveIntensity:.4,roughness:.92})
+);
+chaoGardenFallback.name='chao-garden-loading-floor';
+chaoGardenFallback.rotation.x=-Math.PI/2;
+chaoGardenFallback.scale.set(10,5.9,1);
+chaoGardenFallback.position.set(32.4,.025,13.2);
+scene.add(chaoGardenFallback);
+for(const [lx,lz] of [[-4.5,-3],[4.5,3],[0,-.5]]){
+  const sun=new THREE.PointLight(0xfff3d0,5.2,18,1.9);
+  sun.position.set(32.4+lx,4.4,13.2+lz);
+  scene.add(sun);managedSceneLights.push(sun);
+}
 /**
  * The Silent Hill buildings: a supplied SH1 building model, cloned along both
  * streets in place of the generated brick boxes. Its measured world box is
@@ -1368,37 +1382,73 @@ function installSilentHillBuildings(){
     },undefined,error=>console.warn('Silent Hill buildings could not load.',error));
   }catch(error){console.warn('Silent Hill building loader could not initialize.',error)}})();
 }
-function installChaoGardenProps(){
+function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-props.glb?v=chao-props-2',gltf=>{
-      const source=gltf.scene;
-      const take=name=>{const found=source.getObjectByName(name);if(found)found.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});return found};
-      const palm=take('Palm'),rocks=[take('RockA'),take('RockB'),take('RockC')],column=take('CliffColumn');
-      const cx=CHAO_GARDEN.cx,cz=CHAO_GARDEN.cz;
-      if(palm)for(const [dx,dz,scale,turn] of [[-4.8,2.8,1.05,.3],[-2.4,-4.6,1.2,2.1],[1.8,4.8,1.1,4],[-7,-2.8,.95,1.2],[4,2.4,1.15,5.2],[-.8,-2.2,1.25,2.8],[2.6,-6.2,1,3.6]]){
-        const tree=palm.clone(true);
-        tree.position.set(cx+dx,0,cz+dz);tree.scale.setScalar(scale);tree.rotation.y=turn;
-        scene.add(tree);
-      }
-      if(column){
-        // Two flank the mouth where the cliffs part, two carry the waterfall.
-        for(const [dx,dz,scale,turn] of [[-9.7,3,1.05,.4],[-9.4,-3.2,1.15,2],[6.4,-5.6,1.35,1.1],[4.4,-6.9,1.2,2.6]]){
-          const stack=column.clone(true);
-          stack.position.set(cx+dx,0,cz+dz);stack.scale.setScalar(scale);stack.rotation.y=turn;
-          scene.add(stack);
+    loader.load('assets/models/chao-garden-2.glb?v=chao-2-1',gltf=>{
+      const source=gltf.scene,mount=new THREE.Group(),discard=[];
+      // Turned 180 so the meadow's gentle rise meets the doorway and the pond
+      // and waterfall sit at the far end; one uniform scale, sized so the flat
+      // meadow runs wall to wall. The transform is fixed, derived from the
+      // measured meadow footprint (x -140..100, z -160..-20 at y~0).
+      const GARDEN_SCALE=.09,GARDEN_TX=31.5,GARDEN_TY=.05,GARDEN_TZ=6;
+      source.rotation.y=Math.PI;mount.add(source);
+      const bounds=new THREE.Box3(),size=new THREE.Vector3();
+      source.traverse(node=>{
+        if(node.isCamera||node.isLight)discard.push(node);
+        if(!node.isMesh)return;
+        node.castShadow=false;node.receiveShadow=false;
+        // The skybox sphere, sky card and 1250-unit ocean plane are for an
+        // outdoor camera; indoors they would swallow the whole arcade.
+        bounds.setFromObject(node);bounds.getSize(size);
+        if(Math.max(size.x,size.y,size.z)>500)discard.push(node);
+      });
+      discard.forEach(node=>node.removeFromParent());
+      mount.scale.setScalar(GARDEN_SCALE);
+      mount.position.set(GARDEN_TX,GARDEN_TY,GARDEN_TZ);
+      mount.name='chao-garden-environment';mount.userData.chaoGarden=true;
+      scene.add(mount);
+      mount.updateWorldMatrix(true,true);
+      // The model's east cliff ring lands behind the partition, and flattened
+      // it would slab the doorway shut: triangles touching the door corridor
+      // are cut instead, leaving a rock-flanked gap that reads as the way in.
+      const corridorVertex=new THREE.Vector3();
+      const inCorridor=i=>{return corridorVertex.x<23.2&&corridorVertex.z>11.4&&corridorVertex.z<15&&corridorVertex.y<4.2};
+      source.traverse(node=>{
+        if(!node.isMesh||!node.geometry?.index)return;
+        const positions=node.geometry.attributes.position,index=node.geometry.index,kept=[];
+        const touches=v=>{corridorVertex.fromBufferAttribute(positions,v);node.localToWorld(corridorVertex);return inCorridor()};
+        for(let i=0;i<index.count;i+=3){
+          const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
+          if(touches(a)||touches(b)||touches(c))continue;
+          kept.push(a,b,c);
         }
-      }
-      for(let i=0;i<9;i++){
-        const rock=rocks[i%3];if(!rock)continue;
-        const angle=i*2.399,radius=7.4+(i%3)*1.1;
-        const boulder=rock.clone(true);
-        boulder.position.set(cx+Math.cos(angle)*radius,0,cz+Math.sin(angle)*radius);
-        boulder.scale.setScalar(.7+(i%4)*.28);boulder.rotation.y=i*1.3;
-        scene.add(boulder);
-      }
-    },undefined,error=>console.warn('The Chao Garden props could not load.',error));
-  }catch(error){console.warn('The Chao Garden prop loader could not initialize.',error)}})();
+        if(kept.length!==index.count)node.geometry.setIndex(kept);
+      });
+      // Room-fit clamp: below the 5 m walls, overreach pancakes into them and
+      // hides inside; every peak above the ceiling line is capped flat so the
+      // waterfall cliffs never spear through the floors above.
+      const worldVertex=new THREE.Vector3();
+      source.traverse(node=>{
+        if(!node.isMesh||!node.geometry?.attributes?.position)return;
+        const positions=node.geometry.attributes.position;
+        let touched=false;
+        for(let i=0;i<positions.count;i++){
+          worldVertex.fromBufferAttribute(positions,i);
+          node.localToWorld(worldVertex);
+          let x=worldVertex.x,y=worldVertex.y,z=worldVertex.z;
+          if(y<5){x=Math.min(Math.max(x,22.02),42.58);z=Math.min(Math.max(z,5.12),21.28)}
+          if(y>4.95)y=4.95;
+          if(x===worldVertex.x&&y===worldVertex.y&&z===worldVertex.z)continue;
+          worldVertex.set(x,y,z);
+          node.worldToLocal(worldVertex);
+          positions.setXYZ(i,worldVertex.x,worldVertex.y,worldVertex.z);touched=true;
+        }
+        if(touched){positions.needsUpdate=true;node.geometry.computeBoundingSphere();node.geometry.computeBoundingBox();}
+      });
+      chaoGardenFallback.visible=false;
+    },undefined,error=>console.warn('The Chao Garden model could not load.',error));
+  }catch(error){console.warn('The Chao Garden model loader could not initialize.',error)}})();
 }
 /**
  * The Silent Hill room: an empty city block in dense fog.
@@ -2424,7 +2474,7 @@ async function installFurthermoreModel(){try{const loader=await getOptimizedGltf
 async function installEnterpriseModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/enterprise.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('enterprise-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.76/Math.max(size.x,size.y,size.z));model.rotation.y=Math.PI/2;model.position.y=.02;slot.add(model);},undefined,error=>console.warn('Enterprise model could not load.',error));}catch(error){console.warn('Enterprise model loader could not initialize.',error)}}
 async function installKurackModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/kurack.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('kurack-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.72/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.rotation.y=Math.PI*1.5;model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y=-scaledBounds.min.y-.18;slot.add(model);},undefined,error=>console.warn('Kurack model could not load.',error));}catch(error){console.warn('Kurack model loader could not initialize.',error)}}
 async function installGangsterPepe(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-gangster-animated.optimized.glb?v=meshopt-1',gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.016/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;gangsterPepeMount.add(model);if(gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());animatedMixers.push(mixer);}},undefined,error=>console.warn('Animated gangster Pepe model could not load.',error));}catch(error){console.warn('Animated gangster Pepe loader could not initialize.',error)}}
-let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenPropsStarted=false,silentHillBuildingsStarted=false,pokemonCenterStarted=false,nextHeavyAssetCheck=0;
+let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenModelStarted=false,silentHillBuildingsStarted=false,pokemonCenterStarted=false,nextHeavyAssetCheck=0;
 // Real controllers on the deck instead of a generic stick and four buttons.
 // Each model loads once per system and is cloned onto every cabinet of that
 // system; clones share geometry and materials, so the cost is one upload each.
@@ -2485,7 +2535,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenPropsStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenPropsStarted=true;installChaoGardenProps();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenModelStarted=true;installChaoGardenModel();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -3048,7 +3098,7 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={cx:ANNEX_ROOM_CENTER_X,cz:13.2,ax:10.2,az:7.8,laneHalfWidth:1.5,doorZ:13.2};
+const CHAO_GARDEN={cx:32.9,cz:13.2,ax:9.2,az:5.9,laneHalfWidth:1.5,doorZ:13.2};
 function resolveChaoGardenCollisions(previousX,previousZ){
   if(playerPosition.x<21.6||playerPosition.z<4.8||playerPosition.z>21.6)return;
   if(Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.cx-CHAO_GARDEN.ax*.5)return;

@@ -76,7 +76,7 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { cx: 32.4, cz: 13.2, ax: 10.2, az: 7.8, laneHalfWidth: 1.5, doorZ: 13.2 };
+const CHAO_GARDEN = { cx: 32.9, cz: 13.2, ax: 9.2, az: 5.9, laneHalfWidth: 1.5, doorZ: 13.2 };
 function insideChaoGarden(x: number, z: number): boolean {
   const dx = (x - CHAO_GARDEN.cx) / CHAO_GARDEN.ax;
   const dz = (z - CHAO_GARDEN.cz) / CHAO_GARDEN.az;
