@@ -32,7 +32,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
   // The Temple of Time's overrun past the same wall, further south. Matches
   // TEMPLE_EXPANSE in arcade.js.
-  if (x >= -93.5 && x <= -43.0 && z >= 14.2 && z <= 36.2) return true;
+  if (x >= -93.5 && x <= -42.7 && z >= 14.2 && z <= 36.2) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
   if (x >= 42.7 && x <= 102.5 && z >= 3 && z <= 64.5) return true;

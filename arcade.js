@@ -57,7 +57,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
 const CHAO_EXPANSE={minX:42.7,maxX:102.5,minZ:3,maxZ:64.5};
-const TEMPLE_EXPANSE={minX:-93.5,maxX:-43,minZ:14.2,maxZ:36.2};
+const TEMPLE_EXPANSE={minX:-93.5,maxX:-42.7,minZ:14.2,maxZ:36.2};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -1476,7 +1476,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=temple-5',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=temple-6',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1626,7 +1626,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-5',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-6',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1704,7 +1704,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=temple-5',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=temple-6',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3613,7 +3613,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-5';
+const ARCADE_BUILD='temple-6';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
