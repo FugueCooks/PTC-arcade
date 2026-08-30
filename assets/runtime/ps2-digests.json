@@ -7,15 +7,17 @@
   },
   {
     "kind": "game",
-    "file": "gta-san-andreas-v3.iso",
-    "bytes": 4517036032,
-    "sha256": "c94e9b16ffab9ab04dbf15109e8716a2bf0a853a246bd3d2641bf354a5068e6d"
+    "file": "gta-san-andreas-v4.chd",
+    "bytes": 2756017911,
+    "sha256": "e2f02b2c5938bcc232450979c9337bd1fcc73894e24debd4abdd42c992be3d69",
+    "system": "ps2"
   },
   {
     "kind": "game",
-    "file": "dbz-tenkaichi-3.iso",
-    "bytes": 3020816384,
-    "sha256": "93f1f911e9a2bbdf92e5794fc3075ddf3f87db3df4b1cb8cfbb0448721c91172"
+    "file": "dbz-tenkaichi-3-v2.chd",
+    "bytes": 1751727635,
+    "sha256": "81d8b6d019630452831d7a7e1674b8eb18764dc4ae26c07564a65935cf3684ba",
+    "system": "ps2"
   },
   {
     "kind": "game",

@@ -449,9 +449,9 @@
       "cabinetId": "psx-back-cabinet-03",
       "name": "Grand Theft Auto: San Andreas",
       "system": "ps2",
-      "file": "gta-san-andreas-v3.iso",
+      "file": "gta-san-andreas-v4.chd",
       "emulatorId": 26003,
-      "sizeBytes": 4517036032,
+      "sizeBytes": 2756017911,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "play-ps2",
@@ -460,8 +460,8 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "gta-san-andreas-v3.iso",
-          "sizeBytes": 4517036032,
+          "assetId": "gta-san-andreas-v4.chd",
+          "sizeBytes": 2756017911,
           "required": true,
           "label": null
         }
@@ -473,9 +473,9 @@
       "cabinetId": "psx-back-cabinet-04",
       "name": "DBZ Tenkaichi 3",
       "system": "ps2",
-      "file": "dbz-tenkaichi-3.iso",
+      "file": "dbz-tenkaichi-3-v2.chd",
       "emulatorId": 26004,
-      "sizeBytes": 3020816384,
+      "sizeBytes": 1751727635,
       "enabled": true,
       "launcherAdapterId": "hosted-image",
       "emulatorAdapterId": "play-ps2",
@@ -484,39 +484,11 @@
       "assetRequirements": [
         {
           "kind": "game-image",
-          "assetId": "dbz-tenkaichi-3.iso",
-          "sizeBytes": 3020816384,
+          "assetId": "dbz-tenkaichi-3-v2.chd",
+          "sizeBytes": 1751727635,
           "required": true,
           "label": null
         }
-      ],
-      "bootChunks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        349,
-        350,
-        351,
-        352,
-        353,
-        118,
-        119,
-        120,
-        121,
-        122,
-        123,
-        124,
-        685,
-        686,
-        687,
-        688,
-        689,
-        690,
-        691
       ]
     },
     {
