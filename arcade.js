@@ -1556,7 +1556,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=ps2chd-1',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=hub-1',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1773,7 +1773,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=ps2chd-1',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=hub-1',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1849,7 +1849,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=ps2chd-1',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=hub-1',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -2907,48 +2907,63 @@ for(const [inner,thickness,segments,material] of [[3.15,.055,96,medallionMateria
   ring.rotation.x=-Math.PI/2;ring.position.y=.032;centrepiece.add(ring);
 }
 // Dashes rather than a continuous ring, so the rotation is legible.
+const instanceMatrix=new THREE.Matrix4(),instanceEuler=new THREE.Euler(),instanceQuaternion=new THREE.Quaternion();
+const instancePosition=new THREE.Vector3(),instanceScale=new THREE.Vector3(1,1,1);
+const placeInstance=(mesh,index,x,y,z,rx,ry,rz)=>{
+  instancePosition.set(x,y,z);
+  instanceEuler.set(rx,ry,rz);
+  instanceQuaternion.setFromEuler(instanceEuler);
+  instanceMatrix.compose(instancePosition,instanceQuaternion,instanceScale);
+  mesh.setMatrixAt(index,instanceMatrix);
+};
 for(const [radius,count,length,material,speed] of [[2.62,24,.19,medallionMaterial,.11],[4.18,32,.13,medallionWarmMaterial,-.07]]){
-  const dashes=new THREE.Group();dashes.position.y=.034;centrepiece.add(dashes);
+  const dashes=new THREE.InstancedMesh(new THREE.PlaneGeometry(.05,length),material,count);
+  dashes.position.y=.034;
   for(let i=0;i<count;i++){
     const angle=i/count*Math.PI*2;
-    const dash=new THREE.Mesh(new THREE.PlaneGeometry(.05,length),material);
-    dash.rotation.x=-Math.PI/2;dash.rotation.z=-angle;
-    dash.position.set(Math.cos(angle)*radius,0,Math.sin(angle)*radius);
-    dashes.add(dash);
+    placeInstance(dashes,i,Math.cos(angle)*radius,0,Math.sin(angle)*radius,-Math.PI/2,0,-angle);
   }
+  dashes.instanceMatrix.needsUpdate=true;
+  centrepiece.add(dashes);
   spinningFloorRings.push({ring:dashes,speed});
 }
 const bollardMaterial=new THREE.MeshStandardMaterial({color:0x1a2740,emissive:0x123c5e,emissiveIntensity:.9,metalness:.72,roughness:.24});
 const bollardCapMaterial=new THREE.MeshBasicMaterial({color:0x8ff0ff,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false});
 const bollardGeometry=new THREE.CylinderGeometry(.075,.1,.52,10);
 const bollardCapGeometry=new THREE.SphereGeometry(.085,10,8);
+const bollards=new THREE.InstancedMesh(bollardGeometry,bollardMaterial,8);
+const bollardCaps=new THREE.InstancedMesh(bollardCapGeometry,bollardCapMaterial,8);
 for(let i=0;i<8;i++){
   const angle=i/8*Math.PI*2+Math.PI/8;
-  const bollard=new THREE.Mesh(bollardGeometry,bollardMaterial);
-  bollard.position.set(Math.cos(angle)*4.55,.26,Math.sin(angle)*4.55);centrepiece.add(bollard);
-  const cap=new THREE.Mesh(bollardCapGeometry,bollardCapMaterial);
-  cap.position.set(Math.cos(angle)*4.55,.55,Math.sin(angle)*4.55);centrepiece.add(cap);
+  placeInstance(bollards,i,Math.cos(angle)*4.55,.26,Math.sin(angle)*4.55,0,0,0);
+  placeInstance(bollardCaps,i,Math.cos(angle)*4.55,.55,Math.sin(angle)*4.55,0,0,0);
 }
+bollards.instanceMatrix.needsUpdate=true;bollardCaps.instanceMatrix.needsUpdate=true;
+centrepiece.add(bollards);centrepiece.add(bollardCaps);
 const moteMaterial=new THREE.MeshBasicMaterial({color:0xbdf3ff,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending});
 const moteGeometry=new THREE.SphereGeometry(.035,6,5);
+const moteField=new THREE.InstancedMesh(moteGeometry,moteMaterial,26);
+centrepiece.add(moteField);
 const motes=[];
 for(let i=0;i<26;i++){
   const angle=i*2.399,radius=.35+(i%7)*.26;
-  const mote=new THREE.Mesh(moteGeometry,moteMaterial);
-  mote.position.set(Math.cos(angle)*radius,.1+(i%13)*.28,Math.sin(angle)*radius);
-  centrepiece.add(mote);
-  motes.push({mote,speed:.22+(i%5)*.06,base:.1+(i%13)*.28});
+  motes.push({x:Math.cos(angle)*radius,z:Math.sin(angle)*radius,y:.1+(i%13)*.28,speed:.22+(i%5)*.06,base:.1+(i%13)*.28});
+  placeInstance(moteField,i,Math.cos(angle)*radius,.1+(i%13)*.28,Math.sin(angle)*radius,0,0,0);
 }
+moteField.instanceMatrix.needsUpdate=true;
 beforeRenderCallbacks.push((now,delta)=>{
   if(playerPosition.x*playerPosition.x+playerPosition.z*playerPosition.z>900)return;
   for(const {ring,speed} of haloRings)ring.rotation.z+=speed*delta;
   for(const {ring,speed} of spinningFloorRings)ring.rotation.y+=speed*delta;
-  for(const mote of motes){
-    mote.mote.position.y+=mote.speed*delta;
+  for(let i=0;i<motes.length;i++){
+    const mote=motes[i];
+    mote.y+=mote.speed*delta;
     // Recycled at the top of the beam rather than respawned, so the count is
     // fixed and nothing allocates once the scene is built.
-    if(mote.mote.position.y>3.7)mote.mote.position.y=mote.base%1.2;
+    if(mote.y>3.7)mote.y=mote.base%1.2;
+    placeInstance(moteField,i,mote.x,mote.y,mote.z,0,0,0);
   }
+  moteField.instanceMatrix.needsUpdate=true;
 });
 // Low, oversized glass prize display set flush against the true back wall.
 const prizeDisplay=new THREE.Group();prizeDisplay.position.set(0,0,TOP_BAND_MIN_Z+1.15);scene.add(prizeDisplay);
@@ -3787,7 +3802,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='ps2chd-1';
+const ARCADE_BUILD='hub-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
