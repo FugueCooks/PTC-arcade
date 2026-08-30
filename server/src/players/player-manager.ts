@@ -38,7 +38,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= 42.7 && x <= 86.6 && z >= 31.3 && z <= 93.3) return true;
   // Peach's Castle, outside the west wall on the Mario room's line. Matches
   // CASTLE_EXPANSE in arcade.js.
-  if (x >= -71.4 && x <= -42.7 && z >= -39.6 && z <= -11.4) return true;
+  if (x >= -119.7 && x <= -42.7 && z >= -42 && z <= 11.8) return true;
   // The arena's own region, north of the building. Matches POKEMON_EXPANSE
   // in arcade.js.
   return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;

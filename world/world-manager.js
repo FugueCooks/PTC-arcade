@@ -1,4 +1,4 @@
-import { EnvironmentManager } from './environment-manager.js?v=peach-2';
+import { EnvironmentManager } from './environment-manager.js?v=big-castle-1';
 import { LightingManager } from './lighting-manager.js';
 import { ObjectInteractionManager } from './object-interaction-manager.js';
 import { ParticleManager } from './particle-manager.js';
