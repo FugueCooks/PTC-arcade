@@ -1511,7 +1511,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=plan-6',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=plan-8',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1735,7 +1735,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-6',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-8',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1811,7 +1811,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-4.glb?v=plan-6',gltf=>{
+    loader.load('assets/models/chao-garden-4.glb?v=plan-8',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3518,7 +3518,10 @@ function updateFollowCamera(){
   const inGardenBore=playerPosition.x>40&&playerPosition.x<52&&Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<7.4;
   // The temple's doorway is the same kind of throat: a chase camera set back
   // five metres sits outside the facade, looking at the void beside it.
-  const inTempleDoor=playerPosition.x>-62&&playerPosition.x<-40&&Math.abs(playerPosition.z-42)<7.6;
+  // The temple is vaulted end to end and its passages are narrow: a chase
+  // camera set back five metres clears the roof and shows the void outside.
+  // Inside the building the view is the walker's own.
+  const inTempleDoor=playerPosition.x>-124.5&&playerPosition.x<-40&&Math.abs(playerPosition.z-42)<17.5;
   if(cameraMode==='first-person'||inGardenBore||inTempleDoor){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
@@ -3759,7 +3762,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='plan-6';
+const ARCADE_BUILD='plan-8';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
