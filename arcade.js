@@ -349,35 +349,6 @@ const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MA
 // Mario room's own doorway line now — a 4.4m gap on z -25.2 — because the
 // castle stands outside it and the room is the way through to the front steps.
 box(.3,5,14.6,0x180d31,-SHELL_HALF_WIDTH,2.5,-34.7);box(.3,5,56.6,0x180d31,-SHELL_HALF_WIDTH,2.5,5.3);
-// The castle's own red carpet stops at its threshold, which left the walk in
-// reading as a gap: arcade tile, then a step, then carpet. This runner carries
-// the carpet back through the doorway and out across the room floor, so the old
-// Mario room becomes the castle's antechamber rather than a corridor that
-// happens to end at one. It lies ON the floor, so it takes a polygon offset —
-// a plane coplanar with the tile it covers has nothing to win a depth test
-// with, which is the same fault as the medallion inside the entrance hall.
-{
-  const carpet=new THREE.MeshStandardMaterial({color:0x9e1f28,roughness:.92,metalness:0,
-    polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
-  // Full doorway width, so the carpet meets the jambs instead of leaving a
-  // dark margin down each side of the opening.
-  const runner=new THREE.Mesh(new THREE.PlaneGeometry(9.5,4.4),carpet);
-  runner.rotation.x=-Math.PI/2;
-  runner.position.set(-38.75,.02,-25.2);
-  scene.add(runner);
-  // The castle's ground stands 0.88 above the arcade's, so the runner met it at
-  // a step face that read as a dark band across the doorway. This carries the
-  // carpet up that riser and then on across the castle's own courtyard, which
-  // is checkerboard and grass rather than carpet — without it the red simply
-  // stops at the threshold and starts again somewhere inside, which is the gap.
-  const riser=new THREE.Mesh(new THREE.BoxGeometry(.34,.92,4.4),carpet);
-  riser.position.set(-43.45,.46,-25.2);
-  scene.add(riser);
-  const approach=new THREE.Mesh(new THREE.PlaneGeometry(7.4,4.4),carpet);
-  approach.rotation.x=-Math.PI/2;
-  approach.position.set(-47.1,.9,-25.2);
-  scene.add(approach);
-}
 box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,35.8);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,48.2);
 box(.3,5,82.2,0x180d31,SHELL_HALF_WIDTH,2.5,-26.1);box(.3,5,23,0x180d31,SHELL_HALF_WIDTH,2.5,26.5);box(.3,5,4.4,0x180d31,SHELL_HALF_WIDTH,2.5,48.2);
 // The north wall runs on across the annex, which closes its own west and
@@ -1869,9 +1840,19 @@ function resolveTempleFloor(previousX,previousZ){
  * the walk stops at the threshold.
  *
  * The model's front, the brick arch with the red carpet, faces +x, which is
- * the way a player arrives: west out of the old Mario room. Its east edge sits
- * against the shell so you step off the room's floor onto the castle's ground
- * with no gap of nothing in between.
+ * the way a player arrives: west out of the old Mario room.
+ *
+ * It is placed so the castle's OWN carpet comes through the wall rather than
+ * being met by a painted one. The bake's red runner (Object_2) reaches 9m
+ * further east than anything else — the brick arch stops at x -52.1, the grass
+ * and the sky shell earlier still — so sliding the whole model 6m east pushes
+ * only the carpet through the doorway and leaves the archway outside where it
+ * belongs. It lands about 6m into the room.
+ *
+ * The mount also drops 0.86 so that carpet lies at y 0.02: level with the
+ * arcade floor rather than on a 0.88 step, and two centimetres above it rather
+ * than exactly on it, because coplanar with the room's own floor is a z-fight
+ * across six metres.
  */
 /**
  * The Pikomat, filling the bay east of the Pokemon Center.
@@ -1892,7 +1873,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=carpet-3',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=spill-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1912,7 +1893,7 @@ function installPikomat(){
 }
 let castleStarted=false,castleMount=null,castleSettle=false;
 const castleDown=new THREE.Vector3(0,-1,0),castleRayOrigin=new THREE.Vector3(),castleRay=new THREE.Raycaster();
-const CASTLE_STEP=1.4,CASTLE_FALL=6.8,CASTLE_CENTRE_X=-81.4,CASTLE_CENTRE_Z=-25.2,CASTLE_HEIGHT=31.5,CASTLE_THRESHOLD_X=-44.6;
+const CASTLE_STEP=1.4,CASTLE_FALL=6.8,CASTLE_CENTRE_X=-75.4,CASTLE_CENTRE_Z=-25.2,CASTLE_HEIGHT=31.5,CASTLE_THRESHOLD_X=-44.6;
 function installPeachsCastle(){
   if(castleStarted)return;
   castleStarted=true;
@@ -1938,7 +1919,7 @@ function installPeachsCastle(){
       castle.position.set(-centre.x*scale,-bounds.min.y*scale,-centre.z*scale);
       const mount=new THREE.Group();
       mount.add(castle);
-      mount.position.set(CASTLE_CENTRE_X,0,CASTLE_CENTRE_Z);
+      mount.position.set(CASTLE_CENTRE_X,-.86,CASTLE_CENTRE_Z);
       scene.add(mount);
       castleMount=mount;
       // A decal lying exactly on the surface it decorates cannot win a depth
@@ -2015,7 +1996,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-carpet-3',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-spill-1',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4345,7 +4326,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='carpet-3';
+const ARCADE_BUILD='spill-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
