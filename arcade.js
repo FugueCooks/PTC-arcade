@@ -1411,7 +1411,7 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
 const POKEMON_ROSTER_SCALE=2.1,POKEMON_FIELD_Z=-108.45,POKEMON_FIELD_Y=.06;
 const pokemonModelCache=new Map();
 function loadPokemonModel(file){
-  if(!pokemonModelCache.has(file))pokemonModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/pokemon/'+file+'?v=pokemon-roster-1',resolve,undefined,reject))));
+  if(!pokemonModelCache.has(file))pokemonModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/pokemon/'+file+'?v=pokemon-roster-3',resolve,undefined,reject))));
   return pokemonModelCache.get(file);
 }
 function installPokemonRoster(){
@@ -1432,10 +1432,11 @@ function installPokemonRoster(){
         animatedMixers.push(mixer);
       }
       const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
-      const scale=options.metres*POKEMON_ROSTER_SCALE/Math.max(size.y,.001);
+      const span=options.lengthwise?Math.max(size.x,size.y,size.z):size.y;
+      const scale=options.metres*POKEMON_ROSTER_SCALE/Math.max(span,.001);
       const holder=new THREE.Group();
       model.scale.setScalar(scale);
-      model.position.set(-centre.x*scale,-bounds.min.y*scale,-centre.z*scale);
+      model.position.set(-centre.x*scale,(options.lengthwise?-centre.y:-bounds.min.y)*scale,-centre.z*scale);
       holder.add(model);
       holder.position.set(options.x,POKEMON_FIELD_Y+(options.hover??0),options.z);
       // the models are authored facing +z; a quarter turn puts a line
@@ -1446,7 +1447,8 @@ function installPokemonRoster(){
         const baseY=holder.position.y;
         beforeRenderCallbacks.push((now,delta)=>{
           holder.position.y=baseY+Math.sin(now*.0011)*1.3;
-          holder.rotation.y=options.rotY+Math.sin(now*.0007)*.22;
+          if(options.circle)holder.rotation.y+=delta*options.circle;
+          else holder.rotation.y=options.rotY+Math.sin(now*.0007)*.22;
         });
       }
     }).catch(error=>console.warn('An arena Pokemon could not load:',file,error));
@@ -1460,8 +1462,9 @@ function installPokemonRoster(){
   place('tyranitar.glb',{x:east,z:POKEMON_FIELD_Z,metres:2,rotY:-Math.PI/2});
   place('venusaur.glb',{x:east-1.5,z:POKEMON_FIELD_Z-11,metres:2,rotY:-Math.PI/2});
   place('ditto.glb',{x:east-2.4,z:POKEMON_FIELD_Z+10.5,metres:.3,rotY:-Math.PI/2});
-  // the flier holds the centre, high over the field, drifting on its wings
-  place('charizard.glb',{x:POKEMON_CENTER_X,z:POKEMON_FIELD_Z,metres:1.7,rotY:Math.PI/2,hover:15.5});
+  place('charizard.glb',{x:east+3.4,z:POKEMON_FIELD_Z+5,metres:1.7,rotY:-Math.PI/2});
+  // Rayquaza holds the sky over the centre circle, turning slowly
+  place('rayquaza.glb',{x:POKEMON_CENTER_X,z:POKEMON_FIELD_Z,metres:7,lengthwise:true,rotY:0,hover:21,circle:.14});
 }
 function installPokemonCenter(){
   void (async()=>{try{
@@ -1544,7 +1547,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=pkmn-3',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=pkmn-5',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1727,7 +1730,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=pkmn-3',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=pkmn-5',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1803,7 +1806,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=pkmn-3',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=pkmn-5',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3721,7 +3724,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pkmn-3';
+const ARCADE_BUILD='pkmn-5';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
