@@ -1442,7 +1442,7 @@ function installPokemonRoster(){
       // the models are authored facing +z; a quarter turn puts a line
       // shoulder-on to the field and looking across it
       holder.rotation.y=options.rotY;
-      scene.add(holder);
+      pokemonRosterWorld.add(holder);
       if(options.hover){
         const baseY=holder.position.y;
         beforeRenderCallbacks.push((now,delta)=>{
@@ -1543,11 +1543,20 @@ function installPokemonCenter(){
 // Its textures carry their own light, so meshes go full-bright; the player
 // climbs its porch steps and raised floor by raycast, like the garden.
 let templeOfTimeStarted=false,templeMount=null,templeSettle=false;
+// Each outlying region hangs from its own group so the cull can drop the whole
+// place in one flag when nobody is near it. A hidden subtree costs no draw
+// calls, and these three are the heaviest things in the scene.
+const silentHillWorld=new THREE.Group();
+silentHillWorld.name='silent-hill-world';
+scene.add(silentHillWorld);
+const pokemonRosterWorld=new THREE.Group();
+pokemonRosterWorld.name='pokemon-roster-world';
+scene.add(pokemonRosterWorld);
 const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),templeRay=new THREE.Raycaster();
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=court-1',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=street-1',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1606,6 +1615,40 @@ function resolveTempleFloor(previousX,previousZ){
   }
   playerPosition.y+=(ground+1.65-playerPosition.y)*.35;
 }
+/**
+ * The two things walking the street.
+ *
+ * Both keep their own lit materials rather than going full-bright: the point
+ * of them is that the fog gives them up slowly. Pyramid Head is authored
+ * facing away from the camera, the twins toward it, so their turns differ.
+ */
+function installSilentHillCast(){
+  const place=(file,options)=>{
+    void (async()=>{try{
+      const loader=await getOptimizedGltfLoader();
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-cast-1',gltf=>{
+        const model=gltf.scene;
+        model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
+        const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
+        const scale=options.height/Math.max(size.y,.001);
+        const holder=new THREE.Group();
+        model.scale.setScalar(scale);
+        model.position.set(-centre.x*scale,-bounds.min.y*scale,-centre.z*scale);
+        holder.add(model);
+        holder.position.set(options.x,0,options.z);
+        holder.rotation.y=options.rotY;
+        silentHillWorld.add(holder);
+      },undefined,error=>console.warn('A Silent Hill figure could not load:',file,error));
+    }catch(error){console.warn('Silent Hill cast loader could not initialize.',error)}})();
+  };
+  // He stands in the middle of the road, up the street, turned back toward the
+  // door the player comes in by. The model faces away at rest, so he is turned
+  // half a circle to face the walk.
+  place('pyramid-head.glb',{x:-33.4,z:-58.6,height:2.05,rotY:Math.PI+.22});
+  // The twins keep to the kerbs, side-on to the street.
+  place('twin-victim.glb',{x:-40.2,z:-50.4,height:1.35,rotY:Math.PI/2});
+  place('twin-victim.glb',{x:-25.4,z:-63.4,height:1.35,rotY:-Math.PI/2+.3});
+}
 function installSilentHillBuildings(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
@@ -1650,7 +1693,7 @@ function installSilentHillBuildings(){
         mount.position.set(x,0,z);
         mount.rotation.y=turn;
         mount.scale.setScalar(scale);
-        scene.add(mount);
+        silentHillWorld.add(mount);
       }
     },undefined,error=>console.warn('Silent Hill buildings could not load.',error));
   }catch(error){console.warn('Silent Hill building loader could not initialize.',error)}})();
@@ -1730,7 +1773,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=court-1',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=street-1',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1806,7 +1849,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=court-1',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=street-1',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -2037,6 +2080,16 @@ function buildSilentHillBlock(){
   for(const [x,z] of [[-31.5,-45],[-35,-55],[-29,-63],[-48,-52],[-57,-52.5],[-62.5,-51.5]]){
     const pall=new THREE.PointLight(0xaab8a4,2.6,13,2);
     pall.position.set(x,3.2,z);scene.add(pall);managedSceneLights.push(pall);
+  }
+  // The blocks stand three storeys now, and a lamp at head height reaches a
+  // third of the way up one. These hang over the street instead, dim and cold,
+  // so the upper courses read as masonry rather than as a hole in the fog.
+  // They rank as accent lights so they cannot take the pavement's own slots.
+  for(const [x,z] of [[-32.4,-49],[-32.4,-61],[-55,-52]]){
+    const wash=new THREE.PointLight(0x9fb0a8,2.2,34,1.5);
+    wash.position.set(x,15.5,z);
+    wash.userData.accentLight=true;wash.userData.wideAccent=true;
+    scene.add(wash);managedSceneLights.push(wash);
   }
   // A second car, nose-in at the back lot, and faded parking bays beside it —
   // the lot is where the machines will stand, at the end of the arrow trail.
@@ -3025,7 +3078,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.x<-14&&playerPosition.z>10){templeOfTimeStarted=true;installTempleOfTime();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.x<-14&&playerPosition.z>10){templeOfTimeStarted=true;installTempleOfTime();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -3039,6 +3092,12 @@ function managedLightPosition(light){
 // only for someone who could actually be under it.
 function updateChaoSkyVisibility(){
   chaoWorld.visible=playerPosition.x>4&&playerPosition.z>-14;
+  // The same trick for the other three outposts. Each bound is generous: it
+  // covers everywhere the place can actually be seen from, including the
+  // sightlines through its own doorway, so nothing pops into an open view.
+  silentHillWorld.visible=playerPosition.z<-26;
+  pokemonRosterWorld.visible=playerPosition.z<-44;
+  if(templeMount)templeMount.visible=playerPosition.x<-8&&playerPosition.z>0;
 }
 function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;updateChaoSkyVisibility();const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<324;const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[],muralLights=[],solanaLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.solanaLight?solanaLights:light.userData.muralLight?muralLights:light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
 // Accent beacons only reach 2.8 units, so they are ranked against their own
@@ -3047,7 +3106,7 @@ function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+2
 // Four, and reaching further. Two was tuned for a hall a third of this size,
 // and in the ring it left the floor between rooms genuinely unlit.
 roomLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<4&&distanceSq<400});
-accentLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<2&&distanceSq<16});
+accentLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<2&&distanceSq<(light.userData.wideAccent?900:16)});
 // A mural washes its wall from across the room, so it is ranked over the range
 // it actually reaches. On the accent budget every one of these sat dark unless
 // the player pressed into the wall, which is the one place you cannot see it.
@@ -3728,7 +3787,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='court-1';
+const ARCADE_BUILD='street-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -3738,7 +3797,7 @@ if(performanceStats){
 }
 let performanceWindowStart=performance.now(),performanceFrames=0,slowWindows=0,fastWindows=0,latestPerformance={fps:0,frameMs:0,quality:'WARMING'};
 const getRendererStats=()=>{const memory=performance.memory;return{...latestPerformance,renderScale:currentPixelRatio,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,heapUsedMb:memory?Number((memory.usedJSHeapSize/1048576).toFixed(1)):null,heapLimitMb:memory?Number((memory.jsHeapSizeLimit/1048576).toFixed(1)):null}};
-window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,playerPosition.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),debugInstallRoster:()=>installPokemonRoster(),debugInstallSilentHill:()=>installSilentHillBuildings(),onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
+window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,playerPosition.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),debugInstallRoster:()=>installPokemonRoster(),debugInstallSilentHill:()=>{installSilentHillBuildings();installSilentHillCast()},onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
 function updatePerformanceStats(now){performanceFrames++;const elapsed=now-performanceWindowStart;if(elapsed<1000)return;const fps=Math.round(performanceFrames*1000/elapsed),frameMs=Math.round(elapsed/performanceFrames),quality=currentPixelRatio<=pixelRatioFloor+.01?'LOW':currentPixelRatio<.9?'MED':'HIGH';latestPerformance={fps,frameMs,quality};if(performanceStats)performanceStats.textContent=`${fps} FPS · ${frameMs} MS · ${quality} · ${Math.round(currentPixelRatio*100)}%`;// This only ever went down.
 //
 // It dropped the scale on a single second under 48 fps — one hitch, a model
