@@ -353,12 +353,12 @@
     "gameId": "pokemon-snap",
     "enabled": true,
     "interactionPosition": {
-      "x": 5.49,
+      "x": 13.57,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 5.49,
+      "x": 13.57,
       "y": 1.65,
       "z": -125.45
     },
@@ -859,12 +859,12 @@
     "gameId": "pokemon-yellow",
     "enabled": true,
     "interactionPosition": {
-      "x": 7.49,
+      "x": 5.49,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 7.49,
+      "x": 5.49,
       "y": 1.65,
       "z": -125.45
     },
@@ -880,12 +880,12 @@
     "gameId": "pokemon-gold",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.52,
+      "x": 7.49,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 9.52,
+      "x": 7.49,
       "y": 1.65,
       "z": -125.45
     },
@@ -901,12 +901,12 @@
     "gameId": "pokemon-silver",
     "enabled": true,
     "interactionPosition": {
-      "x": 11.54,
+      "x": 9.52,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 11.54,
+      "x": 9.52,
       "y": 1.65,
       "z": -125.45
     },
@@ -922,12 +922,12 @@
     "gameId": "pokemon-crystal",
     "enabled": true,
     "interactionPosition": {
-      "x": 13.57,
+      "x": 11.54,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 13.57,
+      "x": 11.54,
       "y": 1.65,
       "z": -125.45
     },
@@ -1019,27 +1019,6 @@
     "defaultGameId": "pokemon-leafgreen"
   },
   {
-    "id": "gameboy-cabinet-11",
-    "name": "Aurora Ticket Kiosk",
-    "sceneKey": "AURORA TICKET KIOSK",
-    "cabinetType": "gameboy-upright",
-    "zoneId": "pokemon-arena",
-    "gameId": "pokemon-aurora-ticket",
-    "enabled": true,
-    "interactionPosition": {
-      "x": 23.73,
-      "y": 1.65,
-      "z": -125.1
-    },
-    "playerPosition": {
-      "x": 23.73,
-      "y": 1.65,
-      "z": -125.45
-    },
-    "playerRotationY": 0,
-    "defaultGameId": "pokemon-aurora-ticket"
-  },
-  {
     "id": "gameboy-cabinet-12",
     "name": "Pokemon Emerald",
     "sceneKey": "POKEMON EMERALD",
@@ -1048,12 +1027,12 @@
     "gameId": "pokemon-emerald",
     "enabled": true,
     "interactionPosition": {
-      "x": 25.76,
+      "x": 23.73,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 25.76,
+      "x": 23.73,
       "y": 1.65,
       "z": -125.45
     },

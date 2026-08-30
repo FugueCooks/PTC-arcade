@@ -1135,29 +1135,6 @@
       ]
     },
     {
-      "id": "pokemon-aurora-ticket",
-      "cabinetId": "gameboy-cabinet-11",
-      "name": "Aurora Ticket Kiosk",
-      "system": "gba",
-      "file": "pokemon-aurora-ticket.zip",
-      "emulatorId": 40011,
-      "sizeBytes": 148116,
-      "enabled": true,
-      "launcherAdapterId": "hosted-image",
-      "emulatorAdapterId": "emulatorjs",
-      "inputProfileId": "gb-gamepad",
-      "replayCapability": "NONE",
-      "assetRequirements": [
-        {
-          "kind": "game-image",
-          "assetId": "pokemon-aurora-ticket.zip",
-          "sizeBytes": 148116,
-          "required": true,
-          "label": null
-        }
-      ]
-    },
-    {
       "id": "pokemon-emerald",
       "cabinetId": "gameboy-cabinet-12",
       "name": "Pokemon Emerald",

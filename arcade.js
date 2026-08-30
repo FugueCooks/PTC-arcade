@@ -1493,7 +1493,7 @@ function installPokemonRoster(){
   place('charizard.glb',{x:east+3.4,z:POKEMON_FIELD_Z+5,metres:1.7,rotY:-Math.PI/2});
   // Rayquaza holds the sky over the centre circle, turning slowly, low enough
   // to read as a body overhead rather than a mark against the stars
-  place('rayquaza.glb',{x:POKEMON_CENTER_X,z:POKEMON_FIELD_Z,metres:10.5,lengthwise:true,rotY:0,hover:14,circle:.14});
+  place('rayquaza.glb',{x:POKEMON_CENTER_X,z:POKEMON_FIELD_Z,metres:8.93,lengthwise:true,rotY:0,hover:14});
 }
 function installPokemonCenter(){
   void (async()=>{try{
@@ -2812,17 +2812,16 @@ const POKEMON_MACHINE_MODELS={
 const POKEMON_MACHINE_ROW=[
   ['gameboy-cabinet-01','gb',1.46,0xff5f5f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-red-mat.webp',w:1.8}}],
   ['gameboy-cabinet-02','gb',3.5,0x5f8cff,{noPlate:true,statusY:3.06,mat:{file:'pokemon-blue-mat.webp',w:1.8}}],
-  ['n64-cabinet-01','arc',5.49,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner.png',w:1.07,y:2.1,z:.12,tilt:0}}],
-  ['gameboy-cabinet-03','gb',7.49,0xffe45f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-yellow-mat.webp',w:1.8}}],
-  ['gameboy-cabinet-04','gb',9.52,0xd9b44a],
-  ['gameboy-cabinet-05','gb',11.54,0xc8ccd4],
-  ['gameboy-cabinet-06','gb',13.57,0x8ee6ff],
+  ['n64-cabinet-01','arc',13.57,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner.png',w:1.07,y:2.1,z:.12,tilt:0}}],
+  ['gameboy-cabinet-03','gb',5.49,0xffe45f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-yellow-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-04','gb',7.49,0xd9b44a],
+  ['gameboy-cabinet-05','gb',9.52,0xc8ccd4],
+  ['gameboy-cabinet-06','gb',11.54,0x8ee6ff],
   ['gameboy-cabinet-07','gbasp',15.6,0xd45f5f],
   ['gameboy-cabinet-08','gbasp',17.63,0x4a8cd4],
   ['gameboy-cabinet-09','gbasp',19.66,0xff8c5f],
   ['gameboy-cabinet-10','gbasp',21.7,0x7dff67],
-  ['gameboy-cabinet-11','gbasp',23.73,0xb08cff],
-  ['gameboy-cabinet-12','gbasp',25.76,0x4ad48c],
+  ['gameboy-cabinet-12','gbasp',23.73,0x4ad48c],
   ['nds-cabinet-01','ds',28.4,0x8cb4ff],
   ['nds-cabinet-02','ds',31.65,0xffb4d9],
   ['nds-cabinet-03','ds',34.9,0xd9d9e6],
@@ -3960,7 +3959,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='preload-1';
+const ARCADE_BUILD='row-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
