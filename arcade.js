@@ -1353,11 +1353,34 @@ function installPokemonRoster(){
     const swapped=materials.map(material=>new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),vertexColors:material.vertexColors===true,transparent:material.transparent,opacity:material.opacity,alphaTest:material.alphaTest,side:material.side}));
     node.material=Array.isArray(node.material)?swapped:swapped[0];
   });
+  // A leftover shadow blob or a stray helper hangs below the feet, and taken
+  // as the model's bottom it lifts the whole animal off the field. Only the
+  // meshes the creature is actually made of get a say in where it stands; a
+  // handful of stray vertices does not.
+  const groundLine=(model,bounds)=>{
+    model.updateWorldMatrix(true,true);
+    const parts=[];
+    let total=0;
+    model.traverse(node=>{
+      if(!node.isMesh||!node.geometry?.attributes?.position)return;
+      const count=node.geometry.attributes.position.count;
+      total+=count;
+      parts.push({node,count});
+    });
+    if(!total)return bounds.min.y;
+    let lowest=null;
+    for(const part of parts){
+      if(part.count<total*.05)continue;
+      const box=new THREE.Box3().setFromObject(part.node);
+      if(lowest===null||box.min.y<lowest)lowest=box.min.y;
+    }
+    return lowest??bounds.min.y;
+  };
   const place=(file,options)=>{
     void loadPokemonModel(file).then(gltf=>{
       const model=gltf.scene;
       brighten(model);
-      if(gltf.animations.length){
+      if(gltf.animations.length&&options.idle!==true){
         const mixer=new THREE.AnimationMixer(model);
         mixer.clipAction(gltf.animations[0]).play();
         animatedMixers.push(mixer);
@@ -1365,9 +1388,10 @@ function installPokemonRoster(){
       const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
       const span=options.lengthwise?Math.max(size.x,size.y,size.z):size.y;
       const scale=options.metres*POKEMON_ROSTER_SCALE/Math.max(span,.001);
+      const floor=options.lengthwise?centre.y:groundLine(model,bounds);
       const holder=new THREE.Group();
       model.scale.setScalar(scale);
-      model.position.set(-centre.x*scale,(options.lengthwise?-centre.y:-bounds.min.y)*scale,-centre.z*scale);
+      model.position.set(-centre.x*scale,-floor*scale,-centre.z*scale);
       holder.add(model);
       holder.position.set(options.x,POKEMON_FIELD_Y+(options.hover??0),options.z);
       // the models are authored facing +z; a quarter turn puts a line
@@ -1386,14 +1410,14 @@ function installPokemonRoster(){
   };
   const west=POKEMON_CENTER_X-13.5,east=POKEMON_CENTER_X+13.5;
   // the challengers, west side, looking east
-  place('arceus.glb',{x:west,z:POKEMON_FIELD_Z,metres:3.2,rotY:Math.PI/2});
+  place('arceus.glb',{x:west,z:POKEMON_FIELD_Z,metres:3.2,rotY:-Math.PI/2,idle:true});
   place('entei.glb',{x:west+1.5,z:POKEMON_FIELD_Z-11,metres:2.1,rotY:Math.PI/2});
   place('pikachu.glb',{x:west+2.4,z:POKEMON_FIELD_Z+10.5,metres:.4,rotY:Math.PI/2});
   // the champions, east side, looking west
   place('tyranitar.glb',{x:east,z:POKEMON_FIELD_Z,metres:2,rotY:-Math.PI/2});
   place('venusaur.glb',{x:east-1.5,z:POKEMON_FIELD_Z-11,metres:2,rotY:-Math.PI/2});
   place('ditto.glb',{x:east-2.4,z:POKEMON_FIELD_Z+10.5,metres:.3,rotY:-Math.PI/2});
-  place('charizard.glb',{x:east+3.4,z:POKEMON_FIELD_Z+5,metres:1.7,rotY:-Math.PI/2});
+  place('charizard.glb',{x:east+3.4,z:POKEMON_FIELD_Z+5,metres:1.7,rotY:-Math.PI/2,idle:true});
   // Rayquaza holds the sky over the centre circle, turning slowly
   place('rayquaza.glb',{x:POKEMON_CENTER_X,z:POKEMON_FIELD_Z,metres:7,lengthwise:true,rotY:0,hover:21,circle:.14});
 }
@@ -1487,7 +1511,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=plan-4',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=plan-5',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1711,7 +1735,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-4',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-5',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1787,7 +1811,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-4.glb?v=plan-4',gltf=>{
+    loader.load('assets/models/chao-garden-4.glb?v=plan-5',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3028,7 +3052,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>14&&playerPosition.z>4&&playerPosition.z<22){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.x<-14&&playerPosition.z>10){templeOfTimeStarted=true;installTempleOfTime();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.x>10&&playerPosition.z>20){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.x<-14&&playerPosition.z>10){templeOfTimeStarted=true;installTempleOfTime();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -3735,7 +3759,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='plan-4';
+const ARCADE_BUILD='plan-5';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
