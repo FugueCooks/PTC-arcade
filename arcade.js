@@ -1708,11 +1708,14 @@ function installSilentHillCast(){
       },undefined,error=>console.warn('A Silent Hill figure could not load:',file,error));
     }catch(error){console.warn('Silent Hill cast loader could not initialize.',error)}})();
   };
-  // Not in the road but at the far end of it, in the corner where the fog is
-  // thickest and no lamp reaches — head and shoulders above the street, turned
-  // back toward the door the player comes in by. The model faces away at rest,
-  // so he is turned half a circle to face the walk.
-  place('pyramid-head.glb',{x:-35.6,z:-83.5,height:3.4,rotY:Math.PI-.12});
+  // The old spot claimed a corner it did not have: mid-roadway at (-35.6,-83.5),
+  // six metres off the west facade and eight short of the north one. This is a
+  // real one — the pocket at the head of the street where B10's blank side
+  // return meets B7's brick front, 1.3m off the return and 2.4m clear of the
+  // facade. The fog pall only clips its edge, so it is the darkest corner in
+  // the region. Turned half a circle to face back down the walk; the model
+  // faces away at rest.
+  place('pyramid-head.glb',{x:-25.3,z:-89.9,height:3.4,rotY:Math.PI});
   // The twins keep to the kerbs, side-on to the street.
   place('twin-victim.glb',{x:-40.2,z:-50.4,height:1.35,rotY:Math.PI/2});
   place('twin-victim.glb',{x:-25.4,z:-63.4,height:1.35,rotY:-Math.PI/2+.3});
@@ -1903,7 +1906,7 @@ function installChaoGardenCast(){
   };
   // the four hedgehogs and the fox
   place('amy.glb',{x:69,z:16,height:1.42,rotY:2.4});
-  place('shadow.glb',{x:91,z:27,height:1.45,rotY:-2});
+  place('shadow.glb',{x:91,z:27,height:2.54,rotY:-2});
   place('tails.glb',{x:73,z:45,height:1.35,rotY:0});
   place('sonic.glb',{x:81,z:12,height:1.5,rotY:2.9});
   place('silver.glb',{x:76,z:20,height:1.45,rotY:-1.2});
@@ -1935,7 +1938,9 @@ function installChaoGardenModel(){
       // anyway. The model's water is used as authored and simply set moving —
       // it is the only thing in the garden that is meant to be blue.
       const runningWater=[];
-      beforeRenderCallbacks.push((now,delta)=>{for(const map of runningWater)map.offset.y-=delta*.32});
+      // Plus, not minus: the atlas is authored flipY:false like every glTF
+      // texture, so subtracting from the offset ran the falls upward.
+      beforeRenderCallbacks.push((now,delta)=>{for(const map of runningWater)map.offset.y+=delta*.32});
       const source=gltf.scene,doomed=[];
       source.traverse(node=>{
         if(node.isCamera||node.isLight){doomed.push(node);return}
@@ -3080,8 +3085,45 @@ function addPrizeWindow(x,label,kind,color){const display=new THREE.Group();disp
   if(kind==='penguin'){toy.clear();const exactPudgy=new THREE.Mesh(new THREE.PlaneGeometry(.72,.72),new THREE.MeshBasicMaterial({map:pudgyToyTexture}));exactPudgy.position.z=.12;toy.add(exactPudgy);}
 }
 addPrizeWindow(-5.75,'PEPE','pepe',0x62cf64);addPrizeWindow(-3.45,'PUDGY','penguin',0x72d8ff);addPrizeWindow(-1.15,'ENTERPRISE','enterprise',0x6aaeff);addPrizeWindow(1.15,'KURACK','kurack',0xffb42e);addPrizeWindow(3.45,'FURTHERMORE','furthermore',0xb875ff);addPrizeWindow(5.75,'PUMP.FUN','pill',0xff3cac);
-let optimizedGltfLoaderPromise;
-function getOptimizedGltfLoader(){if(!optimizedGltfLoaderPromise)optimizedGltfLoaderPromise=Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/libs/meshopt_decoder.module.js')]).then(([{GLTFLoader},{MeshoptDecoder}])=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));return optimizedGltfLoaderPromise;}
+let optimizedGltfLoaderPromise,pendingSceneLoads=0;
+function getOptimizedGltfLoader(){if(!optimizedGltfLoaderPromise)optimizedGltfLoaderPromise=Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/libs/meshopt_decoder.module.js')]).then(([{GLTFLoader},{MeshoptDecoder}])=>{
+  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  // Every installer pulls through this one loader and not one of them reports
+  // when it has finished — they hand a callback to loader.load inside a void
+  // async wrapper and return nothing. Rather than make a dozen callers start
+  // returning promises, the loader counts its own outstanding work, and the
+  // preload waits on that count.
+  const load=loader.load.bind(loader);
+  loader.load=(url,onLoad,onProgress,onError)=>{
+    pendingSceneLoads++;
+    let settled=false;
+    const done=()=>{if(!settled){settled=true;pendingSceneLoads--}};
+    load(url,gltf=>{try{onLoad?.(gltf)}finally{done()}},onProgress,error=>{try{onError?.(error)}finally{done()}});
+  };
+  return loader;
+});return optimizedGltfLoaderPromise;}
+// Resolves once nothing is in flight and nothing new started on the following
+// frame — a finished load often starts another from inside its own callback
+// (the garden loads its flora, its eggs and its cast that way).
+// A timer and not requestAnimationFrame: a page opened in a background tab
+// gets no frames at all, and the preload would sit at nought per cent for as
+// long as the tab stayed unlooked-at. Timers still fire there.
+function settleSceneLoads(timeoutMs=45000){
+  return new Promise(resolve=>{
+    const deadline=performance.now()+timeoutMs;
+    let quiet=0;
+    const check=()=>{
+      if(performance.now()>deadline){console.warn('A preload step did not settle in time; carrying on.');resolve();return}
+      // Two quiet polls in a row, because a finished load often starts another
+      // from inside its own callback — the garden loads its flora, its eggs
+      // and its whole cast that way.
+      quiet=pendingSceneLoads>0?0:quiet+1;
+      if(quiet>=2){resolve();return}
+      setTimeout(check,80);
+    };
+    setTimeout(check,80);
+  });
+}
 async function installPepeModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-the-frog.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('pepe-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.58/Math.max(size.x,size.y,size.z));model.rotation.y=0;model.position.set(0,-.24,.22);slot.add(model);},undefined,error=>console.warn('Pepe model could not load.',error));}catch(error){console.warn('Pepe model loader could not initialize.',error)}}
 async function loadPudgyColorTexture(buffer){const view=new DataView(buffer);let offset=12,json,bin;while(offset<buffer.byteLength){const length=view.getUint32(offset,true),type=view.getUint32(offset+4,true),chunk=new Uint8Array(buffer,offset+8,length);if(type===0x4e4f534a)json=JSON.parse(new TextDecoder().decode(chunk));if(type===0x004e4942)bin=chunk;offset+=8+length;}const image=json?.images?.[0],imageView=json?.bufferViews?.[image?.bufferView];if(!image||!imageView||!bin)throw new Error('Penguin color texture is missing.');const imageBytes=bin.slice(imageView.byteOffset||0,(imageView.byteOffset||0)+imageView.byteLength);const url=URL.createObjectURL(new Blob([imageBytes],{type:image.mimeType||'image/jpeg'}));return new Promise((resolve,reject)=>new THREE.TextureLoader().load(url,texture=>{URL.revokeObjectURL(url);texture.colorSpace=THREE.SRGBColorSpace;texture.flipY=false;texture.needsUpdate=true;resolve(texture);},undefined,error=>{URL.revokeObjectURL(url);reject(error)}));}
 async function installPudgyModel(){try{const [loader,buffer]=await Promise.all([getOptimizedGltfLoader(),fetch('assets/models/pudgy-penguin.optimized.glb?v=meshopt-1').then(response=>{if(!response.ok)throw new Error(`Penguin model returned ${response.status}.`);return response.arrayBuffer()})]);const colorTexture=await loadPudgyColorTexture(buffer);const gltf=await new Promise((resolve,reject)=>loader.parse(buffer,'',resolve,reject));const slot=prizeDisplay.getObjectByName('pudgy-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.traverse(node=>{if(node.isMesh)node.material=new THREE.MeshStandardMaterial({map:colorTexture,roughness:.55,metalness:0,side:THREE.DoubleSide});});model.scale.setScalar(.58/Math.max(size.x,size.y,size.z));model.rotation.y=0;model.position.y=-.08;slot.add(model);}catch(error){console.warn('Pudgy model could not load.',error)}}
@@ -3151,6 +3193,65 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
   }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.z>8){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.z>8){templeOfTimeStarted=true;installTempleOfTime();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
+/**
+ * Everything heavy, loaded behind the avatar screen instead of underfoot.
+ *
+ * The regions used to arrive on a distance test while the player was walking
+ * into them, so 77MB of glTF was parsed on the main thread mid-stride: that is
+ * the hitch. The avatar screen is a free window — the scene is already built by
+ * then (app-bootstrap awaits arcade.js before avatar-selection), the render
+ * loop is already spinning, and the player is reading and typing rather than
+ * moving. Nothing here blocks entry: the button stays live, and anyone who goes
+ * in early simply meets the regions arriving the way they always did.
+ *
+ * The visibility culling is untouched. This changes only WHEN things load, not
+ * what draws; updateNearbyLights and updateChaoSkyVisibility never knew about
+ * loading in the first place.
+ */
+let scenePreloadStarted=false;
+function warmSceneGpu(){
+  // Shader programs link and textures upload on the first frame a material is
+  // drawn, which is its own spike on top of the parse. compile() walks only
+  // what is visible and the regions are hidden until someone is near them, so
+  // each is forced on for the pass and put back exactly as it was. r0.160 has
+  // no compileAsync, so this is synchronous by necessity — which is precisely
+  // why it belongs behind the avatar screen and not after it.
+  const regions=[silentHillWorld,pokemonRosterWorld,chaoWorld,templeMount].filter(Boolean);
+  const wasVisible=regions.map(region=>region.visible);
+  for(const region of regions)region.visible=true;
+  try{renderer.compile(scene,camera)}catch(error){console.warn('The GPU warm-up pass did not finish.',error)}
+  regions.forEach((region,index)=>{region.visible=wasVisible[index]});
+}
+function preloadSceneModels(onProgress){
+  if(scenePreloadStarted)return Promise.resolve();
+  scenePreloadStarted=true;
+  // Nearest the spawn first, so an impatient player who enters early already
+  // has what is in front of them.
+  const steps=[
+    ['the garden',()=>{chaoGardenModelStarted=true;installChaoGardenModel()}],
+    ['the temple',()=>{templeOfTimeStarted=true;installTempleOfTime()}],
+    ['the statues',()=>{megaManStatuesStarted=true;installMegaManStatues()}],
+    ['the cabinets',()=>{for(const system of ['psx','n64','gamecube'])installControllerModel(system)}],
+    ['the cabinet art',()=>{for(const cabinet of cabinets)if(cabinet.artSlug&&!cabinet.artApplied)applyCabinetArt(cabinet,cabinet.artSlug)}],
+    ['the prizes',()=>{prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe()}],
+    ['the centre',()=>{pokemonCenterStarted=true;installPokemonCenter()}],
+    ['the arena',()=>{pokemonRosterStarted=true;installPokemonRoster()}],
+    ['the street',()=>{silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast()}]
+  ];
+  return (async()=>{
+    for(let index=0;index<steps.length;index++){
+      const [label,run]=steps[index];
+      // One region at a time. Firing all nine at once saturates the main
+      // thread and freezes the avatar screen itself, which is the same fault
+      // moved rather than fixed.
+      try{run()}catch(error){console.warn('A preload step failed; that region will simply arrive late.',error)}
+      await settleSceneLoads();
+      onProgress?.(index+1,steps.length,label);
+    }
+    warmSceneGpu();
+    onProgress?.(steps.length,steps.length,null);
+  })();
+}
 let nextLightCull=0;
 // The barrier beacons are children of their barrier group, so light.position is
 // a local offset near the origin rather than the corner the beacon actually
@@ -3859,7 +3960,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='falls-1';
+const ARCADE_BUILD='preload-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -3898,3 +3999,17 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
+// Start the preload the moment the scene exists. arcade.js is awaited before
+// avatar-selection.js, so #avatar-screen is already in the document and the
+// player is about to spend a few seconds on it either way.
+(function preloadBehindTheAvatarScreen(){
+  const screen=document.getElementById('avatar-form')??document.getElementById('avatar-screen');
+  const line=document.createElement('p');
+  line.id='preload-line';
+  line.textContent='LOADING THE ARCADE · 0%';
+  screen?.appendChild(line);
+  void preloadSceneModels((done,total,label)=>{
+    if(!label){line.textContent='THE ARCADE IS READY';line.dataset.ready='true';setTimeout(()=>line.remove(),2600);return}
+    line.textContent='LOADING THE ARCADE · '+Math.round(done/total*100)+'% · '+label.toUpperCase();
+  });
+})();

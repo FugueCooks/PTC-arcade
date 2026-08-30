@@ -93,3 +93,7 @@ body.emulator-running #machine-modal { background:#06030b; }
 .avatar-panel #room-help { margin-top:4px; }
 #avatar-status { min-height:1.6em; margin:8px 0; }
 #avatar-confirm,#placement-cancel { padding:11px 16px; }
+/* The preload line under the avatar form. It reports, it never blocks: the
+   confirm button stays live the whole time it is counting. */
+#preload-line { margin:14px 0 0; color:#8af7d1; font-size:9px; letter-spacing:.12em; line-height:1.6; opacity:.85; transition:opacity .4s ease; }
+#preload-line[data-ready="true"] { color:var(--cyan); opacity:1; }
