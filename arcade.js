@@ -1827,7 +1827,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=mario-room-2',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=hall-clear-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1950,7 +1950,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-mario-room-2',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-hall-clear-1',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -3137,12 +3137,12 @@ for(const [cabinetId,kind,rowX,hue,opts] of POKEMON_MACHINE_ROW){
 // the cabinets cannot be reached while the room is blocked.
 const gamecubeTitles=['THE LEGEND OF ZELDA: THE WIND WAKER','THE LEGEND OF ZELDA: TWILIGHT PRINCESS','PIKMIN','SUPER SMASH BROS. MELEE','SUPER MARIO SUNSHINE'];
 const GAMECUBE_HUES=[0x8b5cf6,0x36f9f6,0xff4da6,0x7dff67,0xffb42e];
-// Cabinet 04 — Super Smash Bros. Melee — stands in the tournament hall with
-// the other headline multiplayer games; the rest hold their foyer slots, so a
-// missing cabinet reads as a gap in the row rather than a renumbering.
-const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>index===3
-  ?[4,-9,42,Math.PI/2,hue]
-  :[index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
+// Melee is back in the foyer row with the rest of the GameCube shelf. It stood
+// out in the tournament hall with the other headline multiplayer games; that
+// hall is being decorated, so the whole multiplayer set has come indoors and
+// every cabinet holds its own slot again with no gap in the numbering.
+const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>
+  [index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
   const cabinetId=`gamecube-cabinet-0${index}`;
   makeCabinet(cabinetId,gamecubeTitles[index-1],x,z,hue,false,false,'gamecube');
@@ -3150,20 +3150,22 @@ for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
 }
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
-// Cabinet 04 — DBZ Budokai Tenkaichi 3 — faces Melee across the tournament
-// hall; the rest hold their foyer slots.
-const ps2CabinetLayout=Array.from({length:5},(_,index)=>index===3
-  ?[4,15,42,-Math.PI/2]
-  :[index+1,FOYER_WEST[7+index].x,FOYER_WEST[7+index].z,FOYER_WEST[7+index].rotation]);
+// DBZ Tenkaichi 3 used to face Melee across the tournament hall. It rejoins the
+// PS2 shelf for the same reason Melee did.
+const ps2CabinetLayout=Array.from({length:5},(_,index)=>
+  [index+1,FOYER_WEST[7+index].x,FOYER_WEST[7+index].z,FOYER_WEST[7+index].rotation]);
 for(const [index,x,z,rotation] of ps2CabinetLayout){
   const cabinetId=`psx-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
   makeCabinet(cabinetId,ps2RoomTitles[index-1],x,z,expansionCabinetColors[index-1],false,false,'ps2');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'ps2',gameName:hosted?.name||ps2RoomTitles[index-1],gameId:hosted?.emulatorId||26000+index,enabled:Boolean(hosted),status:hosted?'available':'disabled'});configureHostedCabinet(cabinetId);
 }
-// The five Xbox placeholders are the Halo LAN row along the tournament hall's
-// back wall, facing the floor. Still disabled: the room is sealed and no Halo
-// image is hosted yet, so the stations stand ready rather than pretend to run.
-const xboxCabinetLayout=[[1,-8,48.4,Math.PI],[2,-4,48.4,Math.PI],[3,0,48.4,Math.PI],[4,4,48.4,Math.PI],[5,8,48.4,Math.PI]];
+// The Halo LAN row comes in off the tournament hall's back wall and stands at
+// the south end of the main floor instead, still shoulder to shoulder and still
+// facing the room. z 15.9 keeps it clear of the divider at 16.8 and leaves its
+// players standing at 13.55, just past the last foyer slot at 12.65. Still
+// disabled: no Halo image is hosted, so the stations stand ready rather than
+// pretend to run.
+const xboxCabinetLayout=[[1,-8,15.9,Math.PI],[2,-4,15.9,Math.PI],[3,0,15.9,Math.PI],[4,4,15.9,Math.PI],[5,8,15.9,Math.PI]];
 for(const [index,x,z,rotation] of xboxCabinetLayout){
   const cabinetId=`xbox-cabinet-0${index}`;
   makeCabinet(cabinetId,`HALO LAN // STATION 0${index}`,x,z,expansionCabinetColors[5-index],false,false,'xbox');
@@ -4278,7 +4280,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='mario-room-2';
+const ARCADE_BUILD='hall-clear-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';

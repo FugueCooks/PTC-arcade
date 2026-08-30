@@ -568,16 +568,16 @@
     "gameId": "super-smash-bros-melee",
     "enabled": true,
     "interactionPosition": {
-      "x": -7,
+      "x": 9.5,
       "y": 1.65,
-      "z": 42
+      "z": 10.35
     },
     "playerPosition": {
-      "x": -6.65,
+      "x": 9.15,
       "y": 1.65,
-      "z": 42
+      "z": 10.35
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "super-smash-bros-melee",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -676,16 +676,16 @@
     "gameId": "dbz-tenkaichi-3",
     "enabled": true,
     "interactionPosition": {
-      "x": 13,
+      "x": -9.5,
       "y": 1.65,
-      "z": 42
+      "z": 10.35
     },
     "playerPosition": {
-      "x": 12.65,
+      "x": -9.15,
       "y": 1.65,
-      "z": 42
+      "z": 10.35
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "dbz-tenkaichi-3"
   },
   {
@@ -719,12 +719,12 @@
     "interactionPosition": {
       "x": -8,
       "y": 1.65,
-      "z": 46.4
+      "z": 13.9
     },
     "playerPosition": {
       "x": -8,
       "y": 1.65,
-      "z": 46.05
+      "z": 13.55
     },
     "playerRotationY": 3.141592653589793
   },
@@ -739,12 +739,12 @@
     "interactionPosition": {
       "x": -4,
       "y": 1.65,
-      "z": 46.4
+      "z": 13.9
     },
     "playerPosition": {
       "x": -4,
       "y": 1.65,
-      "z": 46.05
+      "z": 13.55
     },
     "playerRotationY": 3.141592653589793
   },
@@ -759,12 +759,12 @@
     "interactionPosition": {
       "x": 0,
       "y": 1.65,
-      "z": 46.4
+      "z": 13.9
     },
     "playerPosition": {
       "x": 0,
       "y": 1.65,
-      "z": 46.05
+      "z": 13.55
     },
     "playerRotationY": 3.141592653589793
   },
@@ -779,12 +779,12 @@
     "interactionPosition": {
       "x": 4,
       "y": 1.65,
-      "z": 46.4
+      "z": 13.9
     },
     "playerPosition": {
       "x": 4,
       "y": 1.65,
-      "z": 46.05
+      "z": 13.55
     },
     "playerRotationY": 3.141592653589793
   },
@@ -799,12 +799,12 @@
     "interactionPosition": {
       "x": 8,
       "y": 1.65,
-      "z": 46.4
+      "z": 13.9
     },
     "playerPosition": {
       "x": 8,
       "y": 1.65,
-      "z": 46.05
+      "z": 13.55
     },
     "playerRotationY": 3.141592653589793
   },
