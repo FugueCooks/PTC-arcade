@@ -1246,8 +1246,11 @@ function buildChaoGarden(centerX,centerZ){
 // The garden mounts are declared ahead of everything that assigns them: the
 // bore group is built right here at module evaluation.
 let chaoGardenMount=null,chaoBoreGroup=null,chaoRockTexture=null;
-// the garden sky, held so the cull can hide it from every other region
-const chaoSkyPieces=[];
+// Everything the garden draws hangs here, so the cull can hide the island
+// whole from every region that is not looking at it.
+const chaoWorld=new THREE.Group();
+chaoWorld.name='chao-garden-world';
+scene.add(chaoWorld);
 // The supplied SA1-style garden model owns the room now. A grass disc holds
 // the floor while its GLB loads, and the suns stay because the model brings
 // no lights of its own.
@@ -1259,7 +1262,7 @@ chaoGardenFallback.name='chao-garden-loading-floor';
 chaoGardenFallback.rotation.x=-Math.PI/2;
 chaoGardenFallback.scale.set(21,29,1);
 chaoGardenFallback.position.set(80,.025,33);
-scene.add(chaoGardenFallback);
+chaoWorld.add(chaoGardenFallback);
 for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],[94,48],[64,34],[90,10]]){
   const sun=new THREE.PointLight(0xfff3d0,8.4,46,1.8);
   sun.position.set(sx,8.5,sz);
@@ -1301,11 +1304,9 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
     keptSky.push(a,b,c);
   }
   dome.geometry.setIndex(keptSky);
-  scene.add(dome);
-  chaoSkyPieces.push(dome);
+  chaoWorld.add(dome);
   const sea=new THREE.Mesh(new THREE.CircleGeometry(69.5,48),new THREE.MeshBasicMaterial({color:0x3f8fd6,fog:false}));
-  sea.rotation.x=-Math.PI/2;sea.position.set(113,-2.4,43);scene.add(sea);
-  chaoSkyPieces.push(sea);
+  sea.rotation.x=-Math.PI/2;sea.position.set(113,-2.4,43);chaoWorld.add(sea);
 }
 // The way out is a stone bore: straight walls and one smooth barrel vault
 // from the arcade door, through the old room's dark, out the shell, and past
@@ -1543,7 +1544,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=pkmn-2',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=pkmn-3',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1608,22 +1609,44 @@ function installSilentHillBuildings(){
     loader.load('assets/models/silent-hill/sh1-building-11.glb?v=sh-buildings-1',gltf=>{
       const source=gltf.scene;
       source.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});
-      // Taller than they are wide, the way a town's blocks close a street in:
-      // the footprint stays where the fog and the walk expect it and only the
-      // height grows, so the roofline disappears into the murk overhead.
-      for(const [x,z,turn,scale,rise] of [
-        [-28.1,-58.4,Math.PI/2,1,1.95],
-        [-31,-65.4,0,1,2.2],
-        [-48,-65.4,0,1.04,1.8],
-        [-63,-65.4,0,.97,2.35],
-        [-54.5,-41,Math.PI,1,2.05]
+      // Taller blocks, built the way a building gets taller: more storeys.
+      // Stretching one copy on Y smeared its windows into ribbons, so each
+      // site stacks whole copies instead and the masonry keeps its proportions.
+      // Only the ground floor brings its pavement slab.
+      const STOREY=9;
+      source.updateWorldMatrix(true,true);
+      const meshOrder=[],storeyBox=new THREE.Box3();
+      let slabIndex=-1;
+      source.traverse(node=>{
+        if(!node.isMesh)return;
+        storeyBox.setFromObject(node);
+        if(storeyBox.max.y-storeyBox.min.y<1)slabIndex=meshOrder.length;
+        meshOrder.push(node);
+      });
+      for(const [x,z,turn,scale,storeys] of [
+        [-28.1,-58.4,Math.PI/2,1,2],
+        [-31,-65.4,0,1,3],
+        [-48,-65.4,0,1.04,2],
+        [-63,-65.4,0,.97,3],
+        [-54.5,-41,Math.PI,1,2]
       ]){
-        const building=source.clone(true);
         const mount=new THREE.Group();
-        mount.add(building);
+        for(let level=0;level<storeys;level++){
+          const building=source.clone(true);
+          if(level>0&&slabIndex>=0){
+            let seen=0;
+            building.traverse(node=>{
+              if(!node.isMesh)return;
+              if(seen===slabIndex)node.visible=false;
+              seen++;
+            });
+          }
+          building.position.y=level*STOREY;
+          mount.add(building);
+        }
         mount.position.set(x,0,z);
         mount.rotation.y=turn;
-        mount.scale.set(scale,scale*rise,scale);
+        mount.scale.setScalar(scale);
         scene.add(mount);
       }
     },undefined,error=>console.warn('Silent Hill buildings could not load.',error));
@@ -1643,7 +1666,7 @@ function installChaoGardenFlora(){
         if(ground<-0.05)continue;
         const tree=palm.clone(true);
         tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
-        scene.add(tree);
+        chaoWorld.add(tree);
       }
     },undefined,()=>{});
   }catch(error){console.warn('Garden palms could not load.',error)}})();
@@ -1673,7 +1696,7 @@ function installChaoGardenFlora(){
       quad.rotation.y=spin;quad.position.y=.2;patch.add(quad);
     }
     patch.position.set(fx,ground,fz);patch.rotation.y=i*1.7;
-    scene.add(patch);
+    chaoWorld.add(patch);
   }
 }
 function installChaoGardenEggs(){
@@ -1699,12 +1722,12 @@ function installChaoGardenEggs(){
     egg.scale.set(1,1.32,1);
     egg.position.set(ex,ground+.4,ez);
     egg.rotation.set(((index*73)%10-5)*.03,index*1.3,((index*41)%10-5)*.03);
-    scene.add(egg);
+    chaoWorld.add(egg);
   });
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=pkmn-2',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=pkmn-3',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1747,7 +1770,7 @@ function installChaoGardenCast(){
       }
       holder.position.set(spotX,groundY+(options.hover??0),spotZ);
       holder.rotation.y=options.rotY??0;
-      scene.add(holder);
+      chaoWorld.add(holder);
       if(options.spinY||options.bob){
         const baseY=holder.position.y;
         beforeRenderCallbacks.push((now,delta)=>{
@@ -1780,7 +1803,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=pkmn-2',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=pkmn-3',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1830,7 +1853,7 @@ function installChaoGardenModel(){
       });
       doomed.forEach(node=>node.removeFromParent());
       source.name='chao-garden-environment';
-      scene.add(source);
+      chaoWorld.add(source);
       chaoGardenMount=source;
       // The authored falls leave gaps between tiers; one continuous curtain,
       // sized off the tall water geometry itself, completes the drop.
@@ -1852,26 +1875,26 @@ function installChaoGardenModel(){
         const curtainMaterial=new THREE.MeshBasicMaterial({map:waterTexture,transparent:true,opacity:.62,depthWrite:false,side:THREE.DoubleSide,fog:false});
         const curtain=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth,fallsHeight),curtainMaterial);
         curtain.position.set(fallsCentreX,fallsBox.min.y+fallsHeight/2,fallsBox.min.z-.35);
-        scene.add(curtain);
+        chaoWorld.add(curtain);
         const rill=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth*.3,fallsHeight*.75),curtainMaterial);
         rill.position.set(fallsBox.min.x+fallsWidth*.2,fallsBox.min.y+fallsHeight*.4,fallsBox.min.z-.55);
-        scene.add(rill);
+        chaoWorld.add(rill);
         // the headwall: the water needed somewhere to fall FROM. A broad
         // marble-toned summit closes the cliff top behind and above the
         // curtain so every stream begins at rock.
         const headwallMaterial=new THREE.MeshBasicMaterial({map:chaoRockTexture,color:0xc9d3dd,fog:false});
         const headwall=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+14,11,10),headwallMaterial);
         headwall.position.set(fallsCentreX,fallsTop+3.2,fallsBox.min.z+5.4);
-        scene.add(headwall);
+        chaoWorld.add(headwall);
         const summitLedge=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+18,4,16),headwallMaterial);
         summitLedge.position.set(fallsCentreX,fallsTop+8.4,fallsBox.min.z+9);
-        scene.add(summitLedge);
+        chaoWorld.add(summitLedge);
       }
       // The cliff face behind the water: one broad marble wall spanning the
       // falls' full footprint, so every translucent sheet reads against rock.
       const fallsBackdrop=new THREE.Mesh(new THREE.BoxGeometry(64,40,7),new THREE.MeshBasicMaterial({map:chaoRockTexture,color:0xc9d3dd,fog:false}));
       fallsBackdrop.position.set(77,15,92);
-      scene.add(fallsBackdrop);
+      chaoWorld.add(fallsBackdrop);
       chaoGardenFallback.visible=false;
       installChaoGardenFlora();
       installChaoGardenEggs();
@@ -3008,8 +3031,7 @@ function managedLightPosition(light){
 // Silent Hill's street its rim hung in the murk as a pale arc. It is drawn
 // only for someone who could actually be under it.
 function updateChaoSkyVisibility(){
-  const nearGarden=playerPosition.x>4&&playerPosition.z>-14;
-  for(const piece of chaoSkyPieces)piece.visible=nearGarden;
+  chaoWorld.visible=playerPosition.x>4&&playerPosition.z>-14;
 }
 function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;updateChaoSkyVisibility();const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<324;const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[],muralLights=[],solanaLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.solanaLight?solanaLights:light.userData.muralLight?muralLights:light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
 // Accent beacons only reach 2.8 units, so they are ranked against their own
@@ -3699,7 +3721,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pkmn-2';
+const ARCADE_BUILD='pkmn-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
