@@ -1387,6 +1387,55 @@ function loadPokemonModel(file){
   if(!pokemonModelCache.has(file))pokemonModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/pokemon/'+file+'?v=pokemon-roster-3',resolve,undefined,reject))));
   return pokemonModelCache.get(file);
 }
+/**
+ * The world-space bounds of a model as it will actually be drawn.
+ *
+ * A glTF's geometry bounds describe its BIND pose, but the GPU draws the
+ * skeleton's live pose, and on a rigged model the two are routinely different
+ * shapes. Sizing and grounding from the bind box is why Arceus hung three
+ * metres over the grass, why Charizard was scaled to fit a splayed mess, and
+ * why Silver stood two heads taller than he was asked to be while Sonic sank
+ * into the lawn. Only skinned meshes pay the per-vertex walk; everything else
+ * renders exactly as its bounds describe.
+ *
+ * Also returns the floor: the lowest point of the meshes the creature is
+ * actually made of. A leftover shadow blob or a stray helper hanging below the
+ * feet would otherwise lift the whole animal off the ground, so a part holding
+ * under a twentieth of the vertices gets no say in where it stands.
+ */
+const measurePose=model=>{
+  // updateMatrixWorld, not updateWorldMatrix: only the former runs
+  // SkinnedMesh's override, which refreshes bindMatrixInverse. Without it
+  // every posed vertex comes back in a stale frame and the model is sized
+  // from nonsense — Tyranitar came out 163 metres tall.
+  model.updateMatrixWorld(true);
+  const bounds=new THREE.Box3(),vertex=new THREE.Vector3(),parts=[];
+  let total=0;
+  model.traverse(node=>{
+    if(!node.isMesh||!node.geometry?.attributes?.position)return;
+    const positions=node.geometry.attributes.position;
+    let box;
+    if(node.isSkinnedMesh){
+      box=new THREE.Box3();
+      for(let i=0;i<positions.count;i++){
+        node.getVertexPosition(i,vertex);
+        box.expandByPoint(vertex.applyMatrix4(node.matrixWorld));
+      }
+    }else box=new THREE.Box3().setFromObject(node);
+    if(box.isEmpty())return;
+    bounds.union(box);
+    total+=positions.count;
+    parts.push({box,count:positions.count});
+  });
+  if(!total)return{bounds:new THREE.Box3().setFromObject(model),floor:0};
+  let lowest=null;
+  for(const part of parts){
+    if(part.count<total*.05)continue;
+    if(lowest===null||part.box.min.y<lowest)lowest=part.box.min.y;
+  }
+  return{bounds,floor:lowest??bounds.min.y};
+};
+
 function installPokemonRoster(){
   const brighten=model=>model.traverse(node=>{
     if(!node.isMesh)return;
@@ -1408,38 +1457,6 @@ function installPokemonRoster(){
   // as the model's bottom it lifts the whole animal off the field. Only the
   // meshes the creature is actually made of get a say in where it stands; a
   // handful of stray vertices does not.
-  const measurePose=model=>{
-    // updateMatrixWorld, not updateWorldMatrix: only the former runs
-    // SkinnedMesh's override, which refreshes bindMatrixInverse. Without it
-    // every posed vertex comes back in a stale frame and the model is sized
-    // from nonsense — Tyranitar came out 163 metres tall.
-    model.updateMatrixWorld(true);
-    const bounds=new THREE.Box3(),vertex=new THREE.Vector3(),parts=[];
-    let total=0;
-    model.traverse(node=>{
-      if(!node.isMesh||!node.geometry?.attributes?.position)return;
-      const positions=node.geometry.attributes.position;
-      let box;
-      if(node.isSkinnedMesh){
-        box=new THREE.Box3();
-        for(let i=0;i<positions.count;i++){
-          node.getVertexPosition(i,vertex);
-          box.expandByPoint(vertex.applyMatrix4(node.matrixWorld));
-        }
-      }else box=new THREE.Box3().setFromObject(node);
-      if(box.isEmpty())return;
-      bounds.union(box);
-      total+=positions.count;
-      parts.push({box,count:positions.count});
-    });
-    if(!total)return{bounds:new THREE.Box3().setFromObject(model),floor:0};
-    let lowest=null;
-    for(const part of parts){
-      if(part.count<total*.05)continue;
-      if(lowest===null||part.box.min.y<lowest)lowest=part.box.min.y;
-    }
-    return{bounds,floor:lowest??bounds.min.y};
-  };
   const place=(file,options)=>{
     void loadPokemonModel(file).then(gltf=>{
       const model=gltf.scene;
@@ -1693,7 +1710,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-cast-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-cast-4',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -1854,6 +1871,11 @@ function loadSonicModel(file){
   if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-9',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
+// Object3D.clone leaves a skinned copy bound to the original's skeleton, which
+// is why these rigs used to be handed out rather than copied. SkeletonUtils
+// rebinds the bones, so one cached glTF can serve any number of placements.
+let skeletonUtilsPromise=null;
+function getSkeletonUtils(){return skeletonUtilsPromise??=import('three/addons/utils/SkeletonUtils.js');}
 function installChaoGardenCast(){
   // The garden's residents, from the supplied Sonic models. Everything gets
   // the garden's full-bright look and stands on the real ground.
@@ -1865,25 +1887,38 @@ function installChaoGardenCast(){
     node.material=Array.isArray(node.material)?swapped:swapped[0];
   });
   const place=(file,options)=>{
-    void loadSonicModel(file).then(gltf=>{
-      // a skinned rig cannot survive a naive clone, and each is placed once
-      // anyway; static props clone freely
+    void Promise.all([loadSonicModel(file),getSkeletonUtils()]).then(([gltf,SkeletonUtils])=>{
+      // A skinned rig cannot survive Object3D.clone — the copy keeps pointing at
+      // the original's bones — so these used to be placed by handing out the
+      // loader's own gltf.scene. That is only safe if each file is placed once
+      // and only once, and neither held: omochao is placed twice, and any
+      // second pass over the cast re-measured a model that had already been
+      // scaled, read its finished height as its raw height, and overwrote the
+      // real scale with 1. That is how Silver ended up drawn at his authored
+      // 48 metres. SkeletonUtils.clone rebinds the skeleton, so every placement
+      // now gets its own instance and measuring one cannot disturb another.
       const skinned=Boolean(gltf.scene.getObjectByProperty('type','SkinnedMesh'));
-      const model=skinned?gltf.scene:gltf.scene.clone(true);
+      const model=skinned?SkeletonUtils.clone(gltf.scene):gltf.scene.clone(true);
       brighten(model);
       // skinned bounds confuse the culler into hiding whole characters
       model.traverse(node=>{if(node.isMesh)node.frustumCulled=false});
+      // Settle the pose before measuring anything off it. These rigs render
+      // nothing like their bind pose, and sizing from the bind box is what had
+      // Silver and Shadow standing two heads over the garden while Sonic sank
+      // to his shins in the lawn.
+      let mixer=null;
       if(gltf.animations.length){
-        const mixer=new THREE.AnimationMixer(model);
+        mixer=new THREE.AnimationMixer(model);
         mixer.clipAction(gltf.animations[0]).play();
-        animatedMixers.push(mixer);
+        mixer.update(0);
       }
-      const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
+      const {bounds,floor}=measurePose(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
       const scale=options.height/Math.max(size.y,.001);
       const holder=new THREE.Group();
       model.scale.setScalar(scale);
-      model.position.set(-centre.x*scale,-bounds.min.y*scale,-centre.z*scale);
+      model.position.set(-centre.x*scale,-floor*scale,-centre.z*scale);
       holder.add(model);
+      if(mixer)animatedMixers.push(mixer);
       let spotX=options.x,spotZ=options.z,groundY=options.y??null;
       if(groundY===null){
         for(const [dx,dz] of [[0,0],[0,-3],[0,-6],[3,0],[-3,0],[3,-4],[-3,-4]]){
@@ -1924,7 +1959,13 @@ function installChaoGardenCast(){
     place('ring.glb',{x:rx,z:rz,height:.85,hover:1.1,spinY:2.6,rotY:i*.8,wet:true});
   }
 }
+let chaoGardenInstalled=false;
 function installChaoGardenModel(){
+  // The caller sets chaoGardenModelStarted, so a debug call or a second
+  // proximity tick could build the whole garden twice over. Guard it here
+  // instead, where it cannot be forgotten.
+  if(chaoGardenInstalled)return;
+  chaoGardenInstalled=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
     loader.load('assets/models/chao-garden-4.glb?v=plan-9',gltf=>{
@@ -3959,7 +4000,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='row-1';
+const ARCADE_BUILD='cast-4';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -4002,6 +4043,16 @@ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updat
 // avatar-selection.js, so #avatar-screen is already in the document and the
 // player is about to spend a few seconds on it either way.
 (function preloadBehindTheAvatarScreen(){
+  // Local testing only: with all 77MB resident a headless browser renders at
+  // about nothing, which makes the scene impossible to inspect. ?skipPreload=1
+  // leaves the regions to arrive on their distance triggers the way they used
+  // to. Gated to localhost so it is never a switch anyone can throw in
+  // production.
+  const local=['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+  if(local&&new URLSearchParams(location.search).get('skipPreload')==='1'){
+    console.info('[arcade] preload skipped: regions will load on approach.');
+    return;
+  }
   const screen=document.getElementById('avatar-form')??document.getElementById('avatar-screen');
   const line=document.createElement('p');
   line.id='preload-line';
