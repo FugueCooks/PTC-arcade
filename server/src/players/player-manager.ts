@@ -35,7 +35,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -124.5 && x <= -42.7 && z >= 24.8 && z <= 59.2) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
-  if (x >= 42.7 && x <= 102.5 && z >= 3 && z <= 64.5) return true;
+  if (x >= 42.7 && x <= 86.6 && z >= 31.3 && z <= 93.3) return true;
   // The arena's own region, north of the building. Matches POKEMON_EXPANSE
   // in arcade.js.
   return x >= -12 && x <= 66 && z >= -138.6 && z <= -42.5;

@@ -56,7 +56,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // The Chao Garden meadow spills out of the building's east wall the way
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
-const CHAO_EXPANSE={minX:42.7,maxX:102.5,minZ:3,maxZ:64.5};
+const CHAO_EXPANSE={minX:42.7,maxX:86.6,minZ:31.3,maxZ:93.3};
 const TEMPLE_EXPANSE={minX:-124.5,maxX:-42.7,minZ:24.8,maxZ:59.2};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
@@ -324,8 +324,7 @@ const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MA
 // The west shell opens where Silent Hill spills out of the building; the
 // wall resumes at the fog's south line and runs to the back of the building.
 box(.3,5,75.6,0x180d31,-SHELL_HALF_WIDTH,2.5,-4.2);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,35.8);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,48.2);
-box(.3,5,78.4,0x180d31,SHELL_HALF_WIDTH,2.5,-28);
-box(.3,5,35.2,0x180d31,SHELL_HALF_WIDTH,2.5,32.8);
+box(.3,5,82.2,0x180d31,SHELL_HALF_WIDTH,2.5,-26.1);box(.3,5,23,0x180d31,SHELL_HALF_WIDTH,2.5,26.5);box(.3,5,4.4,0x180d31,SHELL_HALF_WIDTH,2.5,48.2);
 // The north wall runs on across the annex, which closes its own west and
 // south sides.
 // The north wall parts where the stadium concourse runs out to the globe.
@@ -1243,11 +1242,13 @@ function buildChaoGarden(centerX,centerZ){
 }
 // The garden mounts are declared ahead of everything that assigns them: the
 // bore group is built right here at module evaluation.
-let chaoGardenMount=null,chaoBoreGroup=null,chaoRockTexture=null;
+let chaoGardenMount=null,chaoRockTexture=null;
 // Everything the garden draws hangs here, so the cull can hide the island
 // whole from every region that is not looking at it.
+const CHAO_DX=-15.9,CHAO_DZ=28.8;
 const chaoWorld=new THREE.Group();
 chaoWorld.name='chao-garden-world';
+chaoWorld.position.set(CHAO_DX,0,CHAO_DZ);
 scene.add(chaoWorld);
 // The supplied SA1-style garden model owns the room now. A grass disc holds
 // the floor while its GLB loads, and the suns stay because the model brings
@@ -1264,7 +1265,7 @@ chaoWorld.add(chaoGardenFallback);
 for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],[94,48],[64,34],[90,10]]){
   const sun=new THREE.PointLight(0xfff3d0,8.4,46,1.8);
   sun.position.set(sx,8.5,sz);
-  scene.add(sun);managedSceneLights.push(sun);
+  chaoWorld.add(sun);managedSceneLights.push(sun);
 }
 // The garden's own sky: a fine-meshed dome and sea disc built here, sized so
 // the dome's west rim tucks against the shell and a small notch over the
@@ -1306,77 +1307,9 @@ for(const [sx,sz] of [[60,13.2],[70,10],[70,26],[80,16],[80,40],[92,30],[70,50],
   const sea=new THREE.Mesh(new THREE.CircleGeometry(69.5,48),new THREE.MeshBasicMaterial({color:0x3f8fd6,fog:false}));
   sea.rotation.x=-Math.PI/2;sea.position.set(113,-2.4,43);chaoWorld.add(sea);
 }
-// The way out is a stone bore: straight walls and one smooth barrel vault
-// from the arcade door, through the old room's dark, out the shell, and past
-// the sky's rim, surfacing on the meadow. A low-frequency noise map keeps it
-// reading as rock without a single jagged slab.
-{
-  const bore=new THREE.Group();bore.name='chao-garden-tunnel';scene.add(bore);chaoBoreGroup=bore;
-  // The old garden room is sealed off from the bore by two full walls, floor
-  // to ceiling: the tunnel is a corridor through solid building, not a tube
-  // crossing a dark room a player could end up beside.
-  for(const wallZ of [10.75,15.65]){
-    const seal=box(21.1,5,.3,0x11182c,32.15,2.5,wallZ,.05);seal.receiveShadow=true;
-  }
-  const rockCanvas=document.createElement('canvas');rockCanvas.width=rockCanvas.height=128;
-  const rockContext=rockCanvas.getContext('2d');
-  rockContext.fillStyle='#8f8a82';rockContext.fillRect(0,0,128,128);
-  for(let i=0;i<340;i++){
-    const shade=118+((i*37)%46);
-    rockContext.fillStyle='rgb('+shade+','+(shade-5)+','+(shade-12)+')';
-    rockContext.globalAlpha=.24;
-    rockContext.beginPath();rockContext.arc((i*53)%128,(i*89)%128,3+(i*29)%9,0,Math.PI*2);rockContext.fill();
-  }
-  rockContext.globalAlpha=1;
-  const rockTexture=new THREE.CanvasTexture(rockCanvas);rockTexture.wrapS=rockTexture.wrapT=THREE.RepeatWrapping;rockTexture.repeat.set(6,2);chaoRockTexture=rockTexture;
-  const boreRock=new THREE.MeshStandardMaterial({map:rockTexture,roughness:.94,metalness:.03,side:THREE.DoubleSide});
-  const BORE_MIN_X=21.9,BORE_MAX_X=57.6,BORE_LENGTH=BORE_MAX_X-BORE_MIN_X,BORE_CENTER_X=(BORE_MIN_X+BORE_MAX_X)/2;
-  for(const side of [-1,1]){
-    const wall=new THREE.Mesh(new THREE.BoxGeometry(BORE_LENGTH,2,.6),boreRock);
-    wall.position.set(BORE_CENTER_X,1,13.2+side*2.33);bore.add(wall);
-  }
-  const vault=new THREE.Mesh(new THREE.CylinderGeometry(2.05,2.05,BORE_LENGTH,22,1,true,0,Math.PI),boreRock);
-  vault.rotation.z=Math.PI/2;vault.scale.y=1;vault.position.set(BORE_CENTER_X,1.95,13.2);
-  vault.scale.set(1,1,.95);bore.add(vault);
-  const header=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.7,5.4),boreRock);
-  header.position.set(22.5,4.25,13.2);bore.add(header);
-  // The Sonic marquee on the header's hall face: the garden's front door
-  // says whose garden it is.
-  new THREE.TextureLoader().load('assets/art/sonic/'+'tunnel-sign.png?v=sonic-sign-1',texture=>{
-    texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;
-    const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.84,1.66),new THREE.MeshBasicMaterial({map:texture,fog:false}));
-    sign.position.set(21.64,4.25,13.2);sign.rotation.y=-Math.PI/2;
-    bore.add(sign);
-  },undefined,()=>{});
-  const boreFloor=new THREE.Mesh(new THREE.BoxGeometry(41.4,.06,5.6),new THREE.MeshStandardMaterial({map:rockTexture,roughness:.96,metalness:.02,color:0x777168}));
-  boreFloor.position.set(42.3,.03,13.2);bore.add(boreFloor);
-  // The mouth is a mound of marble-toned boulders, oversized and sunk so
-  // nothing floats and nothing peeks through from behind.
-  const portalRock=new THREE.MeshBasicMaterial({map:rockTexture,color:0xc9d3dd,fog:false});
-  const portalPieces=[
-    [59.8,1.6,9.4, 5.6,7.4,4.6, .34,-.12],
-    [59.8,1.6,17.0, 5.6,7.4,4.6, -.34,.12],
-    [59.4,5.7,13.2, 7.8,4.6,7.4, .1,.05],
-    [61.4,2.2,16.9, 4.6,5.8,4.2, -.5,0],
-    [61.4,2.2,9.6, 4.6,5.8,4.2, .5,0],
-    [58.6,7.8,13.2, 6.4,3.8,6.2, -.15,-.06]
-  ];
-  for(const [px,py,pz,sx,sy,sz,ry,rz] of portalPieces){
-    const boulder=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),portalRock);
-    boulder.position.set(px,py,pz);
-    boulder.rotation.set(0,ry,rz);
-    bore.add(boulder);
-  }
-  // a stone exit pad wide enough that no sea sliver survives beside the path
-  const exitPad=new THREE.Mesh(new THREE.BoxGeometry(7.2,.07,8.2),new THREE.MeshBasicMaterial({map:rockTexture,color:0xb9c4cf,fog:false}));
-  exitPad.position.set(59.6,.028,13.2);bore.add(exitPad);
-  for(const x of [26.5,33.5,40.5,46.5,51.6,57.2]){
-    const bulb=new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.3),new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xffc070,emissiveIntensity:2.2}));
-    bulb.position.set(x,2.72,14.15);bore.add(bulb);
-    const lantern=new THREE.PointLight(0xffd9a0,2.4,8,1.9);
-    lantern.position.set(x,2.5,13.5);bore.add(lantern);managedSceneLights.push(lantern);
-  }
-}
+// There is no bore any more. The island was carried to the corner until its
+// meadow met the shell wall, so the doorway opens onto grass and the corridor
+// that used to bridge them is not built at all.
 /**
  * The Silent Hill buildings: a supplied SH1 building model, cloned along both
  * streets in place of the generated brick boxes. Its measured world box is
@@ -1554,7 +1487,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=plan-2',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=plan-3',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1706,7 +1639,7 @@ function installChaoGardenFlora(){
       if(!palm)return;
       palm.traverse(o=>{if(o.isMesh){const m=Array.isArray(o.material)?o.material[0]:o.material;o.material=new THREE.MeshBasicMaterial({map:m.map??null,color:m.color?.clone()??new THREE.Color(0x3da53c),fog:false});o.castShadow=false;o.receiveShadow=false}});
       for(const [px,pz,scale,turn] of [[66,7.5,1.5,.4],[69.5,20,1.3,2.2],[65,31,1.6,4.1],[84,7,1.35,3.3],[92,15,1.55,5.2],[98,29,1.3,.9],[78,30,1.2,3.9],[88,36,1.5,2.7],[95,33,1.4,1.8],[71,36,1.2,4.6]]){
-        const ground=chaoGroundAt(px,pz,6)??.25;
+        const ground=chaoGroundAt(px+CHAO_DX,pz+CHAO_DZ,6)??.25;
         if(ground<-0.05)continue;
         const tree=palm.clone(true);
         tree.position.set(px,ground,pz);tree.scale.setScalar(scale);tree.rotation.y=turn;
@@ -1732,7 +1665,7 @@ function installChaoGardenFlora(){
   const flowerMaterial=new THREE.MeshBasicMaterial({map:flowerTexture,transparent:true,side:THREE.DoubleSide,fog:false});
   for(let i=0;i<26;i++){
     const fx=63+((i*173)%370)/10,fz=6+((i*257)%300)/10;
-    const ground=chaoGroundAt(fx,fz,9)??.25;
+    const ground=chaoGroundAt(fx+CHAO_DX,fz+CHAO_DZ,9)??.25;
     if(ground<-0.05)continue;
     const patch=new THREE.Group();
     for(const spin of [0,Math.PI/2]){
@@ -1761,7 +1694,7 @@ function installChaoGardenEggs(){
   eggColours.forEach((colour,index)=>{
     const egg=new THREE.Mesh(eggGeometry,new THREE.MeshBasicMaterial({map:speckleTexture,color:colour,fog:false}));
     const ex=64+((index*211)%330)/10,ez=8+((index*307)%300)/10;
-    const ground=chaoGroundAt(ex,ez,9)??.25;
+    const ground=chaoGroundAt(ex+CHAO_DX,ez+CHAO_DZ,9)??.25;
     if(ground<-0.05)return;
     egg.scale.set(1,1.32,1);
     egg.position.set(ex,ground+.4,ez);
@@ -1771,7 +1704,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-2',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-3',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1807,7 +1740,7 @@ function installChaoGardenCast(){
       let spotX=options.x,spotZ=options.z,groundY=options.y??null;
       if(groundY===null){
         for(const [dx,dz] of [[0,0],[0,-3],[0,-6],[3,0],[-3,0],[3,-4],[-3,-4]]){
-          const probe=chaoGroundAt(options.x+dx,options.z+dz,12);
+          const probe=chaoGroundAt(options.x+dx+CHAO_DX,options.z+dz+CHAO_DZ,12);
           if(probe!==null&&(probe>-0.05||options.wet)){spotX=options.x+dx;spotZ=options.z+dz;groundY=probe;break}
         }
         if(groundY===null)groundY=.25;
@@ -1847,7 +1780,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=plan-2',gltf=>{
+    loader.load('assets/models/chao-garden-4.glb?v=plan-3',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -2205,7 +2138,7 @@ const tournamentFloorMaterial=(()=>{const map=floorTextures.map.clone(),roughnes
 const tournamentFloor=new THREE.Mesh(new THREE.PlaneGeometry(TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH),tournamentFloorMaterial);tournamentFloor.rotation.x=-Math.PI/2;tournamentFloor.position.set(0,.002,TOURNAMENT_ROOM_CENTER_Z);tournamentFloor.receiveShadow=true;scene.add(tournamentFloor);
 // The annex went with Silent Hill, so the hall's ceiling is full width again.
 const tournamentCeiling=box(86.4,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,0,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
-box(.3,5,4.4,0x11182c,-SHELL_HALF_WIDTH,2.5,35.8,.06);box(.3,5,4.4,0x11182c,-SHELL_HALF_WIDTH,2.5,48.2,.06);box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);
+box(.3,5,4.4,0x11182c,-SHELL_HALF_WIDTH,2.5,35.8,.06);box(.3,5,4.4,0x11182c,-SHELL_HALF_WIDTH,2.5,48.2,.06);box(.3,5,4.4,0x11182c,SHELL_HALF_WIDTH,2.5,35.8,.06);box(.3,5,4.4,0x11182c,SHELL_HALF_WIDTH,2.5,48.2,.06);
 box(TOURNAMENT_ROOM_WIDTH,5,.3,0x11182c,0,2.5,TOURNAMENT_ROOM_BACK_Z,.06);
 // The hub's front wall, either side of the one doorway. It reaches the
 // partition walls rather than stopping short of them, which used to leave a two
@@ -3101,7 +3034,7 @@ function managedLightPosition(light){
 // Silent Hill's street its rim hung in the murk as a pale arc. It is drawn
 // only for someone who could actually be under it.
 function updateChaoSkyVisibility(){
-  chaoWorld.visible=playerPosition.x>4&&playerPosition.z>-14;
+  chaoWorld.visible=playerPosition.x>4&&playerPosition.z>10;
   // The same trick for the other three outposts. Each bound is generous: it
   // covers everywhere the place can actually be seen from, including the
   // sightlines through its own doorway, so nothing pops into an open view.
@@ -3549,7 +3482,9 @@ function updateFollowCamera(){
   }
   // Inside the garden bore the camera goes first-person no matter the mode:
   // any chase offset ends up in the rock or out in the void.
-  const inGardenBore=playerPosition.x>21.3&&playerPosition.x<60.1&&Math.abs(playerPosition.z-13.2)<1.7;
+  // The garden doorway is a throat like the temple's: a chase camera set
+  // back five metres would sit outside the shell looking at the void beside it.
+  const inGardenBore=playerPosition.x>40&&playerPosition.x<52&&Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<7.4;
   // The temple's doorway is the same kind of throat: a chase camera set back
   // five metres sits outside the facade, looking at the void beside it.
   const inTempleDoor=playerPosition.x>-62&&playerPosition.x<-40&&Math.abs(playerPosition.z-42)<7.6;
@@ -3672,7 +3607,7 @@ const POKEBOWL={cx:POKEMON_CENTER_X,cz:-108.45,ax:38.7,az:29.7,laneHalfWidth:1.5
  */
 // A circle now: the garden is square, so the cove is round, and the lane sits
 // at the doorway's own z rather than the circle's centre.
-const CHAO_GARDEN={doorZ:13.2,laneHalfWidth:1.5,laneEndX:63.2};
+const CHAO_GARDEN={doorZ:13.2+CHAO_DZ,laneHalfWidth:4.4,laneEndX:47.4};
 // The fence is the geometry itself, and so is the floor: a step stands
 // wherever a ray straight down finds ground within a stride's climb of the
 // player's feet, and the player's height follows that ground. Slopes and
@@ -3683,7 +3618,7 @@ const chaoGroundOrigin=new THREE.Vector3(),chaoGroundDown=new THREE.Vector3(0,-1
 function chaoGroundAt(x,z,feetY){
   chaoGroundOrigin.set(x,42,z);
   chaoGroundRay.set(chaoGroundOrigin,chaoGroundDown);
-  const hits=chaoBoreGroup?chaoGroundRay.intersectObjects([chaoGardenMount,chaoBoreGroup],true):chaoGroundRay.intersectObject(chaoGardenMount,true);
+  const hits=chaoGroundRay.intersectObject(chaoGardenMount,true);
   for(const hit of hits){
     const groundY=hit.point.y;
     if(groundY>-3.5&&groundY<=feetY+1.9)return groundY;
@@ -3692,17 +3627,13 @@ function chaoGroundAt(x,z,feetY){
 }
 
 function resolveChaoGardenCollisions(previousX,previousZ){
-  // The bore is the only road through the old room, and past the shell the
-  // measured grass edge is the only fence. A step that lands on neither goes
-  // back where it began.
-  if(playerPosition.x<21.6)return;
+  // The meadow reaches the shell wall now, so the doorway is the whole story:
+  // past it the measured grass edge is the only fence, and a step that lands
+  // on neither goes back where it began.
+  // the shell wall has thickness: the arcade floor carries the step across it
+  // and the meadow takes over on the far side
+  if(playerPosition.x<43.5)return;
   const inLane=Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.laneEndX;
-  if(playerPosition.x<42.7){
-    if(playerPosition.z<4.8||playerPosition.z>21.6)return;
-    if(!inLane){playerPosition.x=previousX;playerPosition.z=previousZ}
-    else playerPosition.y+=(1.65-playerPosition.y)*.35;
-    return;
-  }
   if(!chaoGardenMount){
     if(!inLane){playerPosition.x=previousX;playerPosition.z=previousZ}
     return;
@@ -3797,7 +3728,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='plan-2';
+const ARCADE_BUILD='plan-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
