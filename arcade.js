@@ -1476,7 +1476,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=temple-6',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=temple-8',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1498,14 +1498,17 @@ function installTempleOfTime(){
     },undefined,error=>console.warn('Temple of Time failed to load:',error));
   }catch(error){console.warn('Temple of Time failed to load:',error)}})();
 }
+const TEMPLE_STEP=.92,TEMPLE_FALL=4.5;
 function templeGroundAt(x,z,feetY){
   if(!templeMount)return null;
-  templeRayOrigin.set(x,feetY+2.2,z);
+  templeRayOrigin.set(x,feetY+TEMPLE_STEP+.1,z);
   templeRay.set(templeRayOrigin,templeDown);
-  templeRay.far=6;
+  templeRay.far=TEMPLE_STEP+TEMPLE_FALL+.2;
   for(const hit of templeRay.intersectObject(templeMount,true)){
     const y=hit.point.y;
-    if(y>-3.8&&y<=feetY+1.9)return y;
+    // arches and lintels overhead are walked under, not onto
+    if(y>feetY+TEMPLE_STEP)continue;
+    return y<feetY-TEMPLE_FALL?null:y;
   }
   return null;
 }
@@ -1519,10 +1522,15 @@ function resolveTempleFloor(previousX,previousZ){
     return;
   }
   templeSettle=true;
-  const ground=templeGroundAt(playerPosition.x,playerPosition.z,playerPosition.y-1.65);
+  const feet=playerPosition.y-1.65;
+  const ground=templeGroundAt(playerPosition.x,playerPosition.z,feet);
   if(ground===null){
-    if(playerPosition.x<-43.2){playerPosition.x=previousX;playerPosition.z=previousZ;return}
-    playerPosition.y+=(1.65-playerPosition.y)*.35;
+    // stone ahead, or a drop with no floor: the step is refused and the
+    // walker keeps the ground they were already standing on
+    playerPosition.x=previousX;playerPosition.z=previousZ;
+    const held=templeGroundAt(previousX,previousZ,feet);
+    if(held!==null)playerPosition.y+=(held+1.65-playerPosition.y)*.35;
+    else playerPosition.y+=(1.65-playerPosition.y)*.35;
     return;
   }
   playerPosition.y+=(ground+1.65-playerPosition.y)*.35;
@@ -1626,7 +1634,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-6',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=temple-8',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1684,9 +1692,7 @@ function installChaoGardenCast(){
   place('shadow.glb',{x:91,z:27,height:1.45,rotY:-2});
   place('tails.glb',{x:73,z:45,height:1.35,rotY:0});
   place('sonic.glb',{x:81,z:12,height:1.5,rotY:2.9});
-  // Silver hangs just off the west cliff lip, mid-jump toward the meadow
-  const silverLip=chaoGroundAt(57.4,26,20);
-  place('silver.glb',{x:59.2,z:26,y:(silverLip??5)+0.5,height:1.45,rotY:-Math.PI/2});
+  place('silver.glb',{x:76,z:20,height:1.45,rotY:-1.2});
   // chao, everywhere a chao should be
   for(const [cx,cz,turn] of [[72,12,1.2],[80,22,3.4],[88,12,5.1],[70,30,2.2],[84,34,4.4]])place('baby-chao.glb',{x:cx,z:cz,height:.55,rotY:turn});
   for(const [cx,cz,turn] of [[74,36,2.8],[92,20,.7]])place('tails-chao.glb',{x:cx,z:cz,height:.6,rotY:turn});
@@ -1704,7 +1710,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=temple-6',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=temple-8',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3613,7 +3619,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-6';
+const ARCADE_BUILD='temple-8';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
