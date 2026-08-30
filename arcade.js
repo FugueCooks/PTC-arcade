@@ -1284,7 +1284,7 @@ function buildChaoGarden(centerX,centerZ){
 }
 // The garden mounts are declared ahead of everything that assigns them: the
 // bore group is built right here at module evaluation.
-let chaoGardenMount=null,chaoRockTexture=null;
+let chaoGardenMount=null;
 // Everything the garden draws hangs here, so the cull can hide the island
 // whole from every region that is not looking at it.
 const CHAO_DX=-15.9,CHAO_DZ=28.8;
@@ -1928,25 +1928,14 @@ function installChaoGardenModel(){
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
-      // The model's own water texture is saturated blue and no tint can
-      // desaturate a map, so the falls get a painted one: soft white streams
-      // over the faintest aqua, the reference's water exactly.
-      const waterCanvas=document.createElement('canvas');waterCanvas.width=128;waterCanvas.height=256;
-      const waterContext=waterCanvas.getContext('2d');
-      waterContext.fillStyle='rgba(214,240,250,.55)';waterContext.fillRect(0,0,128,256);
-      for(let streak=0;streak<46;streak++){
-        const wx=(streak*29)%128,ww=2+(streak*13)%5;
-        const streakGradient=waterContext.createLinearGradient(0,0,0,256);
-        streakGradient.addColorStop(0,'rgba(255,255,255,'+(0.22+(streak%4)*0.12)+')');
-        streakGradient.addColorStop(.5,'rgba(255,255,255,'+(0.08+(streak%3)*0.08)+')');
-        streakGradient.addColorStop(1,'rgba(255,255,255,'+(0.3+(streak%4)*0.1)+')');
-        waterContext.fillStyle=streakGradient;
-        waterContext.fillRect(wx,0,ww,256);
-      }
-      const waterTexture=new THREE.CanvasTexture(waterCanvas);
-      waterTexture.wrapS=waterTexture.wrapT=THREE.RepeatWrapping;waterTexture.repeat.set(3,1.4);
-      waterTexture.colorSpace=THREE.SRGBColorSpace;
-      beforeRenderCallbacks.push((now,delta)=>{waterTexture.offset.y-=delta*.32});
+      // The falls used to be painted here instead: a canvas of white streaks
+      // over the faintest aqua, on the reasoning that the model's own water is
+      // too saturated to tint down. But a white sheet hung on a grey cliff
+      // reads as more cliff, and the paint was going onto the wrong surfaces
+      // anyway. The model's water is used as authored and simply set moving —
+      // it is the only thing in the garden that is meant to be blue.
+      const runningWater=[];
+      beforeRenderCallbacks.push((now,delta)=>{for(const map of runningWater)map.offset.y-=delta*.32});
       const source=gltf.scene,doomed=[];
       source.traverse(node=>{
         if(node.isCamera||node.isLight){doomed.push(node);return}
@@ -1957,16 +1946,35 @@ function installChaoGardenModel(){
         const materials=Array.isArray(node.material)?node.material:[node.material];
         const replaced=materials.map(material=>{
           const name=material.name||'';
-          const isWater=/0012|0013|0033/.test(name);
-          const isRock=/0011|0014|0032/.test(name);
+          // The atlas was read off by number and the numbers were wrong. 0012
+          // and 0013 are grey STONE, so the painted falls texture was being
+          // spread over 32m of cliff face: those were the white translucent
+          // sheets standing where rock should be. The only water in the model
+          // is 0032, the pool, and 0033, the fall itself — the two the file
+          // authors as alphaMode BLEND. 0032 was being tinted grey AND left
+          // writing depth while translucent, which is what punched the cyan
+          // quads through everything behind them.
+          //
+          // Everything else is rock or grass and keeps its own map at full
+          // brightness. The grey wash went with the misreading: it was
+          // draining the colour out of the lawn and the pool both.
+          const isWater=/0032|0033/.test(name);
+          let map=material.map??null;
+          if(isWater&&map){
+            // A clone, so the scroll belongs to this surface and not to every
+            // other place the atlas is sampled.
+            map=map.clone();map.needsUpdate=true;
+            map.wrapS=map.wrapT=THREE.RepeatWrapping;
+            runningWater.push(map);
+          }
           const bright=new THREE.MeshBasicMaterial({
-            map:isWater?waterTexture:(material.map??null),
-            color:isRock?new THREE.Color(0xc9d3dd):new THREE.Color(0xffffff),
-            transparent:isWater||material.transparent,
-            opacity:isWater?.5:material.opacity,
+            map,
+            color:new THREE.Color(0xffffff),
+            transparent:isWater,
+            opacity:isWater?.82:1,
             depthWrite:!isWater,
             side:THREE.DoubleSide,fog:false});
-          bright.userData.isLawn=/0010/.test(name);
+          bright.userData.isLawn=/0011/.test(name);
           bright.userData.isWater=isWater;
           return bright;
         });
@@ -1976,46 +1984,22 @@ function installChaoGardenModel(){
       source.name='chao-garden-environment';
       chaoWorld.add(source);
       chaoGardenMount=source;
-      // The authored falls leave gaps between tiers; one continuous curtain,
-      // sized off the tall water geometry itself, completes the drop.
-      const fallsBox=new THREE.Box3(),pieceBox=new THREE.Box3();
-      let fallsFound=false;
-      source.traverse(node=>{
-        if(!node.isMesh)return;
-        const materials=Array.isArray(node.material)?node.material:[node.material];
-        if(!materials.some(material=>material.map===waterTexture))return;
-        pieceBox.setFromObject(node);
-        if(pieceBox.max.y-pieceBox.min.y<8)return;
-        if(fallsFound)fallsBox.union(pieceBox);else{fallsBox.copy(pieceBox);fallsFound=true}
-      });
-      if(fallsFound){
-        const fallsCentreX=(fallsBox.min.x+fallsBox.max.x)/2;
-        const fallsWidth=(fallsBox.max.x-fallsBox.min.x)*.62;
-        const fallsTop=fallsBox.max.y-3;
-        const fallsHeight=fallsTop-fallsBox.min.y;
-        const curtainMaterial=new THREE.MeshBasicMaterial({map:waterTexture,transparent:true,opacity:.62,depthWrite:false,side:THREE.DoubleSide,fog:false});
-        const curtain=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth,fallsHeight),curtainMaterial);
-        curtain.position.set(fallsCentreX,fallsBox.min.y+fallsHeight/2,fallsBox.min.z-.35);
-        chaoWorld.add(curtain);
-        const rill=new THREE.Mesh(new THREE.PlaneGeometry(fallsWidth*.3,fallsHeight*.75),curtainMaterial);
-        rill.position.set(fallsBox.min.x+fallsWidth*.2,fallsBox.min.y+fallsHeight*.4,fallsBox.min.z-.55);
-        chaoWorld.add(rill);
-        // the headwall: the water needed somewhere to fall FROM. A broad
-        // marble-toned summit closes the cliff top behind and above the
-        // curtain so every stream begins at rock.
-        const headwallMaterial=new THREE.MeshBasicMaterial({map:chaoRockTexture,color:0xc9d3dd,fog:false});
-        const headwall=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+14,11,10),headwallMaterial);
-        headwall.position.set(fallsCentreX,fallsTop+3.2,fallsBox.min.z+5.4);
-        chaoWorld.add(headwall);
-        const summitLedge=new THREE.Mesh(new THREE.BoxGeometry((fallsBox.max.x-fallsBox.min.x)+18,4,16),headwallMaterial);
-        summitLedge.position.set(fallsCentreX,fallsTop+8.4,fallsBox.min.z+9);
-        chaoWorld.add(summitLedge);
-      }
-      // The cliff face behind the water: one broad marble wall spanning the
-      // falls' full footprint, so every translucent sheet reads against rock.
-      const fallsBackdrop=new THREE.Mesh(new THREE.BoxGeometry(64,40,7),new THREE.MeshBasicMaterial({map:chaoRockTexture,color:0xc9d3dd,fog:false}));
-      fallsBackdrop.position.set(77,15,92);
-      chaoWorld.add(fallsBackdrop);
+      // A curtain and a rill used to hang here too, two big translucent planes
+      // sized off the water geometry to close the gaps between tiers. They
+      // were cut from the same white paint as the falls and read as two more
+      // pale sheets leaning on the rock. The model's own cascade stands on its
+      // own once it is actually wearing its water.
+      //
+      // There were three more slabs here — a headwall, a summit ledge and a
+      // 64m backdrop — built to give the water somewhere to fall from and
+      // something to read against. All three were painting with
+      // chaoRockTexture, which has been null ever since the bore was cut
+      // (5949974) took its generator away: an untextured, unlit box in flat
+      // 0xc9d3dd. They were also sized from a WORLD-space Box3 and then added
+      // to chaoWorld, which is offset (-15.9, 0, 28.8), so each one landed
+      // 15.9m west and 28.8m north of the falls it was framing. That is the
+      // stack of pale cuboids. The model already carries real eroded cliff,
+      // 74m of it across x 43.3..117.6, so nothing needs standing in for it.
       chaoGardenFallback.visible=false;
       installChaoGardenFlora();
       installChaoGardenEggs();
@@ -3875,7 +3859,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='arena-1';
+const ARCADE_BUILD='falls-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
