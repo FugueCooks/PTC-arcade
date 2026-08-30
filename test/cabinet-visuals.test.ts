@@ -96,7 +96,11 @@ void test('the main room is an open hall beside square console rooms', async () 
   assert.doesNotMatch(edge, /SOCIAL_COUCH_/);
   // Trench Pepe moved out of that case and onto the prize counter.
   assert.match(arcade, /gangsterPepeMount\.position\.set\(0,1\.265,0\);prizeDisplay\.add\(gangsterPepeMount\)/);
-  assert.match(arcade, /new THREE\.PlaneGeometry\(ROOM_SPAN,SIDE_COLUMN_DEPTH\)/);
+  // A column is floored in one piece, except where the Temple of Time's court
+  // paves the west column's north room in the temple's own stone: that room's
+  // length comes out of the arcade floor rather than being covered twice.
+  assert.match(arcade, /new THREE\.PlaneGeometry\(ROOM_SPAN,floorDepth\)/);
+  assert.match(arcade, /const floorDepth=west\?SIDE_COLUMN_DEPTH-16\.8:SIDE_COLUMN_DEPTH;/);
   // The room beyond the hub is the Multiplayer / Tournament room now, and it
   // runs the full width of the building rather than the old 24 m square.
   assert.match(arcade, /TOURNAMENT_ROOM_WIDTH=SHELL_HALF_WIDTH\*2/);

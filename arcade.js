@@ -1547,7 +1547,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=pkmn-5',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=court-1',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1584,7 +1584,7 @@ function templeGroundAt(x,z,feetY){
   return null;
 }
 function resolveTempleFloor(previousX,previousZ){
-  const inRoom=playerPosition.x>-124.5&&playerPosition.x<-21.6&&playerPosition.z>8.3&&playerPosition.z<42.1;
+  const inRoom=playerPosition.x>-124.5&&playerPosition.x<-21.0&&playerPosition.z>8.3&&playerPosition.z<42.1;
   if(!inRoom){
     if(templeSettle){
       playerPosition.y+=(1.65-playerPosition.y)*.3;
@@ -1730,7 +1730,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=pkmn-5',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=court-1',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1806,7 +1806,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=pkmn-5',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=court-1',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -2095,8 +2095,12 @@ const SIDE_COLUMN_DEPTH=SIDE_COLUMN_MAX_Z-SIDE_COLUMN_MIN_Z,SIDE_COLUMN_CENTER_Z
 const SIDE_ROOM_ACCENTS=[0xff5fae,0xd18a52,0x4aa8ff,0x7dff67];
 for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   const west=roomX<0;
-  const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,SIDE_COLUMN_DEPTH),worldAlignedFloorMaterial(ROOM_SPAN,SIDE_COLUMN_DEPTH,roomX,SIDE_COLUMN_CENTER_Z,EXPANSION_FLOOR_STYLE));
-  columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,SIDE_COLUMN_CENTER_Z);columnFloor.receiveShadow=true;scene.add(columnFloor);
+  // The temple's court paves the west column's north room in its own stone,
+  // so the arcade floor stops at that room's edge rather than showing through.
+  const floorDepth=west?SIDE_COLUMN_DEPTH-16.8:SIDE_COLUMN_DEPTH;
+  const floorCentre=west?SIDE_COLUMN_CENTER_Z-8.4:SIDE_COLUMN_CENTER_Z;
+  const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,floorDepth),worldAlignedFloorMaterial(ROOM_SPAN,floorDepth,roomX,floorCentre,EXPANSION_FLOOR_STYLE));
+  columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,floorCentre);columnFloor.receiveShadow=true;scene.add(columnFloor);
   // The west plate stops at the Temple of Time's room: its dome rises
   // through the hole cut for it in the main ceiling.
   if(west)box(ROOM_SPAN,.12,50.4,0x090b18,roomX,5.08,-8.4,.08);
@@ -3479,7 +3483,7 @@ function updateFollowCamera(){
   const inGardenBore=playerPosition.x>21.3&&playerPosition.x<60.1&&Math.abs(playerPosition.z-13.2)<1.7;
   // The temple's doorway is the same kind of throat: a chase camera set back
   // five metres sits outside the facade, looking at the void beside it.
-  const inTempleDoor=playerPosition.x>-62&&playerPosition.x<-40&&Math.abs(playerPosition.z-25.2)<7.4;
+  const inTempleDoor=playerPosition.x>-62&&playerPosition.x<-20.5&&Math.abs(playerPosition.z-25.2)<7.6;
   if(cameraMode==='first-person'||inGardenBore||inTempleDoor){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
@@ -3724,7 +3728,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pkmn-5';
+const ARCADE_BUILD='court-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
