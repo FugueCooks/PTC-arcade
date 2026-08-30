@@ -1,4 +1,4 @@
-import { EnvironmentManager } from './environment-manager.js?v=hall-clear-1';
+import { EnvironmentManager } from './environment-manager.js?v=carpet-3';
 import { LightingManager } from './lighting-manager.js';
 import { ObjectInteractionManager } from './object-interaction-manager.js';
 import { ParticleManager } from './particle-manager.js';

@@ -357,12 +357,26 @@ box(.3,5,14.6,0x180d31,-SHELL_HALF_WIDTH,2.5,-34.7);box(.3,5,56.6,0x180d31,-SHEL
 // a plane coplanar with the tile it covers has nothing to win a depth test
 // with, which is the same fault as the medallion inside the entrance hall.
 {
-  const runner=new THREE.Mesh(new THREE.PlaneGeometry(9.2,4),
-    new THREE.MeshStandardMaterial({color:0x9e1f28,roughness:.92,metalness:0,
-      polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+  const carpet=new THREE.MeshStandardMaterial({color:0x9e1f28,roughness:.92,metalness:0,
+    polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4});
+  // Full doorway width, so the carpet meets the jambs instead of leaving a
+  // dark margin down each side of the opening.
+  const runner=new THREE.Mesh(new THREE.PlaneGeometry(9.5,4.4),carpet);
   runner.rotation.x=-Math.PI/2;
-  runner.position.set(-38.6,.02,-25.2);
+  runner.position.set(-38.75,.02,-25.2);
   scene.add(runner);
+  // The castle's ground stands 0.88 above the arcade's, so the runner met it at
+  // a step face that read as a dark band across the doorway. This carries the
+  // carpet up that riser and then on across the castle's own courtyard, which
+  // is checkerboard and grass rather than carpet — without it the red simply
+  // stops at the threshold and starts again somewhere inside, which is the gap.
+  const riser=new THREE.Mesh(new THREE.BoxGeometry(.34,.92,4.4),carpet);
+  riser.position.set(-43.45,.46,-25.2);
+  scene.add(riser);
+  const approach=new THREE.Mesh(new THREE.PlaneGeometry(7.4,4.4),carpet);
+  approach.rotation.x=-Math.PI/2;
+  approach.position.set(-47.1,.9,-25.2);
+  scene.add(approach);
 }
 box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,35.8);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,48.2);
 box(.3,5,82.2,0x180d31,SHELL_HALF_WIDTH,2.5,-26.1);box(.3,5,23,0x180d31,SHELL_HALF_WIDTH,2.5,26.5);box(.3,5,4.4,0x180d31,SHELL_HALF_WIDTH,2.5,48.2);
@@ -1742,6 +1756,13 @@ function installTempleOfTime(){
       const doomed=[];
       temple.traverse(node=>{
         if(!node.isMesh)return;
+        // The flank patch is baked into the model — 42 "flank" meshes and three
+        // "corridorlid" slabs added straight to the glb, not written here. It
+        // shows: the lid runs on well past the staircase it was meant to cover,
+        // the wall under it is a bare slab, and there is still a hole through to
+        // the sky. Geometry that cannot be measured cannot be adjusted, so it
+        // comes out by name and is rebuilt below where its numbers are visible.
+        if(/^(flanks|flankn|corridorlid)/.test(node.name||'')){doomed.push(node);return}
         const first=Array.isArray(node.material)?node.material[0]:node.material;
         if(!first.map){doomed.push(node);return}
         node.castShadow=false;node.receiveShadow=false;
@@ -1752,6 +1773,50 @@ function installTempleOfTime(){
       doomed.forEach(node=>node.removeFromParent());
       const mount=new THREE.Group();
       mount.add(temple);
+      // The temple is two buildings — the great hall with its stained glass and
+      // the sanctum behind the Door of Time — standing 9.5m apart with only the
+      // corridor tube joining them at floor level. Everything above and beside
+      // that tube was open to the void, which is the hole. It is closed here as
+      // a link block: two flanks on the buildings' own lines at z 30.2 and 53.8,
+      // and a roof over the top at y 17. Walls and a lid, not a filled volume —
+      // the baked patch packed the whole 9.5 by 24 by 22 space with slabs, which
+      // is why it read as a bare mass rather than as part of the building.
+      // Marble is borrowed from the model itself so it matches the courses
+      // either side rather than being a flat approximation of them.
+      // The dominant material by vertex count, not the first one found. The
+      // first is a character banner, and a link block wearing Sheik across both
+      // flanks is worse than the hole it closes; the masonry is the material
+      // most of the building is actually made of.
+      let marble=null,marbleWeight=0;
+      const weights=new Map();
+      temple.traverse(node=>{
+        if(!node.isMesh||!node.geometry?.attributes?.position)return;
+        const first=Array.isArray(node.material)?node.material[0]:node.material;
+        if(!first?.map)return;
+        const weight=(weights.get(first)??0)+node.geometry.attributes.position.count;
+        weights.set(first,weight);
+        if(weight>marbleWeight){marbleWeight=weight;marble=first}
+      });
+      if(marble){
+        // Tiled, not stretched. One copy of the atlas smeared over a 9.5 by 22
+        // metre face reads as a smear; repeating it at roughly the course size
+        // of the walls either side lets it pass as masonry.
+        const courses=marble.map.clone();
+        courses.needsUpdate=true;
+        courses.wrapS=courses.wrapT=THREE.RepeatWrapping;
+        courses.repeat.set(2.4,5.5);
+        const stone=new THREE.MeshBasicMaterial({map:courses,color:marble.color?.clone()??new THREE.Color(0xffffff),side:THREE.DoubleSide});
+        const link=[
+          [9.5,22,.5,-75.75,6,30.2],   // south flank, on the great hall's own line
+          [9.5,22,.5,-75.75,6,53.8],   // north flank
+          [9.5,.5,23.6,-75.75,17,42]   // the roof over the gap
+        ];
+        for(const [w,h,d,x,y,z] of link){
+          const piece=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),stone);
+          piece.position.set(x,y,z);
+          mount.add(piece);
+        }
+      }
       scene.add(mount);
       templeMount=mount;
     },undefined,error=>console.warn('Temple of Time failed to load:',error));
@@ -1827,7 +1892,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=hall-clear-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=carpet-3',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1950,7 +2015,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-hall-clear-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-carpet-3',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4280,7 +4345,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='hall-clear-1';
+const ARCADE_BUILD='carpet-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
