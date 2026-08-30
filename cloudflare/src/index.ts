@@ -36,7 +36,7 @@ const MOVEMENT_TOLERANCE = 0.3;
 const MIN_WORLD_X = -42.7;
 const MAX_WORLD_X = 42.7;
 const MIN_WORLD_Z = -66.7;
-const MAX_WORLD_Z = 33.1;   // Must match server/src/players/player-manager.ts.
+const MAX_WORLD_Z = 49.9;   // Must match server/src/players/player-manager.ts.
 // The Mega Man room's western extension. A second region rather than a wider
 // MIN_WORLD_X, for the reason spelled out in player-manager.ts.
 // One rectangle: see player-manager.ts.
@@ -673,7 +673,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
   // The Temple of Time's overrun past the same wall, further south. Matches
   // TEMPLE_EXPANSE in arcade.js.
-  if (x >= -124.5 && x <= -42.7 && z >= 8.3 && z <= 42.1) return true;
+  if (x >= -124.5 && x <= -42.7 && z >= 24.8 && z <= 59.2) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
   if (x >= 42.7 && x <= 102.5 && z >= 3 && z <= 64.5) return true;

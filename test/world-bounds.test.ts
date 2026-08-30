@@ -96,7 +96,9 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
   // A cabinet outside the bounds is unreachable, and nothing says so — the
   // player simply stops walking. Cabinets inside a barriered room are exempt:
   // they are unreachable on purpose, and the barrier says so.
-  assert.ok(blockedRooms.length > 0, 'the scene must still declare its barriered rooms');
+  // Nothing is barriered any more, so every enabled cabinet has to be
+  // standable — there is no longer an exempt room to hide an unreachable one.
+  assert.equal(blockedRooms.length, 0, 'no room is barriered now');
   const registryPath = path.join(root, 'assets/cabinets/registry.json');
   return readFile(registryPath, 'utf8').then((raw) => {
     const parsed = JSON.parse(raw);
@@ -105,7 +107,7 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
 
     // The floor is a union now: the main rectangle, the Silent Hill annex,
     // and the arena in the void — a cabinet in any of them can be walked to.
-    const regions = [clientBounds, clientRegion('SILENT_HILL_EXPANSE'), clientRegion('POKEMON_EXPANSE'), clientRegion('CHAO_EXPANSE')];
+    const regions = [clientBounds, clientRegion('SILENT_HILL_EXPANSE'), clientRegion('POKEMON_EXPANSE'), clientRegion('CHAO_EXPANSE'), clientRegion('TEMPLE_EXPANSE')];
     const reachable = (x: number, z: number) =>
       regions.some((region) => x >= region.minX && x <= region.maxX && z >= region.minZ && z <= region.maxZ);
 
@@ -126,16 +128,18 @@ void test('the sealed rooms are closed in the scene and in what it enforces', ()
   // tells the player the opposite of what the other enforces.
   const prompt = /function nearbyConstructionRoom\(\)\{[\s\S]*?\n\}/.exec(client)?.[0] ?? '';
 
-  // The Multiplayer / Tournament room is beyond the hub, and the world stops
-  // short of the doorway into it.
-  assert.ok(client.includes("sealDoorway('Multiplayer / Tournament'"), 'the tournament barrier must be present');
+  // The Multiplayer / Tournament room is the south approach now — the Temple
+  // of Time opens off its west end — so the barrier came down together with
+  // the bound that stood behind it. One without the other tells the player the
+  // opposite of what the building enforces.
+  assert.ok(!client.includes("sealDoorway('Multiplayer / Tournament'"), 'the tournament barrier is gone');
   assert.ok(/for\(const barrier of constructionBarriers\)/.test(client), 'the prompt must read the room off the barrier');
-  assert.ok(clientBounds.maxZ < 33.6, 'the world must stop short of the tournament room');
+  assert.ok(clientBounds.maxZ > 33.6 && clientBounds.maxZ < 50.4, 'the world crosses the hall but stops at its back wall');
 
-  // Nothing else is sealed. Every doorway in both partition walls is open, and
-  // the top row is reached through its own front wall rather than being held
-  // out by the world bound, so that wall has to be enforced now.
-  assert.equal((client.match(/sealDoorway\('/g) ?? []).length, 1, 'the tournament hall is the only sealed room');
+  // Nothing is sealed at all now. Every doorway in both partition walls is
+  // open, and the top row is reached through its own front wall rather than
+  // being held out by the world bound, so that wall has to be enforced now.
+  assert.equal((client.match(/sealDoorway\('/g) ?? []).length, 0, 'no room in the building is sealed any more');
   assert.ok(/const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8,25\.2\]/.test(client),
     'the doorways that are open must be stated once');
   assert.ok(client.includes('resolveTopRowCollisions'), 'the top row needs real walls now that it is open');

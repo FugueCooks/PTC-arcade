@@ -3,23 +3,22 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-void test('only the tournament hall is sealed; every other room is open', async () => {
-  // The ring came down to one barrier. Nothing else in the building is behind
-  // tape: PS2, PlayStation, Mega Man, Nintendo 64, GameCube, Xbox and the four
-  // rooms across the top are all walkable.
+void test('no room in the building is sealed; every one of them is open', async () => {
+  // The ring came down to one barrier, and then to none: the tournament hall
+  // is the south approach to the Temple of Time now, so its tape came down
+  // with the bound behind it. Nothing in the building is behind tape — PS2,
+  // PlayStation, Mega Man, Nintendo 64, GameCube, Xbox, the four rooms across
+  // the top and the south hall are all walkable.
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
   const edge = await readFile(path.resolve(process.cwd(), 'cloudflare/src/index.ts'), 'utf8');
 
   assert.match(arcade, /constructionTapeTexture/);
   assert.doesNotMatch(arcade, /futureConstructionBarrier|Future Console Room Under Construction/);
   assert.doesNotMatch(arcade, /ps2ConstructionBarrier|PS2 Room Under Construction/);
-  // Every sealed doorway in the ring is one call against one builder. Nine of
-  // them are sealed, and three hand-written copies of the same six lines was
-  // already two too many.
+  // The builder stays, because a room may need sealing again while it is being
+  // re-themed. What must not come back quietly is a call to it.
   assert.match(arcade, /function sealDoorway\(roomName,x,z,facing\)/);
-  assert.match(arcade, /sealDoorway\('Multiplayer \/ Tournament',0,TOURNAMENT_MIN_Z-\.25,Math\.PI\)/);
-  // Exactly one call, so a barrier cannot come back without this failing.
-  assert.equal((arcade.match(/sealDoorway\('/g) ?? []).length, 1, 'the tournament hall is the only sealed room');
+  assert.equal((arcade.match(/sealDoorway\('/g) ?? []).length, 0, 'no room in the building is sealed');
   // The console games are all out in the foyer while the rooms are re-themed,
   // so their layouts are slots in the two hall rows rather than wall positions.
   assert.match(arcade, /const ps2CabinetLayout=Array\.from\(\{length:5\}/);

@@ -13,7 +13,7 @@ const MIN_WORLD_Z = -66.7;
 // test/world-bounds.test.ts holds the three to the same numbers: a player who
 // can walk somewhere the server will not accept gets snapped back on every
 // step, which reads as lag rather than as a wall.
-const MAX_WORLD_Z = 33.1;
+const MAX_WORLD_Z = 49.9;
 // The world is not one rectangle. The Mega Man room reaches 4.6 m further west
 // than the rest of the building, so ten cabinets stand in a single row against
 // the wall carrying the PlayStation logo. That strip is out of bounds
@@ -32,7 +32,7 @@ function isInsideWorld(x: number, z: number): boolean {
   if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
   // The Temple of Time's overrun past the same wall, further south. Matches
   // TEMPLE_EXPANSE in arcade.js.
-  if (x >= -124.5 && x <= -42.7 && z >= 8.3 && z <= 42.1) return true;
+  if (x >= -124.5 && x <= -42.7 && z >= 24.8 && z <= 59.2) return true;
   // The Chao Garden meadow, east of the building. Matches CHAO_EXPANSE in
   // arcade.js.
   if (x >= 42.7 && x <= 102.5 && z >= 3 && z <= 64.5) return true;

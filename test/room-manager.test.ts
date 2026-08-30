@@ -28,7 +28,7 @@ void test('server rejects movement packets that arrive too fast, leave bounds, o
   assert.deepEqual(players.move('socket-a', { p: [0.3, 11], r: 0 }, 1_100)?.p, [0.3, 1.65, 11]);
 });
 
-void test('every room off the hall is walkable, and the tournament hall is not', () => {
+void test('every room off the hall is walkable, the tournament hall included', () => {
   // The ring came down to one barrier. The four doorways in each partition wall
   // are open, including the two that used to be taped shut on the east side.
   const players = createPlayers();
@@ -38,12 +38,14 @@ void test('every room off the hall is walkable, and the tournament hall is not',
   route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: 0 }, 1_500 + index * 500), `step ${index} was refused`));
   assert.deepEqual(players.stateFor('socket-a')?.p, [25.5, 1.65, 13.2], 'the room east of the hall is open');
 
-  // The one room still shut is held by the world bound, not by a wall rule.
+  // The tournament hall is the south approach now: the walk carries on
+  // through its doorway to the Temple of Time's own end of the room.
   const south = createPlayers();
   south.join('socket-b', 'main', undefined, identity, 1_000);
-  const toTheDoor: Array<[number, number]> = [[0, 14], [0, 17], [0, 20], [0, 23], [0, 26], [0, 29], [0, 32], [0, 33.1]];
+  const toTheDoor: Array<[number, number]> = [[0, 14], [0, 17], [0, 20], [0, 23], [0, 26], [0, 29], [0, 32], [0, 35], [0, 38], [0, 41]];
   toTheDoor.forEach(([x, z], index) => assert.ok(south.move('socket-b', { p: [x, z], r: 0 }, 1_500 + index * 500), `step ${index} was refused`));
-  assert.equal(south.move('socket-b', { p: [0, 36], r: 0 }, 5_500), undefined, 'the tournament hall stays shut');
+  assert.equal(south.stateFor('socket-b')?.p[2], 41, 'the tournament hall is walkable');
+  assert.equal(south.move('socket-b', { p: [0, 52], r: 0 }, 7_500), undefined, 'its back wall still holds');
 });
 
 void test('the MegaMan Room replaces the former front-left construction bay', () => {

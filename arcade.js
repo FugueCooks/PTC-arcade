@@ -43,7 +43,7 @@ const CABINET_PROMPT_RANGE = 2.25;
 // doorways that are sealed by a bound rather than by collision: the tournament
 // hall at the bottom and the top row at the top. The rooms off the side walls
 // are gated by their own doorways instead, because three of them are open.
-const WORLD_BOUNDS={minX:-42.7,maxX:42.7,minZ:-66.7,maxZ:33.1};
+const WORLD_BOUNDS={minX:-42.7,maxX:42.7,minZ:-66.7,maxZ:49.9};
 // Silent Hill fills the top row's west corner, doubled sideways: its annex is
 // bolted onto the OUTSIDE of the building's west wall, over ground nothing
 // else uses. The walkable floor is the main rectangle plus this one, clamped
@@ -57,7 +57,7 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // Silent Hill leaves the west one: its ground continues outside the shell,
 // and the cliff-edge ellipse does the actual shepherding on it.
 const CHAO_EXPANSE={minX:42.7,maxX:102.5,minZ:3,maxZ:64.5};
-const TEMPLE_EXPANSE={minX:-124.5,maxX:-42.7,minZ:8.3,maxZ:42.1};
+const TEMPLE_EXPANSE={minX:-124.5,maxX:-42.7,minZ:24.8,maxZ:59.2};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -201,11 +201,8 @@ ceilingShape.moveTo(-43.2,-58.8);ceilingShape.lineTo(43.2,-58.8);ceilingShape.li
 const silentHillHole=new THREE.Path();
 silentHillHole.moveTo(-43.2,-58.8);silentHillHole.lineTo(-21.6,-58.8);silentHillHole.lineTo(-21.6,-33.6);silentHillHole.lineTo(-43.2,-33.6);silentHillHole.closePath();
 ceilingShape.holes.push(silentHillHole);
-// The fourth hole is the Temple of Time's: its sanctum dome rises to nine
-// metres, far past the roof, in the west column's bottom room.
-const templeHole=new THREE.Path();
-templeHole.moveTo(-43.2,25.2);templeHole.lineTo(-21.6,25.2);templeHole.lineTo(-21.6,42);templeHole.lineTo(-43.2,42);templeHole.closePath();
-ceilingShape.holes.push(templeHole);
+// The temple stands outside the building now, off the south-west corner, so
+// the roof needs no hole for it.
 const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
 ceiling.rotation.x=Math.PI/2;ceiling.position.set(0,5.08,-8.4);scene.add(ceiling);
 const ceilingBeamMaterial=new THREE.MeshStandardMaterial({color:0x14111f,roughness:.7,metalness:.5});
@@ -326,7 +323,7 @@ const MEGAMAN_ROOM_WEST_X=-SHELL_HALF_WIDTH,MEGAMAN_ROOM_CENTER_X=-ANNEX_ROOM_CE
 const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MAX_Z+NORTH_ROW_MIN_Z)/2;
 // The west shell opens where Silent Hill spills out of the building; the
 // wall resumes at the fog's south line and runs to the back of the building.
-box(.3,5,58.8,0x180d31,-SHELL_HALF_WIDTH,2.5,-12.6);box(.3,5,16.8,0x180d31,-SHELL_HALF_WIDTH,2.5,42);
+box(.3,5,75.6,0x180d31,-SHELL_HALF_WIDTH,2.5,-4.2);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,35.8);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,48.2);
 box(.3,5,78.4,0x180d31,SHELL_HALF_WIDTH,2.5,-28);
 box(.3,5,35.2,0x180d31,SHELL_HALF_WIDTH,2.5,32.8);
 // The north wall runs on across the annex, which closes its own west and
@@ -481,7 +478,8 @@ function sealDoorway(roomName,x,z,facing){
 // The two rooms behind a bound rather than a doorway — the tournament hall and
 // the top row — are sealed by WORLD_BOUNDS as well; the barrier is what tells
 // the player why they stop.
-const tournamentConstructionBarrier=sealDoorway('Multiplayer / Tournament',0,TOURNAMENT_MIN_Z-.25,Math.PI);
+// The tournament hall is open: it is the south approach now, and the Temple
+// of Time stands off its west end. Nothing is sealed in the building any more.
 // Opaque wall lining for the expansion hallway. The original structural walls
 // were so dark that they read as empty space; these inset panels make both
 // sides visibly solid while keeping the openings around the partition ends.
@@ -1556,7 +1554,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=hub-1',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=plan-2',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1593,7 +1591,7 @@ function templeGroundAt(x,z,feetY){
   return null;
 }
 function resolveTempleFloor(previousX,previousZ){
-  const inRoom=playerPosition.x>-124.5&&playerPosition.x<-21.0&&playerPosition.z>8.3&&playerPosition.z<42.1;
+  const inRoom=playerPosition.x>-124.5&&playerPosition.x<-41.6&&playerPosition.z>24.8&&playerPosition.z<59.2;
   if(!inRoom){
     if(templeSettle){
       playerPosition.y+=(1.65-playerPosition.y)*.3;
@@ -1773,7 +1771,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=hub-1',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-2',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1849,7 +1847,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-3.glb?v=hub-1',gltf=>{
+    loader.load('assets/models/chao-garden-3.glb?v=plan-2',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -2148,10 +2146,8 @@ const SIDE_COLUMN_DEPTH=SIDE_COLUMN_MAX_Z-SIDE_COLUMN_MIN_Z,SIDE_COLUMN_CENTER_Z
 const SIDE_ROOM_ACCENTS=[0xff5fae,0xd18a52,0x4aa8ff,0x7dff67];
 for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   const west=roomX<0;
-  // The temple's court paves the west column's north room in its own stone,
-  // so the arcade floor stops at that room's edge rather than showing through.
-  const floorDepth=west?SIDE_COLUMN_DEPTH-16.8:SIDE_COLUMN_DEPTH;
-  const floorCentre=west?SIDE_COLUMN_CENTER_Z-8.4:SIDE_COLUMN_CENTER_Z;
+  const floorDepth=SIDE_COLUMN_DEPTH;
+  const floorCentre=SIDE_COLUMN_CENTER_Z;
   const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,floorDepth),worldAlignedFloorMaterial(ROOM_SPAN,floorDepth,roomX,floorCentre,EXPANSION_FLOOR_STYLE));
   columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,floorCentre);columnFloor.receiveShadow=true;scene.add(columnFloor);
   // The west plate stops at the Temple of Time's room: its dome rises
@@ -2175,7 +2171,6 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
     // no troffers; the plaza it left inherits the rig like any room. The
     // Temple of Time's forecourt is open sky: no troffers there either.
     if(!west&&index===2)return;
-    if(west&&index===3)return;
     const at=west?centerZ:EAST_ROOM_Z[index];
     for(let z=at-6;z<=at+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
     lightRoom(roomX,at,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
@@ -2210,7 +2205,7 @@ const tournamentFloorMaterial=(()=>{const map=floorTextures.map.clone(),roughnes
 const tournamentFloor=new THREE.Mesh(new THREE.PlaneGeometry(TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH),tournamentFloorMaterial);tournamentFloor.rotation.x=-Math.PI/2;tournamentFloor.position.set(0,.002,TOURNAMENT_ROOM_CENTER_Z);tournamentFloor.receiveShadow=true;scene.add(tournamentFloor);
 // The annex went with Silent Hill, so the hall's ceiling is full width again.
 const tournamentCeiling=box(86.4,.12,TOURNAMENT_ROOM_DEPTH,0x090b18,0,5.08,TOURNAMENT_ROOM_CENTER_Z,.08);tournamentCeiling.receiveShadow=true;
-box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,-SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);
+box(.3,5,4.4,0x11182c,-SHELL_HALF_WIDTH,2.5,35.8,.06);box(.3,5,4.4,0x11182c,-SHELL_HALF_WIDTH,2.5,48.2,.06);box(.3,5,TOURNAMENT_ROOM_DEPTH,0x11182c,SHELL_HALF_WIDTH,2.5,TOURNAMENT_ROOM_CENTER_Z,.06);
 box(TOURNAMENT_ROOM_WIDTH,5,.3,0x11182c,0,2.5,TOURNAMENT_ROOM_BACK_Z,.06);
 // The hub's front wall, either side of the one doorway. It reaches the
 // partition walls rather than stopping short of them, which used to leave a two
@@ -3557,7 +3552,7 @@ function updateFollowCamera(){
   const inGardenBore=playerPosition.x>21.3&&playerPosition.x<60.1&&Math.abs(playerPosition.z-13.2)<1.7;
   // The temple's doorway is the same kind of throat: a chase camera set back
   // five metres sits outside the facade, looking at the void beside it.
-  const inTempleDoor=playerPosition.x>-62&&playerPosition.x<-20.5&&Math.abs(playerPosition.z-25.2)<7.6;
+  const inTempleDoor=playerPosition.x>-62&&playerPosition.x<-40&&Math.abs(playerPosition.z-42)<7.6;
   if(cameraMode==='first-person'||inGardenBore||inTempleDoor){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
@@ -3802,7 +3797,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='hub-1';
+const ARCADE_BUILD='plan-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
