@@ -10,8 +10,8 @@ export type ReactionEmoji = '👍' | '😂' | '❤️' | '🔥' | '😮';
 export type Position = readonly [x: number, y: number, z: number];
 
 export interface PlayerMoveInput {
-  /** Horizontal position only. The server owns the fixed camera height. */
-  p: readonly [x: number, z: number];
+  /** Horizontal position; newer clients append their render height. */
+  p: readonly [x: number, z: number] | readonly [x: number, z: number, y: number];
   /** View yaw in radians. */
   r: number;
 }

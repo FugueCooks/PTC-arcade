@@ -456,6 +456,8 @@ export class ArcadeRoom implements DurableObject {
     const input = asObject(payload);
     const position = Array.isArray(input?.p) ? input.p : [];
     const x = position[0]; const z = position[1]; const rotation = input?.r;
+    const rawY = position[2];
+    const y = Number.isFinite(rawY) ? Math.min(28, Math.max(-4.5, rawY as number)) : PLAYER_HEIGHT;
     const now = Date.now();
     if (!player || player.movementLocked || ![x, z, rotation].every(Number.isFinite)) return this.correct(socket, player);
     if (!isInsideWorld(x as number, z as number)) return this.correct(socket, player);
@@ -465,7 +467,7 @@ export class ArcadeRoom implements DurableObject {
     const permitted = MAX_SPEED_PER_SECOND * Math.min(elapsed, 500) / 1000 + MOVEMENT_TOLERANCE;
     if (elapsed < MOVEMENT_PACKET_MS || distance > permitted) return this.correct(socket, player);
     const wasAway = player.s === 'away';
-    player.p = [x as number, PLAYER_HEIGHT, z as number]; player.r = normalizeAngle(rotation as number);
+    player.p = [x as number, y, z as number]; player.r = normalizeAngle(rotation as number);
     player.a = distance > 0.005 ? 'walk' : 'idle'; player.s = distance > 0.005 ? 'walking' : 'idle';
     attachment.lastAcceptedAt = now; attachment.lastActivityAt = now; socket.serializeAttachment(attachment);
     const farBroadcastDue = now - (this.movementBroadcastTimes.get(player.id) ?? -Infinity) >= 300;

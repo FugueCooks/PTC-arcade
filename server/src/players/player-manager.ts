@@ -321,9 +321,12 @@ export class PlayerManager {
     const player = this.playerForSocket(socketId);
     if (!player || player.movementLocked || !this.isValidMove(player, input, now)) return undefined;
 
-    const [x, z] = input.p;
+    const [x, z, rawY] = input.p;
+    // Height rides along for rendering only: terrain is resolved client-side
+    // (garden hills, temple stairs), so the server just stores a sane value.
+    const y = typeof rawY === 'number' && Number.isFinite(rawY) ? Math.min(28, Math.max(-4.5, rawY)) : PLAYER_HEIGHT;
     const movedDistance = Math.hypot(x - player.position[0], z - player.position[2]);
-    player.position = [x, PLAYER_HEIGHT, z];
+    player.position = [x, y, z];
     player.rotationY = normalizeAngle(input.r);
     player.animation = movedDistance > 0.005 ? 'walk' : 'idle';
     player.status = movedDistance > 0.005 ? 'walking' : 'idle';

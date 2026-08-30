@@ -104,7 +104,7 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
       const animation = to.a === 'walk' && !movedBetweenSamples ? 'idle' : to.a;
       remoteAvatarPosition.set(
         from.p[0] + (to.p[0] - from.p[0]) * alpha,
-        Math.max(0, from.p[1] + (to.p[1] - from.p[1]) * alpha - 1.65),
+        from.p[1] + (to.p[1] - from.p[1]) * alpha - 1.65,
         from.p[2] + (to.p[2] - from.p[2]) * alpha
       );
       remote.avatar.setTransform(remoteAvatarPosition, angleLerp(from.r, to.r, alpha), animation);
@@ -125,7 +125,7 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
     if (!hasMeaningfullyChanged(transform)) return;
     // Movement is transient state. Dropping a packet during congestion is much
     // better than replaying stale positions after the connection recovers.
-    socket.volatile.emit('player:move', { p: [transform.position.x, transform.position.z], r: transform.rotationY });
+    socket.volatile.emit('player:move', { p: [transform.position.x, transform.position.z, transform.position.y], r: transform.rotationY });
     lastSentTransform = { position: { ...transform.position }, rotationY: transform.rotationY, animation: transform.animation };
     lastSentAt = now;
   };
@@ -136,7 +136,7 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
     if (localAvatar) {
       const local = arcade.getLocalTransform();
       localAvatar.setHidden(arcade.isFirstPerson?.() === true);
-      localAvatarPosition.set(local.position.x, 0, local.position.z);
+      localAvatarPosition.set(local.position.x, local.position.y - 1.65, local.position.z);
       localAvatar.setTransform(localAvatarPosition, local.rotationY, arcade.getLocalAnimationState());
     }
     if (now - lastAvatarFrameAt >= avatarFrameIntervalMs - 1) {
