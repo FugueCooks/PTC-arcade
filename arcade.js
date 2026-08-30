@@ -1605,14 +1605,19 @@ function installPokemonCenter(){
         const jambCap=new THREE.Mesh(new THREE.BoxGeometry(.34,.1,.5),portalGlow);
         jambCap.position.set(jx,3.36,-40.6);scene.add(jambCap);
       }
-      // Everything below patches the storefront's own wall and was authored in
-      // world space against the model at its original .885 uniform scale. The
-      // model is a quarter wider and deeper now, so each piece is carried
-      // through that same growth about the same mount rather than re-typed by
-      // hand. Skip it and they stay where the small model's front used to be,
-      // which puts a cream slab straight through the middle of the floor —
-      // exactly what happened. Height is untouched because the model did not
-      // grow upward: the hall ceiling is a flat 5.08 and it already stood 4.94.
+      // Everything below is typed in WORLD space against the model at .885,
+      // and that is a standing constraint on the mount above, not a detail.
+      // These pieces patch the storefront's own wall; the jambs are pinned to
+      // the stadium collision corridor at x 25.7/28.45, which does not move;
+      // and the opening itself is CUT out of the arcade wall by a world-space
+      // box. Rescale the mount and none of it follows. It was tried: the model
+      // grew a quarter, these literals stayed, and the result was a flat cream
+      // slab standing in the middle of the lobby and the model's back wall
+      // closing over the vomitory mouth that arcade.js:381-382 leaves open.
+      // Remapping them through the same growth fixed the slab and still walked
+      // the sign off the door the jambs frame. If this storefront ever does
+      // need to be bigger, the wall cut, the jambs, the fills and the tunnel
+      // furniture all have to be re-authored together.
       const lintelPlate=new THREE.Mesh(new THREE.BoxGeometry(4.9,1.9,.5),portalSteel);
       lintelPlate.position.set(27.08,4.15,-40.6);scene.add(lintelPlate);
       const lintelTrim=new THREE.Mesh(new THREE.BoxGeometry(2.4,.09,.1),portalGlow);
