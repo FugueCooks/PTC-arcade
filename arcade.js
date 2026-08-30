@@ -1552,13 +1552,16 @@ function installPokemonCenter(){
       const mount=new THREE.Group();
       mount.add(gltf.scene);
       mount.position.set(23.9,.04,-36.05);
-      // Grown across its footprint but not upward. The hall ceiling is a flat
-      // 5.08 and the storefront already stood 4.94, so a uniform scale had
-      // fourteen centimetres to play with before it came through the roof.
-      // x and z grow together by a quarter, which keeps the plan square to
-      // itself — 17.7m wide becomes 22.1 and the depth follows — and fills the
-      // bay either side without stretching the building out of shape.
-      mount.scale.set(1.106,.885,1.106);
+      // Back to the uniform .885 it was authored at. Growing the plan by a
+      // quarter filled the bay, but this storefront is not a free-standing
+      // model: its opening is CUT from the arcade's own wall by a world-space
+      // box, framed by jambs pinned to the stadium collision corridor at
+      // x 25.7/28.45, and patched by cream panels typed as world literals. Move
+      // the model and none of that follows. The visible costs were a cream slab
+      // adrift in the lobby and the back wall closing over the vomitory mouth
+      // that arcade.js:381-382 deliberately leaves open at x 25.4..28.6. The
+      // dead space it was grown to fill is the Pikomat's now.
+      mount.scale.setScalar(.885);
       scene.add(mount);
       mount.updateWorldMatrix(true,true);
       // The wall map and the wall behind it, aligned on the stadium's door
@@ -1610,12 +1613,10 @@ function installPokemonCenter(){
       // which puts a cream slab straight through the middle of the floor —
       // exactly what happened. Height is untouched because the model did not
       // grow upward: the hall ceiling is a flat 5.08 and it already stood 4.94.
-      const CENTRE_GROWTH=1.25;
-      const cx=v=>23.9+(v-23.9)*CENTRE_GROWTH,cz=v=>-36.05+(v+36.05)*CENTRE_GROWTH,cs=v=>v*CENTRE_GROWTH;
-      const lintelPlate=new THREE.Mesh(new THREE.BoxGeometry(cs(4.9),1.9,cs(.5)),portalSteel);
-      lintelPlate.position.set(cx(27.08),4.15,cz(-40.6));scene.add(lintelPlate);
-      const lintelTrim=new THREE.Mesh(new THREE.BoxGeometry(cs(2.4),.09,cs(.1)),portalGlow);
-      lintelTrim.position.set(cx(27.08),3.22,cz(-40.36));scene.add(lintelTrim);
+      const lintelPlate=new THREE.Mesh(new THREE.BoxGeometry(4.9,1.9,.5),portalSteel);
+      lintelPlate.position.set(27.08,4.15,-40.6);scene.add(lintelPlate);
+      const lintelTrim=new THREE.Mesh(new THREE.BoxGeometry(2.4,.09,.1),portalGlow);
+      lintelTrim.position.set(27.08,3.22,-40.36);scene.add(lintelTrim);
       // The loose cut tears the whole east stretch of the wall away, and the
       // black gap it left read as walkable while the arcade wall behind it
       // refused the step — an invisible wall in a hole. The stretch is
@@ -1624,13 +1625,13 @@ function installPokemonCenter(){
       const centerWall=new THREE.MeshBasicMaterial({color:0xf2dfa6});
       const centerWainscot=new THREE.MeshBasicMaterial({color:0xd97a4e});
       for(const [wx,ww] of [[24.75,1.75],[31.3,5.2]]){
-        const fill=new THREE.Mesh(new THREE.BoxGeometry(cs(ww),4,cs(.34)),centerWall);
-        fill.position.set(cx(wx),2,cz(-40.82));scene.add(fill);
-        const skirt=new THREE.Mesh(new THREE.BoxGeometry(cs(ww),.85,cs(.1)),centerWainscot);
-        skirt.position.set(cx(wx),.43,cz(-40.6));scene.add(skirt);
+        const fill=new THREE.Mesh(new THREE.BoxGeometry(ww,4,.34),centerWall);
+        fill.position.set(wx,2,-40.82);scene.add(fill);
+        const skirt=new THREE.Mesh(new THREE.BoxGeometry(ww,.85,.1),centerWainscot);
+        skirt.position.set(wx,.43,-40.6);scene.add(skirt);
       }
-      const overDoor=new THREE.Mesh(new THREE.BoxGeometry(cs(9.7),.95,cs(.34)),centerWall);
-      overDoor.position.set(cx(28.75),4.48,cz(-40.82));scene.add(overDoor);
+      const overDoor=new THREE.Mesh(new THREE.BoxGeometry(9.7,.95,.34),centerWall);
+      overDoor.position.set(28.75,4.48,-40.82);scene.add(overDoor);
       // The supplied Pokemon logo is a decorative skin on the existing
       // lintel. It deliberately has no collider and does not alter the room.
       loader.load('assets/models/pokemon/pokemon-logo.glb?v=pokemon-logo-1',logoGltf=>{
@@ -1687,7 +1688,7 @@ function installPokemonCenter(){
         // and the whole sign went flat blue, because the back of the wordmark
         // is its unlit outline plate.
         holder.rotation.y=0;
-        holder.position.set(cx(27.08),4.15,cz(-40.48));
+        holder.position.set(27.08,4.15,-40.48);
         scene.add(holder);
       },undefined,error=>console.warn('The Pokemon vomitory logo could not load.',error));
     },undefined,error=>console.warn('The Pokemon Center could not load.',error));
@@ -1802,7 +1803,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=big-castle-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=vomitory-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1907,7 +1908,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-big-castle-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-vomitory-2',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -3961,18 +3962,18 @@ function updateFollowCamera(){
     camera.lookAt(followed.position.x,followed.position.y+1,followed.position.z);
     return;
   }
-  // Inside the garden bore the camera goes first-person no matter the mode:
-  // any chase offset ends up in the rock or out in the void.
-  // The garden doorway is a throat like the temple's: a chase camera set
-  // back five metres would sit outside the shell looking at the void beside it.
-  const inGardenBore=playerPosition.x>40&&playerPosition.x<52&&Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<7.4;
+  // The garden's doorway used to force first person over a 12 by 15 metre box,
+  // on the reasoning that a chase camera five metres back would sit outside the
+  // shell looking at the void. The garden has its own ground and sky out there
+  // now, so there is nothing to hide and the box was simply taking the camera
+  // off the player for a third of the walk in.
   // The temple's doorway is the same kind of throat: a chase camera set back
   // five metres sits outside the facade, looking at the void beside it.
   // The temple is vaulted end to end and its passages are narrow: a chase
   // camera set back five metres clears the roof and shows the void outside.
   // Inside the building the view is the walker's own.
   const inTempleDoor=playerPosition.x>-124.5&&playerPosition.x<-40&&Math.abs(playerPosition.z-42)<17.5;
-  if(cameraMode==='first-person'||inGardenBore||inTempleDoor){
+  if(cameraMode==='first-person'||inTempleDoor){
     camera.position.copy(playerPosition);
     lookDirection.set(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
     cameraTarget.copy(camera.position).add(lookDirection);
@@ -4235,7 +4236,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='big-castle-1';
+const ARCADE_BUILD='vomitory-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
