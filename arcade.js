@@ -349,6 +349,21 @@ const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MA
 // Mario room's own doorway line now — a 4.4m gap on z -25.2 — because the
 // castle stands outside it and the room is the way through to the front steps.
 box(.3,5,14.6,0x180d31,-SHELL_HALF_WIDTH,2.5,-34.7);box(.3,5,56.6,0x180d31,-SHELL_HALF_WIDTH,2.5,5.3);
+// The castle's own red carpet stops at its threshold, which left the walk in
+// reading as a gap: arcade tile, then a step, then carpet. This runner carries
+// the carpet back through the doorway and out across the room floor, so the old
+// Mario room becomes the castle's antechamber rather than a corridor that
+// happens to end at one. It lies ON the floor, so it takes a polygon offset —
+// a plane coplanar with the tile it covers has nothing to win a depth test
+// with, which is the same fault as the medallion inside the entrance hall.
+{
+  const runner=new THREE.Mesh(new THREE.PlaneGeometry(9.2,4),
+    new THREE.MeshStandardMaterial({color:0x9e1f28,roughness:.92,metalness:0,
+      polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+  runner.rotation.x=-Math.PI/2;
+  runner.position.set(-38.6,.02,-25.2);
+  scene.add(runner);
+}
 box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,35.8);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,48.2);
 box(.3,5,82.2,0x180d31,SHELL_HALF_WIDTH,2.5,-26.1);box(.3,5,23,0x180d31,SHELL_HALF_WIDTH,2.5,26.5);box(.3,5,4.4,0x180d31,SHELL_HALF_WIDTH,2.5,48.2);
 // The north wall runs on across the annex, which closes its own west and
@@ -1009,38 +1024,42 @@ function buildPokemonStadium(centerX,arenaCz){
     scene.add(flood);managedSceneLights.push(flood);
   }
 }
-// Super Mario used to be a themed room in the west column behind Metal Gear.
-// It is the way through to Peach's Castle now, so the room keeps no murals of
-// its own and the three come indoors, spread along the main hall's two walls
-// between the doorways rather than filling one room. The hall's clear stretches
-// are shorter than a room wall — about fourteen metres between doors — so these
-// hang at twelve and keep their own proportions instead of being stretched to
-// the room mural's height.
-const hangHallMural=({file,wallX,z,span,aspect})=>{
-  const inward=wallX<0?1:-1;
-  const height=span/aspect;
-  box(.08,height+.4,span+.4,0x050711,wallX+inward*.19,2.5,z,.12);
-  const texture=new THREE.TextureLoader().load(`assets/art/${file}`);
-  texture.colorSpace=THREE.SRGBColorSpace;
-  texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-  const mural=new THREE.Mesh(new THREE.PlaneGeometry(span,height),
-    new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-  mural.position.set(wallX+inward*.32,2.5,z);
-  mural.rotation.y=inward*Math.PI/2;
-  mural.renderOrder=4;
-  scene.add(mural);
-};
-// Measured rather than guessed, because the first placement put a twelve metre
-// mural straight across a wall junction: the room divider at z -16.8 butts into
-// the partition exactly there, and its edge drew as a seam down the middle of
-// Mario's face. There is very little uninterrupted wall in this hall — doors
-// every eight to seventeen metres, a divider every sixteen point eight, and a
-// Solana neon sign occupying z -19.5..-13.7 on the west side. The one genuinely
-// long clear run is 11.6m on the east wall between the door at -25.2 and the
-// fittings that start at -12, so the big one goes there and takes all of it.
-hangHallMural({file:'mario-room-mural.webp?v=mario-1',wallX:N64_WALL_X,z:-17.8,span:11,aspect:1920/432});
-hangHallMural({file:'mario-room-mural-2.webp?v=mario-1',wallX:PLAYSTATION_WALL_X,z:-21.55,span:3.9,aspect:1656/482});
-hangHallMural({file:'mario-room-mural-3.webp?v=mario-1',wallX:PLAYSTATION_WALL_X,z:-11.65,span:3.9,aspect:1920/432});
+// Super Mario, in the west column behind Metal Gear — back on its own three
+// walls exactly as it was. The far and near walls are untouched; the side wall
+// is the one the castle doorway is cut through, so its mural cannot be a single
+// plane any more. Note it is mural-2 that hangs there, not -3: themeRoom puts
+// -3 on the NEAR wall and -2 on the side, and the doorway is in the side.
+themeRoom({
+  centerX:MEGAMAN_ROOM_CENTER_X,centerZ:-25.2,
+  far:'mario-room-mural.webp?v=mario-1',
+  near:'mario-room-mural-3.webp?v=mario-1'
+});
+// The side wall's mural, cut around the doorway: two panels flanking the 4.4m
+// gap on z -25.2, each showing its own share of the image so the picture still
+// reads continuously across the opening rather than being repeated twice.
+{
+  const sideX=-SHELL_HALF_WIDTH+.32,backingX=-SHELL_HALF_WIDTH+.19;
+  const spanZ=[-33.45,-16.95],gap=[-27.4,-23];
+  const panels=[[spanZ[0],gap[0]],[gap[1],spanZ[1]]];
+  const whole=spanZ[1]-spanZ[0];
+  const sideTexture=new THREE.TextureLoader().load('assets/art/mario-room-mural-2.webp?v=mario-1');
+  sideTexture.colorSpace=THREE.SRGBColorSpace;
+  sideTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  for(const [z0,z1] of panels){
+    const span=z1-z0,centre=(z0+z1)/2;
+    box(.08,5,span,0x050711,backingX,2.5,centre,.12);
+    // themeRoom lays this wall out along -z, so u runs from the far end back.
+    const map=sideTexture.clone();map.needsUpdate=true;
+    map.repeat.set(span/whole,1);
+    map.offset.set((spanZ[1]-z1)/whole,0);
+    const panel=new THREE.Mesh(new THREE.PlaneGeometry(span,MEGAMAN_MURAL_HEIGHT),
+      new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+    panel.position.set(sideX,2.5,centre);
+    panel.rotation.y=Math.PI/2;
+    panel.renderOrder=4;
+    scene.add(panel);
+  }
+}
 // Final Fantasy fills the wide top-row room. Its geometry is its own — a 32 m
 // back wall and two 16.4 m sides, with the doorway wall left bare — so its
 // murals are hung directly rather than through themeRoom, with the same
@@ -1808,7 +1827,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=vomitory-2',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=mario-room-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1857,6 +1876,24 @@ function installPeachsCastle(){
       mount.position.set(CASTLE_CENTRE_X,0,CASTLE_CENTRE_Z);
       scene.add(mount);
       castleMount=mount;
+      // A decal lying exactly on the surface it decorates cannot win a depth
+      // test on its own. The sun medallion in the entrance hall is a nine
+      // vertex plane at y=0, coplanar with the checkerboard, and with the
+      // camera at near .1 and far 180 the buffer has no bits left to separate
+      // them at this scale — it tears into stripes. Anything with no thickness
+      // at all is a decal by definition, so it is told to draw in front of
+      // whatever it lies on. Measured after mounting, because the bake's own
+      // Z-up-to-Y-up root means flatness is only meaningful in world space.
+      mount.updateMatrixWorld(true);
+      const decalSpan=new THREE.Vector3();
+      castle.traverse(node=>{
+        if(!node.isMesh)return;
+        new THREE.Box3().setFromObject(node).getSize(decalSpan);
+        if(decalSpan.y>.02)return;
+        for(const material of (Array.isArray(node.material)?node.material:[node.material])){
+          material.polygonOffset=true;material.polygonOffsetFactor=-4;material.polygonOffsetUnits=-4;
+        }
+      });
     },undefined,error=>console.warn('Peachs Castle could not load.',error));
   }catch(error){console.warn('Peachs Castle loader could not initialize.',error)}})();
 }
@@ -1913,7 +1950,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-vomitory-2',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-mario-room-2',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4241,7 +4278,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='vomitory-2';
+const ARCADE_BUILD='mario-room-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
