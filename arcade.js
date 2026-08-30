@@ -1519,7 +1519,13 @@ function installPokemonCenter(){
       const mount=new THREE.Group();
       mount.add(gltf.scene);
       mount.position.set(23.9,.04,-36.05);
-      mount.scale.setScalar(.885);
+      // Grown across its footprint but not upward. The hall ceiling is a flat
+      // 5.08 and the storefront already stood 4.94, so a uniform scale had
+      // fourteen centimetres to play with before it came through the roof.
+      // x and z grow together by a quarter, which keeps the plan square to
+      // itself — 17.7m wide becomes 22.1 and the depth follows — and fills the
+      // bay either side without stretching the building out of shape.
+      mount.scale.set(1.106,.885,1.106);
       scene.add(mount);
       mount.updateWorldMatrix(true,true);
       // The wall map and the wall behind it, aligned on the stadium's door
@@ -1605,6 +1611,27 @@ function installPokemonCenter(){
             :makeUnlit(object.material);
         });
         logo.updateWorldMatrix(true,true);
+        // The bake carries its two colours on the wrong pieces: the letter
+        // bodies wear the blue swatch and the thin rim around them wears the
+        // yellow, so the sign read as a blue outline with nothing inside it.
+        // Every texture in this file is a single flat 8x8 colour, so the fix is
+        // simply to trade them. The bodies are the larger shape by a wide
+        // margin — about three and a half times the rim's bounding volume — so
+        // volume tells the two apart without relying on mesh names.
+        const painted=[];
+        logo.traverse(node=>{
+          if(!node.isMesh)return;
+          const material=Array.isArray(node.material)?node.material[0]:node.material;
+          if(!material?.map)return;
+          const box=new THREE.Box3().setFromObject(node),span=box.getSize(new THREE.Vector3());
+          painted.push({material,volume:span.x*span.y*span.z});
+        });
+        painted.sort((a,b)=>b.volume-a.volume);
+        if(painted.length>=2){
+          const bodies=painted[0].material,rim=painted[1].material;
+          const swatch=bodies.map;bodies.map=rim.map;rim.map=swatch;
+          bodies.needsUpdate=true;rim.needsUpdate=true;
+        }
         const bounds=new THREE.Box3().setFromObject(logo);
         const size=bounds.getSize(new THREE.Vector3());
         const centre=bounds.getCenter(new THREE.Vector3());
@@ -1710,7 +1737,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-cast-4',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-hill-4',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -1725,14 +1752,14 @@ function installSilentHillCast(){
       },undefined,error=>console.warn('A Silent Hill figure could not load:',file,error));
     }catch(error){console.warn('Silent Hill cast loader could not initialize.',error)}})();
   };
-  // The old spot claimed a corner it did not have: mid-roadway at (-35.6,-83.5),
-  // six metres off the west facade and eight short of the north one. This is a
-  // real one — the pocket at the head of the street where B10's blank side
-  // return meets B7's brick front, 1.3m off the return and 2.4m clear of the
-  // facade. The fog pall only clips its edge, so it is the darkest corner in
-  // the region. Turned half a circle to face back down the walk; the model
-  // faces away at rest.
-  place('pyramid-head.glb',{x:-25.3,z:-89.9,height:3.4,rotY:Math.PI});
+  // At the head of the street, hard against the east kerb where the fog is
+  // thickest. He was briefly put at x=-25.3 on the strength of a corner that
+  // measured well on paper and turned out to be INSIDE the block at (-21.4,-86),
+  // whose footprint runs x -25.65..-17.15 — which is why nobody could find him.
+  // -27.5 is in the roadway, about two metres clear of that block's west face,
+  // so he reads against its blank return as you come up the street. Turned half
+  // a circle to face back down the walk; the model faces away at rest.
+  place('pyramid-head.glb',{x:-27.5,z:-89.9,height:3.4,rotY:Math.PI});
   // The twins keep to the kerbs, side-on to the street.
   place('twin-victim.glb',{x:-40.2,z:-50.4,height:1.35,rotY:Math.PI/2});
   place('twin-victim.glb',{x:-25.4,z:-63.4,height:1.35,rotY:-Math.PI/2+.3});
@@ -1789,6 +1816,18 @@ function installSilentHillBuildings(){
         mount.rotation.y=turn;
         mount.scale.setScalar(scale);
         silentHillWorld.add(mount);
+        // Each block is a hollow facade, open at the back and the top, and
+        // nothing enforced it: you could walk through the brickwork and out
+        // into the black behind the street. Take the footprint from the placed
+        // mount rather than the source, so scale and the quarter turns are
+        // already in it. Only the ground storey needs measuring — the upper
+        // copies sit directly above it.
+        mount.updateMatrixWorld(true);
+        const footprint=new THREE.Box3().setFromObject(mount.children[0]);
+        silentHillBlocks.push({
+          minX:footprint.min.x,maxX:footprint.max.x,
+          minZ:footprint.min.z,maxZ:footprint.max.z
+        });
       }
     },undefined,error=>console.warn('Silent Hill buildings could not load.',error));
   }catch(error){console.warn('Silent Hill building loader could not initialize.',error)}})();
@@ -3862,6 +3901,29 @@ function resolveSocialLayoutCollisions(previousX,previousZ){
 // now, and the rooms behind it are entered from the hall like every other room.
 function resolveRearGalleryCollision(){}
 /**
+ * Silent Hill's blocks are solid.
+ *
+ * The buildings are facades with side returns, hollow behind and open above,
+ * and they carried no collision at all — the street's only fences were the
+ * region bounds, so the brickwork was scenery you could step through into the
+ * dark. Their footprints are captured as each block is placed and every one is
+ * axis-aligned (the mounts turn in quarter circles), so the test is a
+ * rectangle. A step that ends inside one is refused outright rather than
+ * projected: these are walls, and sliding along the inside of a wall is how a
+ * player ends up in the void behind it.
+ */
+const silentHillBlocks=[];
+function resolveSilentHillCollisions(previousX,previousZ){
+  if(!silentHillBlocks.length)return;
+  if(playerPosition.x>SILENT_HILL_EXPANSE.maxX+1||playerPosition.z>SILENT_HILL_EXPANSE.maxZ+1)return;
+  for(const block of silentHillBlocks){
+    if(playerPosition.x<=block.minX-PLAYER_COLLISION_RADIUS||playerPosition.x>=block.maxX+PLAYER_COLLISION_RADIUS)continue;
+    if(playerPosition.z<=block.minZ-PLAYER_COLLISION_RADIUS||playerPosition.z>=block.maxZ+PLAYER_COLLISION_RADIUS)continue;
+    playerPosition.x=previousX;playerPosition.z=previousZ;
+    return;
+  }
+}
+/**
  * The Pokemon bowl is solid.
  *
  * The stands are an ellipse just inside the drawn band, and the only way
@@ -4000,7 +4062,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='cast-4';
+const ARCADE_BUILD='hill-4';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -4036,7 +4098,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before
