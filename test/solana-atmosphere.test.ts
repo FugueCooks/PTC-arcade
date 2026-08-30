@@ -21,11 +21,17 @@ void test('Solana signs stay on solid partition spans and clear every doorway', 
   assert.doesNotMatch(arcade, /addSolanaNeonSign\(\{x:0/);
 });
 
-void test('Solana ambient washes have their own one-light proximity budget', async () => {
+void test('Solana ambient washes brighten the walking route within a two-light budget', async () => {
   const arcade = await readFile(path.resolve(process.cwd(), 'arcade.js'), 'utf8');
 
   assert.match(arcade, /solanaWestWash\.userData\.solanaLight=true/);
   assert.match(arcade, /solanaEastWash\.userData\.solanaLight=true/);
+  assert.match(arcade, /const SOLANA_AMBIENT_POOLS=Object\.freeze\(\[/);
+  assert.equal((arcade.match(/SOLANA_PALETTE\[/g) ?? []).length, 10,
+    'the two signs and eight walking-route pools share the approved palette');
+  assert.match(arcade, /pool\.userData\.decorative=true/);
+  assert.match(arcade, /new THREE\.PointLight\(color,7\.5,18,2\)/);
+  assert.match(arcade, /beforeRenderCallbacks\.push\(now=>/);
   assert.match(arcade, /const roomLights=\[\],accentLights=\[\],muralLights=\[\],solanaLights=\[\]/);
-  assert.match(arcade, /solanaLights\.sort[\s\S]+light\.visible=index<1&&distanceSq<144/);
+  assert.match(arcade, /solanaLights\.sort[\s\S]+light\.visible=index<2&&distanceSq<400/);
 });

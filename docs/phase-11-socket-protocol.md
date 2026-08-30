@@ -42,7 +42,6 @@ extended to.
 | `reaction:send` | `{ emoji }` | `SocialActionResult` | ticket | server-side limiter | current room | lossy acceptable |
 | `presence:activity` | none | no | ticket | coalesced | current room | lossy acceptable |
 | `social:ping` | `{ sentAt }` | `{ serverAt }` | ticket | none | none | must arrive |
-| `world:jukebox-set` | `{ trackId, playing }` | `JukeboxResult` | ticket | server-side limiter | current room | must arrive |
 
 ## Server to client
 

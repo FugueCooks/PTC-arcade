@@ -19,11 +19,11 @@ interface PlayerState {
   cabinetSessionStartedAt: number | null;
 }
 interface TicketIdentity { playerId: string; displayName: string; avatarId: string; mode: 'guest' | 'wallet' }
-interface SocketAttachment { socketId: string; player?: PlayerState; resumeToken?: string; authenticatedIdentity?: TicketIdentity; lastAcceptedAt: number; lastActivityAt: number }
+interface SocketAttachment { socketId: string; player?: PlayerState; resumeToken?: string; authenticatedIdentity?: TicketIdentity; lastAcceptedAt: number; lastActivityAt: number; lastAuthoritativeEchoAt?: number }
 interface ResumeRecord { player: PlayerState; resumeToken: string; disconnectedAt: number; expiresAt: number }
 interface CabinetState { cabinetId: string; occupiedByPlayerId: string | null; occupiedByDisplayName: string | null; status: CabinetStatus; reservedAt: number | null; sessionStartedAt: number | null }
 interface ChatMessage { id: string; roomId: string; kind: 'chat' | 'system' | 'announcement'; playerId: string | null; displayName: string | null; text: string; at: number }
-interface WorldState { roomId: string; themeId: string; weatherId: string; activityLevel: 'quiet' | 'active' | 'busy'; population: number; jukebox: { trackId: string | null; playing: boolean; startedAt: number | null; changedBy: string | null }; revision: number }
+interface WorldState { roomId: string; themeId: string; weatherId: string; activityLevel: 'quiet' | 'active' | 'busy'; population: number; revision: number }
 interface WireMessage { e?: string; d?: unknown; q?: string }
 
 const ROOM_ID = 'main';
@@ -318,7 +318,7 @@ export class ArcadeRoom implements DurableObject {
     const server = pair[1];
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment({ socketId: crypto.randomUUID(), lastAcceptedAt: Date.now(),
-      lastActivityAt: Date.now() } satisfies SocketAttachment);
+      lastActivityAt: Date.now(), lastAuthoritativeEchoAt: 0 } satisfies SocketAttachment);
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -469,7 +469,10 @@ export class ArcadeRoom implements DurableObject {
     const wasAway = player.s === 'away';
     player.p = [x as number, y, z as number]; player.r = normalizeAngle(rotation as number);
     player.a = distance > 0.005 ? 'walk' : 'idle'; player.s = distance > 0.005 ? 'walking' : 'idle';
-    attachment.lastAcceptedAt = now; attachment.lastActivityAt = now; socket.serializeAttachment(attachment);
+    attachment.lastAcceptedAt = now; attachment.lastActivityAt = now;
+    const shouldEchoAuthoritativeState = now - (attachment.lastAuthoritativeEchoAt ?? 0) >= 250;
+    if (shouldEchoAuthoritativeState) attachment.lastAuthoritativeEchoAt = now;
+    socket.serializeAttachment(attachment);
     const farBroadcastDue = now - (this.movementBroadcastTimes.get(player.id) ?? -Infinity) >= 300;
     for (const peer of this.joinedSockets()) {
       if (peer === socket) continue;
@@ -477,7 +480,7 @@ export class ArcadeRoom implements DurableObject {
       if (other && (Math.hypot(other.p[0] - player.p[0], other.p[2] - player.p[2]) <= 12 || farBroadcastDue)) this.send(peer, 'player:moved', player);
     }
     if (farBroadcastDue) this.movementBroadcastTimes.set(player.id, now);
-    this.send(socket, 'player:state', player);
+    if (shouldEchoAuthoritativeState) this.send(socket, 'player:state', player);
     if (wasAway) void this.scheduleAlarm();
   }
 
@@ -590,7 +593,7 @@ export class ArcadeRoom implements DurableObject {
     const previous = this.world.activityLevel; this.world.population = population; this.world.activityLevel = level; this.world.revision += 1;
     await this.ctx.storage.put('world', this.world); this.broadcast('world:state-changed', this.world);
     if (level === 'busy' && previous !== 'busy') {
-      const announcement = { id: crypto.randomUUID(), roomId: this.roomId, text: 'The arcade is getting busy.', kind: 'activity' as const, at: Date.now(), audioCue: 'busy' };
+      const announcement = { id: crypto.randomUUID(), roomId: this.roomId, text: 'The arcade is getting busy.', kind: 'activity' as const, at: Date.now() };
       this.broadcast('world:announcement', announcement); await this.pushChat({ ...announcement, kind: 'announcement', playerId: null, displayName: null });
     }
   }
@@ -774,7 +777,7 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
 function normalizeAngle(value: number): number { return Math.atan2(Math.sin(value), Math.cos(value)); }
 function chooseSpawn(players: PlayerState[]): typeof spawnPoints[number] { return spawnPoints.find((spawn) => players.every((player) => Math.hypot(player.p[0] - spawn[0], player.p[2] - spawn[2]) >= 1.4)) ?? spawnPoints[players.length % spawnPoints.length]; }
 function availableCabinet(cabinetId: string): CabinetState { return { cabinetId, occupiedByPlayerId: null, occupiedByDisplayName: null, status: 'available', reservedAt: null, sessionStartedAt: null }; }
-function initialWorld(roomId: string): WorldState { return { roomId, themeId: worldConfig.defaultThemeId, weatherId: worldConfig.defaultWeatherId, activityLevel: 'quiet', population: 0, jukebox: { trackId: null, playing: false, startedAt: null, changedBy: null }, revision: 1 }; }
+function initialWorld(roomId: string): WorldState { return { roomId, themeId: worldConfig.defaultThemeId, weatherId: worldConfig.defaultWeatherId, activityLevel: 'quiet', population: 0, revision: 1 }; }
 function approved(state: CabinetState, definition: typeof cabinetRegistry[number]): Record<string, unknown> { return { ok: true, state: { ...state }, alignment: { position: [definition.playerPosition.x, definition.playerPosition.y, definition.playerPosition.z], rotationY: definition.playerRotationY } }; }
 function alignPlayer(player: PlayerState, definition: typeof cabinetRegistry[number], state: 'reserved' | 'interact', now: number): void { player.activeCabinetId = definition.id; player.interactionState = state; player.movementLocked = true; player.cabinetSessionStartedAt = state === 'interact' ? now : null; player.p = [definition.playerPosition.x, definition.playerPosition.y, definition.playerPosition.z]; player.r = definition.playerRotationY; player.a = state === 'interact' ? 'interact' : 'idle'; player.s = state === 'interact' ? 'playing' : 'loading'; }
 function clearCabinetPlayer(player: PlayerState): void { player.activeCabinetId = null; player.interactionState = 'none'; player.movementLocked = false; player.cabinetSessionStartedAt = null; player.a = 'idle'; player.s = 'idle'; }

@@ -47,14 +47,12 @@ export interface ReactionEvent { playerId: string; emoji: ReactionEmoji; at: num
 export interface SocialActionResult { ok: boolean; reason?: 'invalid' | 'rate-limited' }
 
 export type WorldActivityLevel = 'quiet' | 'active' | 'busy';
-export interface JukeboxState { trackId: string | null; playing: boolean; startedAt: number | null; changedBy: string | null }
 export interface WorldState {
   roomId: string; themeId: string; weatherId: string; activityLevel: WorldActivityLevel;
-  population: number; jukebox: JukeboxState; revision: number;
+  population: number; revision: number;
 }
-export interface WorldAnnouncement { id: string; roomId: string; text: string; kind: 'welcome' | 'activity' | 'event'; at: number; audioCue?: string }
+export interface WorldAnnouncement { id: string; roomId: string; text: string; kind: 'welcome' | 'activity' | 'event'; at: number }
 export interface WorldEvent { id: string; roomId: string; type: 'power-flicker' | 'neon-surge' | 'machine-malfunction' | 'fireworks'; at: number; durationMs: number }
-export interface JukeboxResult { ok: boolean; reason?: 'invalid' | 'unknown-track' | 'rate-limited'; state?: JukeboxState }
 
 export type CabinetStatus = 'available' | 'reserved' | 'in-use';
 export interface CabinetState {
@@ -127,7 +125,6 @@ export interface ClientToServerEvents {
   'reaction:send': (payload: { emoji?: unknown }, acknowledge: (result: SocialActionResult) => void) => void;
   'presence:activity': () => void;
   'social:ping': (payload: { sentAt?: unknown }, acknowledge: (result: { serverAt: number }) => void) => void;
-  'world:jukebox-set': (payload: { trackId?: unknown; playing?: unknown }, acknowledge: (result: JukeboxResult) => void) => void;
   /**
    * Matches. A client asks to sit down; it never names a seat, and it never
    * says who hosts or who won — seat order decides the first, and the server

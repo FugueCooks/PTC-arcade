@@ -4,7 +4,7 @@
 
 Cloudflare Pages and R2 continue to serve the browser, models, emulator code, and approved game assets. The scaled realtime path is a set of Node.js/Socket.IO game servers connected to one trusted Redis deployment. Redis Streams forwards cross-process Socket.IO broadcasts and resumes after temporary Redis interruptions. Redis coordination keys provide server discovery, room discovery, admission reservations, and exclusive room-owner leases.
 
-Each active room has exactly one owning game-server process. Its player, movement, cabinet, chat, presence, reaction, jukebox, and world simulation remains in process. Redis contains routing and short-lived coordination records, never ROM bytes, emulator frames, controller input, or game audio/video.
+Each active room has exactly one owning game-server process. Its player, movement, cabinet, chat, presence, reaction, and world simulation remains in process. Redis contains routing and short-lived coordination records, never ROM bytes, emulator frames, controller input, or game audio/video.
 
 The current public safety envelope is 10 rooms per server, 25 players per room, and 250 active players per server. These are launch guards, not measured capacity claims; they should be lowered if production load tests expose a tighter CPU, memory, or bandwidth limit.
 
@@ -23,7 +23,7 @@ HTTP polling requires sticky load-balancer sessions even with the Redis Streams 
 
 An unhealthy owner changes the room to `unhealthy`, which removes it from placement. Room IDs created for coordinated deployments contain a UUID and are globally unique. Seeded fixed IDs remain only for local compatibility. Empty dynamic rooms expire after `ROOM_IDLE_TIMEOUT_SECONDS`; seeded local rooms remain available.
 
-Room records carry server ownership, capacity, population, health, creation and activity timestamps, plus cabinet/world/jukebox revision counters. The active state itself stays in the relevant authoritative manager.
+Room records carry server ownership, capacity, population, health, creation and activity timestamps, plus cabinet/world revision counters. The active state itself stays in the relevant authoritative manager.
 
 ## Ownership and admissions
 

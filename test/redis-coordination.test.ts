@@ -55,7 +55,7 @@ class FakeMulti {
 
 const record = (id: string, serverId: string): RoomRecord => ({
   id, name: id, templateId: 'main', serverId, playerCount: 1, capacity: 24, status: 'available', health: 'healthy',
-  createdAt: 1_000, lastActivityAt: 2_000, seeded: false, cabinetRevision: 0, worldRevision: 0, jukeboxRevision: 0
+  createdAt: 1_000, lastActivityAt: 2_000, seeded: false, cabinetRevision: 0, worldRevision: 0
 });
 
 void test('Redis keys are versioned, environment scoped, and contain no player data', () => {

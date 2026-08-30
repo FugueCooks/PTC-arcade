@@ -83,7 +83,7 @@ export class RoomManager {
 
   setAllStatuses(status: RoomStatus, now = Date.now()): void { this.rooms.forEach((room) => room.setStatus(status, now)); }
   setHealth(roomId: string, health: RoomHealth, now = Date.now()): void { this.rooms.get(roomId)?.setHealth(health, now); }
-  bumpStateRevision(roomId: string, domain: 'cabinet' | 'world' | 'jukebox', now = Date.now()): void { this.rooms.get(roomId)?.bumpRevision(domain, now); }
+  bumpStateRevision(roomId: string, domain: 'cabinet' | 'world', now = Date.now()): void { this.rooms.get(roomId)?.bumpRevision(domain, now); }
 
   private addRoom(config: RoomConfig, now: number, announce: boolean): Room {
     if (this.rooms.has(config.id)) throw new Error(`Duplicate room ID: ${config.id}`);

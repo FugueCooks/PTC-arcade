@@ -10,7 +10,7 @@ const roomConfigs = [
   { id: 'other', spawnSeparation: .1, spawnPoints: [{ x: 0, y: 1.65, z: 0, rotationY: 0 }] }
 ];
 
-function setup() { const players = new PlayerManager(new RoomManager(roomConfigs)); const world = new WorldManager(players, 500); players.subscribe((event) => world.handlePlayerEvent(event)); return { players, world }; }
+function setup() { const players = new PlayerManager(new RoomManager(roomConfigs)); const world = new WorldManager(players); players.subscribe((event) => world.handlePlayerEvent(event)); return { players, world }; }
 
 void test('world activity follows authoritative connected room population', () => {
   const { players, world } = setup();
@@ -21,13 +21,6 @@ void test('world activity follows authoritative connected room population', () =
   assert.equal(world.snapshot('main').population, 2);
   players.disconnect('b', 1_200);
   assert.equal(world.snapshot('main').activityLevel, 'quiet');
-});
-
-void test('music requests are rejected when no tracks are approved', () => {
-  const { players, world } = setup(); players.join('a', 'main', undefined, identity, 1_000);
-  assert.deepEqual(world.setJukebox('a', 'neon-drive', true, 2_000), { ok: false, reason: 'unknown-track' });
-  assert.equal(world.snapshot('main').jukebox.playing, false);
-  assert.equal(world.snapshot('main').jukebox.trackId, null);
 });
 
 void test('environment state remains isolated by room', () => {

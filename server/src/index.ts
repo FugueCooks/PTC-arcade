@@ -111,7 +111,7 @@ const presence = new PresenceManager(players, {
 const statuses = new StatusManager(players, { afkTimeoutMs: Number(process.env.AFK_TIMEOUT_MS ?? 120_000) });
 const chat = new ChatManager(players, { maxLength: Number(process.env.CHAT_MAX_LENGTH ?? 180) });
 const reactions = new ReactionManager(players, Number(process.env.REACTION_COOLDOWN_MS ?? 550));
-const world = new WorldManager(players, Number(process.env.WORLD_REQUEST_COOLDOWN_MS ?? 500));
+const world = new WorldManager(players);
 
 let health: HealthService;
 const metrics: RuntimeMetrics = new RuntimeMetrics({
@@ -380,6 +380,7 @@ cabinets.subscribe((event) => {
 
 io.on('connection', (socket) => {
   let joined = false;
+  let lastAuthoritativeEchoAt = 0;
   metrics.increment('socket_connections_total');
 
   socket.on('room:join', async (request) => {
@@ -457,12 +458,17 @@ io.on('connection', (socket) => {
   socket.on('player:move', (input) => {
     metrics.increment('events_player_move_received_total');
     statuses.noteActivityForSocket(socket.id);
-    const player = players.move(socket.id, input);
-    // Always answer movement packets with server state: accepted state corrects prediction,
-    // rejected state quietly restores a client that drifted or attempted an invalid move.
+    const now = Date.now();
+    const player = players.move(socket.id, input, now);
+    // Rejected movement is corrected immediately. Accepted movement is still
+    // reconciled periodically, but client prediction does not need a redundant
+    // state echo for every packet.
     const authoritativeState = player ?? players.stateFor(socket.id);
     if (!player) metrics.increment('movement_rejected_total');
-    if (authoritativeState) socket.emit('player:state', authoritativeState);
+    if (authoritativeState && (!player || now - lastAuthoritativeEchoAt >= 250)) {
+      socket.emit('player:state', authoritativeState);
+      lastAuthoritativeEchoAt = now;
+    }
   });
 
   socket.on('chat:send', (payload, acknowledge) => {

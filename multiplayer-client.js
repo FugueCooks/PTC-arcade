@@ -8,8 +8,10 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
   }
 
   const RESUME_TOKEN_KEY = 'roms-arcade-multiplayer-resume-token';
-  const sendIntervalMs = 66;
-  const interpolationDelayMs = 100;
+  // Match the server's 20 Hz movement budget instead of waiting an extra
+  // animation frame, and retain one-and-a-half samples of interpolation slack.
+  const sendIntervalMs = 50;
+  const interpolationDelayMs = 75;
   const remotePlayers = new Map();
   let socket;
   let avatarRenderer;
@@ -171,7 +173,7 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
         import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=poke-7'),
         import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=network-meter-1'),
         import('./social/reaction-client.js?v=phase5-2'), import('./social/inspection-client.js?v=phase5-1'),
-        import('./world/world-manager.js?v=arcade-rows-6')
+        import('./world/world-manager.js?v=lobby-perf-1')
       ]);
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);

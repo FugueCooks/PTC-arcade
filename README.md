@@ -14,7 +14,7 @@ Phase 7 operational safeguards begin with typed and bounded environment configur
 
 Player selection now includes automatic Quick Join, sanitized live room populations, manual room-ID entry, refresh, and a cancelable bounded waiting-room retry flow. It falls back to the ten approved static instances when the Phase 7 matchmaking endpoint is unavailable.
 
-The Node room layer now models each arcade instance with an owning server ID, human name, lifecycle and health status, capacity, population, creation/activity timestamps, and cabinet/world/jukebox revision counters. `RoomDirectory` is deliberately transport-independent: local development uses `InMemoryRoomDirectory`, while the next scaling milestone supplies the Redis implementation without moving active room simulation out of its owning server.
+The Node room layer now models each arcade instance with an owning server ID, human name, lifecycle and health status, capacity, population, creation/activity timestamps, and cabinet/world revision counters. `RoomDirectory` is deliberately transport-independent: local development uses `InMemoryRoomDirectory`, while the next scaling milestone supplies the Redis implementation without moving active room simulation out of its owning server.
 
 When `REDIS_URL` is present, the Node service uses Redis Streams for cross-process Socket.IO delivery, registers expiring server and room records, and protects each room with an exclusive renewable lease and fencing token. `REDIS_REQUIRED=1` makes loss of coordination fail readiness. Full topology and key documentation live in `docs/phase-7-architecture.md` and `docs/redis-keys.md`.
 
@@ -125,7 +125,7 @@ Phase 6 is configuration-driven through `assets/world/config.json`. `WorldManage
 - **NPCManager** remains available as a future-facing ambient-character framework, but the live arcade currently spawns no wandering NPCs.
 - **ParticleManager** pools typed position/velocity buffers for dust, snow, sparks, neon bursts, and future effects. Emitters stop updating outside their configured camera distance.
 - **EnvironmentManager** creates interior window displays, applies configuration-defined theme/fog/window colors, and switches pooled snow, sunset dust, and fog-style effects without affecting collision or gameplay. The former N64-wall rain particle field has been removed for performance.
-- **ObjectInteractionManager** detects nearby non-cabinet objects independently from cabinet ownership. The prize counter remains registered for future interaction. The jukebox, placeholder vending machine, and information kiosk were removed to keep the arcade floor and soundscape uncluttered.
+- **ObjectInteractionManager** detects nearby non-cabinet objects independently from cabinet ownership. The prize counter remains registered for future interaction. Lobby music, the jukebox, placeholder vending machine, and information kiosk were removed to keep the arcade floor and download surface uncluttered; emulator audio remains isolated inside game sessions.
 
 Room-specific world state contains `themeId`, `weatherId`, `activityLevel`, population, and revision. The server validates theme and weather IDs against the registry. `WorldManager.setTheme()` and `setWeather()` are server-side expansion APIs for future schedules/admin controls. State is persistent for the lifetime of the server process but intentionally is not stored in a database.
 

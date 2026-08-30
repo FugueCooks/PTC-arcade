@@ -17,7 +17,7 @@ const requiredPrizeModels = new Set([
   'pepe-the-frog.optimized.glb',
   'pudgy-penguin.optimized.glb'
 ]);
-const requiredEnvironmentModels = new Set(['chao-garden.glb']);
+const requiredEnvironmentModels = new Set(['chao-garden.glb', 'pokemon-logo.glb']);
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });

@@ -18,7 +18,6 @@
     { "id": "snow", "name": "Snow", "particle": "snow", "color": "#516b92" },
     { "id": "fog", "name": "Fog", "particle": "fog", "color": "#536070" }
   ],
-  "tracks": [],
   "objects": [
     { "id": "prize-counter", "type": "prize-counter", "name": "PRIZE COUNTER", "position": [0, 0, -14.35], "interactionDistance": 2.3 }
   ],

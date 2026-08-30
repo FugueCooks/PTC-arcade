@@ -84,10 +84,10 @@ const gameCubeDspAssetUrl=window.ARCADE_RUNTIME?.gameCubeDspAssetUrl||gameAssetB
 let yaw=0,pitch=0, locked=false, activeCabinet=null, localAnimationState='idle', cameraMode='third-person', socialFollowProvider=null, emulatorRuntimeActive=false;
 // The base wash the whole building sits in. The old values left everything
 // outside a managed light's radius near-black; this is a soft violet sky over
-// a warm floor bounce plus a low lavender ambient — colour without glare, and
+// a green-blue floor bounce plus a low lavender ambient — colour without glare, and
 // none of it counts against the per-frame light budget.
-scene.add(new THREE.HemisphereLight(0x6a5fc9,0x2a1e14,1.55));
-scene.add(new THREE.AmbientLight(0x8a7fb8,.4));
+scene.add(new THREE.HemisphereLight(0x756fe0,0x12362d,2.15));
+scene.add(new THREE.AmbientLight(0x8b9bc7,.72));
 const managedSceneLights=[];
 // Callbacks run after movement resolves and before the draw call. Declared up
 // here so scenery built anywhere in the file can register an animation.
@@ -220,6 +220,30 @@ const haloTexture=(()=>{
 })();
 const warmHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xffb877,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending});
 const coolHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xff4fa8,transparent:true,opacity:.34,depthWrite:false,blending:THREE.AdditiveBlending});
+// Every troffer used to be three separate scene objects. The expanded arcade
+// now has hundreds of them, so keep their identical geometry in five GPU
+// batches (housing, two diffuser colours and two halo colours). This preserves
+// the layout while removing hundreds of draw calls.
+const ceilingFixturePositions={housing:[],warmPanel:[],coolPanel:[],warmHalo:[],coolHalo:[]};
+function queueCeilingFixture(x,z,cool=false){
+  ceilingFixturePositions.housing.push([x,z]);
+  ceilingFixturePositions[cool?'coolPanel':'warmPanel'].push([x,z]);
+  ceilingFixturePositions[cool?'coolHalo':'warmHalo'].push([x,z]);
+}
+function addCeilingFixtureBatch(geometry,material,positions,y,rotationX=0){
+  if(!positions.length)return;
+  const batch=new THREE.InstancedMesh(geometry,material,positions.length),transform=new THREE.Object3D();
+  positions.forEach(([x,z],index)=>{transform.position.set(x,y,z);transform.rotation.set(rotationX,0,0);transform.updateMatrix();batch.setMatrixAt(index,transform.matrix)});
+  batch.instanceMatrix.setUsage(THREE.StaticDrawUsage);batch.instanceMatrix.needsUpdate=true;batch.frustumCulled=true;scene.add(batch);
+}
+function flushCeilingFixtures(){
+  addCeilingFixtureBatch(new THREE.BoxGeometry(3.6,.17,.52),ceilingHousingMaterial,ceilingFixturePositions.housing,4.95);
+  const panelGeometry=new THREE.PlaneGeometry(3.3,.34),haloGeometry=new THREE.PlaneGeometry(5.4,1.6);
+  addCeilingFixtureBatch(panelGeometry,warmPanelMaterial,ceilingFixturePositions.warmPanel,4.862,Math.PI/2);
+  addCeilingFixtureBatch(panelGeometry,coolPanelMaterial,ceilingFixturePositions.coolPanel,4.862,Math.PI/2);
+  addCeilingFixtureBatch(haloGeometry,warmHaloMaterial,ceilingFixturePositions.warmHalo,4.84,Math.PI/2);
+  addCeilingFixtureBatch(haloGeometry,coolHaloMaterial,ceilingFixturePositions.coolHalo,4.84,Math.PI/2);
+}
 // The ceiling beams stop where the carved-out rooms begin: a beam crossing
 // the Chao Garden hung in its sky as a floating black slab. West of the
 // garden the run is unchanged; the beams never reached Silent Hill or the
@@ -227,11 +251,7 @@ const coolHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xff4f
 for(let z=-15;z<=15;z+=5)box(z<-12?49.6:56,.26,.34,0x14111f,z<-12?-3.2:0,4.9,z,.04);
 for(const [row,z] of [-12.5,-7.5,-2.5,2.5,7.5,12.5].entries()){
   const cool=row%3===1;
-  for(const x of [-21,-9,0,9,21]){
-    const housing=new THREE.Mesh(new THREE.BoxGeometry(3.6,.17,.52),ceilingHousingMaterial);housing.position.set(x,4.95,z);scene.add(housing);
-    const panel=new THREE.Mesh(new THREE.PlaneGeometry(3.3,.34),cool?coolPanelMaterial:warmPanelMaterial);panel.rotation.x=Math.PI/2;panel.position.set(x,4.862,z);scene.add(panel);
-    const halo=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.6),cool?coolHaloMaterial:warmHaloMaterial);halo.rotation.x=Math.PI/2;halo.position.set(x,4.84,z);scene.add(halo);
-  }
+  for(const x of [-21,-9,0,9,21])queueCeilingFixture(x,z,cool);
 }
 // The galleries added beyond the original hall inherited a ceiling but no
 // fixtures, so they read as unlit black boxes. Lay the same troffer grid into
@@ -244,9 +264,7 @@ function lightRoom(centerX,centerZ,width,depth,accent=0xff9a4d){
     const z=centerZ-depth/2+depth*(row+.5)/rows,cool=row%3===1;
     for(let column=0;column<columns;column++){
       const x=centerX-width/2+width*(column+.5)/columns;
-      const housing=new THREE.Mesh(new THREE.BoxGeometry(3.6,.17,.52),ceilingHousingMaterial);housing.position.set(x,4.95,z);scene.add(housing);
-      const panel=new THREE.Mesh(new THREE.PlaneGeometry(3.3,.34),cool?coolPanelMaterial:warmPanelMaterial);panel.rotation.x=Math.PI/2;panel.position.set(x,4.862,z);scene.add(panel);
-      const halo=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.6),cool?coolHaloMaterial:warmHaloMaterial);halo.rotation.x=Math.PI/2;halo.position.set(x,4.84,z);scene.add(halo);
+      queueCeilingFixture(x,z,cool);
     }
   }
   point(accent,centerX,3.1,centerZ-depth/4,5.2);
@@ -417,6 +435,30 @@ addSolanaNeonSign({x:PLAYSTATION_WALL_X+.205,y:3.7,z:-16.6,rotationY:Math.PI/2,w
 addSolanaNeonSign({x:N64_WALL_X-.205,y:3.7,z:20.4,rotationY:-Math.PI/2,width:5.2,height:1.25});
 const solanaWestWash=point(SOLANA_PALETTE[0],-18.8,2.8,-16.6,3.15);solanaWestWash.userData.solanaLight=true;
 const solanaEastWash=point(SOLANA_PALETTE[2],18.8,2.8,20.4,3.15);solanaEastWash.userData.solanaLight=true;
+// Soft pools follow the main walking route instead of adding another row of
+// signs. Their additive floor halos cost no lights; only the two nearest real
+// washes are enabled, so the arcade is brighter without multiplying GPU work.
+const solanaPoolGeometry=new THREE.PlaneGeometry(11,8);
+const SOLANA_AMBIENT_POOLS=Object.freeze([
+  [-8,-27,SOLANA_PALETTE[0]], [8,-19,SOLANA_PALETTE[1]],
+  [-8,-11,SOLANA_PALETTE[2]], [8,-3,SOLANA_PALETTE[0]],
+  [-8,5,SOLANA_PALETTE[1]], [8,13,SOLANA_PALETTE[2]],
+  [-8,21,SOLANA_PALETTE[0]], [8,29,SOLANA_PALETTE[1]]
+]);
+const solanaAmbientPools=[];
+for(const [x,z,color] of SOLANA_AMBIENT_POOLS){
+  const material=new THREE.MeshBasicMaterial({map:haloTexture,color,transparent:true,opacity:.11,depthWrite:false,blending:THREE.AdditiveBlending});
+  const pool=new THREE.Mesh(solanaPoolGeometry,material);pool.rotation.x=-Math.PI/2;pool.position.set(x,.018,z);pool.renderOrder=2;pool.userData.decorative=true;solanaAtmosphere.add(pool);
+  const wash=new THREE.PointLight(color,7.5,18,2);wash.position.set(x,2.65,z);wash.visible=false;wash.userData.solanaLight=true;wash.userData.baseIntensity=7.5;scene.add(wash);managedSceneLights.push(wash);
+  solanaAmbientPools.push({pool,material,wash,phase:(x+z)*.17});
+}
+beforeRenderCallbacks.push(now=>{
+  for(const accent of solanaAmbientPools){
+    const breath=.5+.5*Math.sin(now*.00055+accent.phase);
+    accent.material.opacity=.09+breath*.055;
+    if(accent.wash.visible)accent.wash.intensity=accent.wash.userData.baseIntensity*(.94+breath*.12);
+  }
+});
 // The old front-left expansion is now the MegaMan Room. Xbox remains behind
 // its original barrier while PS2 keeps its dedicated rear gallery.
 // Hazard signage, but lit rather than painted. The yellow and black tape read
@@ -1491,6 +1533,40 @@ function installPokemonCenter(){
       }
       const overDoor=new THREE.Mesh(new THREE.BoxGeometry(9.7,.95,.34),centerWall);
       overDoor.position.set(28.75,4.48,-40.82);scene.add(overDoor);
+      // The supplied Pokemon logo is a decorative skin on the existing
+      // lintel. It deliberately has no collider and does not alter the room.
+      loader.load('assets/models/pokemon/pokemon-logo.glb?v=pokemon-logo-1',logoGltf=>{
+        const logo=logoGltf.scene;
+        logo.traverse(object=>{
+          if(!object.isMesh)return;
+          object.castShadow=false;
+          object.receiveShadow=false;
+          const makeUnlit=source=>new THREE.MeshBasicMaterial({
+            map:source?.map??null,
+            color:source?.color?.clone?.()??new THREE.Color(0xffffff),
+            transparent:Boolean(source?.transparent||(source?.opacity??1)<1),
+            opacity:source?.opacity??1,
+            alphaTest:source?.alphaTest??0,
+            side:source?.side??THREE.FrontSide,
+            vertexColors:Boolean(source?.vertexColors),
+            toneMapped:false
+          });
+          object.material=Array.isArray(object.material)
+            ?object.material.map(makeUnlit)
+            :makeUnlit(object.material);
+        });
+        logo.updateWorldMatrix(true,true);
+        const bounds=new THREE.Box3().setFromObject(logo);
+        const size=bounds.getSize(new THREE.Vector3());
+        const centre=bounds.getCenter(new THREE.Vector3());
+        const holder=new THREE.Group();
+        logo.position.sub(centre);
+        holder.add(logo);
+        holder.scale.setScalar(Math.min(4.15/Math.max(size.x,.001),1.48/Math.max(size.y,.001)));
+        holder.rotation.y=Math.PI;
+        holder.position.set(27.08,4.15,-40.48);
+        scene.add(holder);
+      },undefined,error=>console.warn('The Pokemon vomitory logo could not load.',error));
     },undefined,error=>console.warn('The Pokemon Center could not load.',error));
   }catch(error){console.warn('The Pokemon Center loader could not initialize.',error)}})();
 }
@@ -2179,6 +2255,7 @@ box(SHELL_HALF_WIDTH-ROOM_DOOR_HALF_WIDTH,5,.3,0x11182c,-(SHELL_HALF_WIDTH+ROOM_
 box(SHELL_HALF_WIDTH-ROOM_DOOR_HALF_WIDTH,5,.3,0x11182c,(SHELL_HALF_WIDTH+ROOM_DOOR_HALF_WIDTH)/2,2.5,TOURNAMENT_ROOM_DOOR_Z,.06);
 for(let x=-40;x<=40;x+=4)box(3.82,.055,.06,0x4e7ea8,x,4.66,TOURNAMENT_ROOM_BACK_Z-.19,.75);
 lightRoom(0,TOURNAMENT_ROOM_CENTER_Z,TOURNAMENT_ROOM_WIDTH,TOURNAMENT_ROOM_DEPTH,0xffb066);
+flushCeilingFixtures();
 const pudgyToyTexture=new THREE.TextureLoader().load('assets/art/pudgy-penguin-toy.webp?v=webp-2');
 function crashArt(){
   const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d');
@@ -3086,10 +3163,9 @@ accentLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},
 // it actually reaches. On the accent budget every one of these sat dark unless
 // the player pressed into the wall, which is the one place you cannot see it.
 muralLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<3&&distanceSq<225});
-// The Solana signs carry their own cheap additive glow. One nearby wall wash
-// is enough to tint the player and floor without raising the live light budget
-// by one light per sign as the arcade grows.
-solanaLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<1&&distanceSq<144});
+// The Solana signs carry their own cheap additive glow. Two nearby washes tint
+// the player and floor without raising the live light budget as the arcade grows.
+solanaLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<2&&distanceSq<400});
 const prizeVisible=playerPosition.distanceToSquared(prizeDisplay.position)<144;gangsterPepeLight.visible=prizeVisible;prizeDisplayLights.forEach(light=>{light.visible=prizeVisible});}
 const prizeSignCanvas=document.createElement('canvas');prizeSignCanvas.width=1024;prizeSignCanvas.height=192;const psc=prizeSignCanvas.getContext('2d');const prizeLedTexture=new THREE.CanvasTexture(prizeSignCanvas);
 function drawPrizeLed(time=0){psc.fillStyle='#05060b';psc.fillRect(0,0,1024,192);for(let x=8;x<1024;x+=16){for(let y=8;y<192;y+=16){psc.fillStyle=(x+y)%32?'#101527':'#1c2540';psc.fillRect(x,y,3,3)}}psc.font='bold 88px monospace';psc.textBaseline='middle';psc.shadowColor='#ff3cac';psc.shadowBlur=20;psc.fillStyle='#fff4cc';const text='  ✦  PRIZE COUNTER  ✦  ';const width=psc.measureText(text).width;const offset=(time*.14)%(width+1024);psc.fillText(text,1024-offset,98);psc.fillText(text,1024-offset+width+160,98);psc.shadowBlur=0;prizeLedTexture.needsUpdate=true;}
@@ -3763,7 +3839,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='plan-9';
+const ARCADE_BUILD='lobby-perf-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
