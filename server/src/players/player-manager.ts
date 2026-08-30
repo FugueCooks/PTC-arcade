@@ -29,7 +29,7 @@ function isInsideWorld(x: number, z: number): boolean {
   // Silent Hill doubled sideways: its annex is bolted onto the OUTSIDE of
   // the building's west wall, over ground nothing else uses. Matches
   // SILENT_HILL_EXPANSE in arcade.js.
-  if (x >= -64.3 && x <= MIN_WORLD_X && z >= -66.7 && z <= -42.5) return true;
+  if (x >= -64.3 && x <= -21.6 && z >= -95.5 && z <= -42.5) return true;
   // The Temple of Time's overrun past the same wall, further south. Matches
   // TEMPLE_EXPANSE in arcade.js.
   if (x >= -124.5 && x <= -42.7 && z >= 24.8 && z <= 59.2) return true;

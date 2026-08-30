@@ -48,7 +48,7 @@ const WORLD_BOUNDS={minX:-42.7,maxX:42.7,minZ:-66.7,maxZ:49.9};
 // bolted onto the OUTSIDE of the building's west wall, over ground nothing
 // else uses. The walkable floor is the main rectangle plus this one, clamped
 // against whichever rectangle the step began in.
-const SILENT_HILL_EXPANSE={minX:-64.3,maxX:-42.7,minZ:-66.7,maxZ:-42.5};
+const SILENT_HILL_EXPANSE={minX:-64.3,maxX:-21.6,minZ:-95.5,maxZ:-42.5};
 // The arena hangs in the void north of the building, reached only through
 // the vomitory: its region spans the globe, and the tunnel walls plus the
 // bowl's own ellipse do the actual shepherding inside it.
@@ -328,7 +328,7 @@ box(.3,5,82.2,0x180d31,SHELL_HALF_WIDTH,2.5,-26.1);box(.3,5,23,0x180d31,SHELL_HA
 // The north wall runs on across the annex, which closes its own west and
 // south sides.
 // The north wall parts where the stadium concourse runs out to the globe.
-box(90.1,5,.3,0x180d31,-19.75,2.5,NORTH_ROW_MIN_Z);
+box(21.7,5,.3,0x180d31,-54.05,2.5,NORTH_ROW_MIN_Z);box(46.5,5,.3,0x180d31,1.55,2.5,NORTH_ROW_MIN_Z);
 box(14.5,5,.3,0x180d31,35.95,2.5,NORTH_ROW_MIN_Z);
 box(.3,5,25.2,0x180d31,SILENT_WEST_X,2.5,-54.6);
 box(21.6,5,.3,0x180d31,-54,2.5,SILENT_SOUTH_Z);
@@ -1487,7 +1487,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=plan-3',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=plan-4',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1605,7 +1605,14 @@ function installSilentHillBuildings(){
         [-31,-65.4,0,1,3],
         [-48,-65.4,0,1.04,2],
         [-63,-65.4,0,.97,3],
-        [-54.5,-41,Math.PI,1,2]
+        [-54.5,-41,Math.PI,1,2],
+        // the street north of the building: blocks down both kerbs, thinning
+        // out as the fog takes over
+        [-21.4,-72.5,-Math.PI/2,1.02,3],
+        [-21.4,-86,-Math.PI/2,.98,2],
+        [-43.4,-72.5,Math.PI/2,1,2],
+        [-43.4,-86,Math.PI/2,1.03,3],
+        [-32.4,-93.5,0,1.05,3]
       ]){
         const mount=new THREE.Group();
         for(let level=0;level<storeys;level++){
@@ -1704,7 +1711,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-3',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-4',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1780,7 +1787,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-4.glb?v=plan-3',gltf=>{
+    loader.load('assets/models/chao-garden-4.glb?v=plan-4',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -1893,7 +1900,7 @@ function installChaoGardenModel(){
  * stand, with the monsters hidden along the way.
  */
 function buildSilentHillBlock(){
-  const CX=-32.4,MIN_Z=-67,MAX_Z=-42.2,CZ=(MIN_Z+MAX_Z)/2;
+  const CX=-32.4,MIN_Z=-94.5,MAX_Z=-42.2,CZ=(MIN_Z+MAX_Z)/2;
   // The street: cracked asphalt with a faded double centre line.
   const roadCanvas=document.createElement('canvas');roadCanvas.width=256;roadCanvas.height=512;
   const rc=roadCanvas.getContext('2d');
@@ -2008,7 +2015,7 @@ function buildSilentHillBlock(){
     arrow.position.set(ax,.045,az);arrow.renderOrder=4;scene.add(arrow);
   }
   // What light there is: two sickly grey-green pools on the managed budget.
-  for(const [x,z] of [[-31.5,-45],[-35,-55],[-29,-63],[-48,-52],[-57,-52.5],[-62.5,-51.5]]){
+  for(const [x,z] of [[-31.5,-45],[-35,-55],[-29,-63],[-48,-52],[-57,-52.5],[-62.5,-51.5],[-35,-71],[-29,-79],[-35,-88]]){
     const pall=new THREE.PointLight(0xaab8a4,2.6,13,2);
     pall.position.set(x,3.2,z);scene.add(pall);managedSceneLights.push(pall);
   }
@@ -2016,7 +2023,7 @@ function buildSilentHillBlock(){
   // third of the way up one. These hang over the street instead, dim and cold,
   // so the upper courses read as masonry rather than as a hole in the fog.
   // They rank as accent lights so they cannot take the pavement's own slots.
-  for(const [x,z] of [[-32.4,-49],[-32.4,-61],[-55,-52]]){
+  for(const [x,z] of [[-32.4,-49],[-32.4,-61],[-55,-52],[-32.4,-75],[-32.4,-89]]){
     const wash=new THREE.PointLight(0x9fb0a8,2.2,34,1.5);
     wash.position.set(x,15.5,z);
     wash.userData.accentLight=true;wash.userData.wideAccent=true;
@@ -3728,7 +3735,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='plan-3';
+const ARCADE_BUILD='plan-4';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
