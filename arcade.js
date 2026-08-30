@@ -58,7 +58,11 @@ const POKEMON_EXPANSE={minX:-12,maxX:66,minZ:-138.6,maxZ:-42.5};
 // and the cliff-edge ellipse does the actual shepherding on it.
 const CHAO_EXPANSE={minX:42.7,maxX:86.6,minZ:31.3,maxZ:93.3};
 const TEMPLE_EXPANSE={minX:-124.5,maxX:-42.7,minZ:24.8,maxZ:59.2};
-const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE];
+// Peach's Castle stands outside the west wall on the Mario room's own line,
+// the way the Temple of Time stands outside it further south. The room is not
+// a room any more: it is the forecourt you cross to reach the front steps.
+const CASTLE_EXPANSE={minX:-71.4,maxX:-42.7,minZ:-39.6,maxZ:-11.4};
+const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE,CASTLE_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
   const region=WORLD_REGIONS.find(candidate=>insideRegion(candidate,previousX,previousZ))??WORLD_BOUNDS;
@@ -341,7 +345,11 @@ const MEGAMAN_ROOM_WEST_X=-SHELL_HALF_WIDTH,MEGAMAN_ROOM_CENTER_X=-ANNEX_ROOM_CE
 const SHELL_DEPTH=TOURNAMENT_MAX_Z-NORTH_ROW_MIN_Z,SHELL_CENTER_Z=(TOURNAMENT_MAX_Z+NORTH_ROW_MIN_Z)/2;
 // The west shell opens where Silent Hill spills out of the building; the
 // wall resumes at the fog's south line and runs to the back of the building.
-box(.3,5,75.6,0x180d31,-SHELL_HALF_WIDTH,2.5,-4.2);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,35.8);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,48.2);
+// The west shell used to run unbroken from z -42 to 33.6. It is cut at the
+// Mario room's own doorway line now — a 4.4m gap on z -25.2 — because the
+// castle stands outside it and the room is the way through to the front steps.
+box(.3,5,14.6,0x180d31,-SHELL_HALF_WIDTH,2.5,-34.7);box(.3,5,56.6,0x180d31,-SHELL_HALF_WIDTH,2.5,5.3);
+box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,35.8);box(.3,5,4.4,0x180d31,-SHELL_HALF_WIDTH,2.5,48.2);
 box(.3,5,82.2,0x180d31,SHELL_HALF_WIDTH,2.5,-26.1);box(.3,5,23,0x180d31,SHELL_HALF_WIDTH,2.5,26.5);box(.3,5,4.4,0x180d31,SHELL_HALF_WIDTH,2.5,48.2);
 // The north wall runs on across the annex, which closes its own west and
 // south sides.
@@ -1001,13 +1009,30 @@ function buildPokemonStadium(centerX,arenaCz){
     scene.add(flood);managedSceneLights.push(flood);
   }
 }
-// Super Mario, in the west column behind Metal Gear.
-themeRoom({
-  centerX:MEGAMAN_ROOM_CENTER_X,centerZ:-25.2,
-  far:'mario-room-mural.webp?v=mario-1',
-  near:'mario-room-mural-3.webp?v=mario-1',
-  side:'mario-room-mural-2.webp?v=mario-1'
-});
+// Super Mario used to be a themed room in the west column behind Metal Gear.
+// It is the way through to Peach's Castle now, so the room keeps no murals of
+// its own and the three come indoors, spread along the main hall's two walls
+// between the doorways rather than filling one room. The hall's clear stretches
+// are shorter than a room wall — about fourteen metres between doors — so these
+// hang at twelve and keep their own proportions instead of being stretched to
+// the room mural's height.
+const hangHallMural=({file,wallX,z,span,aspect})=>{
+  const inward=wallX<0?1:-1;
+  const height=span/aspect;
+  box(.08,height+.4,span+.4,0x050711,wallX+inward*.19,2.5,z,.12);
+  const texture=new THREE.TextureLoader().load(`assets/art/${file}`);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  const mural=new THREE.Mesh(new THREE.PlaneGeometry(span,height),
+    new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+  mural.position.set(wallX+inward*.32,2.5,z);
+  mural.rotation.y=inward*Math.PI/2;
+  mural.renderOrder=4;
+  scene.add(mural);
+};
+hangHallMural({file:'mario-room-mural.webp?v=mario-1',wallX:PLAYSTATION_WALL_X,z:-16.6,span:12,aspect:1920/432});
+hangHallMural({file:'mario-room-mural-2.webp?v=mario-1',wallX:N64_WALL_X,z:4.8,span:12,aspect:1656/482});
+hangHallMural({file:'mario-room-mural-3.webp?v=mario-1',wallX:PLAYSTATION_WALL_X,z:16.6,span:12,aspect:1920/432});
 // Final Fantasy fills the wide top-row room. Its geometry is its own — a 32 m
 // back wall and two 16.4 m sides, with the doorway wall left bare — so its
 // murals are hung directly rather than through themeRoom, with the same
@@ -1727,6 +1752,96 @@ function resolveTempleFloor(previousX,previousZ){
   playerPosition.y+=(ground+1.65-playerPosition.y)*.35;
 }
 /**
+ * Peach's Castle, outside the west wall on the Mario room's own line.
+ *
+ * Placed like the Temple of Time and walked the same way: the model's geometry
+ * IS the floor, found by a ray straight down, and a step with nothing under it
+ * is refused. That is what makes the black doorways inside the castle solid
+ * without building a single wall for them — there is no floor behind one, so
+ * the walk stops at the threshold.
+ *
+ * The model's front, the brick arch with the red carpet, faces +x, which is
+ * the way a player arrives: west out of the old Mario room. Its east edge sits
+ * against the shell so you step off the room's floor onto the castle's ground
+ * with no gap of nothing in between.
+ */
+let castleStarted=false,castleMount=null,castleSettle=false;
+const castleDown=new THREE.Vector3(0,-1,0),castleRayOrigin=new THREE.Vector3(),castleRay=new THREE.Raycaster();
+const CASTLE_STEP=1.4,CASTLE_FALL=6.8,CASTLE_CENTRE_X=-54,CASTLE_CENTRE_Z=-25.2,CASTLE_HEIGHT=9,CASTLE_THRESHOLD_X=-43.4;
+function installPeachsCastle(){
+  if(castleStarted)return;
+  castleStarted=true;
+  void (async()=>{try{
+    const loader=await getOptimizedGltfLoader();
+    loader.load('assets/models/mario/peachs-castle-1f.glb?v=castle-model-1',gltf=>{
+      const castle=gltf.scene;
+      // The bake carries its own light, like the temple's and the garden's.
+      castle.traverse(node=>{
+        if(!node.isMesh)return;
+        node.castShadow=false;node.receiveShadow=false;
+        const materials=Array.isArray(node.material)?node.material:[node.material];
+        const swapped=materials.map(material=>new THREE.MeshBasicMaterial({
+          map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),
+          transparent:material.transparent,opacity:material.opacity,side:THREE.DoubleSide,fog:false}));
+        node.material=Array.isArray(node.material)?swapped:swapped[0];
+      });
+      castle.updateMatrixWorld(true);
+      const bounds=new THREE.Box3().setFromObject(castle);
+      const size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
+      const scale=CASTLE_HEIGHT/Math.max(size.y,.001);
+      castle.scale.setScalar(scale);
+      castle.position.set(-centre.x*scale,-bounds.min.y*scale,-centre.z*scale);
+      const mount=new THREE.Group();
+      mount.add(castle);
+      mount.position.set(CASTLE_CENTRE_X,0,CASTLE_CENTRE_Z);
+      scene.add(mount);
+      castleMount=mount;
+    },undefined,error=>console.warn('Peachs Castle could not load.',error));
+  }catch(error){console.warn('Peachs Castle loader could not initialize.',error)}})();
+}
+function castleGroundAt(x,z,feetY){
+  if(!castleMount)return null;
+  castleRayOrigin.set(x,feetY+CASTLE_STEP+.1,z);
+  castleRay.set(castleRayOrigin,castleDown);
+  castleRay.far=CASTLE_STEP+CASTLE_FALL+.2;
+  for(const hit of castleRay.intersectObject(castleMount,true)){
+    const y=hit.point.y;
+    // the arch overhead and the painted sky are walked under, not onto
+    if(y>feetY+CASTLE_STEP)continue;
+    return y<feetY-CASTLE_FALL?null:y;
+  }
+  return null;
+}
+function resolveCastleFloor(previousX,previousZ){
+  const inCastle=playerPosition.x<WORLD_BOUNDS.minX
+    &&playerPosition.x>CASTLE_EXPANSE.minX
+    &&playerPosition.z>CASTLE_EXPANSE.minZ&&playerPosition.z<CASTLE_EXPANSE.maxZ;
+  if(!inCastle){
+    if(castleSettle){
+      playerPosition.y+=(1.65-playerPosition.y)*.3;
+      if(Math.abs(playerPosition.y-1.65)<.02){playerPosition.y=1.65;castleSettle=false}
+    }
+    return;
+  }
+  castleSettle=true;
+  const feet=playerPosition.y-1.65;
+  let ground=castleGroundAt(playerPosition.x,playerPosition.z,feet);
+  // The castle's own ground starts at x -43.4 and the hall's stops at -42.7,
+  // so there is two thirds of a metre of doorway with neither under it. Left
+  // to the refusal rule that gap is a wall across the arch: every step into it
+  // finds no floor and is put back. The threshold keeps the hall's level
+  // instead, and the castle's own 25cm lip is a step up from there.
+  if(ground===null&&playerPosition.x>CASTLE_THRESHOLD_X)ground=0;
+  if(ground===null){
+    playerPosition.x=previousX;playerPosition.z=previousZ;
+    const held=castleGroundAt(previousX,previousZ,feet);
+    if(held!==null)playerPosition.y+=(held+1.65-playerPosition.y)*.35;
+    else playerPosition.y+=(1.65-playerPosition.y)*.35;
+    return;
+  }
+  playerPosition.y+=(ground+1.65-playerPosition.y)*.35;
+}
+/**
  * The two things walking the street.
  *
  * Both keep their own lit materials rather than going full-bright: the point
@@ -1737,7 +1852,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-hill-4',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-peach-2',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -3271,7 +3386,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.z>8){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.z>8){templeOfTimeStarted=true;installTempleOfTime();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.z>8){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.z>8){templeOfTimeStarted=true;installTempleOfTime();}if(playerPosition.x<-14&&playerPosition.z<-12&&playerPosition.z>-40){installPeachsCastle();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
 /**
  * Everything heavy, loaded behind the avatar screen instead of underfoot.
  *
@@ -3295,7 +3410,7 @@ function warmSceneGpu(){
   // each is forced on for the pass and put back exactly as it was. r0.160 has
   // no compileAsync, so this is synchronous by necessity — which is precisely
   // why it belongs behind the avatar screen and not after it.
-  const regions=[silentHillWorld,pokemonRosterWorld,chaoWorld,templeMount].filter(Boolean);
+  const regions=[silentHillWorld,pokemonRosterWorld,chaoWorld,templeMount,castleMount].filter(Boolean);
   const wasVisible=regions.map(region=>region.visible);
   for(const region of regions)region.visible=true;
   try{renderer.compile(scene,camera)}catch(error){console.warn('The GPU warm-up pass did not finish.',error)}
@@ -3309,6 +3424,7 @@ function preloadSceneModels(onProgress){
   const steps=[
     ['the garden',()=>{chaoGardenModelStarted=true;installChaoGardenModel()}],
     ['the temple',()=>{templeOfTimeStarted=true;installTempleOfTime()}],
+    ['the castle',()=>installPeachsCastle()],
     ['the statues',()=>{megaManStatuesStarted=true;installMegaManStatues()}],
     ['the cabinets',()=>{for(const system of ['psx','n64','gamecube'])installControllerModel(system)}],
     ['the cabinet art',()=>{for(const cabinet of cabinets)if(cabinet.artSlug&&!cabinet.artApplied)applyCabinetArt(cabinet,cabinet.artSlug)}],
@@ -3350,6 +3466,7 @@ function updateChaoSkyVisibility(){
   silentHillWorld.visible=playerPosition.z<-26;
   pokemonRosterWorld.visible=playerPosition.z<-44;
   if(templeMount)templeMount.visible=playerPosition.z>14;
+  if(castleMount)castleMount.visible=playerPosition.x<-14;
 }
 function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;updateChaoSkyVisibility();const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<324;const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[],muralLights=[],solanaLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.solanaLight?solanaLights:light.userData.muralLight?muralLights:light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
 // Accent beacons only reach 2.8 units, so they are ranked against their own
@@ -4062,7 +4179,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='hill-4';
+const ARCADE_BUILD='peach-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -4072,7 +4189,7 @@ if(performanceStats){
 }
 let performanceWindowStart=performance.now(),performanceFrames=0,slowWindows=0,fastWindows=0,latestPerformance={fps:0,frameMs:0,quality:'WARMING'};
 const getRendererStats=()=>{const memory=performance.memory;return{...latestPerformance,renderScale:currentPixelRatio,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,heapUsedMb:memory?Number((memory.usedJSHeapSize/1048576).toFixed(1)):null,heapLimitMb:memory?Number((memory.jsHeapSizeLimit/1048576).toFixed(1)):null}};
-window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,playerPosition.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),debugInstallRoster:()=>installPokemonRoster(),debugWorldTick:()=>{nextHeavyAssetCheck=0;nextLightCull=0;loadNearbySceneModels(performance.now());updateNearbyLights(performance.now())},debugInstallSilentHill:()=>{installSilentHillBuildings();installSilentHillCast()},onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
+window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,playerPosition.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),debugInstallCastle:()=>installPeachsCastle(),debugInstallRoster:()=>installPokemonRoster(),debugWorldTick:()=>{nextHeavyAssetCheck=0;nextLightCull=0;loadNearbySceneModels(performance.now());updateNearbyLights(performance.now())},debugInstallSilentHill:()=>{installSilentHillBuildings();installSilentHillCast()},onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
 function updatePerformanceStats(now){performanceFrames++;const elapsed=now-performanceWindowStart;if(elapsed<1000)return;const fps=Math.round(performanceFrames*1000/elapsed),frameMs=Math.round(elapsed/performanceFrames),quality=currentPixelRatio<=pixelRatioFloor+.01?'LOW':currentPixelRatio<.9?'MED':'HIGH';latestPerformance={fps,frameMs,quality};if(performanceStats)performanceStats.textContent=`${fps} FPS · ${frameMs} MS · ${quality} · ${Math.round(currentPixelRatio*100)}%`;// This only ever went down.
 //
 // It dropped the scale on a single second under 48 fps — one hitch, a model
@@ -4098,7 +4215,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before
