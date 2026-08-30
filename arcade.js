@@ -1511,7 +1511,7 @@ const templeDown=new THREE.Vector3(0,-1,0),templeRayOrigin=new THREE.Vector3(),t
 function installTempleOfTime(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/temple-of-time.glb?v=plan-8',gltf=>{
+    loader.load('assets/models/temple-of-time.glb?v=plan-9',gltf=>{
       const temple=gltf.scene;
       // one stray untextured fragment of the deleted entrance door survives in
       // the bake as a black box on the sill; nothing untextured belongs here
@@ -1596,10 +1596,11 @@ function installSilentHillCast(){
       },undefined,error=>console.warn('A Silent Hill figure could not load:',file,error));
     }catch(error){console.warn('Silent Hill cast loader could not initialize.',error)}})();
   };
-  // He stands in the middle of the road, up the street, turned back toward the
-  // door the player comes in by. The model faces away at rest, so he is turned
-  // half a circle to face the walk.
-  place('pyramid-head.glb',{x:-33.4,z:-58.6,height:2.05,rotY:Math.PI+.22});
+  // Not in the road but at the far end of it, in the corner where the fog is
+  // thickest and no lamp reaches — head and shoulders above the street, turned
+  // back toward the door the player comes in by. The model faces away at rest,
+  // so he is turned half a circle to face the walk.
+  place('pyramid-head.glb',{x:-35.6,z:-83.5,height:3.4,rotY:Math.PI-.12});
   // The twins keep to the kerbs, side-on to the street.
   place('twin-victim.glb',{x:-40.2,z:-50.4,height:1.35,rotY:Math.PI/2});
   place('twin-victim.glb',{x:-25.4,z:-63.4,height:1.35,rotY:-Math.PI/2+.3});
@@ -1735,7 +1736,7 @@ function installChaoGardenEggs(){
 }
 const sonicModelCache=new Map();
 function loadSonicModel(file){
-  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-8',resolve,undefined,reject))));
+  if(!sonicModelCache.has(file))sonicModelCache.set(file,getOptimizedGltfLoader().then(loader=>new Promise((resolve,reject)=>loader.load('assets/models/sonic/'+file+'?v=plan-9',resolve,undefined,reject))));
   return sonicModelCache.get(file);
 }
 function installChaoGardenCast(){
@@ -1811,7 +1812,7 @@ function installChaoGardenCast(){
 function installChaoGardenModel(){
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/chao-garden-4.glb?v=plan-8',gltf=>{
+    loader.load('assets/models/chao-garden-4.glb?v=plan-9',gltf=>{
       // Everything hard about this model is baked into the file now: world
       // transform, the flattened walkable ground, the clean rock cap on the
       // west cut, and the carved tunnel corridor. The runtime just mounts it.
@@ -3762,7 +3763,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='plan-8';
+const ARCADE_BUILD='plan-9';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
