@@ -1395,46 +1395,73 @@ function installPokemonRoster(){
     const swapped=materials.map(material=>new THREE.MeshBasicMaterial({map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),vertexColors:material.vertexColors===true,transparent:material.transparent,opacity:material.opacity,alphaTest:material.alphaTest,side:material.side}));
     node.material=Array.isArray(node.material)?swapped:swapped[0];
   });
+  // Skinning happens on the GPU from the skeleton's live pose, but a glTF's
+  // geometry bounds describe its bind pose, and on every rigged model here the
+  // two differ. Measuring the bind box sized each animal wrongly and hung it in
+  // the air: Arceus stood 3.1m clear of the grass, Tyranitar 2.0m, and
+  // Charizard — whose bind pose is a splayed, tail-stretched mess — was scaled
+  // to fit that mess. So walk the posed vertices, which is what the player
+  // actually sees. Only skinned meshes need the slow path; the rest render
+  // exactly as their bounds describe.
+  //
   // A leftover shadow blob or a stray helper hangs below the feet, and taken
   // as the model's bottom it lifts the whole animal off the field. Only the
   // meshes the creature is actually made of get a say in where it stands; a
   // handful of stray vertices does not.
-  const groundLine=(model,bounds)=>{
-    model.updateWorldMatrix(true,true);
-    const parts=[];
+  const measurePose=model=>{
+    // updateMatrixWorld, not updateWorldMatrix: only the former runs
+    // SkinnedMesh's override, which refreshes bindMatrixInverse. Without it
+    // every posed vertex comes back in a stale frame and the model is sized
+    // from nonsense — Tyranitar came out 163 metres tall.
+    model.updateMatrixWorld(true);
+    const bounds=new THREE.Box3(),vertex=new THREE.Vector3(),parts=[];
     let total=0;
     model.traverse(node=>{
       if(!node.isMesh||!node.geometry?.attributes?.position)return;
-      const count=node.geometry.attributes.position.count;
-      total+=count;
-      parts.push({node,count});
+      const positions=node.geometry.attributes.position;
+      let box;
+      if(node.isSkinnedMesh){
+        box=new THREE.Box3();
+        for(let i=0;i<positions.count;i++){
+          node.getVertexPosition(i,vertex);
+          box.expandByPoint(vertex.applyMatrix4(node.matrixWorld));
+        }
+      }else box=new THREE.Box3().setFromObject(node);
+      if(box.isEmpty())return;
+      bounds.union(box);
+      total+=positions.count;
+      parts.push({box,count:positions.count});
     });
-    if(!total)return bounds.min.y;
+    if(!total)return{bounds:new THREE.Box3().setFromObject(model),floor:0};
     let lowest=null;
     for(const part of parts){
       if(part.count<total*.05)continue;
-      const box=new THREE.Box3().setFromObject(part.node);
-      if(lowest===null||box.min.y<lowest)lowest=box.min.y;
+      if(lowest===null||part.box.min.y<lowest)lowest=part.box.min.y;
     }
-    return lowest??bounds.min.y;
+    return{bounds,floor:lowest??bounds.min.y};
   };
   const place=(file,options)=>{
     void loadPokemonModel(file).then(gltf=>{
       const model=gltf.scene;
       brighten(model);
+      // The pose has to be settled before anything is measured off it, so the
+      // clip is played and stepped to its first frame here rather than being
+      // left for the render loop to start a frame later.
+      let mixer=null;
       if(gltf.animations.length&&options.idle!==true){
-        const mixer=new THREE.AnimationMixer(model);
+        mixer=new THREE.AnimationMixer(model);
         mixer.clipAction(gltf.animations[0]).play();
-        animatedMixers.push(mixer);
+        mixer.update(0);
       }
-      const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
+      const {bounds,floor:standing}=measurePose(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
       const span=options.lengthwise?Math.max(size.x,size.y,size.z):size.y;
       const scale=options.metres*POKEMON_ROSTER_SCALE/Math.max(span,.001);
-      const floor=options.lengthwise?centre.y:groundLine(model,bounds);
+      const floor=options.lengthwise?centre.y:standing;
       const holder=new THREE.Group();
       model.scale.setScalar(scale);
       model.position.set(-centre.x*scale,-floor*scale,-centre.z*scale);
       holder.add(model);
+      if(mixer)animatedMixers.push(mixer);
       holder.position.set(options.x,POKEMON_FIELD_Y+(options.hover??0),options.z);
       // the models are authored facing +z; a quarter turn puts a line
       // shoulder-on to the field and looking across it
@@ -1452,6 +1479,10 @@ function installPokemonRoster(){
   };
   const west=POKEMON_CENTER_X-13.5,east=POKEMON_CENTER_X+13.5;
   // the challengers, west side, looking east
+  // Arceus's only clip is a broken "Take 001" that scatters its mesh across
+  // half the stadium, so it is placed deliberately still. Charizard's first
+  // clip is its real standing idle and it needs it: the bind pose is the
+  // splayed, stretched-tail mess you get without one.
   place('arceus.glb',{x:west,z:POKEMON_FIELD_Z,metres:3.2,rotY:-Math.PI/2,idle:true});
   place('entei.glb',{x:west+1.5,z:POKEMON_FIELD_Z-11,metres:2.1,rotY:Math.PI/2});
   place('pikachu.glb',{x:west+2.4,z:POKEMON_FIELD_Z+10.5,metres:.4,rotY:Math.PI/2});
@@ -1459,9 +1490,10 @@ function installPokemonRoster(){
   place('tyranitar.glb',{x:east,z:POKEMON_FIELD_Z,metres:2,rotY:-Math.PI/2});
   place('venusaur.glb',{x:east-1.5,z:POKEMON_FIELD_Z-11,metres:2,rotY:-Math.PI/2});
   place('ditto.glb',{x:east-2.4,z:POKEMON_FIELD_Z+10.5,metres:.3,rotY:-Math.PI/2});
-  place('charizard.glb',{x:east+3.4,z:POKEMON_FIELD_Z+5,metres:1.7,rotY:-Math.PI/2,idle:true});
-  // Rayquaza holds the sky over the centre circle, turning slowly
-  place('rayquaza.glb',{x:POKEMON_CENTER_X,z:POKEMON_FIELD_Z,metres:7,lengthwise:true,rotY:0,hover:21,circle:.14});
+  place('charizard.glb',{x:east+3.4,z:POKEMON_FIELD_Z+5,metres:1.7,rotY:-Math.PI/2});
+  // Rayquaza holds the sky over the centre circle, turning slowly, low enough
+  // to read as a body overhead rather than a mark against the stars
+  place('rayquaza.glb',{x:POKEMON_CENTER_X,z:POKEMON_FIELD_Z,metres:10.5,lengthwise:true,rotY:0,hover:14,circle:.14});
 }
 function installPokemonCenter(){
   void (async()=>{try{
@@ -1563,7 +1595,11 @@ function installPokemonCenter(){
         logo.position.sub(centre);
         holder.add(logo);
         holder.scale.setScalar(Math.min(4.15/Math.max(size.x,.001),1.48/Math.max(size.y,.001)));
-        holder.rotation.y=Math.PI;
+        // The lintel is read from the south, so the logo's face has to point
+        // that way. A half turn showed its back instead: the letters mirrored
+        // and the whole sign went flat blue, because the back of the wordmark
+        // is its unlit outline plate.
+        holder.rotation.y=0;
         holder.position.set(27.08,4.15,-40.48);
         scene.add(holder);
       },undefined,error=>console.warn('The Pokemon vomitory logo could not load.',error));
@@ -3839,7 +3875,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='lobby-perf-1';
+const ARCADE_BUILD='arena-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
