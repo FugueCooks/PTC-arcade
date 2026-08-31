@@ -42,6 +42,8 @@ const JOBS = [
   ['super_mario_bros_arcade.glb', 'mario-smb-arcade.glb'],
   ['arcade_machine_lowpoly.glb', 'mario-bros-arcade.glb'],
   ['super_mario_3_acrade.glb', 'mario-smb3-arcade.glb'],
+  ['sega_genesis.glb', 'sega-genesis.glb'],
+  ['sega_dreamcast_sega_sports_edition (1).glb', 'sega-dreamcast.glb'],
 ];
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);

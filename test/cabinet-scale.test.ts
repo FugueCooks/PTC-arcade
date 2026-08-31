@@ -26,12 +26,12 @@ export function syntheticRegistry(count: number, zones = 20): CabinetDefinition[
 
 void test('the shipped registry indexes by ID, zone, game, and type', () => {
   const index = new CabinetIndex(CABINET_REGISTRY);
-  assert.equal(index.size, 82);
-  assert.equal(index.zoneCount, 10);
+  assert.equal(index.size, 85);
+  assert.equal(index.zoneCount, 11);
   assert.equal(index.forZone('megaman-room').length, 9);
   assert.equal(index.forZone('no-such-zone').length, 0);
   assert.equal(index.forGame('crash-bandicoot').length, 1);
-  assert.equal(index.forType('xbox-display').length, 5);
+  assert.equal(index.forType('dreamcast-display').length, 2);
   assert.equal(index.get('pixel-rally')?.id, 'pixel-rally');
   assert.equal(index.get('nope'), undefined);
 });
@@ -98,7 +98,7 @@ void test('the default cell size keeps buckets small on the real floor plan', ()
 void test('zones derive bounds from their cabinets and know their neighbours', () => {
   const index = new CabinetIndex(CABINET_REGISTRY);
   const zones = new ZoneRegistry(index);
-  assert.equal(zones.size, 10);
+  assert.equal(zones.size, 11);
 
   const megaman = zones.get('megaman-room');
   assert.ok(megaman);

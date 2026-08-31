@@ -1929,6 +1929,144 @@
           "label": null
         }
       ]
+    },
+    {
+      "id": "sonic-the-hedgehog",
+      "cabinetId": "sonic-cabinet-01",
+      "name": "Sonic the Hedgehog",
+      "system": "genesis",
+      "file": "sonic-the-hedgehog.md",
+      "emulatorId": 50001,
+      "sizeBytes": 524288,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "genesis-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "sonic-the-hedgehog.md",
+          "sizeBytes": 524288,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "sonic-the-hedgehog-2",
+      "cabinetId": "sonic-cabinet-02",
+      "name": "Sonic the Hedgehog 2",
+      "system": "genesis",
+      "file": "sonic-the-hedgehog-2.md",
+      "emulatorId": 50002,
+      "sizeBytes": 1048576,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "genesis-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "sonic-the-hedgehog-2.md",
+          "sizeBytes": 1048576,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "sonic-the-hedgehog-3",
+      "cabinetId": "sonic-cabinet-03",
+      "name": "Sonic the Hedgehog 3",
+      "system": "genesis",
+      "file": "sonic-the-hedgehog-3.md",
+      "emulatorId": 50003,
+      "sizeBytes": 2097152,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "genesis-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "sonic-the-hedgehog-3.md",
+          "sizeBytes": 2097152,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "sonic-and-knuckles",
+      "cabinetId": "sonic-cabinet-04",
+      "name": "Sonic & Knuckles",
+      "system": "genesis",
+      "file": "sonic-and-knuckles.md",
+      "emulatorId": 50004,
+      "sizeBytes": 2097152,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "genesis-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "sonic-and-knuckles.md",
+          "sizeBytes": 2097152,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "sonic-mega-collection-plus",
+      "cabinetId": "sonic-cabinet-07",
+      "name": "Sonic Mega Collection Plus",
+      "system": "ps2",
+      "file": "sonic-mega-collection-plus.iso",
+      "emulatorId": 95004,
+      "sizeBytes": 4698767360,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "sonic-mega-collection-plus.iso",
+          "sizeBytes": 4698767360,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "shadow-the-hedgehog",
+      "cabinetId": "sonic-cabinet-08",
+      "name": "Shadow the Hedgehog",
+      "system": "ps2",
+      "file": "shadow-the-hedgehog.iso",
+      "emulatorId": 95005,
+      "sizeBytes": 4493967360,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "shadow-the-hedgehog.iso",
+          "sizeBytes": 4493967360,
+          "required": true,
+          "label": null
+        }
+      ]
     }
   ]
 }

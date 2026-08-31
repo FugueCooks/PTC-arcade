@@ -99,7 +99,7 @@ void test('the main room is an open hall beside square console rooms', async () 
   // Both columns are floored in one piece again: the temple moved out of the
   // building to the south-west corner, so no room's floor is paved over by it.
   assert.match(arcade, /new THREE\.PlaneGeometry\(ROOM_SPAN,floorDepth\)/);
-  assert.match(arcade, /const floorDepth=SIDE_COLUMN_DEPTH;/);
+  assert.match(arcade, /const floorDepth=west\?SIDE_COLUMN_DEPTH:21\.6;/);
   // The room beyond the hub is the Multiplayer / Tournament room now, and it
   // runs the full width of the building rather than the old 24 m square.
   assert.match(arcade, /TOURNAMENT_ROOM_WIDTH=SHELL_HALF_WIDTH\*2/);

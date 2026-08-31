@@ -13,10 +13,10 @@ const validRow = {
 void test('the shipped registry maps onto the domain model with zones and types', () => {
   const { definitions, issues } = readCabinetRegistry();
   assert.deepEqual(issues, []);
-  assert.equal(definitions.length, 82);
-  assert.equal(new Set(definitions.map(({ zoneId }) => zoneId)).size, 10);
+  assert.equal(definitions.length, 85);
+  assert.equal(new Set(definitions.map(({ zoneId }) => zoneId)).size, 11);
   assert.equal(definitions.filter(({ zoneId }) => zoneId === 'megaman-room').length, 9);
-  assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 74);
+  assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 80);
   assert.ok(definitions.every(({ cabinetType }) => cabinetType.length > 0));
   assert.ok(definitions.every(({ interactionPolicy }) => interactionPolicy.interactionDistance > 0));
 });
@@ -24,7 +24,7 @@ void test('the shipped registry maps onto the domain model with zones and types'
 void test('every cabinet ID survives the Phase 11 migration unchanged', () => {
   // Milestone 11.39: existing cabinet IDs must remain stable.
   const ids = new Set(CABINET_REGISTRY.map(({ id }) => id));
-  for (const id of ['pixel-rally', 'silent-hill', 'metal-gear-solid', 'n64-cabinet-07', 'psx-back-cabinet-05', 'xbox-cabinet-05', 'gamecube-cabinet-05']) {
+  for (const id of ['pixel-rally', 'silent-hill', 'metal-gear-solid', 'n64-cabinet-07', 'psx-back-cabinet-05', 'sonic-cabinet-05', 'gamecube-cabinet-05']) {
     assert.ok(ids.has(id), `${id} must still exist`);
   }
   assert.equal([...ids].filter((id) => id.startsWith('megaman-cabinet-')).length, 9);

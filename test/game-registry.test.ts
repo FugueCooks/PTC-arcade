@@ -22,7 +22,7 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 2);
-  assert.equal(registry.games.length, 74);
+  assert.equal(registry.games.length, 80);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);
@@ -52,7 +52,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   assert.equal(byId.get('silent-hill')?.defaultGameId, 'silent-hill');
   assert.equal(byId.get('metal-gear-solid')?.defaultGameId, 'metal-gear-solid');
   assert.equal([...byId].filter(([id]) => id.startsWith('n64-back-cabinet-')).length, 0);
-  assert.equal([...byId].filter(([id, cabinet]) => id.startsWith('xbox-cabinet-') && !cabinet.enabled).length, 5);
+  assert.equal([...byId].filter(([id, cabinet]) => id.startsWith('sonic-cabinet-') && !cabinet.enabled).length, 2);
   const gamecubeCabinets = [...byId].filter(([id]) => id.startsWith('gamecube-cabinet-')).map(([, cabinet]) => cabinet);
   assert.equal(gamecubeCabinets.length, 5);
   assert.ok(gamecubeCabinets.every((cabinet) => cabinet.enabled));

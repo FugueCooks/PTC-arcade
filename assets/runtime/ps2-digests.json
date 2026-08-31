@@ -25,5 +25,17 @@
     "file": "mega-man-x7.chd",
     "bytes": 797582980,
     "sha256": "6592a617fca2981c933f53e6399b9df311588e01cf9c60b19ae20edb5f8f97ca"
+  },
+  {
+    "kind": "game",
+    "file": "sonic-mega-collection-plus.iso",
+    "bytes": 4698767360,
+    "sha256": "14822de0e58bd3698bfb41687e48f919607b1140fa0e202818d59ae06fe67628"
+  },
+  {
+    "kind": "game",
+    "file": "shadow-the-hedgehog.iso",
+    "bytes": 4493967360,
+    "sha256": "42e8c083bc2264e8f50416793c6e8c320fb7222563b444e4204cdb001a0380c7"
   }
 ]

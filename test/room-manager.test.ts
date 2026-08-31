@@ -29,14 +29,14 @@ void test('server rejects movement packets that arrive too fast, leave bounds, o
 });
 
 void test('every room off the hall is walkable, the tournament hall included', () => {
-  // The ring came down to one barrier. The four doorways in each partition wall
-  // are open, including the two that used to be taped shut on the east side.
+  // The three east rooms were empty and are deleted: the wall is solid where
+  // their doorways were, so the walk along it stays in the hall and the step
+  // through the old door at 13.2 is refused.
   const players = createPlayers();
   players.join('socket-a', 'main', undefined, identity, 1_000);
-  // The east doors moved with the re-planned column; this room's is at 13.2.
-  const route: Array<[number, number]> = [[3, 11], [6, 11], [9, 11], [12, 11], [15, 11], [18, 11], [19.6, 11], [19.6, 13.2], [22.5, 13.2], [25.5, 13.2]];
+  const route: Array<[number, number]> = [[3, 11], [6, 11], [9, 11], [12, 11], [15, 11], [18, 11], [19.6, 11], [19.6, 13.2]];
   route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: 0 }, 1_500 + index * 500), `step ${index} was refused`));
-  assert.deepEqual(players.stateFor('socket-a')?.p, [25.5, 1.65, 13.2], 'the room east of the hall is open');
+  assert.equal(players.move('socket-a', { p: [22.5, 13.2], r: 0 }, 9_500), undefined, 'the sealed east wall holds where the old doorway was');
 
   // The tournament hall is the south approach now: the walk carries on
   // through its doorway to the Temple of Time's own end of the room.

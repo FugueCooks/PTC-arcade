@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=zelda-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=sonic-garden-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .016);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 180);
 camera.position.set(0, 1.65, 11);
@@ -406,7 +406,11 @@ const SIDE_ROOM_Z=[-25.2,-8.4,8.4,25.2];
 // depth and the unbuilt room at the bottom absorbs the squeeze, so every door
 // on that side moved to its room's new centre.
 const OPEN_DOOR_Z_WEST=[-25.2,-8,8,25.2];
-const OPEN_DOOR_Z_EAST=[-25.2,-3.6,13.2,27.6];
+// The east wall's only opening is the Pokemon Center's storefront run, which
+// is handled as an open stretch rather than a doorway; the -25.2 entry lies
+// inside that stretch. The three rooms south of it were empty and are deleted:
+// the wall is solid across where their doorways were.
+const OPEN_DOOR_Z_EAST=[-25.2];
 const EAST_ROOM_Z=[-22.8,-3.6,13.2,27.6];
 const EAST_WALL_Z={'-16.8':-12,'0':4.8,'16.8':21.6};
 const SIDE_COLUMN_MIN_Z=-33.6,SIDE_COLUMN_MAX_Z=33.6;
@@ -476,7 +480,7 @@ const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_W
 const PARTITION_WALL_SEGMENTS_WEST=[[-31.65,3.9],[-15.15,11.1],[0,12.8],[16.6,14],[30.2,6.8]];
 // The first east segment is gone: the Pokemon Center fronts the hall through
 // where it stood, one wide opening with the old plaza doorway.
-const PARTITION_WALL_SEGMENTS_EAST=[[-8.6,6.8],[4.8,13.6],[20.4,11.2],[31.4,4.4]];
+const PARTITION_WALL_SEGMENTS_EAST=[[10.8,45.6]];
 function buildPartitionWall(wallX,accent,segments){
   for(const [centerZ,depth] of segments){
     const wall=box(PARTITION_WALL_HALF_THICKNESS*2,5,depth,0x111425,wallX,2.5,centerZ,.08);wall.receiveShadow=true;
@@ -1142,13 +1146,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=zelda-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=sonic-garden-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=zelda-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+    {file:'ff-room-mural-2.webp?v=sonic-garden-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=zelda-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+    {file:'ff-room-mural-3.webp?v=sonic-garden-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -2088,7 +2092,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=rtt-bar-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=sonic-garden-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2224,7 +2228,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=rtt-bar-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=sonic-garden-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -2991,8 +2995,10 @@ const SIDE_COLUMN_DEPTH=SIDE_COLUMN_MAX_Z-SIDE_COLUMN_MIN_Z,SIDE_COLUMN_CENTER_Z
 const SIDE_ROOM_ACCENTS=[0xff5fae,0xd18a52,0x4aa8ff,0x7dff67];
 for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   const west=roomX<0;
-  const floorDepth=SIDE_COLUMN_DEPTH;
-  const floorCentre=SIDE_COLUMN_CENTER_Z;
+  // The east floor stops where the sealed bay begins: only the Pokemon
+  // storefront run (z -33.6..-12) is still stood on.
+  const floorDepth=west?SIDE_COLUMN_DEPTH:21.6;
+  const floorCentre=west?SIDE_COLUMN_CENTER_Z:-22.8;
   const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,floorDepth),worldAlignedFloorMaterial(ROOM_SPAN,floorDepth,roomX,floorCentre,EXPANSION_FLOOR_STYLE));
   columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,floorCentre);columnFloor.receiveShadow=true;scene.add(columnFloor);
   // The west plate stops at the Temple of Time's room: its dome rises
@@ -3004,21 +3010,25 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   // The east column's plate stops at the garden's new room: its sky dome
   // rises through the hole cut for it. The old garden room is the Pokemon
   // Center's plaza now, covered by the main ceiling like any other room.
-  else{box(ROOM_SPAN,.12,16.8,0x090b18,roomX,5.08,-3.6,.08);box(ROOM_SPAN,.12,16.8,0x090b18,roomX,5.08,13.2,.08);box(ROOM_SPAN,.12,12,0x090b18,roomX,5.08,27.6,.08);}
+  // One plate seals the whole dead bay east of the wall: the three empty
+  // rooms behind it are deleted, so there is nothing under it to light or see.
+  else{box(ROOM_SPAN,.12,45.6,0x090b18,roomX,5.08,10.8,.08);}
   for(const wallZ of [SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z]){
     // The east column's end wall is gone: the Pokemon Center runs from the
     // stadium's wall across the old band pocket into its plaza.
     if(!west&&wallZ===SIDE_COLUMN_MIN_Z)continue;
-    // The east column's dividers all moved with the garden's growth: full
-    // rooms follow it, and the bottom room absorbs the squeeze.
+    // The east column's dividers between its deleted rooms are gone with the
+    // rooms. The wall at -12 stays: it is the Pokemon storefront's south wall.
+    // The wall at 33.6 stays: it faces the tournament hall.
+    if(!west&&(wallZ===0||wallZ===ROOM_DEPTH))continue;
     const wallAt=(!west&&EAST_WALL_Z[String(wallZ)]!==undefined)?EAST_WALL_Z[String(wallZ)]:wallZ;
     const wall=box(ROOM_SPAN-.4,5,.3,0x11182c,roomX+(west?-.2:.2),2.5,wallAt,.05);wall.receiveShadow=true;
   }
   SIDE_ROOM_Z.forEach((centerZ,index)=>{
-    // The Chao Garden lights itself — suns and sky — so its new slot takes
-    // no troffers; the plaza it left inherits the rig like any room. The
-    // Temple of Time's forecourt is open sky: no troffers there either.
-    if(!west&&index===2)return;
+    // East of the wall only the Pokemon storefront run is still a place:
+    // the three rooms south of it are deleted and sealed, so no strips and
+    // no troffers burn behind the wall.
+    if(!west&&index>0)return;
     // The Mario room is the warp pipe and nothing else now: no strips, no
     // troffers, no accent points burning inside a sealed box.
     if(west&&index===0)return;
@@ -3720,11 +3730,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=rtt-bar-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=rtt-bar-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=rtt-bar-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=rtt-bar-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=rtt-bar-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=sonic-garden-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=sonic-garden-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=sonic-garden-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=sonic-garden-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=sonic-garden-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3777,13 +3787,13 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=rtt-bar-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=rtt-bar-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=rtt-bar-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=sonic-garden-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=sonic-garden-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=sonic-garden-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=rtt-bar-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=rtt-bar-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=rtt-bar-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=sonic-garden-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=sonic-garden-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=sonic-garden-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -3852,6 +3862,49 @@ for(const [cabinetId,gameId,rowZ,hue,system] of METROID_ROW){
   if(system==='gamecube')Object.assign(cabinet,{system:'gamecube',emulator:'gecko',enabled:!isMobileDevice,status:isMobileDevice?'disabled':'available',disabledReason:isMobileDevice?'desktop-only':undefined});
   configureHostedCabinet(cabinetId);
 }
+/**
+ * The Sonic library, on the Chao Garden's north meadow: consoles on plinths in
+ * release order, facing the water. The meadow is flat at y 0.12 the whole way.
+ * The four Genesis classics run through segaMD; the two PS2 discs through the
+ * Play! runtime like the rest of the PS2 shelf; the two Dreamcast Adventures
+ * stand as display machines on the Dreamcast shell -- nothing in this stack
+ * runs Dreamcast, and a labelled machine that says so beats an empty lawn.
+ */
+const SEGA_MACHINE_MODELS={
+  genesis:{file:'assets/models/sega/sega-genesis.glb?v=sonic-garden-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=sonic-garden-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=sonic-garden-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
+};
+const SONIC_GARDEN_ROW=[
+  ['sonic-cabinet-01','genesis',    50,'sonic-the-hedgehog',0x4aa8ff],
+  ['sonic-cabinet-02','genesis',    53,'sonic-the-hedgehog-2',0xffb42e],
+  ['sonic-cabinet-03','genesis',    56,'sonic-the-hedgehog-3',0xff5f5f],
+  ['sonic-cabinet-04','genesis',    59,'sonic-and-knuckles',0xd4b24a],
+  ['sonic-cabinet-05','dreamcast',  62,'SONIC ADVENTURE',0x8ee6ff],
+  ['sonic-cabinet-06','dreamcast',  65,'SONIC ADVENTURE 2',0xc06fff],
+  ['sonic-cabinet-07','ps2',        68,'sonic-mega-collection-plus',0x7dff67],
+  ['sonic-cabinet-08','ps2',        71,'shadow-the-hedgehog',0x1b1b28],
+];
+const sonicCabinetSpots=[];
+for(const [cabinetId,kind,rowX,gameOrLabel,hue] of SONIC_GARDEN_ROW){
+  const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
+  const label=hosted?hosted.name.toUpperCase():gameOrLabel;
+  if(kind==='ps2'){
+    // The PS2 discs take the house upright, the same machine the PS2 shelf
+    // uses, rather than a console shell that does not exist for them.
+    makeCabinet(cabinetId,label,rowX,39,hue,false,false,'ps2');
+    const cabinet=cabinets[cabinets.length-1];
+    cabinet.g.position.y=.12;
+    Object.assign(cabinet,{system:'ps2',enabled:true,status:'available'});
+  }else{
+    makeModelCabinet(cabinetId,label,rowX,39,hue,hosted?.system??'genesis',
+      {...SEGA_MACHINE_MODELS[kind],baseY:.12,rotY:0,farCull:true});
+    if(kind==='dreamcast')Object.assign(cabinets[cabinets.length-1],
+      {enabled:false,status:'disabled',disabledReason:'display-only'});
+  }
+  configureHostedCabinet(cabinetId);
+  sonicCabinetSpots.push([rowX,39]);
+}
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
 // DBZ Tenkaichi 3 used to face Melee across the tournament hall. It rejoins the
@@ -3863,18 +3916,8 @@ for(const [index,x,z,rotation] of ps2CabinetLayout){
   makeCabinet(cabinetId,ps2RoomTitles[index-1],x,z,expansionCabinetColors[index-1],false,false,'ps2');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'ps2',gameName:hosted?.name||ps2RoomTitles[index-1],gameId:hosted?.emulatorId||26000+index,enabled:Boolean(hosted),status:hosted?'available':'disabled'});configureHostedCabinet(cabinetId);
 }
-// The Halo LAN row comes in off the tournament hall's back wall and stands at
-// the south end of the main floor instead, still shoulder to shoulder and still
-// facing the room. z 15.9 keeps it clear of the divider at 16.8 and leaves its
-// players standing at 13.55, just past the last foyer slot at 12.65. Still
-// disabled: no Halo image is hosted, so the stations stand ready rather than
-// pretend to run.
-const xboxCabinetLayout=[[1,-8,15.9,Math.PI],[2,-4,15.9,Math.PI],[3,0,15.9,Math.PI],[4,4,15.9,Math.PI],[5,8,15.9,Math.PI]];
-for(const [index,x,z,rotation] of xboxCabinetLayout){
-  const cabinetId=`xbox-cabinet-0${index}`;
-  makeCabinet(cabinetId,`HALO LAN // STATION 0${index}`,x,z,expansionCabinetColors[5-index],false,false,'xbox');
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'xbox',gameName:`Xbox Cabinet ${index}`,enabled:false,status:'disabled'});
-}
+// The Halo LAN row is gone: five stations that never held a hosted game,
+// deleted rather than left standing dark at the south end of the floor.
 // The centre of the hall is deliberately empty. The couch ring and the round
 // glass case that stood here made the middle of the arcade a thing to walk
 // around rather than a place to walk through, and the floorplan puts the
@@ -3925,7 +3968,8 @@ function lightThreshold(x,z,alongZ){
 for(const doorZ of OPEN_DOOR_Z_WEST)if(doorZ!==CASTLE_APPROACH_Z)lightThreshold(PLAYSTATION_WALL_X,doorZ,false);
 // No threshold at -25.2 any more: that doorway widened into the Pokemon
 // Center's storefront opening, and a lit strip floating in it would be odd.
-for(const doorZ of OPEN_DOOR_Z_EAST)if(doorZ!==-25.2)lightThreshold(N64_WALL_X,doorZ,false);
+// The east wall has no doorways to mark: its one opening is the Pokemon
+// storefront run, which is a missing stretch of wall rather than a door.
 for(const doorX of NORTH_ROOM_X)lightThreshold(doorX,TOP_BAND_MIN_Z,true);
 lightThreshold(POKEMON_DOOR_X,POKEMON_SOUTH_Z,true);
 lightThreshold(SILENT_DOOR_X,SILENT_SOUTH_Z,true);
@@ -4543,7 +4587,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=zelda-1')
+  import('./emulators/disc-range-cache.js?v=sonic-garden-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -4563,7 +4607,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=zelda-1')
+  import('./emulators/disc-range-cache.js?v=sonic-garden-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -4880,6 +4924,21 @@ function resolveZeldaCabinetCollisions(previousX,previousZ){
  * The castle's machines are solid, for the same reason the temple's are: the
  * castle is raycast-as-floor with no lateral collision of its own.
  */
+/** The garden machines are solid; the meadow is raycast floor with no lateral rules. */
+function resolveSonicCabinetCollisions(previousX,previousZ){
+  if(!sonicCabinetSpots.length)return;
+  if(playerPosition.x<44||playerPosition.z<33||playerPosition.z>46)return;
+  const reach=ZELDA_CABINET_RADIUS+PLAYER_COLLISION_RADIUS;
+  for(const [x,z] of sonicCabinetSpots){
+    const offsetX=playerPosition.x-x,offsetZ=playerPosition.z-z;
+    const distance=Math.hypot(offsetX,offsetZ);
+    if(distance>=reach)continue;
+    if(distance<1e-4){playerPosition.x=previousX;playerPosition.z=previousZ;return}
+    playerPosition.x=x+offsetX/distance*reach;
+    playerPosition.z=z+offsetZ/distance*reach;
+    return;
+  }
+}
 function resolveMarioCabinetCollisions(previousX,previousZ){
   if(!marioCabinetSpots.length)return;
   if(playerPosition.x>-84||playerPosition.x<-116)return;
@@ -5119,7 +5178,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='rtt-bar-1';
+const ARCADE_BUILD='sonic-garden-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -5149,6 +5208,7 @@ function runResolvers(previousX,previousZ){
     ['chao',()=>resolveChaoGardenCollisions(previousX,previousZ)],
     ['zelda-cab',()=>resolveZeldaCabinetCollisions(previousX,previousZ)],
     ['mario-cab',()=>resolveMarioCabinetCollisions(previousX,previousZ)],
+    ['sonic-cab',()=>resolveSonicCabinetCollisions(previousX,previousZ)],
     ['temple-floor',()=>resolveTempleFloor(previousX,previousZ)],
     ['castle-floor',()=>resolveCastleFloor(previousX,previousZ)],
     ['top-row',()=>resolveTopRowCollisions(previousX,previousZ)],

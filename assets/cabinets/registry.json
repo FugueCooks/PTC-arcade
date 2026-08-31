@@ -709,106 +709,6 @@
     "playerRotationY": 1.5707963267948966
   },
   {
-    "id": "xbox-cabinet-01",
-    "name": "Xbox Cabinet 1",
-    "sceneKey": "XBOX // READY 01",
-    "cabinetType": "xbox-display",
-    "zoneId": "multiplayer-hall",
-    "gameId": null,
-    "enabled": false,
-    "interactionPosition": {
-      "x": -8,
-      "y": 1.65,
-      "z": 13.9
-    },
-    "playerPosition": {
-      "x": -8,
-      "y": 1.65,
-      "z": 13.55
-    },
-    "playerRotationY": 3.141592653589793
-  },
-  {
-    "id": "xbox-cabinet-02",
-    "name": "Xbox Cabinet 2",
-    "sceneKey": "XBOX // READY 02",
-    "cabinetType": "xbox-display",
-    "zoneId": "multiplayer-hall",
-    "gameId": null,
-    "enabled": false,
-    "interactionPosition": {
-      "x": -4,
-      "y": 1.65,
-      "z": 13.9
-    },
-    "playerPosition": {
-      "x": -4,
-      "y": 1.65,
-      "z": 13.55
-    },
-    "playerRotationY": 3.141592653589793
-  },
-  {
-    "id": "xbox-cabinet-03",
-    "name": "Xbox Cabinet 3",
-    "sceneKey": "XBOX // READY 03",
-    "cabinetType": "xbox-display",
-    "zoneId": "multiplayer-hall",
-    "gameId": null,
-    "enabled": false,
-    "interactionPosition": {
-      "x": 0,
-      "y": 1.65,
-      "z": 13.9
-    },
-    "playerPosition": {
-      "x": 0,
-      "y": 1.65,
-      "z": 13.55
-    },
-    "playerRotationY": 3.141592653589793
-  },
-  {
-    "id": "xbox-cabinet-04",
-    "name": "Xbox Cabinet 4",
-    "sceneKey": "XBOX // READY 04",
-    "cabinetType": "xbox-display",
-    "zoneId": "multiplayer-hall",
-    "gameId": null,
-    "enabled": false,
-    "interactionPosition": {
-      "x": 4,
-      "y": 1.65,
-      "z": 13.9
-    },
-    "playerPosition": {
-      "x": 4,
-      "y": 1.65,
-      "z": 13.55
-    },
-    "playerRotationY": 3.141592653589793
-  },
-  {
-    "id": "xbox-cabinet-05",
-    "name": "Xbox Cabinet 5",
-    "sceneKey": "XBOX // READY 05",
-    "cabinetType": "xbox-display",
-    "zoneId": "multiplayer-hall",
-    "gameId": null,
-    "enabled": false,
-    "interactionPosition": {
-      "x": 8,
-      "y": 1.65,
-      "z": 13.9
-    },
-    "playerPosition": {
-      "x": 8,
-      "y": 1.65,
-      "z": 13.55
-    },
-    "playerRotationY": 3.141592653589793
-  },
-  {
     "id": "gameboy-cabinet-01",
     "name": "Pokemon Red",
     "sceneKey": "POKEMON RED",
@@ -1735,5 +1635,173 @@
     "defaultGameId": "metroid-prime-2-echoes",
     "system": "gamecube",
     "emulatorId": "gecko"
+  },
+  {
+    "id": "sonic-cabinet-01",
+    "name": "Sonic the Hedgehog",
+    "sceneKey": "SONIC THE HEDGEHOG",
+    "cabinetType": "genesis-console",
+    "zoneId": "chao-garden",
+    "gameId": "sonic-the-hedgehog",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 50,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 50,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "sonic-the-hedgehog"
+  },
+  {
+    "id": "sonic-cabinet-02",
+    "name": "Sonic the Hedgehog 2",
+    "sceneKey": "SONIC THE HEDGEHOG 2",
+    "cabinetType": "genesis-console",
+    "zoneId": "chao-garden",
+    "gameId": "sonic-the-hedgehog-2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 53,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 53,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "sonic-the-hedgehog-2"
+  },
+  {
+    "id": "sonic-cabinet-03",
+    "name": "Sonic the Hedgehog 3",
+    "sceneKey": "SONIC THE HEDGEHOG 3",
+    "cabinetType": "genesis-console",
+    "zoneId": "chao-garden",
+    "gameId": "sonic-the-hedgehog-3",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 56,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 56,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "sonic-the-hedgehog-3"
+  },
+  {
+    "id": "sonic-cabinet-04",
+    "name": "Sonic & Knuckles",
+    "sceneKey": "SONIC & KNUCKLES",
+    "cabinetType": "genesis-console",
+    "zoneId": "chao-garden",
+    "gameId": "sonic-and-knuckles",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 59,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 59,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "sonic-and-knuckles"
+  },
+  {
+    "id": "sonic-cabinet-05",
+    "name": "Sonic Adventure",
+    "sceneKey": "SONIC ADVENTURE",
+    "cabinetType": "dreamcast-display",
+    "zoneId": "chao-garden",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": 62,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 62,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": null
+  },
+  {
+    "id": "sonic-cabinet-06",
+    "name": "Sonic Adventure 2",
+    "sceneKey": "SONIC ADVENTURE 2",
+    "cabinetType": "dreamcast-display",
+    "zoneId": "chao-garden",
+    "gameId": null,
+    "enabled": false,
+    "interactionPosition": {
+      "x": 65,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 65,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": null
+  },
+  {
+    "id": "sonic-cabinet-07",
+    "name": "Sonic Mega Collection Plus",
+    "sceneKey": "SONIC MEGA COLLECTION PLUS",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "chao-garden",
+    "gameId": "sonic-mega-collection-plus",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 68,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 68,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "sonic-mega-collection-plus"
+  },
+  {
+    "id": "sonic-cabinet-08",
+    "name": "Shadow the Hedgehog",
+    "sceneKey": "SHADOW THE HEDGEHOG",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "chao-garden",
+    "gameId": "shadow-the-hedgehog",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 71,
+      "y": 1.77,
+      "z": 39
+    },
+    "playerPosition": {
+      "x": 71,
+      "y": 1.77,
+      "z": 39.35
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "shadow-the-hedgehog"
   }
 ]

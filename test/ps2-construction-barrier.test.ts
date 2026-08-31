@@ -34,9 +34,9 @@ void test('no room in the building is sealed; every one of them is open', async 
   // The east column re-planned around the grown garden, so each wall carries
   // its own door list and the two no longer mirror each other.
   assert.match(arcade, /const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8,25\.2\];/);
-  assert.match(arcade, /const OPEN_DOOR_Z_EAST=\[-25\.2,-3\.6,13\.2,27\.6\];/);
+  assert.match(arcade, /const OPEN_DOOR_Z_EAST=\[-25\.2\];/);
   assert.match(edge, /const OPEN_DOOR_Z_WEST = \[-25\.2, -8, 8, 25\.2\];/);
-  assert.match(edge, /const OPEN_DOOR_Z_EAST = \[-25\.2, -3\.6, 13\.2, 27\.6\];/);
+  assert.match(edge, /const OPEN_DOOR_Z_EAST = \[-25\.2\];/);
   // The top row is walkable now, so its front wall and the walls between its
   // rooms have to be enforced rather than left to the world bound.
   assert.match(arcade, /function resolveTopRowCollisions\(previousX,previousZ\)/);
