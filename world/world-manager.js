@@ -1,4 +1,4 @@
-import { EnvironmentManager } from './environment-manager.js?v=mario-castle-6';
+import { EnvironmentManager } from './environment-manager.js?v=mario-castle-7';
 import { LightingManager } from './lighting-manager.js';
 import { ObjectInteractionManager } from './object-interaction-manager.js';
 import { ParticleManager } from './particle-manager.js';

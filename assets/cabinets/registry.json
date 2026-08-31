@@ -1552,12 +1552,12 @@
     "gameId": "super-mario-world",
     "enabled": true,
     "interactionPosition": {
-      "x": -98.83,
+      "x": -100.7,
       "y": 5.275,
       "z": 10.29
     },
     "playerPosition": {
-      "x": -98.830003,
+      "x": -100.700003,
       "y": 5.275,
       "z": 9.94
     },
@@ -1573,12 +1573,12 @@
     "gameId": "dr-mario",
     "enabled": true,
     "interactionPosition": {
-      "x": -89.12,
+      "x": -91,
       "y": 5.275,
       "z": -60.63
     },
     "playerPosition": {
-      "x": -89.12,
+      "x": -91,
       "y": 5.275,
       "z": -60.28
     },
