@@ -150,6 +150,6 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
   // not a fixture: rooms are themed as their art arrives, and a test that
   // pinned the exact number would fail on every one of them.
   const themed = (arcade.match(/^themeRoom\(\{/gm) ?? []).length;
-  assert.ok(themed >= 3, `every themed room goes through the one builder, found ${themed}`);
+  assert.ok(themed >= 2, `every themed room goes through the one builder, found ${themed}`); // Mario's room was demolished around its warp pipe; Mega Man and Metroid remain
   assert.match(arcade, /metroid-room-mural\.webp/);
 });

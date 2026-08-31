@@ -1096,41 +1096,27 @@ function buildPokemonStadium(centerX,arenaCz){
     scene.add(flood);managedSceneLights.push(flood);
   }
 }
-// Super Mario, in the west column behind Metal Gear — back on its own three
-// walls exactly as it was. The far and near walls are untouched; the side wall
-// is the one the castle doorway is cut through, so its mural cannot be a single
-// plane any more. Note it is mural-2 that hangs there, not -3: themeRoom puts
-// -3 on the NEAR wall and -2 on the side, and the doorway is in the side.
-themeRoom({
-  centerX:MEGAMAN_ROOM_CENTER_X,centerZ:-25.2,
-  far:'mario-room-mural.webp?v=mario-1',
-  near:'mario-room-mural-3.webp?v=mario-1'
-});
-// The side wall's mural, cut around the doorway: two panels flanking the 4.4m
-// gap on z -25.2, each showing its own share of the image so the picture still
-// reads continuously across the opening rather than being repeated twice.
+// The Mario room is gone. The warp pipe was already the room -- one tube from
+// wall to wall -- and everything the room still owned existed only to be
+// glimpsed through the corners of the pipe's mouth: three murals, their
+// backing panels, a light rig inside a sealed box. All of it is deleted, and
+// the mouth is closed with this collar: the partition leaves a 9m rectangular
+// opening and the pipe's lip is a 4.5m circle, so the four corners between
+// them looked straight into the dead room. Rectangle minus bore, hung just
+// behind the lip so the rim overlaps it; the rectangle is oversized past the
+// floor and the wall head so the bore hole never crosses the outline, which
+// ShapeGeometry cannot triangulate.
 {
-  const sideX=-SHELL_HALF_WIDTH+.32,backingX=-SHELL_HALF_WIDTH+.19;
-  const spanZ=[-33.45,-16.95],gap=[-27.4,-23];
-  const panels=[[spanZ[0],gap[0]],[gap[1],spanZ[1]]];
-  const whole=spanZ[1]-spanZ[0];
-  const sideTexture=new THREE.TextureLoader().load('assets/art/mario-room-mural-2.webp?v=mario-1');
-  sideTexture.colorSpace=THREE.SRGBColorSpace;
-  sideTexture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-  for(const [z0,z1] of panels){
-    const span=z1-z0,centre=(z0+z1)/2;
-    box(.08,5,span,0x050711,backingX,2.5,centre,.12);
-    // themeRoom lays this wall out along -z, so u runs from the far end back.
-    const map=sideTexture.clone();map.needsUpdate=true;
-    map.repeat.set(span/whole,1);
-    map.offset.set((spanZ[1]-z1)/whole,0);
-    const panel=new THREE.Mesh(new THREE.PlaneGeometry(span,MEGAMAN_MURAL_HEIGHT),
-      new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-    panel.position.set(sideX,2.5,centre);
-    panel.rotation.y=Math.PI/2;
-    panel.renderOrder=4;
-    scene.add(panel);
-  }
+  const collar=new THREE.Shape();
+  collar.moveTo(-29.7,-1.5);collar.lineTo(-20.7,-1.5);collar.lineTo(-20.7,7.45);collar.lineTo(-29.7,7.45);collar.closePath();
+  const bore=new THREE.Path();
+  bore.absarc(-25.2,2.97,4.42,0,Math.PI*2,true);
+  collar.holes.push(bore);
+  const wall=new THREE.Mesh(new THREE.ShapeGeometry(collar,48),
+    new THREE.MeshStandardMaterial({color:0x111425,emissive:0x111425,emissiveIntensity:.08,roughness:.43,metalness:.65,side:THREE.DoubleSide}));
+  wall.rotation.y=-Math.PI/2;
+  wall.position.set(-21.65,0,0);
+  scene.add(wall);
 }
 // Final Fantasy fills the wide top-row room. Its geometry is its own — a 32 m
 // back wall and two 16.4 m sides, with the doorway wall left bare — so its
@@ -2099,7 +2085,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=metroid-room-2',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=pipe-standalone-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2235,7 +2221,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=metroid-room-2',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pipe-standalone-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3030,6 +3016,9 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
     // no troffers; the plaza it left inherits the rig like any room. The
     // Temple of Time's forecourt is open sky: no troffers there either.
     if(!west&&index===2)return;
+    // The Mario room is the warp pipe and nothing else now: no strips, no
+    // troffers, no accent points burning inside a sealed box.
+    if(west&&index===0)return;
     const at=west?centerZ:EAST_ROOM_Z[index];
     // Four cyan strips per room at 4.65. In the Mario room the middle two land
     // at z -27.2 and -23.2, which is inside the bore: they drew as a pair of lit
@@ -3728,11 +3717,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=metroid-room-2',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=metroid-room-2',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=metroid-room-2',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=metroid-room-2',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=metroid-room-2',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=pipe-standalone-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=pipe-standalone-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=pipe-standalone-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pipe-standalone-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pipe-standalone-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3785,12 +3774,12 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=metroid-room-2',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=metroid-room-2',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=metroid-room-2',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=pipe-standalone-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=pipe-standalone-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=pipe-standalone-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=metroid-room-2',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=metroid-room-2',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pipe-standalone-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pipe-standalone-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -5120,7 +5109,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='metroid-room-2';
+const ARCADE_BUILD='pipe-standalone-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
