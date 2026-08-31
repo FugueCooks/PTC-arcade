@@ -2048,21 +2048,55 @@ function installPeachsCastle(){
         // pass pinched them into strips. At 2.4 there is +/-2.4 to play with.
         // 2.0 out from the axis: the bore's radius is 2.92, so that offset still
         // leaves 2.13 of half-height and a 3.8m panel sits inside the curve.
-        const bore=2,pipeMuralX=(CASTLE_PIPE_EAST+CASTLE_PIPE_WEST)/2;
-        const portal=[
-          ['mario-room-mural.webp?v=mario-1',20,3.8,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z-bore,0,0],
-          ['mario-room-mural-3.webp?v=mario-1',20,3.8,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z+bore,Math.PI,0],
-          ['mario-room-mural-2.webp?v=mario-1',20,3.8,pipeMuralX,CASTLE_PIPE_AXIS_Y+bore,CASTLE_APPROACH_Z,0,Math.PI/2]
-        ];
-        for(const [file,w,h,x,y,z,turnY,turnX] of portal){
+        // Curved to the bore rather than hung flat inside it. Three flat planes in
+        // a round tube leave wedges of green at every edge and read as boards
+        // propped in a pipe; these are strips of the cylinder itself, so the art
+        // wraps the wall the way paint would. Built by hand because a
+        // CylinderGeometry runs its axis along y and maps u around the arc — the
+        // opposite of what is wanted on both counts.
+        // A quarter circle on each flank, and nothing across the crown. At this
+        // radius the bore's top sits at 5.69 and the hall's ceiling is at 5.02, so
+        // a band over the crown draws above the roof and is simply not seen —
+        // measured, not guessed. Anything within 41 degrees of vertical is lost,
+        // so the arcs run 45 to 135 either side: y 4.89 down to 1.05, clear of the
+        // ceiling above and of the walker below.
+        const skinRadius=2.72,skinArc=Math.PI/2,skinX=[CASTLE_PIPE_WEST+.6,CASTLE_PIPE_EAST-.6];
+        const skinMid=(skinX[0]+skinX[1])/2;
+        const axisY=CASTLE_PIPE_AXIS_Y+.86,axisZ=CASTLE_APPROACH_Z-CASTLE_CENTRE_Z;
+        const curvedSkin=(centre,fromX,toX)=>{
+          const arcSegments=28,positions=[],uvs=[],indices=[];
+          for(let i=0;i<=1;i++){
+            const along=i,x=fromX+(toX-fromX)*along-CASTLE_CENTRE_X;
+            for(let j=0;j<=arcSegments;j++){
+              const across=j/arcSegments,theta=centre-skinArc/2+skinArc*across;
+              positions.push(x,axisY+skinRadius*Math.cos(theta),axisZ+skinRadius*Math.sin(theta));
+              uvs.push(along,1-across);
+            }
+          }
+          for(let i=0;i<1;i++)for(let j=0;j<arcSegments;j++){
+            const a=i*(arcSegments+1)+j,b=a+arcSegments+1;
+            indices.push(a,b,a+1,a+1,b,b+1);
+          }
+          const geometry=new THREE.BufferGeometry();
+          geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+          geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+          geometry.setIndex(indices);
+          geometry.computeVertexNormals();
+          return geometry;
+        };
+        // Top of the bore, then the two haunches either side of it.
+        // The south flank takes two in sequence so all three still hang; the north
+        // flank takes one the whole way.
+        for(const [file,centre,fromX,toX] of [
+          ['mario-room-mural.webp?v=mario-1',-Math.PI/2,skinX[0],skinMid],
+          ['mario-room-mural-3.webp?v=mario-1',-Math.PI/2,skinMid,skinX[1]],
+          ['mario-room-mural-2.webp?v=mario-1',Math.PI/2,skinX[0],skinX[1]]
+        ]){
           const texture=new THREE.TextureLoader().load('assets/art/'+file);
           texture.colorSpace=THREE.SRGBColorSpace;
           texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-          const panel=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
-            new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,toneMapped:false}));
-          panel.position.set(x-CASTLE_CENTRE_X,y+.86,z-CASTLE_CENTRE_Z);
-          panel.rotation.set(turnX,turnY,0);
-          mount.add(panel);
+          mount.add(new THREE.Mesh(curvedSkin(centre,fromX,toX),
+            new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,toneMapped:false})));
         }
       },undefined,error=>console.warn('The warp pipe could not load.',error)));
       scene.add(mount);
@@ -2149,7 +2183,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-mouth-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-skin-2',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -3413,7 +3447,11 @@ function lightThreshold(x,z,alongZ){
     jamb.position.set(x+(alongZ?offset:0),1.7,z+(alongZ?0:offset));scene.add(jamb);
   }
 }
-for(const doorZ of OPEN_DOOR_Z_WEST)lightThreshold(PLAYSTATION_WALL_X,doorZ,false);
+// The Mario doorway is the warp pipe's mouth now. lightThreshold hangs two
+// jamb posts at +/-1.72 and lays a glowing strip across the floor, which inside
+// a nine metre round opening reads as a square frame standing in the middle of
+// it. That one gets no threshold; the pipe is its own doorway.
+for(const doorZ of OPEN_DOOR_Z_WEST)if(doorZ!==CASTLE_APPROACH_Z)lightThreshold(PLAYSTATION_WALL_X,doorZ,false);
 // No threshold at -25.2 any more: that doorway widened into the Pokemon
 // Center's storefront opening, and a lit strip floating in it would be odd.
 for(const doorZ of OPEN_DOOR_Z_EAST)if(doorZ!==-25.2)lightThreshold(N64_WALL_X,doorZ,false);
@@ -4488,7 +4526,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-mouth-1';
+const ARCADE_BUILD='pipe-skin-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
