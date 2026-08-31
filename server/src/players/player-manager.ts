@@ -122,7 +122,10 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     // The Pokemon Center's storefront: the east wall is open from the old
     // plaza door to the column's end. Matches arcade.js.
     const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE)
-      || (wallX > 0 && z > -33.7 && z < -12.1);
+      || (wallX > 0 && z > -33.7 && z < -12.1)
+      // The warp pipe's mouth: nine metres on z -25.2, wider than any door in
+      // the building. Matches CASTLE_PIPE_MOUTH_HALF in arcade.js.
+      || (wallX < 0 && Math.abs(z + 25.2) < 4.5);
     if (!throughDoor(toZ) && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);

@@ -383,7 +383,10 @@ box(14.6,5,.3,0x11182c,35.9,2.5,POKEMON_SOUTH_Z,.06);
 const gangsterPepeMount=new THREE.Group();
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);
 const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34;
-const PARTITION_WALL_SEGMENTS_WEST=[[-30.2,6.8],[-16.6,14],[0,12.8],[16.6,14],[30.2,6.8]];
+// The first two segments are pulled back to clear the warp pipe's mouth: the
+// opening on z -25.2 runs the pipe's full nine metres rather than a door's 3.2,
+// so the tube is seen whole from the hall instead of cropped to a slot.
+const PARTITION_WALL_SEGMENTS_WEST=[[-31.65,3.9],[-15.15,11.1],[0,12.8],[16.6,14],[30.2,6.8]];
 // The first east segment is gone: the Pokemon Center fronts the hall through
 // where it stood, one wide opening with the old plaza doorway.
 const PARTITION_WALL_SEGMENTS_EAST=[[-8.6,6.8],[4.8,13.6],[20.4,11.2],[31.4,4.4]];
@@ -1904,7 +1907,14 @@ const CASTLE_APPROACH_Z=-25.2,CASTLE_APPROACH_HALF=5.4,CASTLE_APPROACH_WEST=-57.
 // at 2.92 so the bore's floor still lands level with the room's own; a player
 // walks the bottom of the pipe, not a ledge inside it.
 const CASTLE_PIPE_BORE=1.246,CASTLE_PIPE_LENGTH=3.87;
-const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=2.92;
+// 2.97, not 2.92. At 2.92 the axis equalled the bore radius exactly, so the
+// tube's lowest point sat at y 0.000 while the room's floor sits at 0.002 —
+// and the floor came through the green in a hairline down the whole length.
+// Five centimetres of lift clears it and is nothing to step over.
+const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=2.97;
+// The pipe's mouth is the doorway now: nine metres of it, not the 3.2m opening
+// the other rooms get. Held here because all three authorities have to agree.
+const CASTLE_PIPE_MOUTH_HALF=4.5;
 const CASTLE_PIPE_SHADE=.74;
 function installPeachsCastle(){
   if(castleStarted)return;
@@ -2139,7 +2149,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-room-3',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-mouth-1',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4267,6 +4277,9 @@ function resolvePartitionWallCollisions(previousX,previousZ){
     const crossingZ=crossedWall?previousZ+(playerPosition.z-previousZ)*crossing:playerPosition.z;
     const doors=wallX<0?OPEN_DOOR_Z_WEST:OPEN_DOOR_Z_EAST;
     if(doors.some(doorZ=>Math.abs(crossingZ-doorZ)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS))continue;
+    // The pipe's mouth is wider than any door in the building. Leaving it at the
+    // door width would put an invisible wall across the visible opening.
+    if(wallX===PLAYSTATION_WALL_X&&Math.abs(crossingZ-CASTLE_APPROACH_Z)<CASTLE_PIPE_MOUTH_HALF-PLAYER_COLLISION_RADIUS)continue;
     // The Pokemon Center's storefront: the east wall is open from the old
     // plaza door to the column's end.
     if(wallX===N64_WALL_X&&crossingZ>-33.7&&crossingZ<-12.1)continue;
@@ -4475,7 +4488,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-room-3';
+const ARCADE_BUILD='pipe-mouth-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
