@@ -1771,7 +1771,7 @@ function installTempleOfTime(){
         // once and replaced with a solid block, which put a ten metre monolith
         // across the staircase. The plate stays; what it needed was something
         // under it at the wall line, not instead of it.
-        if(/^(flanks|flankn|corridorlid)/.test(node.name||'')){doomed.push(node);return}
+        if(/^(flanks|flankn|corridorlid|threshold)/.test(node.name||'')){doomed.push(node);return}
         const first=Array.isArray(node.material)?node.material[0]:node.material;
         if(!first.map){doomed.push(node);return}
         node.castShadow=false;node.receiveShadow=false;
@@ -1895,6 +1895,22 @@ function installTempleOfTime(){
         // underside, which would drop a walker three and a half metres. The
         // temple has no lateral collision, so the entry passes a player either
         // way — the same reason its own columns are walk-through.
+        // The ground outside the door is ground, not a floating plate.
+        //
+        // threshold, the plate the model lays at y 0 outside the door, floats:
+        // probing the whole footprint, there is no floor whatever under it from
+        // x -48 eastward, so anyone who walks out through the doorway -- and the
+        // temple has no lateral collision, so everyone can -- ends up standing in
+        // a void looking up at its bare underside. That is the horizontal plane.
+        //
+        // It replaces the plate rather than propping it up: a base under a floating
+        // slab is still something you can walk inside. The block starts at x -49,
+        // east of where the stairs reach y 0.01 on their own at -49, so it cannot
+        // touch them -- the last attempt began at -51.5 and put a block through
+        // the staircase.
+        const apron=new THREE.Mesh(new THREE.BoxGeometry(7.6,3.5,12),dressed(7.6,3.5));
+        apron.position.set(-45.2,-1.75,42);
+        mount.add(apron);
         const reveal=dressed(10.2,3.5);
         const dark=dressed(10.2,3.5);
         dark.color.multiplyScalar(.16);
@@ -1992,7 +2008,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=mario-castle-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=mario-castle-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2128,7 +2144,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-2',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3560,11 +3576,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-2',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-2',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-2',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-2',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-2',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3617,12 +3633,12 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-2',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-2',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-2',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-2',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-2',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb', -102.25,.019, -3.74, 2.3380,0xff5f5f], // Super Mario Bros.
@@ -4893,7 +4909,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='mario-castle-1';
+const ARCADE_BUILD='mario-castle-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
