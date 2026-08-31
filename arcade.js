@@ -664,14 +664,9 @@ themeRoom({
   near:'megaman-room-mural-3.webp?v=megaman-mural-3',
   side:'megaman-room-mural-2.webp?v=megaman-mural-2'
 });
-// The second themed room, from art supplied for it. Everything the Mega Man
-// room needed by hand, this room gets in six lines.
-themeRoom({
-  centerX:MEGAMAN_ROOM_CENTER_X,centerZ:-8.4,
-  far:'metal-gear-room-mural.webp?v=mgs-3',
-  near:'metal-gear-room-mural-3.webp?v=mgs-3',
-  side:'metal-gear-room-mural-2.webp?v=mgs-3'
-});
+// The Metal Gear room is scrapped. Its three murals came down with it and its
+// cabinet went back to the PlayStation shelf, so the room behind Mega Man is
+// bare wall waiting on whatever takes it next.
 // Metroid, across the hall in the east column. Each wall is a band from one of
 // the three images supplied for it, cut to that wall's own aspect.
 // Metroid moved south with the garden's growth and keeps its full depth; its
@@ -1873,7 +1868,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=approach-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=no-mgs-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1940,10 +1935,21 @@ function installPeachsCastle(){
         if(courses){courses.needsUpdate=true;courses.wrapS=courses.wrapT=THREE.RepeatWrapping;courses.repeat.set(4,3.4)}
         const walling=new THREE.MeshBasicMaterial({map:courses,color:brick.color?.clone()??new THREE.Color(0xffffff),side:THREE.DoubleSide});
         const localZ=z=>z-CASTLE_CENTRE_Z,localX=x=>x-CASTLE_CENTRE_X,localY=y=>y+.86;
+        // The last two are the shoulders. The approach is 10.8m across and the
+        // arcade's doorway is 4.4, so either side of the opening the corridor
+        // met nothing but the shell wall — and that wall is only 5m tall, so
+        // above it the corridor was still open, and the join read as a seam
+        // with daylight in it. These close the shoulders the corridor's full
+        // height, flush against the wall's inner face, so the passage simply
+        // narrows into the doorway.
+        const shoulder=(CASTLE_APPROACH_HALF-ROOM_DOOR_HALF_WIDTH-.6)/2+ROOM_DOOR_HALF_WIDTH+.6;
+        const shoulderWidth=CASTLE_APPROACH_HALF-ROOM_DOOR_HALF_WIDTH-.6;
         for(const [w,h,d,x,y,z] of [
           [14.2,13,.5,-50.3,6.5,CASTLE_APPROACH_Z-CASTLE_APPROACH_HALF],
           [14.2,13,.5,-50.3,6.5,CASTLE_APPROACH_Z+CASTLE_APPROACH_HALF],
-          [14.2,.5,CASTLE_APPROACH_HALF*2,-50.3,13,CASTLE_APPROACH_Z]
+          [14.2,.5,CASTLE_APPROACH_HALF*2,-50.3,13,CASTLE_APPROACH_Z],
+          [.5,13,shoulderWidth,-43.45,6.5,CASTLE_APPROACH_Z-shoulder],
+          [.5,13,shoulderWidth,-43.45,6.5,CASTLE_APPROACH_Z+shoulder]
         ]){
           const piece=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),walling);
           piece.position.set(localX(x),localY(y),localZ(z));
@@ -2034,7 +2040,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-approach-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-no-mgs-1',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -2984,7 +2990,7 @@ playstationRow.forEach(([id,label,hue,isCrash,isGex],index)=>{
   // Metal Gear Solid stands in its own themed room, in front of the far
   // mural, the way the Mega Man room fronts its cabinets with its art. The
   // rest hold their foyer slots.
-  const slot=id==='metal-gear-solid'?{x:-32.4,z:-1.8,rotation:Math.PI}:FOYER_WEST[index];
+  const slot=FOYER_WEST[index];
   makeCabinet(id,label,slot.x,slot.z,hue,isCrash,isGex,'psx');
   cabinets[cabinets.length-1].g.rotation.y=slot.rotation;configureHostedCabinet(id);
 });
@@ -4370,7 +4376,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='approach-1';
+const ARCADE_BUILD='no-mgs-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';

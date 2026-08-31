@@ -134,16 +134,16 @@
     "gameId": "metal-gear-solid",
     "enabled": true,
     "interactionPosition": {
-      "x": -32.4,
+      "x": -9.5,
       "y": 1.65,
-      "z": -3.8
+      "z": 1.15
     },
     "playerPosition": {
-      "x": -32.4,
+      "x": -9.15,
       "y": 1.65,
-      "z": -4.15
+      "z": 1.15
     },
-    "playerRotationY": 3.141592653589793,
+    "playerRotationY": 1.5707963267948966,
     "defaultGameId": "metal-gear-solid"
   },
   {
