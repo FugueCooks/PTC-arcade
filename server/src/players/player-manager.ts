@@ -69,6 +69,9 @@ const NORTH_ROOM_X = [-10.8];
 // arcade.js.
 const SILENT_EAST_X = -21.6;
 const SILENT_SOUTH_Z = -42;
+// Silent Hill's west edge. Without it the south wall below applies to every
+// point west of -21.6, which includes the whole of Peach's Castle.
+const SILENT_WEST_X = -64.8;
 const SILENT_DOOR_X = -32.4;
 // The east half of the top row, plus a bite of the band, is the Pokemon
 // stadium at 1.5x. Its west wall has no doorway; its south wall has one.
@@ -177,11 +180,11 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   }
   // Silent Hill's south wall, with the entrance doorway at its centre.
   const throughSilentDoor = (x: number) => Math.abs(x - SILENT_DOOR_X) < 1.38;
-  if (toX < SILENT_EAST_X && !throughSilentDoor(toX) && Math.abs(toZ - SILENT_SOUTH_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if (toX < SILENT_EAST_X && toX > SILENT_WEST_X && !throughSilentDoor(toX) && Math.abs(toZ - SILENT_SOUTH_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if ((fromZ - SILENT_SOUTH_Z) * (toZ - SILENT_SOUTH_Z) < 0) {
     const crossing = (SILENT_SOUTH_Z - fromZ) / (toZ - fromZ);
     const crossingX = fromX + (toX - fromX) * crossing;
-    if (crossing >= 0 && crossing <= 1 && crossingX < SILENT_EAST_X && !throughSilentDoor(crossingX)) return true;
+    if (crossing >= 0 && crossing <= 1 && crossingX < SILENT_EAST_X && crossingX > SILENT_WEST_X && !throughSilentDoor(crossingX)) return true;
   }
   // The stadium's south wall, with the entrance doorway at its centre.
   const throughStadiumDoor = (x: number) => Math.abs(x - POKEMON_DOOR_X) < ROOM_DOOR_CLEARANCE;
