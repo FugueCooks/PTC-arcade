@@ -2088,7 +2088,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=mario-castle-8',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=mario-castle-9',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2224,7 +2224,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-8',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-9',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3656,11 +3656,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-8',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-8',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-8',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-8',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-8',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-9',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-9',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-9',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-9',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-9',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3713,12 +3713,12 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-8',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-8',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-8',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-9',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-9',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-9',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-8',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-8',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-9',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-9',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -5016,7 +5016,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='mario-castle-8';
+const ARCADE_BUILD='mario-castle-9';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -5025,6 +5025,47 @@ if(performanceStats){
   performanceStats.insertAdjacentElement('afterend',buildStamp);
 }
 let performanceWindowStart=performance.now(),performanceFrames=0,slowWindows=0,fastWindows=0,latestPerformance={fps:0,frameMs:0,quality:'WARMING'};
+/**
+ * Which rule last stopped the player, on the HUD.
+ *
+ * Every invisible-wall report so far has come in as a screenshot, and the
+ * screenshots always include the HUD. So when any resolver moves the player
+ * against their input, its name goes up next to the build stamp for a few
+ * seconds -- the report then names the culprit by itself instead of starting
+ * another search through eleven resolvers. Costs nine coordinate compares per
+ * moving frame; draws nothing at all unless something actually blocks.
+ */
+let lastBlockNote=0;
+function runResolvers(previousX,previousZ){
+  const chain=[
+    ['partition',()=>resolvePartitionWallCollisions(previousX,previousZ)],
+    ['warp-pipe',()=>resolveWarpPipeCollisions(previousX)],
+    ['social',()=>resolveSocialLayoutCollisions(previousX,previousZ)],
+    ['statues',()=>resolveStatueCollisions(previousX,previousZ)],
+    ['pokebowl',()=>resolvePokemonBowlCollisions(previousX,previousZ)],
+    ['chao',()=>resolveChaoGardenCollisions(previousX,previousZ)],
+    ['zelda-cab',()=>resolveZeldaCabinetCollisions(previousX,previousZ)],
+    ['mario-cab',()=>resolveMarioCabinetCollisions(previousX,previousZ)],
+    ['temple-floor',()=>resolveTempleFloor(previousX,previousZ)],
+    ['castle-floor',()=>resolveCastleFloor(previousX,previousZ)],
+    ['top-row',()=>resolveTopRowCollisions(previousX,previousZ)],
+    ['silent-hill',()=>resolveSilentHillCollisions(previousX,previousZ)],
+    ['world-bounds',()=>clampToWorld(previousX,previousZ)]
+  ];
+  for(const [name,run] of chain){
+    const beforeX=playerPosition.x,beforeZ=playerPosition.z;
+    run();
+    if(Math.abs(playerPosition.x-beforeX)>.003||Math.abs(playerPosition.z-beforeZ)>.003){
+      const now=performance.now();
+      if(now>lastBlockNote+250){lastBlockNote=now;
+        const stamp=document.getElementById('build-stamp');
+        if(stamp)stamp.textContent='BUILD · '+ARCADE_BUILD.toUpperCase()+' · BLOCK '+name.toUpperCase()+' @'+playerPosition.x.toFixed(0)+','+playerPosition.z.toFixed(0);
+        clearTimeout(runResolvers.reset);
+        runResolvers.reset=setTimeout(()=>{const s=document.getElementById('build-stamp');if(s)s.textContent='BUILD · '+ARCADE_BUILD.toUpperCase()},4000);
+      }
+    }
+  }
+}
 const getRendererStats=()=>{const memory=performance.memory;return{...latestPerformance,renderScale:currentPixelRatio,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,heapUsedMb:memory?Number((memory.usedJSHeapSize/1048576).toFixed(1)):null,heapLimitMb:memory?Number((memory.jsHeapSizeLimit/1048576).toFixed(1)):null}};
 window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,playerPosition.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),debugInstallCastle:()=>installPeachsCastle(),debugInstallPikomat:()=>installPikomat(),debugInstallRoster:()=>installPokemonRoster(),debugWorldTick:()=>{nextHeavyAssetCheck=0;nextLightCull=0;loadNearbySceneModels(performance.now());updateNearbyLights(performance.now())},debugInstallSilentHill:()=>{installSilentHillBuildings();installSilentHillCast()},onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
 function updatePerformanceStats(now){performanceFrames++;const elapsed=now-performanceWindowStart;if(elapsed<1000)return;const fps=Math.round(performanceFrames*1000/elapsed),frameMs=Math.round(elapsed/performanceFrames),quality=currentPixelRatio<=pixelRatioFloor+.01?'LOW':currentPixelRatio<.9?'MED':'HIGH';latestPerformance={fps,frameMs,quality};if(performanceStats)performanceStats.textContent=`${fps} FPS · ${frameMs} MS · ${quality} · ${Math.round(currentPixelRatio*100)}%`;// This only ever went down.
@@ -5052,7 +5093,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveZeldaCabinetCollisions(previousX,previousZ);resolveMarioCabinetCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-PLAYER_EYE_HEIGHT*PLAYER_EYE_HEIGHT;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;if(near&&Math.abs(near.g.position.y-(playerPosition.y-PLAYER_EYE_HEIGHT))>1.8)near=null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}flushStaticBoxes();tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);runResolvers(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-PLAYER_EYE_HEIGHT*PLAYER_EYE_HEIGHT;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;if(near&&Math.abs(near.g.position.y-(playerPosition.y-PLAYER_EYE_HEIGHT))>1.8)near=null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}flushStaticBoxes();tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before
