@@ -1943,6 +1943,13 @@ const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=2.97,CAST
 // ring between the bore and the lip is the pipe's own wall seen end on. Held
 // here because all three authorities have to agree.
 const CASTLE_PIPE_CHANNEL_HALF=2.2;
+// Where that channel starts, coming from the castle. The approach corridor is
+// 10.8m wide and the bore is 4.4, and the archway's brick shoulders are drawn
+// across the whole of that difference over x -43.7..-43.2. They are the taper,
+// so the narrow section begins at their west face rather than at the pipe's
+// own end half a metre later -- otherwise a walker is refused by nothing until
+// they are already standing inside the brick.
+const CASTLE_ARCHWAY_WEST=CASTLE_PIPE_WEST-.5;
 const CASTLE_PIPE_SHADE=.74;
 function installPeachsCastle(){
   if(castleStarted)return;
@@ -4391,14 +4398,23 @@ const SIDE_ROOM_DIVIDER_Z=[SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUM
  * room a walker can legitimately be that is outside the pipe.
  *
  * Clamped rather than refused, so running at the wall slides along it the way
- * the partition walls do instead of stopping dead.
+ * the partition walls do instead of stopping dead -- except when the step is
+ * what brought the player into the narrow section at all. Coming east off the
+ * castle approach they can legitimately be 5.06 off the centre line, and
+ * clamping that to 1.86 is not a slide, it is a three metre sideways teleport:
+ * a camera whip on its own, and a jump far enough past the authorities' own
+ * speed check (1.1m per packet) to be refused and dragged back, which puts the
+ * player straight back into it. The shoulders they are walking at are solid
+ * brick to look at, so refuse the step in x and let them stand against it. z
+ * still moves, so they slide along the shoulder into the mouth as expected.
  */
-function resolveWarpPipeCollisions(){
-  if(playerPosition.x<CASTLE_PIPE_WEST||playerPosition.x>CASTLE_PIPE_EAST)return;
+function resolveWarpPipeCollisions(previousX){
+  if(playerPosition.x<CASTLE_ARCHWAY_WEST||playerPosition.x>CASTLE_PIPE_EAST)return;
   const offset=playerPosition.z-CASTLE_APPROACH_Z;
   if(Math.abs(offset)>ROOM_DEPTH/2)return;
   const limit=CASTLE_PIPE_CHANNEL_HALF-PLAYER_COLLISION_RADIUS;
   if(Math.abs(offset)<=limit)return;
+  if(previousX<CASTLE_ARCHWAY_WEST){playerPosition.x=previousX;return;}
   playerPosition.z=CASTLE_APPROACH_Z+Math.sign(offset)*limit;
 }
 function resolveSocialLayoutCollisions(previousX,previousZ){
@@ -4628,7 +4644,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions();resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before

@@ -712,8 +712,10 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   }
   // The Mario room is one warp pipe from wall to wall. The room floor either
   // side of the bore is inside the tube's wall rather than under it, so
-  // nothing may stand there. Matches resolveWarpPipeCollisions in arcade.js.
-  if (toX >= -43.2 && toX <= -21.6 && Math.abs(toZ + 25.2) < 8.4 && Math.abs(toZ + 25.2) > 2.2) return true;
+  // nothing may stand there. Runs from the archway's west face at -43.7, not
+  // the pipe's own end, so the corridor narrows where the brick shoulders show
+  // it narrowing. Matches CASTLE_ARCHWAY_WEST in arcade.js.
+  if (toX >= -43.7 && toX <= -21.6 && Math.abs(toZ + 25.2) < 8.4 && Math.abs(toZ + 25.2) > 2.2) return true;
   // The walls between the rooms in a column. None of them has a doorway: every
   // room is entered from the hall.
   const inSideColumn = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
