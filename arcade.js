@@ -1873,7 +1873,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=spill-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=spill-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1996,7 +1996,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-spill-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-spill-2',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -3612,7 +3612,13 @@ function updateChaoSkyVisibility(){
   silentHillWorld.visible=playerPosition.z<-26;
   pokemonRosterWorld.visible=playerPosition.z<-44;
   if(templeMount)templeMount.visible=playerPosition.z>14;
-  if(castleMount)castleMount.visible=playerPosition.x<-14;
+  // Generous on purpose. The castle's carpet now runs INSIDE the arcade room,
+  // out to x -37, and the doorway at z -25.2 has a sightline from most of the
+  // hall — so a tight cull does not save a distant object, it punches a black
+  // hole through the doorway and deletes the carpet from a room the player is
+  // standing in. That is what x<-14 did. The castle is ten meshes and 1,190
+  // vertices; there was never much to save by cutting it fine.
+  if(castleMount)castleMount.visible=playerPosition.x<HALL_HALF_WIDTH;
   if(pikomatMount)pikomatMount.visible=playerPosition.x>4&&playerPosition.z<-18;
 }
 function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;updateChaoSkyVisibility();const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<324;const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[],muralLights=[],solanaLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.solanaLight?solanaLights:light.userData.muralLight?muralLights:light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
@@ -4326,7 +4332,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='spill-1';
+const ARCADE_BUILD='spill-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
