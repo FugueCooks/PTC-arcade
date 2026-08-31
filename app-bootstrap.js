@@ -72,6 +72,6 @@ window.ARCADE_ENSURE_RUNTIME_DETECTION = () => {
 // distance to every cabinet on every frame.
 window.ARCADE_CABINET_SPATIAL_INDEX = new CabinetSpatialIndex([]);
 
-await import('./arcade.js?v=mario-castle-7');
+await import('./arcade.js?v=mario-castle-8');
 await import('./avatar-selection.js?v=triple-t-label-2');
-await import('./multiplayer-client.js?v=mario-castle-7');
+await import('./multiplayer-client.js?v=mario-castle-8');

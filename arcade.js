@@ -190,7 +190,53 @@ function worldAlignedFloorMaterial(width,depth,centerX,centerZ,style){
 }
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(43.2,67.2),hallFloorMaterial);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
 const topBandFloor = new THREE.Mesh(new THREE.PlaneGeometry(86.4,16.8),worldAlignedFloorMaterial(86.4,16.8,0,-42,HALL_FLOOR_STYLE));topBandFloor.rotation.x=-Math.PI/2;topBandFloor.position.set(0,0,-42);topBandFloor.receiveShadow=true;scene.add(topBandFloor);
-function box(w,h,d,color,x,y,z,emissive=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissive,roughness:.43,metalness:.65}));m.position.set(x,y,z);m.castShadow=true;scene.add(m);return m}
+/**
+ * The building's boxes, batched.
+ *
+ * box() used to create a Mesh with its own BoxGeometry and its own material per
+ * call, and it is called from loops everywhere the building repeats — wall
+ * segments, ceiling plates, light strips, dividers. Every one was a draw call.
+ * With the whole map open that put the frame at 2,000+ draw calls, which is why
+ * dropping the render scale never helped: the cost was per-call CPU overhead,
+ * not pixels.
+ *
+ * During the synchronous build, calls are pooled by (color, emissive) and
+ * flushed into one InstancedMesh per pool — the same technique the ceiling
+ * troffers already use — with each instance a unit cube scaled to its box. No
+ * box() call rotates its result, so every instance matrix is diagonal and the
+ * shader's mat3(instanceMatrix) keeps normals exact after its normalize.
+ *
+ * Callers only ever touch castShadow/receiveShadow on the return value, and
+ * shadows are disabled renderer-wide, so pooled calls return a stub with those
+ * properties. Anything created after the seal — nothing does today — falls back
+ * to the old one-mesh path rather than breaking.
+ */
+const staticBoxPool=new Map();let staticBoxesSealed=false;
+const unitBoxGeometry=new THREE.BoxGeometry(1,1,1);
+function box(w,h,d,color,x,y,z,emissive=0){
+  if(staticBoxesSealed){
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissive,roughness:.43,metalness:.65}));
+    m.position.set(x,y,z);scene.add(m);return m;
+  }
+  const key=color+':'+emissive;
+  let pool=staticBoxPool.get(key);
+  if(!pool){pool={color,emissive,entries:[]};staticBoxPool.set(key,pool)}
+  pool.entries.push([w,h,d,x,y,z]);
+  return {castShadow:true,receiveShadow:true,visible:true,position:new THREE.Vector3(x,y,z)};
+}
+function flushStaticBoxes(){
+  staticBoxesSealed=true;
+  const transform=new THREE.Object3D();
+  for(const {color,emissive,entries} of staticBoxPool.values()){
+    const material=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:emissive,roughness:.43,metalness:.65});
+    const batch=new THREE.InstancedMesh(unitBoxGeometry,material,entries.length);
+    entries.forEach(([w,h,d,x,y,z],index)=>{transform.position.set(x,y,z);transform.scale.set(w,h,d);transform.updateMatrix();batch.setMatrixAt(index,transform.matrix)});
+    batch.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+    batch.computeBoundingSphere();
+    scene.add(batch);
+  }
+  staticBoxPool.clear();
+}
 // Tokyo-noir ceiling. A real ceiling plane closes off what used to be an open
 // black void, and the full-width cyan light bars are replaced by short recessed
 // troffers, so the room reads as a low-lit game centre rather than an arena.
@@ -322,12 +368,14 @@ const pendantCordGeometry=new THREE.BoxGeometry(.02,.62,.02);
 const pendantTubeGeometry=new THREE.CylinderGeometry(.075,.075,.46,10);
 const pendantBloomGeometry=new THREE.SphereGeometry(.3,10,8);
 const pendantBloomMaterial=new THREE.MeshBasicMaterial({color:0xffa860,transparent:true,opacity:.11,depthWrite:false,blending:THREE.AdditiveBlending});
-for(const x of [-11.5,0,11.5]){
-  for(let z=-31;z<=31;z+=6.2){
-    const cord=new THREE.Mesh(pendantCordGeometry,ceilingHousingMaterial);cord.position.set(x,4.55,z);scene.add(cord);
-    const tube=new THREE.Mesh(pendantTubeGeometry,pendantMaterial);tube.position.set(x,4.02,z);scene.add(tube);
-    const bloom=new THREE.Mesh(pendantBloomGeometry,pendantBloomMaterial);bloom.position.set(x,4.02,z);scene.add(bloom);
-  }
+// Instanced, like the troffers above: 33 pendants were 99 meshes and 99 draw
+// calls for three shapes that never move.
+{
+  const pendantSpots=[];
+  for(const x of [-11.5,0,11.5])for(let z=-31;z<=31;z+=6.2)pendantSpots.push([x,z]);
+  addCeilingFixtureBatch(pendantCordGeometry,ceilingHousingMaterial,pendantSpots,4.55);
+  addCeilingFixtureBatch(pendantTubeGeometry,pendantMaterial,pendantSpots,4.02);
+  addCeilingFixtureBatch(pendantBloomGeometry,pendantBloomMaterial,pendantSpots,4.02);
 }
 /**
  * The floor plan: one hall with a ring of rooms around it.
@@ -795,6 +843,7 @@ function pokemonFieldTexture(){
  * corner sees the mirrored outside of the bowl, not a void, because the band
  * is double-sided.
  */
+let stadiumArenaWorld=null;
 function buildPokemonStadium(centerX,arenaCz){
   /**
    * Tripled, the arena no longer fits in the building: the globe hangs in the
@@ -878,6 +927,7 @@ function buildPokemonStadium(centerX,arenaCz){
   // ---- the arena, built at the old scale and grown whole ----
   const arena=new THREE.Group();
   arena.position.set(centerX,0,arenaCz);
+  stadiumArenaWorld=arena;
   arena.scale.setScalar(3);
   scene.add(arena);
   const RX=15.75,RZ=12.15,SPHERE_RY=8,SPHERE_CY=4.2;
@@ -2038,7 +2088,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=mario-castle-7',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=mario-castle-8',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2174,7 +2224,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-7',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-8',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3606,11 +3656,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-7',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-7',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-7',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-7',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-7',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-8',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-8',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-8',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-8',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-8',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3663,12 +3713,12 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-7',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-7',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-7',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-8',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-8',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-8',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-7',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-7',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-8',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-8',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -4076,7 +4126,7 @@ function warmSceneGpu(){
   // each is forced on for the pass and put back exactly as it was. r0.160 has
   // no compileAsync, so this is synchronous by necessity — which is precisely
   // why it belongs behind the avatar screen and not after it.
-  const regions=[silentHillWorld,pokemonRosterWorld,chaoWorld,templeMount,castleMount].filter(Boolean);
+  const regions=[silentHillWorld,pokemonRosterWorld,chaoWorld,templeMount,castleMount,stadiumArenaWorld,prizeDisplay].filter(Boolean);
   const wasVisible=regions.map(region=>region.visible);
   for(const region of regions)region.visible=true;
   try{renderer.compile(scene,camera)}catch(error){console.warn('The GPU warm-up pass did not finish.',error)}
@@ -4129,8 +4179,15 @@ function updateChaoSkyVisibility(){
   // The same trick for the other three outposts. Each bound is generous: it
   // covers everywhere the place can actually be seen from, including the
   // sightlines through its own doorway, so nothing pops into an open view.
-  silentHillWorld.visible=playerPosition.z<-26;
-  pokemonRosterWorld.visible=playerPosition.z<-44;
+  // Bounded in x as well as z. These gates were z-only, so standing seventy
+  // metres west in Peach's Castle still drew Silent Hill's 110 meshes and the
+  // roster's 83 whenever the camera swung east -- nearly 200 draw calls for
+  // rooms in another building. Same for the stadium bowl and the prize counter,
+  // which had no gate at all: 79 and 116 more.
+  silentHillWorld.visible=playerPosition.z<-26&&playerPosition.x>-70;
+  pokemonRosterWorld.visible=playerPosition.z<-44&&playerPosition.x>-16;
+  if(stadiumArenaWorld)stadiumArenaWorld.visible=playerPosition.z<-30&&playerPosition.x>-16;
+  prizeDisplay.visible=playerPosition.distanceToSquared(prizeDisplay.position)<5625;
   if(templeMount)templeMount.visible=playerPosition.z>14;
   // Generous on purpose. The castle's carpet now runs INSIDE the arcade room,
   // out to x -37, and the doorway at z -25.2 has a sightline from most of the
@@ -4959,7 +5016,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='mario-castle-7';
+const ARCADE_BUILD='mario-castle-8';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -4995,7 +5052,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveZeldaCabinetCollisions(previousX,previousZ);resolveMarioCabinetCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-PLAYER_EYE_HEIGHT*PLAYER_EYE_HEIGHT;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;if(near&&Math.abs(near.g.position.y-(playerPosition.y-PLAYER_EYE_HEIGHT))>1.8)near=null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveZeldaCabinetCollisions(previousX,previousZ);resolveMarioCabinetCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-PLAYER_EYE_HEIGHT*PLAYER_EYE_HEIGHT;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;if(near&&Math.abs(near.g.position.y-(playerPosition.y-PLAYER_EYE_HEIGHT))>1.8)near=null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}flushStaticBoxes();tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before
