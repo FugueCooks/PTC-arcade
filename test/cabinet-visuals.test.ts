@@ -142,8 +142,9 @@ void test('the MegaMan Room gives each mural its own full-length solid wall', as
   assert.match(arcade, /new THREE\.PlaneGeometry\(wall\.span,MEGAMAN_MURAL_HEIGHT\)/);
   assert.equal((arcade.match(/side:THREE\.DoubleSide/g) ?? []).length >= 2, true);
   // A second room is themed the same way, from art supplied for it — the point
-  // of pulling the room's numbers out of the code in the first place.
-  assert.match(arcade, /metal-gear-room-mural\.webp/);
+  // of pulling the room's numbers out of the code in the first place. Metal
+  // Gear was that room until it was scrapped and its murals came down; Metroid
+  // carries the assertion now, checked below.
   // Anchored to the line start, so the builder's own declaration — which opens
   // the same way — is not counted as one of the rooms. The count is a floor,
   // not a fixture: rooms are themed as their art arrives, and a test that

@@ -95,8 +95,12 @@ void test('the outer wall of the building remains authoritative', () => {
     [-22.5, 8], [-25.5, 8], [-28.5, 8], [-31.5, 8], [-34.5, 8], [-37.5, 8], [-40.5, 8], [-42.7, 8]
   ];
   route.forEach(([x, z], index) => assert.ok(players.move('socket-a', { p: [x, z], r: -Math.PI / 2 }, 1_500 + index * 500), `step ${index} was refused`));
-  assert.equal(players.move('socket-a', { p: [-44, 8], r: -Math.PI / 2 }, 9_500), undefined);
-  assert.deepEqual(players.stateFor('socket-a')?.p, [-42.7, 1.65, 8]);
+  // The step past -42.7 is not a wall any more: Peach's Castle stands there,
+  // and CASTLE_EXPANSE (x -119.7..-42.7, z -63..11.8) is walkable floor. The
+  // authoritative boundary this test guards is now the castle's own north edge.
+  assert.ok(players.move('socket-a', { p: [-44, 8], r: -Math.PI / 2 }, 9_500), 'the castle grounds accept the step west');
+  assert.equal(players.move('socket-a', { p: [-44, 13], r: -Math.PI / 2 }, 10_000), undefined, 'north of the castle expanse is still out of bounds');
+  assert.deepEqual(players.stateFor('socket-a')?.p, [-44, 1.65, 8]);
 });
 
 void test('the partition wall is solid everywhere it has no doorway', () => {
