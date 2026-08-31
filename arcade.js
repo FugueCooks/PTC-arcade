@@ -91,6 +91,11 @@ const gameAssetBaseUrl=(window.ARCADE_RUNTIME?.gameAssetBaseUrl||'assets/games')
 const gameAssetUrl=fileName=>`${gameAssetBaseUrl}/${fileName}`;
 const biosAssetUrl=window.ARCADE_RUNTIME?.biosAssetUrl||'assets/bios/SCPH1001.BIN';
 const gameCubeDspAssetUrl=window.ARCADE_RUNTIME?.gameCubeDspAssetUrl||gameAssetBaseUrl.replace(/\/games$/,'/bios/dsp_rom.bin');
+// How far up and down a player may look. It was -0.42 to +0.58 -- 24 degrees
+// down, 33 up -- which in a building with a vaulted ceiling and a Triforce on
+// the floor means you can see neither. 1.45 is just short of straight up and
+// straight down, stopping shy of vertical so the view never flips.
+const LOOK_PITCH_LIMIT=1.45;
 let yaw=0,pitch=0, locked=false, activeCabinet=null, localAnimationState='idle', cameraMode='third-person', socialFollowProvider=null, emulatorRuntimeActive=false;
 // The base wash the whole building sits in. The old values left everything
 // outside a managed light's radius near-black; this is a soft violet sky over
@@ -1885,10 +1890,11 @@ function installTempleOfTime(){
         // Flush panels on the wall line closed the view but left the front of
         // the temple blank: from the forecourt there was no door at all. What
         // reads as a door is depth, so the opening keeps its full ten metres and
-        // gains a reveal — two returns, a soffit and a back — set 1.4m into the
-        // wall and finished dark. From outside you see a doorway with an unlit
-        // interior; from inside the same dark back is what stops the sightline
-        // that used to run through the building to the Chao Garden.
+        // gains a reveal — two returns and a soffit — set 1.4m into the wall. It
+        // is a passage, not a plug: the doorway above the stairs stays open and
+        // walkable, and what you see through it is the arcade's own west room,
+        // which is where it actually leads. The sky and the ground beyond are
+        // covered by the head above and the apron below.
         //
         // All on the scene, not the mount: this stone is DoubleSide and anything
         // in the doorway that templeGroundAt can see is read as floor at its
@@ -1912,10 +1918,7 @@ function installTempleOfTime(){
         apron.position.set(-45.2,-1.75,42);
         mount.add(apron);
         const reveal=dressed(10.2,3.5);
-        const dark=dressed(10.2,3.5);
-        dark.color.multiplyScalar(.16);
         for(const [w,h,d,x,y,z,material] of [
-          [.4,6.9,10.0,-47.6,-.15,42,dark],      // the back of the recess
           [1.4,6.9,.4,-46.9,-.15,36.8,reveal],   // south return
           [1.4,6.9,.4,-46.9,-.15,47.2,reveal],   // north return
           [1.4,.4,10.8,-46.9,3.4,42,reveal]      // soffit over the opening
@@ -1929,18 +1932,45 @@ function installTempleOfTime(){
   }catch(error){console.warn('Temple of Time failed to load:',error)}})();
 }
 const TEMPLE_STEP=1.4,TEMPLE_FALL=6.8;
+/**
+ * The temple's floor, cached on a grid.
+ *
+ * The raycast underneath this measures 7.5ms on a mid machine — for a model of
+ * only 19,469 triangles, which is the surprise. Two things make it that slow:
+ * the glb is meshopt-quantised, so three.js takes its slow per-vertex
+ * dequantising path, and one mesh (Object_32, 10,822 triangles) spans the whole
+ * building, so no bounding volume culls anything. Filtering to the meshes over
+ * the probe point only takes it to 6.2ms. It is called every frame a player
+ * moves inside the temple, which is most of a 60fps budget spent on the floor.
+ *
+ * The floor does not change, so the answer is cached rather than recomputed:
+ * 0.4m cells, and half-metre buckets of foot height because the result depends
+ * on where the walker's feet are (a lintel overhead is walked under, not onto).
+ * At 11.25 m/s a cell lasts about 35ms, so the raycast runs a few times a second
+ * instead of sixty, and standing still or looking around costs nothing at all.
+ */
+const templeGroundCache=new Map();
 function templeGroundAt(x,z,feetY){
   if(!templeMount)return null;
+  const key=Math.round(x*2.5)+':'+Math.round(z*2.5)+':'+Math.round(feetY*2);
+  const cached=templeGroundCache.get(key);
+  if(cached!==undefined)return cached;
   templeRayOrigin.set(x,feetY+TEMPLE_STEP+.1,z);
   templeRay.set(templeRayOrigin,templeDown);
   templeRay.far=TEMPLE_STEP+TEMPLE_FALL+.2;
+  let ground=null;
   for(const hit of templeRay.intersectObject(templeMount,true)){
     const y=hit.point.y;
     // arches and lintels overhead are walked under, not onto
     if(y>feetY+TEMPLE_STEP)continue;
-    return y<feetY-TEMPLE_FALL?null:y;
+    ground=y<feetY-TEMPLE_FALL?null:y;
+    break;
   }
-  return null;
+  // A walked path is bounded by the room, but clear it rather than let a long
+  // session grow the map without limit.
+  if(templeGroundCache.size>24000)templeGroundCache.clear();
+  templeGroundCache.set(key,ground);
+  return ground;
 }
 function resolveTempleFloor(previousX,previousZ){
   const inRoom=playerPosition.x>-124.5&&playerPosition.x<-41.6&&playerPosition.z>24.8&&playerPosition.z<59.2;
@@ -2008,7 +2038,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=mario-castle-2',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=mario-castle-3',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2144,7 +2174,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-2',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-3',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3576,11 +3606,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-2',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-2',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-2',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-2',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-2',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-3',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-3',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-3',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-3',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-3',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3633,12 +3663,12 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-2',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-2',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-2',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-3',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-3',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-3',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-2',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-2',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-3',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-3',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb', -102.25,.019, -3.74, 2.3380,0xff5f5f], // Super Mario Bros.
@@ -4180,7 +4210,7 @@ function pollArcadeGamepad(delta){
   if(!activeCabinet){
     readStick(pad,GAMEPAD_AXES.RIGHT_X,GAMEPAD_AXES.RIGHT_Y,GAMEPAD_DEAD_ZONE,gamepadLook);
     yaw-=gamepadLook.x*delta*2.25;
-    pitch=Math.max(-.42,Math.min(.58,pitch-gamepadLook.y*delta*1.75));
+    pitch=Math.max(-LOOK_PITCH_LIMIT,Math.min(LOOK_PITCH_LIMIT,pitch-gamepadLook.y*delta*1.75));
   }
   consumeGamepadPress(pad,GAMEPAD_BUTTONS.SOUTH,()=>{if(!activeCabinet)interactWithNearbyCabinet()});
   consumeGamepadPress(pad,GAMEPAD_BUTTONS.NORTH,toggleCameraMode);
@@ -4209,7 +4239,7 @@ renderer.domElement.addEventListener('click', ()=>{
 function resetMobileMove(){mobileMove.x=0;mobileMove.y=0;if(mobileMoveThumb)mobileMoveThumb.style.transform='translate(-50%,-50%)'}
 window.addEventListener('blur', ()=>{ Object.keys(keys).forEach(key=>keys[key]=false);resetMobileMove(); });
 document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement;document.querySelector('#crosshair').style.opacity=locked||mobileInputAvailable()&&document.body.classList.contains('arcade-started')?'1':'0'});
-document.addEventListener('mousemove',e=>{if(!locked)return;if(e.movementX||e.movementY)setGamepadEngaged(false);yaw-=e.movementX*.0025;pitch=Math.max(-.42,Math.min(.58,pitch-e.movementY*.0025))});
+document.addEventListener('mousemove',e=>{if(!locked)return;if(e.movementX||e.movementY)setGamepadEngaged(false);yaw-=e.movementX*.0025;pitch=Math.max(-LOOK_PITCH_LIMIT,Math.min(LOOK_PITCH_LIMIT,pitch-e.movementY*.0025))});
 addEventListener('keydown',e=>{keys[e.code]=true;setGamepadEngaged(false);if(e.code==='KeyV'&&!e.repeat)toggleCameraMode();if(e.code==='KeyE'&&near&&(locked||mobileInputAvailable())&&!e.repeat)interactWithNearbyCabinet();if(e.code==='Escape'&&activeCabinet)closeMachine();else if(e.code==='Escape'&&socialFollowProvider)socialFollowProvider=null});addEventListener('keyup',e=>keys[e.code]=false);
 if(mobileMoveZone&&mobileMoveThumb&&mobileLookZone){
   let movePointer=null,lookPointer=null,lastLookX=0,lastLookY=0;
@@ -4219,7 +4249,7 @@ if(mobileMoveZone&&mobileMoveThumb&&mobileLookZone){
   const endMove=event=>{if(event.pointerId!==movePointer)return;movePointer=null;resetMobileMove()};
   mobileMoveZone.addEventListener('pointerup',endMove);mobileMoveZone.addEventListener('pointercancel',endMove);
   mobileLookZone.addEventListener('pointerdown',event=>{event.preventDefault();lookPointer=event.pointerId;lastLookX=event.clientX;lastLookY=event.clientY;mobileLookZone.setPointerCapture(event.pointerId)});
-  mobileLookZone.addEventListener('pointermove',event=>{if(event.pointerId!==lookPointer)return;const dx=event.clientX-lastLookX,dy=event.clientY-lastLookY;lastLookX=event.clientX;lastLookY=event.clientY;yaw-=dx*.006;pitch=Math.max(-.42,Math.min(.58,pitch-dy*.006))});
+  mobileLookZone.addEventListener('pointermove',event=>{if(event.pointerId!==lookPointer)return;const dx=event.clientX-lastLookX,dy=event.clientY-lastLookY;lastLookX=event.clientX;lastLookY=event.clientY;yaw-=dx*.006;pitch=Math.max(-LOOK_PITCH_LIMIT,Math.min(LOOK_PITCH_LIMIT,pitch-dy*.006))});
   const endLook=event=>{if(event.pointerId===lookPointer)lookPointer=null};mobileLookZone.addEventListener('pointerup',endLook);mobileLookZone.addEventListener('pointercancel',endLook);
   document.querySelector('#mobile-view').addEventListener('click',event=>{event.preventDefault();toggleCameraMode()});
   document.querySelector('#mobile-use').addEventListener('click',event=>{event.preventDefault();const down=new KeyboardEvent('keydown',{code:'KeyE',key:'e'}),up=new KeyboardEvent('keyup',{code:'KeyE',key:'e'});dispatchEvent(down);dispatchEvent(up)});
@@ -4570,8 +4600,13 @@ function updateFollowCamera(){
   // the standard offset floated it through the concourse roof, which read as
   // the tunnel falling apart rather than as a camera artifact.
   const inVomitory=Math.abs(playerPosition.x-27)<2.2&&playerPosition.z<-41.5&&playerPosition.z>-88.5;
-  if(inVomitory)followOffset.set(0,.72-pitch*1.2,2.5).applyAxisAngle(upAxis,yaw);
-  else followOffset.set(0,2.15-pitch*2.1,4.55).applyAxisAngle(upAxis,yaw);
+  // The chase camera rides up and down with pitch, so at the full look range it
+  // would bury itself under the floor (2.15 - 1.45*2.1 is below the player's
+  // feet). Clamp what the camera uses, not what the player sees: first person
+  // gets the whole range, third person keeps exactly the arc it always had.
+  const chasePitch=Math.max(-.42,Math.min(.58,pitch));
+  if(inVomitory)followOffset.set(0,.72-chasePitch*1.2,2.5).applyAxisAngle(upAxis,yaw);
+  else followOffset.set(0,2.15-chasePitch*2.1,4.55).applyAxisAngle(upAxis,yaw);
   camera.position.copy(playerPosition).add(followOffset);
   if(inVomitory){
     camera.position.x=Math.max(25.75,Math.min(28.25,camera.position.x));
@@ -4909,7 +4944,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='mario-castle-2';
+const ARCADE_BUILD='mario-castle-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
