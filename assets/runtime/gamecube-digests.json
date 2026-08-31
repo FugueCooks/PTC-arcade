@@ -33,5 +33,19 @@
     "file": "super-mario-sunshine-v2.rvz",
     "bytes": 1073698636,
     "sha256": "85b20aea95fddf549e1e1486b2cce87c0c39c5dc30a2a98403d7af1dc224489f"
+  },
+  {
+    "file": "metroid-prime.iso",
+    "bytes": 1459978240,
+    "sha256": "8d57db0d2d6ea27ceb7697470379f8ab32c82167972cb6d0b517029c591c03d1",
+    "system": "gamecube",
+    "kind": "game"
+  },
+  {
+    "file": "metroid-prime-2-echoes.iso",
+    "bytes": 1459978240,
+    "sha256": "e4ec030232b6859c02d47949070e0a0eee1598b0ea7a10660b1be5635d1770c1",
+    "system": "gamecube",
+    "kind": "game"
   }
 ]

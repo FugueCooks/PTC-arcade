@@ -22,7 +22,7 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 2);
-  assert.equal(registry.games.length, 67);
+  assert.equal(registry.games.length, 74);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);
@@ -154,8 +154,11 @@ void test('GameCube RVZ images are registered for the validated Gecko runtime', 
   const games = (await loadJson<{ games: GameDefinition[] }>('assets/games/registry.json')).games;
   const gamecubeGames = games.filter((game) => game.system === 'gamecube');
   const remoteAssets = await loadJson<Array<{ file: string; bytes: number; sha256: string; system: string }>>('assets/runtime/gamecube-digests.json');
-  assert.equal(gamecubeGames.length, 5);
-  assert.ok(gamecubeGames.every((game) => game.enabled && game.file.endsWith('.rvz')));
+  assert.equal(gamecubeGames.length, 7);
+  // .iso joined .rvz when the Metroid Primes arrived as CISO sources: Gecko's
+  // own accept list is .rvz,.iso,.gcm, and CISO converts losslessly to iso with
+  // tools/convert-gamecube-ciso.mjs, while RVZ would need Dolphin to author.
+  assert.ok(gamecubeGames.every((game) => game.enabled && (game.file.endsWith('.rvz') || game.file.endsWith('.iso'))));
   assert.equal(remoteAssets.length, gamecubeGames.length);
   assert.ok(remoteAssets.every((asset) => asset.system === 'gamecube' && /^[a-f0-9]{64}$/.test(asset.sha256)));
   assert.deepEqual(
@@ -167,7 +170,9 @@ void test('GameCube RVZ images are registered for the validated Gecko runtime', 
     'The Legend of Zelda: Twilight Princess',
     'Pikmin',
     'Super Smash Bros. Melee',
-    'Super Mario Sunshine'
+    'Super Mario Sunshine',
+    'Metroid Prime',
+    'Metroid Prime 2: Echoes'
   ]);
   const dockerfile = await readFile(path.resolve(process.cwd(), 'Dockerfile'), 'utf8');
   assert.match(dockerfile, /COPY --from=build \/app\/emulators \.\/emulators/);

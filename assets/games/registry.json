@@ -1754,6 +1754,181 @@
           "label": null
         }
       ]
+    },
+    {
+      "id": "metroid",
+      "cabinetId": "metroid-cabinet-01",
+      "name": "Metroid",
+      "system": "nes",
+      "file": "metroid.zip",
+      "emulatorId": 10007,
+      "sizeBytes": 58878,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "metroid.zip",
+          "sizeBytes": 58878,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "metroid-2-return-of-samus",
+      "cabinetId": "metroid-cabinet-02",
+      "name": "Metroid II: Return of Samus",
+      "system": "gb",
+      "file": "metroid-2-return-of-samus.zip",
+      "emulatorId": 40029,
+      "sizeBytes": 105266,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "metroid-2-return-of-samus.zip",
+          "sizeBytes": 105266,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "super-metroid",
+      "cabinetId": "metroid-cabinet-03",
+      "name": "Super Metroid",
+      "system": "snes",
+      "file": "super-metroid.zip",
+      "emulatorId": 26006,
+      "sizeBytes": 1516405,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "snes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-metroid.zip",
+          "sizeBytes": 1516405,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "metroid-fusion",
+      "cabinetId": "metroid-cabinet-04",
+      "name": "Metroid Fusion",
+      "system": "gba",
+      "file": "metroid-fusion.zip",
+      "emulatorId": 40030,
+      "sizeBytes": 4534448,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "metroid-fusion.zip",
+          "sizeBytes": 4534448,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "metroid-zero-mission",
+      "cabinetId": "metroid-cabinet-06",
+      "name": "Metroid: Zero Mission",
+      "system": "gba",
+      "file": "metroid-zero-mission.zip",
+      "emulatorId": 40031,
+      "sizeBytes": 5099199,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "metroid-zero-mission.zip",
+          "sizeBytes": 5099199,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "metroid-prime",
+      "cabinetId": "metroid-cabinet-05",
+      "name": "Metroid Prime",
+      "system": "gamecube",
+      "file": "metroid-prime.iso",
+      "emulatorId": 32006,
+      "sizeBytes": 1459978240,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "gecko-gamecube",
+      "inputProfileId": "gamecube-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "metroid-prime.iso",
+          "sizeBytes": 1459978240,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "firmware",
+          "assetId": "dsp_rom.bin",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "metroid-prime-2-echoes",
+      "cabinetId": "metroid-cabinet-07",
+      "name": "Metroid Prime 2: Echoes",
+      "system": "gamecube",
+      "file": "metroid-prime-2-echoes.iso",
+      "emulatorId": 32007,
+      "sizeBytes": 1459978240,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "gecko-gamecube",
+      "inputProfileId": "gamecube-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "metroid-prime-2-echoes.iso",
+          "sizeBytes": 1459978240,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "firmware",
+          "assetId": "dsp_rom.bin",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
     }
   ]
 }

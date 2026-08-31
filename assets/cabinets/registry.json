@@ -1584,5 +1584,156 @@
     },
     "playerRotationY": 3.141593,
     "defaultGameId": "dr-mario"
+  },
+  {
+    "id": "metroid-cabinet-01",
+    "name": "Metroid",
+    "sceneKey": "METROID",
+    "cabinetType": "nes-upright",
+    "zoneId": "metroid-room",
+    "gameId": "metroid",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.9,
+      "y": 1.65,
+      "z": -10.5
+    },
+    "playerPosition": {
+      "x": 41.55,
+      "y": 1.65,
+      "z": -10.5
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "metroid"
+  },
+  {
+    "id": "metroid-cabinet-02",
+    "name": "Metroid II: Return of Samus",
+    "sceneKey": "METROID II: RETURN OF SAMUS",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "metroid-room",
+    "gameId": "metroid-2-return-of-samus",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.9,
+      "y": 1.65,
+      "z": -8.2
+    },
+    "playerPosition": {
+      "x": 41.55,
+      "y": 1.65,
+      "z": -8.2
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "metroid-2-return-of-samus"
+  },
+  {
+    "id": "metroid-cabinet-03",
+    "name": "Super Metroid",
+    "sceneKey": "SUPER METROID",
+    "cabinetType": "snes-upright",
+    "zoneId": "metroid-room",
+    "gameId": "super-metroid",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.9,
+      "y": 1.65,
+      "z": -5.9
+    },
+    "playerPosition": {
+      "x": 41.55,
+      "y": 1.65,
+      "z": -5.9
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "super-metroid"
+  },
+  {
+    "id": "metroid-cabinet-04",
+    "name": "Metroid Fusion",
+    "sceneKey": "METROID FUSION",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "metroid-room",
+    "gameId": "metroid-fusion",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.9,
+      "y": 1.65,
+      "z": -3.6
+    },
+    "playerPosition": {
+      "x": 41.55,
+      "y": 1.65,
+      "z": -3.6
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "metroid-fusion"
+  },
+  {
+    "id": "metroid-cabinet-05",
+    "name": "Metroid Prime",
+    "sceneKey": "METROID PRIME",
+    "cabinetType": "gamecube-kiosk",
+    "zoneId": "metroid-room",
+    "gameId": "metroid-prime",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.9,
+      "y": 1.65,
+      "z": -1.3
+    },
+    "playerPosition": {
+      "x": 41.55,
+      "y": 1.65,
+      "z": -1.3
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "metroid-prime",
+    "system": "gamecube",
+    "emulatorId": "gecko"
+  },
+  {
+    "id": "metroid-cabinet-06",
+    "name": "Metroid: Zero Mission",
+    "sceneKey": "METROID: ZERO MISSION",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "metroid-room",
+    "gameId": "metroid-zero-mission",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.9,
+      "y": 1.65,
+      "z": 1
+    },
+    "playerPosition": {
+      "x": 41.55,
+      "y": 1.65,
+      "z": 1
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "metroid-zero-mission"
+  },
+  {
+    "id": "metroid-cabinet-07",
+    "name": "Metroid Prime 2: Echoes",
+    "sceneKey": "METROID PRIME 2: ECHOES",
+    "cabinetType": "gamecube-kiosk",
+    "zoneId": "metroid-room",
+    "gameId": "metroid-prime-2-echoes",
+    "enabled": true,
+    "interactionPosition": {
+      "x": 41.9,
+      "y": 1.65,
+      "z": 3.3
+    },
+    "playerPosition": {
+      "x": 41.55,
+      "y": 1.65,
+      "z": 3.3
+    },
+    "playerRotationY": 1.5707963267948966,
+    "defaultGameId": "metroid-prime-2-echoes",
+    "system": "gamecube",
+    "emulatorId": "gecko"
   }
 ]

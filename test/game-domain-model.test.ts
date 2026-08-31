@@ -20,12 +20,12 @@ function definition(overrides: Record<string, unknown> = {}): GameDefinition {
 void test('the shipped game registry loads with adapter identity for every game', () => {
   const { registry, issues } = loadGameRegistry();
   assert.deepEqual(issues, []);
-  assert.equal(registry.size, 67);
+  assert.equal(registry.size, 74);
   assert.ok(registry.all().every((game) => game.emulatorAdapterId !== undefined));
   assert.ok(registry.all().every((game) => game.launcherAdapterId === 'hosted-image'));
-  assert.equal(registry.forAdapter('emulatorjs').length, 58);
+  assert.equal(registry.forAdapter('emulatorjs').length, 63);
   assert.equal(registry.forAdapter('play-ps2').length, 4);
-  assert.equal(registry.forAdapter('gecko-gamecube').length, 5);
+  assert.equal(registry.forAdapter('gecko-gamecube').length, 7);
 });
 
 void test('a cabinet resolves the correct game through its game ID', () => {

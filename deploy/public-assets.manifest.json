@@ -394,5 +394,47 @@
     "file": "paper-mario.zip",
     "bytes": 21966975,
     "sha256": "ec3e2a727fc2ee041ba02f74aac4bb9c399349dcfd9e1402fb990a8805690691"
+  },
+  {
+    "kind": "game",
+    "file": "metroid.zip",
+    "bytes": 58878,
+    "sha256": "a83330698aa042357ac27b6ee5c57d80a5bc7e92b4ebc273a515b74c3395248a"
+  },
+  {
+    "kind": "game",
+    "file": "metroid-2-return-of-samus.zip",
+    "bytes": 105266,
+    "sha256": "4990a8c5a7a9eef82c8594165fff046e5d01d7c55be41f4dcbe1223ca26489a7"
+  },
+  {
+    "kind": "game",
+    "file": "super-metroid.zip",
+    "bytes": 1516405,
+    "sha256": "3a816cd98bd66e6521f900ac00db380e4ca25c5e660d8510f301cd880fda52ba"
+  },
+  {
+    "kind": "game",
+    "file": "metroid-fusion.zip",
+    "bytes": 4534448,
+    "sha256": "5f5a19c234dfe7818c70b08c70a534a6201b5438c581c0d6c9df71c83344c7a7"
+  },
+  {
+    "kind": "game",
+    "file": "metroid-zero-mission.zip",
+    "bytes": 5099199,
+    "sha256": "522de348c8a35b6aee344a1236529f2fb7e73e8f6a03d05a4883e88bccf38717"
+  },
+  {
+    "kind": "game",
+    "file": "metroid-prime.iso",
+    "bytes": 1459978240,
+    "sha256": "8d57db0d2d6ea27ceb7697470379f8ab32c82167972cb6d0b517029c591c03d1"
+  },
+  {
+    "kind": "game",
+    "file": "metroid-prime-2-echoes.iso",
+    "bytes": 1459978240,
+    "sha256": "e4ec030232b6859c02d47949070e0a0eee1598b0ea7a10660b1be5635d1770c1"
   }
 ]
