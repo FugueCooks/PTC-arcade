@@ -587,20 +587,20 @@
     "name": "Super Mario Sunshine",
     "sceneKey": "SUPER MARIO SUNSHINE",
     "cabinetType": "gamecube-kiosk",
-    "zoneId": "gamecube-room",
+    "zoneId": "peachs-castle",
     "gameId": "super-mario-sunshine",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
-      "y": 1.65,
-      "z": 12.65
+      "x": -100.5,
+      "y": 1.669,
+      "z": 0.3
     },
     "playerPosition": {
-      "x": 9.15,
-      "y": 1.65,
-      "z": 12.65
+      "x": -100.252514,
+      "y": 1.669,
+      "z": 0.052511
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": 5.497793,
     "defaultGameId": "super-mario-sunshine",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -1594,16 +1594,16 @@
     "gameId": "metroid",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.9,
+      "x": -41.9,
       "y": 1.65,
-      "z": -10.5
+      "z": -15.3
     },
     "playerPosition": {
-      "x": 41.55,
+      "x": -41.55,
       "y": 1.65,
-      "z": -10.5
+      "z": -15.3
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 1.570796,
     "defaultGameId": "metroid"
   },
   {
@@ -1615,16 +1615,16 @@
     "gameId": "metroid-2-return-of-samus",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.9,
+      "x": -41.9,
       "y": 1.65,
-      "z": -8.2
+      "z": -13
     },
     "playerPosition": {
-      "x": 41.55,
+      "x": -41.55,
       "y": 1.65,
-      "z": -8.2
+      "z": -13
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 1.570796,
     "defaultGameId": "metroid-2-return-of-samus"
   },
   {
@@ -1636,16 +1636,16 @@
     "gameId": "super-metroid",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.9,
+      "x": -41.9,
       "y": 1.65,
-      "z": -5.9
+      "z": -10.7
     },
     "playerPosition": {
-      "x": 41.55,
+      "x": -41.55,
       "y": 1.65,
-      "z": -5.9
+      "z": -10.7
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 1.570796,
     "defaultGameId": "super-metroid"
   },
   {
@@ -1657,16 +1657,16 @@
     "gameId": "metroid-fusion",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.9,
+      "x": -41.9,
       "y": 1.65,
-      "z": -3.6
+      "z": -8.4
     },
     "playerPosition": {
-      "x": 41.55,
+      "x": -41.55,
       "y": 1.65,
-      "z": -3.6
+      "z": -8.4
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 1.570796,
     "defaultGameId": "metroid-fusion"
   },
   {
@@ -1678,16 +1678,16 @@
     "gameId": "metroid-prime",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.9,
+      "x": -41.9,
       "y": 1.65,
-      "z": -1.3
+      "z": -6.1
     },
     "playerPosition": {
-      "x": 41.55,
+      "x": -41.55,
       "y": 1.65,
-      "z": -1.3
+      "z": -6.1
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 1.570796,
     "defaultGameId": "metroid-prime",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -1701,16 +1701,16 @@
     "gameId": "metroid-zero-mission",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.9,
+      "x": -41.9,
       "y": 1.65,
-      "z": 1
+      "z": -3.8
     },
     "playerPosition": {
-      "x": 41.55,
+      "x": -41.55,
       "y": 1.65,
-      "z": 1
+      "z": -3.8
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 1.570796,
     "defaultGameId": "metroid-zero-mission"
   },
   {
@@ -1722,16 +1722,16 @@
     "gameId": "metroid-prime-2-echoes",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.9,
+      "x": -41.9,
       "y": 1.65,
-      "z": 3.3
+      "z": -1.5
     },
     "playerPosition": {
-      "x": 41.55,
+      "x": -41.55,
       "y": 1.65,
-      "z": 3.3
+      "z": -1.5
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 1.570796,
     "defaultGameId": "metroid-prime-2-echoes",
     "system": "gamecube",
     "emulatorId": "gecko"

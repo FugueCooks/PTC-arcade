@@ -762,8 +762,11 @@ themeRoom({
 // Metroid moved south with the garden's growth and keeps its full depth; its
 // murals re-hang on the room's actual walls, which is what went missing when
 // the divider moved out from under them.
+// Moved across the hall into the west column's middle room — bare wall since
+// Metal Gear was scrapped — so the whole series sits beside Mega Man. Its old
+// east-column room goes back to waiting for whatever takes it next.
 themeRoom({
-  centerX:ANNEX_ROOM_CENTER_X,centerZ:-3.6,
+  centerX:MEGAMAN_ROOM_CENTER_X,centerZ:-8.4,
   far:'metroid-room-mural.webp?v=metroid-1',
   near:'metroid-room-mural-3.webp?v=metroid-1',
   side:'metroid-room-mural-2.webp?v=metroid-1'
@@ -2085,7 +2088,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=pipe-standalone-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=rooms-shuffle-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2221,7 +2224,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pipe-standalone-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=rooms-shuffle-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3717,11 +3720,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=pipe-standalone-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=pipe-standalone-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=pipe-standalone-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pipe-standalone-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pipe-standalone-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=rooms-shuffle-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=rooms-shuffle-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=rooms-shuffle-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=rooms-shuffle-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=rooms-shuffle-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3774,12 +3777,13 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=pipe-standalone-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=pipe-standalone-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=pipe-standalone-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=rooms-shuffle-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=rooms-shuffle-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=rooms-shuffle-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pipe-standalone-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pipe-standalone-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=rooms-shuffle-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=rooms-shuffle-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=rooms-shuffle-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -3793,6 +3797,7 @@ const MARIO_CASTLE_RING=[
   // landings, and a machine centred on the walk line is a wall across it.
   ['mario-cabinet-07','nes',   -100.70, 3.625,  10.29, 3.1416,0xc06fff], // super-mario-world — north terrace
   ['mario-cabinet-08','nes',    -91.00, 3.625, -60.63, 0.0000,0x5fd48c], // dr-mario — south terrace
+  ['gamecube-cabinet-05','gamecube',-100.50, 0.019,   0.30, 2.3562,0x36f9f6], // super-mario-sunshine — hall back-right corner
 ];
 const marioCabinetSpots=[];
 for(const [cabinetId,kind,x,floorY,z,yaw,hue] of MARIO_CASTLE_RING){
@@ -3800,6 +3805,10 @@ for(const [cabinetId,kind,x,floorY,z,yaw,hue] of MARIO_CASTLE_RING){
   const label=hosted?hosted.name.toUpperCase():cabinetId.toUpperCase();
   makeModelCabinet(cabinetId,label,x,z,hue,hosted?.system??'nes',
     {...MARIO_MACHINE_MODELS[kind],baseY:floorY,rotY:yaw,farCull:true});
+  // Sunshine keeps the GameCube shelf's desktop-only gate: Gecko does not run
+  // on a phone, and moving the machine does not change that.
+  if(kind==='gamecube')Object.assign(cabinets[cabinets.length-1],
+    {system:'gamecube',emulator:'gecko',enabled:!isMobileDevice,status:isMobileDevice?'disabled':'available',disabledReason:isMobileDevice?'desktop-only':undefined});
   configureHostedCabinet(cabinetId);
   marioCabinetSpots.push([x,z,floorY]);
 }
@@ -3815,8 +3824,9 @@ const GAMECUBE_HUES=[0x8b5cf6,0x36f9f6,0xff4da6,0x7dff67,0xffb42e];
 const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>
   [index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
-  // Wind Waker and Twilight Princess stand in the Temple of Time now.
-  if(index===1||index===2)continue;
+  // Wind Waker and Twilight Princess stand in the Temple of Time; Super Mario
+  // Sunshine stands in Peach's Castle, which is the other room it belongs in.
+  if(index===1||index===2||index===5)continue;
   const cabinetId=`gamecube-cabinet-0${index}`;
   makeCabinet(cabinetId,gamecubeTitles[index-1],x,z,hue,false,false,'gamecube');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'gamecube',emulator:'gecko',gameName:gamecubeTitles[index-1],enabled:!isMobileDevice,status:isMobileDevice?'disabled':'available',disabledReason:isMobileDevice?'desktop-only':undefined});configureHostedCabinet(cabinetId);
@@ -3826,19 +3836,19 @@ for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
 // already hung; these are the games they were promising. The two Primes keep
 // the GameCube shelf's desktop-only gate, since Gecko does not run on phones.
 const METROID_ROW=[
-  ['metroid-cabinet-01','metroid',  -10.5,0xffb42e,'nes'],
-  ['metroid-cabinet-02','metroid-2-return-of-samus',   -8.2,0x8ee6ff,'gb'],
-  ['metroid-cabinet-03','super-metroid',   -5.9,0xc06fff,'snes'],
-  ['metroid-cabinet-04','metroid-fusion',   -3.6,0xff5f5f,'gba'],
-  ['metroid-cabinet-05','metroid-prime',   -1.3,0x7dff67,'gamecube'],
-  ['metroid-cabinet-06','metroid-zero-mission',      1,0x4aa8ff,'gba'],
-  ['metroid-cabinet-07','metroid-prime-2-echoes',    3.3,0x36f9f6,'gamecube'],
+  ['metroid-cabinet-01','metroid',  -15.3,0xffb42e,'nes'],
+  ['metroid-cabinet-02','metroid-2-return-of-samus',    -13,0x8ee6ff,'gb'],
+  ['metroid-cabinet-03','super-metroid',  -10.7,0xc06fff,'snes'],
+  ['metroid-cabinet-04','metroid-fusion',   -8.4,0xff5f5f,'gba'],
+  ['metroid-cabinet-05','metroid-prime',   -6.1,0x7dff67,'gamecube'],
+  ['metroid-cabinet-06','metroid-zero-mission',   -3.8,0x4aa8ff,'gba'],
+  ['metroid-cabinet-07','metroid-prime-2-echoes',   -1.5,0x36f9f6,'gamecube'],
 ];
 for(const [cabinetId,gameId,rowZ,hue,system] of METROID_ROW){
   const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
   const label=hosted?hosted.name.toUpperCase():cabinetId.toUpperCase();
-  makeCabinet(cabinetId,label,41.9,rowZ,hue,false,false,system);
-  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=-Math.PI/2;
+  makeCabinet(cabinetId,label,-41.9,rowZ,hue,false,false,system);
+  const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=Math.PI/2;
   if(system==='gamecube')Object.assign(cabinet,{system:'gamecube',emulator:'gecko',enabled:!isMobileDevice,status:isMobileDevice?'disabled':'available',disabledReason:isMobileDevice?'desktop-only':undefined});
   configureHostedCabinet(cabinetId);
 }
@@ -5109,7 +5119,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-standalone-1';
+const ARCADE_BUILD='rooms-shuffle-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
