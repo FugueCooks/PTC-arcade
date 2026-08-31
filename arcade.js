@@ -1868,7 +1868,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=no-mgs-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=reveal-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1949,7 +1949,13 @@ function installPeachsCastle(){
           [14.2,13,.5,-50.3,6.5,CASTLE_APPROACH_Z+CASTLE_APPROACH_HALF],
           [14.2,.5,CASTLE_APPROACH_HALF*2,-50.3,13,CASTLE_APPROACH_Z],
           [.5,13,shoulderWidth,-43.45,6.5,CASTLE_APPROACH_Z-shoulder],
-          [.5,13,shoulderWidth,-43.45,6.5,CASTLE_APPROACH_Z+shoulder]
+          [.5,13,shoulderWidth,-43.45,6.5,CASTLE_APPROACH_Z+shoulder],
+          // The reveals. Cutting the shell left two raw edges 0.3m deep on the
+          // sides of the opening, and the shell's own colour is 0x180d31 — all
+          // but black. Unfaced they read as a dead slot beside the doorway
+          // rather than as the thickness of a wall, which is what they are.
+          [.62,5.2,.14,-43.2,2.6,CASTLE_APPROACH_Z-2.2],
+          [.62,5.2,.14,-43.2,2.6,CASTLE_APPROACH_Z+2.2]
         ]){
           const piece=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),walling);
           piece.position.set(localX(x),localY(y),localZ(z));
@@ -2040,7 +2046,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-no-mgs-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-reveal-1',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4376,7 +4382,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='no-mgs-1';
+const ARCADE_BUILD='reveal-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
