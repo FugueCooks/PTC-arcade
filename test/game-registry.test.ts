@@ -22,7 +22,7 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 2);
-  assert.equal(registry.games.length, 51);
+  assert.equal(registry.games.length, 59);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);
@@ -62,11 +62,14 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // Tournament room, which runs the full width of the building.
   // Out in the foyer with the other console games: the back five of the east
   // hall row, all facing the centre aisle.
-  // Cabinet 04 — Super Smash Bros. Melee — stands in the tournament hall with
-  // the other headline multiplayer games; the rest hold their foyer slots.
+  // Cabinets 01 and 02 — Wind Waker and Twilight Princess — stand in the Temple
+  // of Time's back room with the rest of the Zelda library, on its floor at
+  // y 0.993 rather than the hall's 1.65. Melee came back off the tournament
+  // hall into its own foyer slot when that hall was cleared. The remaining
+  // three hold the shelf.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
-    { x: 9.5, y: 1.65, z: 3.45 }, { x: 9.5, y: 1.65, z: 5.75 },
-    { x: 9.5, y: 1.65, z: 8.05 }, { x: -7, y: 1.65, z: 42 },
+    { x: -103.268871, y: 0.993, z: 36.433684 }, { x: -96.037024, y: 0.993, z: 33.538489 },
+    { x: 9.5, y: 1.65, z: 8.05 }, { x: 9.5, y: 1.65, z: 10.35 },
     { x: 9.5, y: 1.65, z: 12.65 }
   ]);
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.defaultGameId), [

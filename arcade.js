@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-7';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=zelda-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .016);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 180);
 camera.position.set(0, 1.65, 11);
@@ -1092,13 +1092,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=poke-7',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=zelda-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=poke-7',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+    {file:'ff-room-mural-2.webp?v=zelda-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=poke-7',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+    {file:'ff-room-mural-3.webp?v=zelda-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -1899,7 +1899,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=corner-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=zelda-room-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2035,7 +2035,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=corner-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=zelda-room-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3086,7 +3086,10 @@ function loadPokemonMachine(file){
   return pending;
 }
 function makeModelCabinet(id,name,x,z,hue,system,model){
-  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=model.rotY??0;
+  // baseY, because not every room's floor is the hall's. The Temple of Time's
+  // back room sits at -0.657 and its machines have to stand on it rather than
+  // hover half a metre over it.
+  const g=new THREE.Group();g.position.set(x,model.baseY??0,z);g.rotation.y=model.rotY??0;
   const plinth=new THREE.Mesh(cabinetGeometry.plinth,cabinetPlinthMaterial);plinth.position.y=.05;plinth.scale.set(model.plinthScale??1.4,1,model.plinthScale??1.4);g.add(plinth);
   const underglowMat=new THREE.MeshBasicMaterial({color:hue,transparent:true,opacity:.62});
   const railScale=model.plinthScale??1.4;
@@ -3120,7 +3123,10 @@ function makeModelCabinet(id,name,x,z,hue,system,model){
     g.add(body);
   }).catch(error=>console.warn('A Pokemon machine model could not load.',error));
   scene.add(g);
-  const cabinet={id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot:new THREE.Group(),controllerSystem:system,renderLights:[floorGlow],status:'syncing',occupiedByDisplayName:null,enabled:true};
+  // The 18 m cull is tuned for rows you walk along. In a 34 m round room the far
+  // side of a ring stands 25 m off and would simply not be drawn, so a machine
+  // can ask to be culled at 30 instead.
+  const cabinet={id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot:new THREE.Group(),controllerSystem:system,renderLights:[floorGlow],status:'syncing',occupiedByDisplayName:null,enabled:true,cullSq:model.farCull?900:undefined};
   cabinets.push(cabinet);cabinetsById.set(id,cabinet);indexCabinet(cabinet);
 }
 // Cabinet art keyed off the registry id. Crash and Gex keep their hand-made
@@ -3380,8 +3386,10 @@ function resolveStatueCollisions(previousX,previousZ){
 const N64_HUES=[0x8b5cf6,0xff4da6,0x36f9f6,0xffb42e,0x7dff67,0xff3cac,0x42a5ff];
 const n64CabinetLayout=N64_HUES.map((hue,index)=>[index+1,FOYER_EAST[index].x,FOYER_EAST[index].z,FOYER_EAST[index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of n64CabinetLayout){
-  // Pokemon Snap moved to the plaza, into the Pokemon arcade machine.
-  if(index===1)continue;
+  // Pokemon Snap moved to the plaza, into the Pokemon arcade machine, and
+  // Ocarina of Time moved to the Temple of Time with the rest of the Zelda
+  // library. Both leave a gap in the row rather than a renumbering.
+  if(index===1||index===5)continue;
   const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
 /**
  * The Pokemon library, lined up on the arena platform's north deck strip in
@@ -3426,6 +3434,65 @@ for(const [cabinetId,kind,rowX,hue,opts] of POKEMON_MACHINE_ROW){
   makeModelCabinet(cabinetId,label,rowX,-127.2,hue,hosted?.system??(kind==='ds'?'nds':'gb'),model);
   configureHostedCabinet(cabinetId);
 }
+/**
+ * The Temple of Time's back room: every Zelda game in the arcade, in one ring.
+ *
+ * The room is a regular octagon 15.9 m to a wall face, with the Triforce dais
+ * off-centre in it and eight columns on a 12.25 m circle. The ring sits at 8.5,
+ * inside the columns and clear of the dais, which reaches 5.9 from the middle.
+ *
+ * It runs 30 to 330 degrees rather than the whole circle: the sixty degree
+ * sector facing the doorway stays empty so the room opens on the Triforce
+ * rather than on the back of a machine. Every cabinet turns to face the middle,
+ * so the ring reads as an exhibition rather than a row that happens to be bent.
+ *
+ * Order is chronological from the doorway anticlockwise, 1986 to 2009, which is
+ * why the ids are not in sequence around it.
+ */
+const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,ZELDA_RING_RADIUS=8.5;
+// Five machines for five shapes of hardware. The handhelds share one shell
+// because five Game Boy variants in a row would read as a mistake; the two
+// consoles that lie flat get a lower marquee so it sits over the machine rather
+// than a metre above it.
+const ZELDA_MACHINE_MODELS={
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=zelda-room-1',scale:1.55,lift:.496,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=zelda-room-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=zelda-room-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=zelda-room-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=zelda-room-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+};
+const ZELDA_ROOM_RING=[
+  ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
+  ['zelda-cabinet-01','handheld',0x8ee6ff],  // Link's Awakening, 1993
+  ['n64-cabinet-05','n64',0xffd23e],         // Ocarina of Time, 1998
+  ['zelda-cabinet-09','n64',0xc06fff],       // Majora's Mask, 2000
+  ['zelda-cabinet-02','handheld',0x5fd48c],  // Oracle of Ages, 2001
+  ['zelda-cabinet-03','handheld',0xff8c5f],  // Oracle of Seasons, 2001
+  ['zelda-cabinet-04','handheld',0x9ad6ff],  // A Link to the Past & Four Swords, 2002
+  ['gamecube-cabinet-01','gamecube',0x4ad8c8],// The Wind Waker, 2003
+  ['zelda-cabinet-05','handheld',0x6fe36f],  // The Minish Cap, 2005
+  ['gamecube-cabinet-02','gamecube',0xd4a24a],// Twilight Princess, 2006
+  ['zelda-cabinet-06','ds',0x5f8cff],        // Phantom Hourglass, 2007
+  ['zelda-cabinet-07','ds',0xffcf6b]         // Spirit Tracks, 2009
+];
+const zeldaCabinetSpots=[];
+ZELDA_ROOM_RING.forEach(([cabinetId,kind,hue],index)=>{
+  const bearing=(30+index*(300/(ZELDA_ROOM_RING.length-1)))*Math.PI/180;
+  const x=ZELDA_ROOM_CENTRE_X+ZELDA_RING_RADIUS*Math.cos(bearing);
+  const z=ZELDA_ROOM_CENTRE_Z+ZELDA_RING_RADIUS*Math.sin(bearing);
+  const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
+  const label=hosted?hosted.name.toUpperCase():cabinetId.toUpperCase();
+  // A cabinet's front is its +z. Turn that to face the middle of the room.
+  const rotY=Math.atan2(-Math.cos(bearing),-Math.sin(bearing));
+  makeModelCabinet(cabinetId,label,x,z,hue,hosted?.system??'gb',
+    {...ZELDA_MACHINE_MODELS[kind],baseY:ZELDA_ROOM_FLOOR,rotY,farCull:true});
+  configureHostedCabinet(cabinetId);
+  // The GameCube pair keeps the shelf's desktop-only gate: Gecko does not run
+  // on a phone, and moving the machine does not change that.
+  if(kind==='gamecube')Object.assign(cabinets[cabinets.length-1],
+    {system:'gamecube',emulator:'gecko',enabled:!isMobileDevice,status:isMobileDevice?'disabled':'available',disabledReason:isMobileDevice?'desktop-only':undefined});
+  zeldaCabinetSpots.push([x,z]);
+});
 // Five experimental GameCube cabinets sit inside their dedicated construction
 // room, facing its doorway. Gecko remains available for later runtime work, but
 // the cabinets cannot be reached while the room is blocked.
@@ -3438,6 +3505,8 @@ const GAMECUBE_HUES=[0x8b5cf6,0x36f9f6,0xff4da6,0x7dff67,0xffb42e];
 const gamecubeCabinetLayout=GAMECUBE_HUES.map((hue,index)=>
   [index+1,FOYER_EAST[7+index].x,FOYER_EAST[7+index].z,FOYER_EAST[7+index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of gamecubeCabinetLayout){
+  // Wind Waker and Twilight Princess stand in the Temple of Time now.
+  if(index===1||index===2)continue;
   const cabinetId=`gamecube-cabinet-0${index}`;
   makeCabinet(cabinetId,gamecubeTitles[index-1],x,z,hue,false,false,'gamecube');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'gamecube',emulator:'gecko',gameName:gamecubeTitles[index-1],enabled:!isMobileDevice,status:isMobileDevice?'disabled':'available',disabledReason:isMobileDevice?'desktop-only':undefined});configureHostedCabinet(cabinetId);
@@ -3873,7 +3942,7 @@ function updateChaoSkyVisibility(){
   if(castleMount)castleMount.visible=playerPosition.x<HALL_HALF_WIDTH;
   if(pikomatMount)pikomatMount.visible=playerPosition.x>4&&playerPosition.z<-18;
 }
-function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;updateChaoSkyVisibility();const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<324;const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[],muralLights=[],solanaLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.solanaLight?solanaLights:light.userData.muralLight?muralLights:light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
+function updateNearbyLights(now){if(now<nextLightCull)return;nextLightCull=now+250;updateChaoSkyVisibility();const cabinetDistances=cabinets.map(cabinet=>({cabinet,distanceSq:cabinet.g.position.distanceToSquared(playerPosition)})).sort((a,b)=>a.distanceSq-b.distanceSq);let litCabinets=0;for(const {cabinet,distanceSq} of cabinetDistances){cabinet.g.visible=distanceSq<(cabinet.cullSq??324);const lightsVisible=cabinet.g.visible&&distanceSq<64&&litCabinets<2;if(lightsVisible)litCabinets++;cabinet.renderLights.forEach(light=>{light.visible=lightsVisible});}const roomLights=[],accentLights=[],muralLights=[],solanaLights=[];for(const light of managedSceneLights){const position=managedLightPosition(light),dx=position.x-playerPosition.x,dz=position.z-playerPosition.z;(light.userData.solanaLight?solanaLights:light.userData.muralLight?muralLights:light.userData.accentLight?accentLights:roomLights).push({light,distanceSq:dx*dx+dz*dz})}
 // Accent beacons only reach 2.8 units, so they are ranked against their own
 // radius. Sharing one budget with the room lights let them win both slots from
 // across the room and leave the floor unlit.
@@ -4126,7 +4195,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-7')
+  import('./emulators/disc-range-cache.js?v=zelda-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -4146,7 +4215,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=poke-7')
+  import('./emulators/disc-range-cache.js?v=zelda-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -4425,6 +4494,35 @@ function resolveWarpPipeCollisions(previousX){
   if(previousX<CASTLE_ARCHWAY_WEST){playerPosition.x=previousX;return;}
   playerPosition.z=CASTLE_APPROACH_Z+Math.sign(offset)*limit;
 }
+/**
+ * The Zelda room's machines are solid.
+ *
+ * The temple has no lateral collision of any kind — it is raycast-as-floor and
+ * nothing else, which is why the temple's own columns are walk-through today. A
+ * ring of twelve cabinets you can stand inside would read as a bug rather than
+ * as a style, so these carry their own colliders.
+ *
+ * Circles rather than boxes: every machine in the ring faces a different way,
+ * and a box would need each one's rotation to test against.
+ */
+const ZELDA_CABINET_RADIUS=.82;
+function resolveZeldaCabinetCollisions(previousX,previousZ){
+  if(!zeldaCabinetSpots.length)return;
+  const roomX=playerPosition.x-ZELDA_ROOM_CENTRE_X,roomZ=playerPosition.z-ZELDA_ROOM_CENTRE_Z;
+  if(roomX*roomX+roomZ*roomZ>400)return;
+  const reach=ZELDA_CABINET_RADIUS+PLAYER_COLLISION_RADIUS;
+  for(const [x,z] of zeldaCabinetSpots){
+    const offsetX=playerPosition.x-x,offsetZ=playerPosition.z-z;
+    const distance=Math.hypot(offsetX,offsetZ);
+    if(distance>=reach)continue;
+    // Dead centre gives no direction to push along, which only happens if a
+    // player is put there rather than walking there.
+    if(distance<1e-4){playerPosition.x=previousX;playerPosition.z=previousZ;return}
+    playerPosition.x=x+offsetX/distance*reach;
+    playerPosition.z=z+offsetZ/distance*reach;
+    return;
+  }
+}
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
   // The dividers live between the partition and the shell and nowhere else:
@@ -4626,7 +4724,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='corner-1';
+const ARCADE_BUILD='zelda-room-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -4662,7 +4760,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveZeldaCabinetCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before

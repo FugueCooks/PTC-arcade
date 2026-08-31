@@ -433,20 +433,20 @@
     "name": "The Legend of Zelda: Ocarina of Time",
     "sceneKey": "THE LEGEND OF ZELDA: OCARINA OF TIME",
     "cabinetType": "n64-upright",
-    "zoneId": "main-floor-east",
+    "zoneId": "zelda-temple",
     "gameId": "zelda-ocarina-of-time",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
-      "y": 1.65,
-      "z": -3.45
+      "x": -96.037024,
+      "y": 0.993,
+      "z": 50.461511
     },
     "playerPosition": {
-      "x": 9.15,
-      "y": 1.65,
-      "z": -3.45
+      "x": -96.070293,
+      "y": 0.993,
+      "z": 50.113096
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": -3.046393,
     "defaultGameId": "zelda-ocarina-of-time"
   },
   {
@@ -495,20 +495,20 @@
     "name": "The Legend of Zelda: The Wind Waker",
     "sceneKey": "THE LEGEND OF ZELDA: THE WIND WAKER",
     "cabinetType": "gamecube-kiosk",
-    "zoneId": "gamecube-room",
+    "zoneId": "zelda-temple",
     "gameId": "wind-waker",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
-      "y": 1.65,
-      "z": 3.45
+      "x": -103.268871,
+      "y": 0.993,
+      "z": 36.433684
     },
     "playerPosition": {
-      "x": 9.15,
-      "y": 1.65,
-      "z": 3.45
+      "x": -103.004359,
+      "y": 0.993,
+      "z": 36.662885
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": 0.856798,
     "defaultGameId": "wind-waker",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -518,20 +518,20 @@
     "name": "The Legend of Zelda: Twilight Princess",
     "sceneKey": "THE LEGEND OF ZELDA: TWILIGHT PRINCESS",
     "cabinetType": "gamecube-kiosk",
-    "zoneId": "gamecube-room",
+    "zoneId": "zelda-temple",
     "gameId": "zelda-twilight-princess",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
-      "y": 1.65,
-      "z": 5.75
+      "x": -96.037024,
+      "y": 0.993,
+      "z": 33.538489
     },
     "playerPosition": {
-      "x": 9.15,
-      "y": 1.65,
-      "z": 5.75
+      "x": -96.070293,
+      "y": 0.993,
+      "z": 33.886904
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": -0.0952,
     "defaultGameId": "zelda-twilight-princess",
     "system": "gamecube",
     "emulatorId": "gecko"
@@ -1227,5 +1227,194 @@
     },
     "playerRotationY": 0,
     "defaultGameId": "pokemon-white-2"
+  },
+  {
+    "id": "zelda-cabinet-08",
+    "name": "The Legend of Zelda",
+    "sceneKey": "THE LEGEND OF ZELDA",
+    "cabinetType": "nes-console",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-legend-of-zelda",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -89.483784,
+      "y": 0.993,
+      "z": 46.25
+    },
+    "playerPosition": {
+      "x": -89.786893,
+      "y": 0.993,
+      "z": 46.075
+    },
+    "playerRotationY": -2.094395,
+    "defaultGameId": "zelda-legend-of-zelda"
+  },
+  {
+    "id": "zelda-cabinet-01",
+    "name": "The Legend of Zelda: Link's Awakening",
+    "sceneKey": "THE LEGEND OF ZELDA: LINK'S AWAKENING",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-links-awakening",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -92.249553,
+      "y": 0.993,
+      "z": 49.150655
+    },
+    "playerPosition": {
+      "x": -92.438777,
+      "y": 0.993,
+      "z": 48.856216
+    },
+    "playerRotationY": -2.570394,
+    "defaultGameId": "zelda-links-awakening"
+  },
+  {
+    "id": "zelda-cabinet-09",
+    "name": "The Legend of Zelda: Majora's Mask",
+    "sceneKey": "THE LEGEND OF ZELDA: MAJORA'S MASK",
+    "cabinetType": "n64-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-majoras-mask",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -100.004131,
+      "y": 0.993,
+      "z": 49.891127
+    },
+    "playerPosition": {
+      "x": -99.874049,
+      "y": 0.993,
+      "z": 49.566199
+    },
+    "playerRotationY": 2.760794,
+    "defaultGameId": "zelda-majoras-mask"
+  },
+  {
+    "id": "zelda-cabinet-02",
+    "name": "The Legend of Zelda: Oracle of Ages",
+    "sceneKey": "THE LEGEND OF ZELDA: ORACLE OF AGES",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-oracle-of-ages",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -103.268871,
+      "y": 0.993,
+      "z": 47.566316
+    },
+    "playerPosition": {
+      "x": -103.004359,
+      "y": 0.993,
+      "z": 47.337115
+    },
+    "playerRotationY": 2.284795,
+    "defaultGameId": "zelda-oracle-of-ages"
+  },
+  {
+    "id": "zelda-cabinet-03",
+    "name": "The Legend of Zelda: Oracle of Seasons",
+    "sceneKey": "THE LEGEND OF ZELDA: ORACLE OF SEASONS",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-oracle-of-seasons",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -105.105398,
+      "y": 0.993,
+      "z": 44.003951
+    },
+    "playerPosition": {
+      "x": -104.765264,
+      "y": 0.993,
+      "z": 43.921435
+    },
+    "playerRotationY": 1.808796,
+    "defaultGameId": "zelda-oracle-of-seasons"
+  },
+  {
+    "id": "zelda-cabinet-04",
+    "name": "The Legend of Zelda: A Link to the Past & Four Swords",
+    "sceneKey": "THE LEGEND OF ZELDA: A LINK TO THE PAST & FOUR SWORDS",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-link-to-the-past-four-swords",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -105.105398,
+      "y": 0.993,
+      "z": 39.996049
+    },
+    "playerPosition": {
+      "x": -104.765264,
+      "y": 0.993,
+      "z": 40.078565
+    },
+    "playerRotationY": 1.332797,
+    "defaultGameId": "zelda-link-to-the-past-four-swords"
+  },
+  {
+    "id": "zelda-cabinet-05",
+    "name": "The Legend of Zelda: The Minish Cap",
+    "sceneKey": "THE LEGEND OF ZELDA: THE MINISH CAP",
+    "cabinetType": "gameboy-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-minish-cap",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -100.004131,
+      "y": 0.993,
+      "z": 34.108873
+    },
+    "playerPosition": {
+      "x": -99.874049,
+      "y": 0.993,
+      "z": 34.433801
+    },
+    "playerRotationY": 0.380799,
+    "defaultGameId": "zelda-minish-cap"
+  },
+  {
+    "id": "zelda-cabinet-06",
+    "name": "The Legend of Zelda: Phantom Hourglass",
+    "sceneKey": "THE LEGEND OF ZELDA: PHANTOM HOURGLASS",
+    "cabinetType": "nds-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-phantom-hourglass",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -92.249553,
+      "y": 0.993,
+      "z": 34.849345
+    },
+    "playerPosition": {
+      "x": -92.438777,
+      "y": 0.993,
+      "z": 35.143784
+    },
+    "playerRotationY": -0.571199,
+    "defaultGameId": "zelda-phantom-hourglass"
+  },
+  {
+    "id": "zelda-cabinet-07",
+    "name": "The Legend of Zelda: Spirit Tracks",
+    "sceneKey": "THE LEGEND OF ZELDA: SPIRIT TRACKS",
+    "cabinetType": "nds-upright",
+    "zoneId": "zelda-temple",
+    "gameId": "zelda-spirit-tracks",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -89.483784,
+      "y": 0.993,
+      "z": 37.75
+    },
+    "playerPosition": {
+      "x": -89.786893,
+      "y": 0.993,
+      "z": 37.925
+    },
+    "playerRotationY": -1.047198,
+    "defaultGameId": "zelda-spirit-tracks"
   }
 ]

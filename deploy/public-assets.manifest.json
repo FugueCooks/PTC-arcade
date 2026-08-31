@@ -292,5 +292,59 @@
     "file": "pokemon-white-2.zip",
     "bytes": 153749213,
     "sha256": "01b0e1376bc0afb20bfe4ffffcd4e1edefc9b7a8df4b8504a69be74c260b8ac9"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-legend-of-zelda.zip",
+    "bytes": 64126,
+    "sha256": "7985e7e09e07bad15e954238747b8a5478b1dbbb308f2500cd26ec892e6df435"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-links-awakening.zip",
+    "bytes": 287088,
+    "sha256": "fa6eb851c1c257e544865efed7511a63d90a58db3d12647dd034b7bddd3992c9"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-oracle-of-ages.zip",
+    "bytes": 679263,
+    "sha256": "a2cc523ff962730b550c079ad07a738dce01ce2c6bdd936d8009d2ace2ea609f"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-oracle-of-seasons.zip",
+    "bytes": 657460,
+    "sha256": "6e826e4cad0c187f71c5ccbbd55154ea41999d351ff127c719fb0882048d4f96"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-link-to-the-past-four-swords.zip",
+    "bytes": 3335605,
+    "sha256": "1d1a9cb056758a1b34c0c4a6931a9bea16c359ba6f6c6acabbe39df7c5f987fe"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-minish-cap.zip",
+    "bytes": 7253613,
+    "sha256": "94b69fb798bb0daf57ee1d95ff6ba3b8bad7a260b6a3fbdc3540ee62cb78fa02"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-phantom-hourglass.zip",
+    "bytes": 46976450,
+    "sha256": "4aa0439c5553c57045c874fbfe9d6e2adcecc2b02b59f0680bff32decd9cfc5e"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-spirit-tracks.zip",
+    "bytes": 68008257,
+    "sha256": "89561019a7f4aa5e00c41fcdacee96780fdca43385decf660f0798da953e37eb"
+  },
+  {
+    "kind": "game",
+    "file": "zelda-majoras-mask.zip",
+    "bytes": 27148761,
+    "sha256": "3252df2be001fd6e83d5dc0db1e929a3d767c7118972c856d8a9ba68f88f57c3"
   }
 ]

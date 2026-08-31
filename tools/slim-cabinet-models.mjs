@@ -60,6 +60,14 @@ for (const [inName, outName] of JOBS) {
     for (const slot of ['NormalTexture', 'OcclusionTexture', 'MetallicRoughnessTexture']) {
       if (material[`get${slot}`]()) { material[`set${slot}`](null); dropped++ }
     }
+    // glTF's default metallicFactor is 1.0, and a model that carries a
+    // metallicRoughness texture is usually relying on it to bring that down to
+    // zero across most of the mesh. Drop the texture and leave the factor and
+    // the whole thing renders fully metallic — which, with no environment map
+    // in the scene to reflect, is solid black. This is what turned the Game Boy
+    // and NES cabinets into black slabs on the temple floor the first time.
+    material.setMetallicFactor(0);
+    material.setRoughnessFactor(0.85);
   }
 
   await doc.transform(

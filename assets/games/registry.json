@@ -1363,6 +1363,213 @@
           "label": null
         }
       ]
+    },
+    {
+      "id": "zelda-legend-of-zelda",
+      "cabinetId": "zelda-cabinet-08",
+      "name": "The Legend of Zelda",
+      "system": "nes",
+      "file": "zelda-legend-of-zelda.zip",
+      "emulatorId": 10001,
+      "sizeBytes": 64126,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-legend-of-zelda.zip",
+          "sizeBytes": 64126,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-links-awakening",
+      "cabinetId": "zelda-cabinet-01",
+      "name": "The Legend of Zelda: Link's Awakening",
+      "system": "gb",
+      "file": "zelda-links-awakening.zip",
+      "emulatorId": 40022,
+      "sizeBytes": 287088,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-links-awakening.zip",
+          "sizeBytes": 287088,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-oracle-of-ages",
+      "cabinetId": "zelda-cabinet-02",
+      "name": "The Legend of Zelda: Oracle of Ages",
+      "system": "gbc",
+      "file": "zelda-oracle-of-ages.zip",
+      "emulatorId": 40023,
+      "sizeBytes": 679263,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-oracle-of-ages.zip",
+          "sizeBytes": 679263,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-oracle-of-seasons",
+      "cabinetId": "zelda-cabinet-03",
+      "name": "The Legend of Zelda: Oracle of Seasons",
+      "system": "gbc",
+      "file": "zelda-oracle-of-seasons.zip",
+      "emulatorId": 40024,
+      "sizeBytes": 657460,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-oracle-of-seasons.zip",
+          "sizeBytes": 657460,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-link-to-the-past-four-swords",
+      "cabinetId": "zelda-cabinet-04",
+      "name": "The Legend of Zelda: A Link to the Past & Four Swords",
+      "system": "gba",
+      "file": "zelda-link-to-the-past-four-swords.zip",
+      "emulatorId": 40025,
+      "sizeBytes": 3335605,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-link-to-the-past-four-swords.zip",
+          "sizeBytes": 3335605,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-minish-cap",
+      "cabinetId": "zelda-cabinet-05",
+      "name": "The Legend of Zelda: The Minish Cap",
+      "system": "gba",
+      "file": "zelda-minish-cap.zip",
+      "emulatorId": 40026,
+      "sizeBytes": 7253613,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "gb-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-minish-cap.zip",
+          "sizeBytes": 7253613,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-phantom-hourglass",
+      "cabinetId": "zelda-cabinet-06",
+      "name": "The Legend of Zelda: Phantom Hourglass",
+      "system": "nds",
+      "file": "zelda-phantom-hourglass.zip",
+      "emulatorId": 40027,
+      "sizeBytes": 46976450,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-phantom-hourglass.zip",
+          "sizeBytes": 46976450,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-spirit-tracks",
+      "cabinetId": "zelda-cabinet-07",
+      "name": "The Legend of Zelda: Spirit Tracks",
+      "system": "nds",
+      "file": "zelda-spirit-tracks.zip",
+      "emulatorId": 40028,
+      "sizeBytes": 68008257,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nds-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-spirit-tracks.zip",
+          "sizeBytes": 68008257,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "zelda-majoras-mask",
+      "cabinetId": "zelda-cabinet-09",
+      "name": "The Legend of Zelda: Majora's Mask",
+      "system": "n64",
+      "file": "zelda-majoras-mask.zip",
+      "emulatorId": 6406,
+      "sizeBytes": 27148761,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "zelda-majoras-mask.zip",
+          "sizeBytes": 27148761,
+          "required": true,
+          "label": null
+        }
+      ]
     }
   ]
 }
