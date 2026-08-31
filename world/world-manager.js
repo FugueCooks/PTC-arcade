@@ -1,4 +1,4 @@
-import { EnvironmentManager } from './environment-manager.js?v=mario-castle-10';
+import { EnvironmentManager } from './environment-manager.js?v=mario-castle-11';
 import { LightingManager } from './lighting-manager.js';
 import { ObjectInteractionManager } from './object-interaction-manager.js';
 import { ParticleManager } from './particle-manager.js';
@@ -20,7 +20,7 @@ export class WorldManager {
     window.addEventListener('arcade:emulator-mode-changed', this.onEmulatorModeChanged);
     this.frame = (now) => this.update(now); requestAnimationFrame(this.frame);
   }
-  apply(state) { if (this.state && state.revision < this.state.revision) return; this.state = state; this.environment.apply(state); this.lighting.apply(state); const theme = this.config.themes.find((candidate) => candidate.id === state.themeId); document.querySelector('#world-status').textContent = `${theme?.name ?? state.themeId} · ${state.activityLevel}`.toUpperCase(); }
+  apply(state) { if (this.state && state.revision < this.state.revision) return; this.state = state; this.environment.apply(state); this.lighting.apply(state); }
   interact(object) { const messages = { 'prize-counter': 'PRIZE COUNTER // SHOP COMING LATER' }; this.announce({ text: messages[object.type] ?? `${object.name} // READY` }); }
   announce(announcement) { const element = document.querySelector('#world-announcement'); element.textContent = announcement.text; element.classList.add('visible'); clearTimeout(this.announcementTimer); this.announcementTimer = setTimeout(() => element.classList.remove('visible'), 4200); }
   event(event) { this.lighting.event(event); if (event.type === 'power-flicker' && this.state?.weatherId === 'thunder') this.environment.flash(); if (event.type === 'neon-surge') this.particles.burst([0, 2.2, 0], 0xff3cac); if (event.type === 'fireworks') this.particles.burst([12.8, 3, 0], 0xffd34a); }
