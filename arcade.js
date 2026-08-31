@@ -1892,11 +1892,17 @@ const CASTLE_STEP=1.4,CASTLE_FALL=6.8,CASTLE_CENTRE_X=-75.4,CASTLE_CENTRE_Z=-25.
 // The walled approach between the archway and the arcade wall, on the arch's
 // own z lines so the arch closes its west end.
 const CASTLE_APPROACH_Z=-25.2,CASTLE_APPROACH_HALF=5.4,CASTLE_APPROACH_WEST=-57.4;
-// The pipe stands upright in its own file: x and z are the circular section,
-// 7.224 across, and y is the axis, 5.584 long, with the origin at the base and
-// the rim at the far end. Section scaled to 10.5 to fill the corridor, length to
-// 14.2 to run it end to end.
-const CASTLE_PIPE_BORE=1.45,CASTLE_PIPE_LENGTH=2.54;
+// The pipe IS the Mario room: you step out of the hall straight into it and it
+// carries you the room's whole 21.6m depth to the castle wall. Its own file
+// stands it upright — x and z are the circular section, 7.224 across, y is the
+// axis, 5.584 long, origin at the base and rim at the far end.
+//
+// The section is capped by the room, not by taste. That ceiling is a flat 5.08,
+// so the widest pipe that fits is about five metres across, which leaves a bore
+// of 3.24. Dropped so the bore's floor sits at the room's own, the crown lands
+// at 4.12 and clears the ceiling with a metre to spare.
+const CASTLE_PIPE_BORE=.69,CASTLE_PIPE_LENGTH=3.87;
+const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=1.62;
 function installPeachsCastle(){
   if(castleStarted)return;
   castleStarted=true;
@@ -1992,7 +1998,7 @@ function installPeachsCastle(){
         // origin is the base, so it is planted at the archway end and runs east
         // to meet the wall.
         pipeMount.rotation.z=-Math.PI/2;
-        pipeMount.position.set(CASTLE_APPROACH_WEST-CASTLE_CENTRE_X,2.2+.86,CASTLE_APPROACH_Z-CASTLE_CENTRE_Z);
+        pipeMount.position.set(CASTLE_PIPE_WEST-CASTLE_CENTRE_X,CASTLE_PIPE_AXIS_Y+.86,CASTLE_APPROACH_Z-CASTLE_CENTRE_Z);
         mount.add(pipeMount);
         // The bore measures 6.8m clear from end to end, but the pipe's material
         // is one flat unlit green inside and out, so an open tube reads as a
@@ -2003,11 +2009,11 @@ function installPeachsCastle(){
         // radius 3.4, so a panel at 3.3 out from the axis has only +/-0.8 of
         // height before it pushes through the curve — which is why the first
         // pass pinched them into strips. At 2.4 there is +/-2.4 to play with.
-        const bore=2.4,pipeMuralX=(CASTLE_APPROACH_WEST-43.2)/2;
+        const bore=1.15,pipeMuralX=(CASTLE_PIPE_EAST+CASTLE_PIPE_WEST)/2;
         const portal=[
-          ['mario-room-mural.webp?v=mario-1',13,4.4,pipeMuralX,2.2,CASTLE_APPROACH_Z-bore,0,0],
-          ['mario-room-mural-3.webp?v=mario-1',13,4.4,pipeMuralX,2.2,CASTLE_APPROACH_Z+bore,Math.PI,0],
-          ['mario-room-mural-2.webp?v=mario-1',13,4.4,pipeMuralX,2.2+bore,CASTLE_APPROACH_Z,0,Math.PI/2]
+          ['mario-room-mural.webp?v=mario-1',20,2.1,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z-bore,0,0],
+          ['mario-room-mural-3.webp?v=mario-1',20,2.1,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z+bore,Math.PI,0],
+          ['mario-room-mural-2.webp?v=mario-1',20,2.1,pipeMuralX,CASTLE_PIPE_AXIS_Y+bore,CASTLE_APPROACH_Z,0,Math.PI/2]
         ];
         for(const [file,w,h,x,y,z,turnY,turnX] of portal){
           const texture=new THREE.TextureLoader().load('assets/art/'+file);
@@ -2104,7 +2110,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-5',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-room-1',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4440,7 +4446,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-5';
+const ARCADE_BUILD='pipe-room-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
