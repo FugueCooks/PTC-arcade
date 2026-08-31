@@ -205,6 +205,21 @@ ceilingShape.moveTo(-43.2,-58.8);ceilingShape.lineTo(43.2,-58.8);ceilingShape.li
 const silentHillHole=new THREE.Path();
 silentHillHole.moveTo(-43.2,-58.8);silentHillHole.lineTo(-21.6,-58.8);silentHillHole.lineTo(-21.6,-33.6);silentHillHole.lineTo(-43.2,-33.6);silentHillHole.closePath();
 ceilingShape.holes.push(silentHillHole);
+// The fourth is the warp pipe's. The Mario room is one tube from wall to wall
+// and the tube is bigger than the room: the crown reaches 5.87 against a
+// ceiling at 5.08, so a lid here sliced the top off the pipe and hung a flat
+// black chord across the bore for anyone standing inside it. The slot is cut to
+// the lip's nine metres, the same width the partition wall leaves for the
+// mouth, so the tube rises through it along its whole length.
+const warpPipeHole=new THREE.Path();
+warpPipeHole.moveTo(-43.2,-21.3);warpPipeHole.lineTo(-21.6,-21.3);warpPipeHole.lineTo(-21.6,-12.3);warpPipeHole.lineTo(-43.2,-12.3);warpPipeHole.closePath();
+ceilingShape.holes.push(warpPipeHole);
+// The volume the tube occupies, in world coordinates. The building lays its
+// ceiling out room by room without knowing one of the rooms is a warp pipe, so
+// anything it would hang in here has to be held back: inside the bore there is
+// no ceiling to hang from, and the fitting draws as junk floating in the
+// tunnel. Matches the slot cut above.
+const insideWarpPipeSlot=(x,z)=>x>-43.2&&x<-21.6&&z>-29.7&&z<-20.7;
 // The temple stands outside the building now, off the south-west corner, so
 // the roof needs no hole for it.
 const ceiling=new THREE.Mesh(new THREE.ShapeGeometry(ceilingShape),new THREE.MeshStandardMaterial({color:0x0c0a15,roughness:.95,metalness:.06,side:THREE.DoubleSide}));
@@ -230,6 +245,11 @@ const coolHaloMaterial=new THREE.MeshBasicMaterial({map:haloTexture,color:0xff4f
 // the layout while removing hundreds of draw calls.
 const ceilingFixturePositions={housing:[],warmPanel:[],coolPanel:[],warmHalo:[],coolHalo:[]};
 function queueCeilingFixture(x,z,cool=false){
+  // Nothing hangs inside the warp pipe. The Mario room's rig is laid on the
+  // room, but the room is a tube now, and its middle row of troffers came out
+  // in mid-air halfway down the bore -- lit fittings floating in a pipe, hung
+  // from a ceiling that is no longer above them.
+  if(insideWarpPipeSlot(x,z))return;
   ceilingFixturePositions.housing.push([x,z]);
   ceilingFixturePositions[cool?'coolPanel':'warmPanel'].push([x,z]);
   ceilingFixturePositions[cool?'coolHalo':'warmHalo'].push([x,z]);
@@ -1871,7 +1891,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=pipe-model-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=pipe-solid-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1911,10 +1931,18 @@ const CASTLE_PIPE_BORE=1.246,CASTLE_PIPE_LENGTH=3.87;
 // tube's lowest point sat at y 0.000 while the room's floor sits at 0.002 —
 // and the floor came through the green in a hairline down the whole length.
 // Five centimetres of lift clears it and is nothing to step over.
-const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=2.97;
-// The pipe's mouth is the doorway now: nine metres of it, not the 3.2m opening
-// the other rooms get. Held here because all three authorities have to agree.
-const CASTLE_PIPE_MOUTH_HALF=4.5;
+const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=2.97,CASTLE_PIPE_BORE_RADIUS=2.9;
+// How far off the centre line a player may walk. The pipe is round and the
+// room's floor is flat, so the tube gives nothing to stop a walker at: its
+// inner surface leaves the floor gradually, and two metres out it is already
+// climbing through their shins. 2.2 is where that wall stands waist high, and
+// it is also where the archway at the far end already puts its jambs, so the
+// channel is the same width at both ends of the run.
+//
+// The mouth is nine metres wide but only this much of it is a way through: the
+// ring between the bore and the lip is the pipe's own wall seen end on. Held
+// here because all three authorities have to agree.
+const CASTLE_PIPE_CHANNEL_HALF=2.2;
 const CASTLE_PIPE_SHADE=.74;
 function installPeachsCastle(){
   if(castleStarted)return;
@@ -1992,7 +2020,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pipe-model-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pipe-solid-2',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -2067,7 +2095,7 @@ function installPeachsCastle(){
         // through a band floating above it. The crown ends up above the hall's
         // ceiling and is simply never seen, which costs nothing now that there is
         // no separate panel up there to lose.
-        const skinRadius=2.9,skinArc=Math.PI*2,skinX=[CASTLE_PIPE_WEST+.6,CASTLE_PIPE_EAST-.6];
+        const skinRadius=CASTLE_PIPE_BORE_RADIUS,skinArc=Math.PI*2,skinX=[CASTLE_PIPE_WEST+.6,CASTLE_PIPE_EAST-.6];
         const axisY=CASTLE_PIPE_AXIS_Y+.86,axisZ=CASTLE_APPROACH_Z-CASTLE_CENTRE_Z;
         const curvedSkin=(centre,fromX,toX)=>{
           const arcSegments=64,positions=[],uvs=[],indices=[];
@@ -2752,8 +2780,11 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   const columnFloor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SPAN,floorDepth),worldAlignedFloorMaterial(ROOM_SPAN,floorDepth,roomX,floorCentre,EXPANSION_FLOOR_STYLE));
   columnFloor.rotation.x=-Math.PI/2;columnFloor.position.set(roomX,.002,floorCentre);columnFloor.receiveShadow=true;scene.add(columnFloor);
   // The west plate stops at the Temple of Time's room: its dome rises
-  // through the hole cut for it in the main ceiling.
-  if(west)box(ROOM_SPAN,.12,50.4,0x090b18,roomX,5.08,-8.4,.08);
+  // through the hole cut for it in the main ceiling. It breaks a second time
+  // over the Mario room, on the same nine metre slot, because this plate hangs
+  // six centimetres below the main ceiling and would have cropped the pipe on
+  // its own.
+  if(west){box(ROOM_SPAN,.12,3.9,0x090b18,roomX,5.08,-31.65,.08);box(ROOM_SPAN,.12,37.5,0x090b18,roomX,5.08,-1.95,.08);}
   // The east column's plate stops at the garden's new room: its sky dome
   // rises through the hole cut for it. The old garden room is the Pokemon
   // Center's plaza now, covered by the main ceiling like any other room.
@@ -2773,7 +2804,13 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
     // Temple of Time's forecourt is open sky: no troffers there either.
     if(!west&&index===2)return;
     const at=west?centerZ:EAST_ROOM_Z[index];
-    for(let z=at-6;z<=at+6;z+=4)box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
+    // Four cyan strips per room at 4.65. In the Mario room the middle two land
+    // at z -27.2 and -23.2, which is inside the bore: they drew as a pair of lit
+    // wires strung across the tunnel a metre and a half over your head.
+    for(let z=at-6;z<=at+6;z+=4){
+      if(insideWarpPipeSlot(roomX,z))continue;
+      box(ROOM_SPAN-.5,.035,.055,0x4e7ea8,roomX,4.65,z,.8);
+    }
     lightRoom(roomX,at,ROOM_SPAN,ROOM_DEPTH,SIDE_ROOM_ACCENTS[index]);
   });
 }
@@ -4324,9 +4361,9 @@ function resolvePartitionWallCollisions(previousX,previousZ){
     const crossingZ=crossedWall?previousZ+(playerPosition.z-previousZ)*crossing:playerPosition.z;
     const doors=wallX<0?OPEN_DOOR_Z_WEST:OPEN_DOOR_Z_EAST;
     if(doors.some(doorZ=>Math.abs(crossingZ-doorZ)<ROOM_DOOR_HALF_WIDTH-PLAYER_COLLISION_RADIUS))continue;
-    // The pipe's mouth is wider than any door in the building. Leaving it at the
-    // door width would put an invisible wall across the visible opening.
-    if(wallX===PLAYSTATION_WALL_X&&Math.abs(crossingZ-CASTLE_APPROACH_Z)<CASTLE_PIPE_MOUTH_HALF-PLAYER_COLLISION_RADIUS)continue;
+    // The pipe's mouth is wider than any door in the building, but only its
+    // bore is open: stepping in anywhere else is stepping into the lip.
+    if(wallX===PLAYSTATION_WALL_X&&Math.abs(crossingZ-CASTLE_APPROACH_Z)<CASTLE_PIPE_CHANNEL_HALF-PLAYER_COLLISION_RADIUS)continue;
     // The Pokemon Center's storefront: the east wall is open from the old
     // plaza door to the column's end.
     if(wallX===N64_WALL_X&&crossingZ>-33.7&&crossingZ<-12.1)continue;
@@ -4344,6 +4381,26 @@ function resolvePartitionWallCollisions(previousX,previousZ){
  * two lines its room sits between.
  */
 const SIDE_ROOM_DIVIDER_Z=[SIDE_COLUMN_MIN_Z,-ROOM_DEPTH,0,ROOM_DEPTH,SIDE_COLUMN_MAX_Z];
+/**
+ * The warp pipe is solid.
+ *
+ * The Mario room is one tube from wall to wall, so the room's floor either side
+ * of the bore is not a place to be: a player out there stands inside the pipe's
+ * wall, walking through green. The mouth funnels into the channel and the
+ * archway at the far end is cut to the same width, so there is nowhere in this
+ * room a walker can legitimately be that is outside the pipe.
+ *
+ * Clamped rather than refused, so running at the wall slides along it the way
+ * the partition walls do instead of stopping dead.
+ */
+function resolveWarpPipeCollisions(){
+  if(playerPosition.x<CASTLE_PIPE_WEST||playerPosition.x>CASTLE_PIPE_EAST)return;
+  const offset=playerPosition.z-CASTLE_APPROACH_Z;
+  if(Math.abs(offset)>ROOM_DEPTH/2)return;
+  const limit=CASTLE_PIPE_CHANNEL_HALF-PLAYER_COLLISION_RADIUS;
+  if(Math.abs(offset)<=limit)return;
+  playerPosition.z=CASTLE_APPROACH_Z+Math.sign(offset)*limit;
+}
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
   // The dividers live between the partition and the shell and nowhere else:
@@ -4535,7 +4592,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='galaxy-3';
+const ARCADE_BUILD='pipe-solid-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -4571,7 +4628,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions();resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before

@@ -699,15 +699,21 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
     // plaza door to the column's end. Matches arcade.js.
     const throughDoor = (z: number) => doors.some((doorZ) => Math.abs(z - doorZ) < ROOM_DOOR_CLEARANCE)
       || (wallX > 0 && z > -33.7 && z < -12.1)
-      // The warp pipe's mouth: nine metres on z -25.2, wider than any door in
-      // the building. Matches CASTLE_PIPE_MOUTH_HALF in arcade.js.
-      || (wallX < 0 && Math.abs(z + 25.2) < 4.5);
+      // The warp pipe's bore on z -25.2: wider than any door in the building,
+      // but narrower than the nine metre opening around it, because the ring
+      // between the bore and the lip is the pipe's wall seen end on.
+      // Matches CASTLE_PIPE_CHANNEL_HALF in arcade.js.
+      || (wallX < 0 && Math.abs(z + 25.2) < 2.2);
     if (!throughDoor(toZ) && Math.abs(toX - wallX) < PARTITION_COLLISION_HALF_WIDTH) return true;
     if ((fromX - wallX) * (toX - wallX) > 0 || fromX === toX) continue;
     const crossing = (wallX - fromX) / (toX - fromX);
     const crossingZ = fromZ + (toZ - fromZ) * crossing;
     if (crossing >= 0 && crossing <= 1 && !throughDoor(crossingZ)) return true;
   }
+  // The Mario room is one warp pipe from wall to wall. The room floor either
+  // side of the bore is inside the tube's wall rather than under it, so
+  // nothing may stand there. Matches resolveWarpPipeCollisions in arcade.js.
+  if (toX >= -43.2 && toX <= -21.6 && Math.abs(toZ + 25.2) < 8.4 && Math.abs(toZ + 25.2) > 2.2) return true;
   // The walls between the rooms in a column. None of them has a doorway: every
   // room is entered from the hall.
   const inSideColumn = Math.max(Math.abs(fromX), Math.abs(toX)) > PARTITION_WALL_X + PARTITION_COLLISION_HALF_WIDTH
