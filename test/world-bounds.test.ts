@@ -99,7 +99,9 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
   // they are unreachable on purpose, and the barrier says so.
   // Nothing is barriered any more, so every enabled cabinet has to be
   // standable — there is no longer an exempt room to hide an unreachable one.
-  assert.equal(blockedRooms.length, 0, 'no room is barriered now');
+  // Silent Hill is barriered while its district is rebuilt; its machines are
+  // unreachable on purpose and the exemption below says so.
+  assert.deepEqual(blockedRooms, ['silent'], 'Silent Hill is the one barriered room');
   const registryPath = path.join(root, 'assets/cabinets/registry.json');
   return readFile(registryPath, 'utf8').then((raw) => {
     const parsed = JSON.parse(raw);
@@ -143,7 +145,12 @@ void test('the sealed rooms are closed in the scene and in what it enforces', ()
   // Nothing is sealed at all now. Every doorway in both partition walls is
   // open, and the top row is reached through its own front wall rather than
   // being held out by the world bound, so that wall has to be enforced now.
-  assert.equal((client.match(/sealDoorway\('/g) ?? []).length, 0, 'no room in the building is sealed any more');
+  // Silent Hill is sealed again — barrier in the scene AND the rule behind
+  // it: the south-wall clamp lost its doorway exception, so neither tells the
+  // player the opposite of what the other enforces.
+  assert.equal((client.match(/sealDoorway\('/g) ?? []).length, 1, 'Silent Hill is the only sealed room');
+  assert.ok(client.includes("sealDoorway('Silent Hill'"), 'the barrier names the room');
+  assert.ok(!/SILENT_DOOR_X\)>=1\.72/.test(client), 'the wall clamp no longer excuses the old doorway');
   assert.ok(/const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8,25\.2\]/.test(client),
     'the doorways that are open must be stated once');
   assert.ok(client.includes('resolveTopRowCollisions'), 'the top row needs real walls now that it is open');

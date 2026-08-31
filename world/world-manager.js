@@ -1,4 +1,4 @@
-import { EnvironmentManager } from './environment-manager.js?v=sh-block-1';
+import { EnvironmentManager } from './environment-manager.js?v=sh-seal-1';
 import { LightingManager } from './lighting-manager.js';
 import { ObjectInteractionManager } from './object-interaction-manager.js';
 import { ParticleManager } from './particle-manager.js';

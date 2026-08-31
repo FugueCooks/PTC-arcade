@@ -18,7 +18,10 @@ void test('no room in the building is sealed; every one of them is open', async 
   // The builder stays, because a room may need sealing again while it is being
   // re-themed. What must not come back quietly is a call to it.
   assert.match(arcade, /function sealDoorway\(roomName,x,z,facing\)/);
-  assert.equal((arcade.match(/sealDoorway\('/g) ?? []).length, 0, 'no room in the building is sealed');
+  // Silent Hill is the one exception again: its district is being rebuilt,
+  // so its doorway carries tape and the wall behind the tape is solid.
+  assert.equal((arcade.match(/sealDoorway\('/g) ?? []).length, 1, 'Silent Hill is the only sealed room');
+  assert.ok(arcade.includes("sealDoorway('Silent Hill'"), 'the sealed room is Silent Hill');
   // The console games are all out in the foyer while the rooms are re-themed,
   // so their layouts are slots in the two hall rows rather than wall positions.
   assert.match(arcade, /const ps2CabinetLayout=Array\.from\(\{length:5\}/);

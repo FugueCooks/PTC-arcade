@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=sh-block-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=sh-seal-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .016);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 180);
 camera.position.set(0, 1.65, 11);
@@ -622,7 +622,11 @@ function sealDoorway(roomName,x,z,facing){
 // the top row — are sealed by WORLD_BOUNDS as well; the barrier is what tells
 // the player why they stop.
 // The tournament hall is open: it is the south approach now, and the Temple
-// of Time stands off its west end. Nothing is sealed in the building any more.
+// of Time stands off its west end.
+// Silent Hill is sealed while the district is rebuilt: its doorway is solid
+// in all three authorities, and this barrier is what tells the player why
+// they stop in front of it.
+sealDoorway('Silent Hill',SILENT_DOOR_X,SILENT_SOUTH_Z+.55,0);
 // Opaque wall lining for the expansion hallway. The original structural walls
 // were so dark that they read as empty space; these inset panels make both
 // sides visibly solid while keeping the openings around the partition ends.
@@ -1146,13 +1150,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=sh-block-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=sh-seal-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=sh-block-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+    {file:'ff-room-mural-2.webp?v=sh-seal-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=sh-block-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+    {file:'ff-room-mural-3.webp?v=sh-seal-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -2092,7 +2096,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=sh-block-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=sh-seal-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2228,7 +2232,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=sh-block-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=sh-seal-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3750,11 +3754,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=sh-block-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=sh-block-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=sh-block-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=sh-block-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=sh-block-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=sh-seal-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=sh-seal-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=sh-seal-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=sh-seal-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=sh-seal-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3807,13 +3811,13 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=sh-block-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=sh-block-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=sh-block-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=sh-seal-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=sh-seal-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=sh-seal-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=sh-block-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=sh-block-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=sh-block-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=sh-seal-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=sh-seal-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=sh-seal-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -3891,9 +3895,9 @@ for(const [cabinetId,gameId,rowZ,hue,system] of METROID_ROW){
  * runs Dreamcast, and a labelled machine that says so beats an empty lawn.
  */
 const SEGA_MACHINE_MODELS={
-  genesis:{file:'assets/models/sega/sega-genesis.glb?v=sh-block-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=sh-block-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=sh-block-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
+  genesis:{file:'assets/models/sega/sega-genesis.glb?v=sh-seal-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=sh-seal-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=sh-seal-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
 };
 const SONIC_GARDEN_ROW=[
   ['sonic-cabinet-01','genesis',    50,'sonic-the-hedgehog',0x4aa8ff],
@@ -4015,7 +4019,8 @@ for(const doorZ of OPEN_DOOR_Z_WEST)if(doorZ!==CASTLE_APPROACH_Z)lightThreshold(
 // storefront run, which is a missing stretch of wall rather than a door.
 for(const doorX of NORTH_ROOM_X)lightThreshold(doorX,TOP_BAND_MIN_Z,true);
 lightThreshold(POKEMON_DOOR_X,POKEMON_SOUTH_Z,true);
-lightThreshold(SILENT_DOOR_X,SILENT_SOUTH_Z,true);
+// Silent Hill's threshold glow came down with the seal: a doorway under
+// construction tape does not also get a lit welcome mat.
 lightThreshold(0,TOURNAMENT_MIN_Z,true);
 // The hub reads as a very large dark floor with nothing above eye level, so the
 // lounge gets a centrepiece: counter-rotating light rings inside a soft beam
@@ -4630,7 +4635,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=sh-block-1')
+  import('./emulators/disc-range-cache.js?v=sh-seal-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -4650,7 +4655,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=sh-block-1')
+  import('./emulators/disc-range-cache.js?v=sh-seal-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -5189,8 +5194,9 @@ function resolveTopRowCollisions(previousX,previousZ){
   if(playerPosition.x<SILENT_EAST_X&&playerPosition.x>SILENT_WEST_X){
     // Silent Hill's south wall, with the entrance at its centre.
     const northFace=SILENT_SOUTH_Z-wallGap,southFace=SILENT_SOUTH_Z+wallGap;
-    if(playerPosition.z>northFace&&playerPosition.z<southFace
-      &&Math.abs(playerPosition.x-SILENT_DOOR_X)>=1.72-PLAYER_COLLISION_RADIUS){
+    // The doorway is sealed while the district is rebuilt: the wall is solid
+    // across where the entrance was, and the barrier out front says why.
+    if(playerPosition.z>northFace&&playerPosition.z<southFace){
       if(previousZ<SILENT_SOUTH_Z)playerPosition.z=northFace;else playerPosition.z=southFace;
       return;
     }
@@ -5225,7 +5231,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='sh-block-1';
+const ARCADE_BUILD='sh-seal-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';

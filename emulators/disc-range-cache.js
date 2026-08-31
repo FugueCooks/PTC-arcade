@@ -87,7 +87,7 @@ function cacheWorkerChannel() {
     // Node (the tests) and old browsers take the in-page store below.
     if (typeof Worker !== 'function' || typeof document === 'undefined') return null;
     try {
-      const worker = new Worker(new URL('./disc-cache-worker.js?v=sh-block-1', import.meta.url), { type: 'module' });
+      const worker = new Worker(new URL('./disc-cache-worker.js?v=sh-seal-1', import.meta.url), { type: 'module' });
       const pending = new Map();
       let nextId = 1;
       worker.onmessage = ({ data }) => {
