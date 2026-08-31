@@ -1868,7 +1868,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=reveal-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=pipe-model-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1892,6 +1892,11 @@ const CASTLE_STEP=1.4,CASTLE_FALL=6.8,CASTLE_CENTRE_X=-75.4,CASTLE_CENTRE_Z=-25.
 // The walled approach between the archway and the arcade wall, on the arch's
 // own z lines so the arch closes its west end.
 const CASTLE_APPROACH_Z=-25.2,CASTLE_APPROACH_HALF=5.4,CASTLE_APPROACH_WEST=-57.4;
+// The pipe stands upright in its own file: x and z are the circular section,
+// 7.224 across, and y is the axis, 5.584 long, with the origin at the base and
+// the rim at the far end. Section scaled to 10.5 to fill the corridor, length to
+// 14.2 to run it end to end.
+const CASTLE_PIPE_BORE=1.45,CASTLE_PIPE_LENGTH=2.54;
 function installPeachsCastle(){
   if(castleStarted)return;
   castleStarted=true;
@@ -1962,6 +1967,59 @@ function installPeachsCastle(){
           mount.add(piece);
         }
       }
+      // The approach reads as a warp pipe rather than a brick box. The bake's
+      // axis runs along world z once its Z-up root is applied, so a quarter
+      // turn lays it down the corridor with its mouth facing east — the way a
+      // player arrives. It is scaled wide enough to fill the corridor's section
+      // so the masonry behind it barely shows, and long enough to run the whole
+      // 14.2m from the arcade wall to the archway.
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pipe-model-1',pipeGltf=>{
+        const pipe=pipeGltf.scene;
+        pipe.traverse(node=>{
+          if(!node.isMesh)return;
+          node.castShadow=false;node.receiveShadow=false;
+          const materials=Array.isArray(node.material)?node.material:[node.material];
+          const swapped=materials.map(material=>new THREE.MeshBasicMaterial({
+            map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),
+            side:THREE.DoubleSide,toneMapped:false}));
+          node.material=Array.isArray(node.material)?swapped:swapped[0];
+        });
+        pipe.scale.set(CASTLE_PIPE_BORE,CASTLE_PIPE_LENGTH,CASTLE_PIPE_BORE);
+        const pipeMount=new THREE.Group();
+        pipeMount.add(pipe);
+        // A quarter turn about Z lays the pipe down and puts its rim — the mouth —
+        // at the +x end, facing a player walking west out of the arcade. The
+        // origin is the base, so it is planted at the archway end and runs east
+        // to meet the wall.
+        pipeMount.rotation.z=-Math.PI/2;
+        pipeMount.position.set(CASTLE_APPROACH_WEST-CASTLE_CENTRE_X,2.2+.86,CASTLE_APPROACH_Z-CASTLE_CENTRE_Z);
+        mount.add(pipeMount);
+        // The bore measures 6.8m clear from end to end, but the pipe's material
+        // is one flat unlit green inside and out, so an open tube reads as a
+        // solid wall — there is no shading to tell you it is hollow. The murals
+        // go in here and do that job: three walls of Mario running the length of
+        // the tube, so walking in is a portal rather than a green rectangle.
+        // Set in to 2.4, not hard against the wall. The bore is a cylinder of
+        // radius 3.4, so a panel at 3.3 out from the axis has only +/-0.8 of
+        // height before it pushes through the curve — which is why the first
+        // pass pinched them into strips. At 2.4 there is +/-2.4 to play with.
+        const bore=2.4,pipeMuralX=(CASTLE_APPROACH_WEST-43.2)/2;
+        const portal=[
+          ['mario-room-mural.webp?v=mario-1',13,4.4,pipeMuralX,2.2,CASTLE_APPROACH_Z-bore,0,0],
+          ['mario-room-mural-3.webp?v=mario-1',13,4.4,pipeMuralX,2.2,CASTLE_APPROACH_Z+bore,Math.PI,0],
+          ['mario-room-mural-2.webp?v=mario-1',13,4.4,pipeMuralX,2.2+bore,CASTLE_APPROACH_Z,0,Math.PI/2]
+        ];
+        for(const [file,w,h,x,y,z,turnY,turnX] of portal){
+          const texture=new THREE.TextureLoader().load('assets/art/'+file);
+          texture.colorSpace=THREE.SRGBColorSpace;
+          texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+          const panel=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+            new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,toneMapped:false}));
+          panel.position.set(x-CASTLE_CENTRE_X,y+.86,z-CASTLE_CENTRE_Z);
+          panel.rotation.set(turnX,turnY,0);
+          mount.add(panel);
+        }
+      },undefined,error=>console.warn('The warp pipe could not load.',error)));
       scene.add(mount);
       castleMount=mount;
       // A decal lying exactly on the surface it decorates cannot win a depth
@@ -2046,7 +2104,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-reveal-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-5',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4382,7 +4440,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='reveal-1';
+const ARCADE_BUILD='pipe-5';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
