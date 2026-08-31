@@ -1774,32 +1774,6 @@ function installTempleOfTime(){
         node.material=Array.isArray(node.material)?swapped:swapped[0];
       });
       doomed.forEach(node=>node.removeFromParent());
-      // The great hall's ledge runs the length of the building and then keeps
-      // going five metres past the entrance stairs on both sides, where there
-      // is nothing under it and nothing beyond it. From the steps it reads as a
-      // shelf hanging across the doorway. Only that overhang goes: west of the
-      // stairs the same mesh is the walk up to the sanctum, and the temple has
-      // no collision but its raycast floor, so cutting the wrong part of it
-      // would drop a player through the world.
-      const ledge=temple.getObjectByName('Object_31');
-      if(ledge?.geometry?.attributes?.position){
-        temple.updateMatrixWorld(true);
-        const position=ledge.geometry.attributes.position,index=ledge.geometry.getIndex();
-        const count=index?index.count:position.count;
-        const vertex=new THREE.Vector3(),kept=[];
-        // World space, not local: the temple's placement is baked into the
-        // glb's root node, so local coordinates are turned and scaled 4.5x.
-        const overhang=i=>{
-          vertex.fromBufferAttribute(position,i).applyMatrix4(ledge.matrixWorld);
-          return vertex.x>-52&&(vertex.z<37.2||vertex.z>46.8);
-        };
-        for(let i=0;i<count;i+=3){
-          const a=index?index.getX(i):i,b=index?index.getX(i+1):i+1,c=index?index.getX(i+2):i+2;
-          if(overhang(a)&&overhang(b)&&overhang(c))continue;
-          kept.push(a,b,c);
-        }
-        if(kept.length<count)ledge.geometry.setIndex(kept);
-      }
       const mount=new THREE.Group();
       mount.add(temple);
       // The temple is two buildings — the great hall with its stained glass and
@@ -1871,38 +1845,58 @@ function installTempleOfTime(){
         // wall, and that wall is open on this line, so the sightline runs
         // straight through the building and out the far side to the Chao Garden.
         //
-        // Below the landing line the seal is the landing itself, built solid
-        // this time. The plate it replaces floated: half the sightlines out of
-        // the building went under it rather than over it, and from the hall it
-        // read as a shelf hanging in mid-air. A block from the hall floor up to
-        // the tread does both jobs — it stops the view and it gives the stairs
-        // something to land on. On the mount, because this one IS the floor
-        // outside the door and templeGroundAt has to find it; its top face at
-        // y 0 is exactly where the old plate stood, so the walk out is unchanged.
-        const landing=new THREE.Mesh(new THREE.BoxGeometry(10.1,3.5,10.2),stone);
-        landing.position.set(-46.45,-1.75,42);
-        mount.add(landing);
-        // Above the landing it is a door again rather than a bricked-up hole.
-        // Masonry on the jamb lines the model already has, and a leaf set back
-        // 0.35 into the reveal so the opening keeps its depth. All of it on the
-        // scene, not the mount: this stone is DoubleSide, and anything standing
-        // in the doorway that templeGroundAt can see would be read as floor at
-        // its underside and drop a walker three and a half metres. The temple
-        // has no lateral collision, so the door still passes a player either
-        // way — the same reason its own columns are walk-through.
-        const [leafSouth,leafNorth]=[39.4,44.6];
-        for(const [z,depth] of [[(36.9+leafSouth)/2,leafSouth-36.9],[(leafNorth+47.1)/2,47.1-leafNorth]]){
-          const jamb=new THREE.Mesh(new THREE.BoxGeometry(.5,3.2,depth),stone);
-          jamb.position.set(-46.2,1.6,z);
-          scene.add(jamb);
-        }
-        const leaf=new THREE.Mesh(new THREE.BoxGeometry(.5,3.2,leafNorth-leafSouth),
-          new THREE.MeshBasicMaterial({map:courses,color:new THREE.Color(0x6f675a),side:THREE.DoubleSide}));
-        leaf.position.set(-46.55,1.6,(leafSouth+leafNorth)/2);
-        scene.add(leaf);
+        // The entrance is built after the mount goes in, so it can sample the
+        // wall it is filling rather than guess at it.
       }
       scene.add(mount);
       templeMount=mount;
+      // The entrance patch wears the wall it fills.
+      //
+      // The link block borrows `marble`, the dominant material by vertex count,
+      // and for a flank standing between two buildings that is right. At the
+      // front door it is not: the dominant material is the pale floor stone, and
+      // against the dark banded masonry of the front wall a patch made of it
+      // reads as a bare slab dropped in the opening — which is exactly how it
+      // looked. Sample the wall beside the doorway instead and take whatever is
+      // actually there, so the fill matches its surroundings by construction
+      // rather than by my judgement of them.
+      const wallProbe=new THREE.Raycaster(new THREE.Vector3(-52,2,35),new THREE.Vector3(1,0,0),0,22);
+      const wallSample=wallProbe.intersectObject(mount,true).filter(hit=>hit.face&&hit.object.material?.map)[0];
+      const facing=wallSample?.object.material??marble;
+      if(facing?.map){
+        // One texture tile per four metres, the same density the link block
+        // ends up at, so a three metre landing does not wear a twenty metre
+        // flank's stretch. BoxGeometry maps every face 0..1, so the repeat has
+        // to be set per piece from that piece's own size.
+        const dressed=(width,height)=>{
+          const map=facing.map.clone();map.needsUpdate=true;
+          map.wrapS=map.wrapT=THREE.RepeatWrapping;
+          map.repeat.set(Math.max(1,Math.round(width/4)),Math.max(1,Math.round(height/4)));
+          return new THREE.MeshBasicMaterial({map,color:facing.color?.clone()??new THREE.Color(0xffffff),side:THREE.DoubleSide});
+        };
+        // The landing, solid from the hall floor to the tread. On the mount,
+        // because this one IS the floor outside the door and templeGroundAt has
+        // to find it; its top face at y 0 is where the old floating plate stood,
+        // so the walk out is unchanged.
+        const landing=new THREE.Mesh(new THREE.BoxGeometry(10.1,3.5,10.2),dressed(10.2,3.5));
+        landing.position.set(-46.45,-1.75,42);
+        mount.add(landing);
+        // Jambs on the lines the model already has, and a leaf set back 0.35
+        // into the reveal so the opening keeps its depth. These go on the scene,
+        // not the mount: the stone is DoubleSide, and anything in the doorway
+        // that templeGroundAt can see is read as floor at its underside and
+        // drops a walker three and a half metres.
+        const [leafSouth,leafNorth]=[39.4,44.6];
+        for(const [z,depth] of [[(36.9+leafSouth)/2,leafSouth-36.9],[(leafNorth+47.1)/2,47.1-leafNorth]]){
+          const jamb=new THREE.Mesh(new THREE.BoxGeometry(.5,3.2,depth),dressed(depth,3.2));
+          jamb.position.set(-46.2,1.6,z);
+          scene.add(jamb);
+        }
+        const leaf=new THREE.Mesh(new THREE.BoxGeometry(.5,3.2,leafNorth-leafSouth),dressed(leafNorth-leafSouth,3.2));
+        leaf.material.color.multiplyScalar(.34);
+        leaf.position.set(-46.55,1.6,(leafSouth+leafNorth)/2);
+        scene.add(leaf);
+      }
     },undefined,error=>console.warn('Temple of Time failed to load:',error));
   }catch(error){console.warn('Temple of Time failed to load:',error)}})();
 }
@@ -1986,7 +1980,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=temple-door-3',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=temple-door-4',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2122,7 +2116,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=temple-door-3',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=temple-door-4',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3552,11 +3546,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=temple-door-3',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=temple-door-3',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=temple-door-3',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=temple-door-3',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=temple-door-3',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=temple-door-4',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=temple-door-4',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=temple-door-4',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=temple-door-4',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=temple-door-4',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -4821,7 +4815,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-door-3';
+const ARCADE_BUILD='temple-door-4';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
