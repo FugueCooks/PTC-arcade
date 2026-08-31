@@ -5059,7 +5059,11 @@ function resolveChaoGardenCollisions(previousX,previousZ){
   // on neither goes back where it began.
   // the shell wall has thickness: the arcade floor carries the step across it
   // and the meadow takes over on the far side
-  if(playerPosition.x<43.5)return;
+  // Bounded to the garden's own z-range: the Pokemon stadium bowl also reaches
+  // past x 43.5 at z around -120, and an unbounded guard ran this resolver's
+  // no-ground refusal as an invisible wall across the arena (BLOCK CHAO
+  // @43,-120 on the HUD). Every region resolver is bounded to its region.
+  if(playerPosition.x<43.5||playerPosition.z<CHAO_EXPANSE.minZ-.3||playerPosition.z>CHAO_EXPANSE.maxZ+.3)return;
   const inLane=Math.abs(playerPosition.z-CHAO_GARDEN.doorZ)<CHAO_GARDEN.laneHalfWidth&&playerPosition.x<CHAO_GARDEN.laneEndX;
   if(!chaoGardenMount){
     if(!inLane){playerPosition.x=previousX;playerPosition.z=previousZ}

@@ -94,13 +94,6 @@ const POKEBOWL = { cx: 27, cz: -108.45, ax: 38.7, az: 29.7, laneHalfWidth: 1.5 }
 // where the cliffs part at the doorway. Matches CHAO_GARDEN in arcade.js.
 // The garden moved to the east column's middle room and is an ellipse now,
 // shallower along z to fit a standard-depth room. Matches arcade.js.
-const CHAO_GARDEN = { doorZ: 13.2, laneHalfWidth: 1.5, laneEndX: 63.2 };
-// Past the shell the client fences against the garden's real geometry; the
-// authoritative copies hold the outer rectangle and the bore, which is what
-// they can state without the model.
-function inChaoGardenLane(x: number, z: number): boolean {
-  return Math.abs(z - CHAO_GARDEN.doorZ) < CHAO_GARDEN.laneHalfWidth && x < CHAO_GARDEN.laneEndX;
-}
 function insidePokemonBowl(x: number, z: number): boolean {
   const dx = (x - POKEBOWL.cx) / POKEBOWL.ax;
   const dz = (z - POKEBOWL.cz) / POKEBOWL.az;
@@ -171,10 +164,8 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   // jumbotron, and there is no way through a jumbotron.
   if (insidePokemonBowl(fromX, fromZ) !== insidePokemonBowl(toX, toZ)
     && !(inPokemonTunnelLane(fromX, fromZ) || inPokemonTunnelLane(toX, toZ))) return true;
-  // The Chao Garden: the tunnel bore is the only road through the old room,
-  // and past the shell the cliff-edge ellipse is the only fence.
-  if (toX > PARTITION_WALL_X && toX <= 42.7 && toZ > 4.8 && toZ < 21.6
-    && !inChaoGardenLane(toX, toZ)) return true;
+  // The Chao Garden is entered from the tournament hall now, and the old east
+  // room that used to lead to it is deleted and sealed: no rule needed here.
 
   // The top row's front wall, which ends where the Pokemon stadium begins.
   const throughTopRowDoor = (x: number) => NORTH_ROOM_X.some((doorX) => Math.abs(x - doorX) < ROOM_DOOR_CLEARANCE);
