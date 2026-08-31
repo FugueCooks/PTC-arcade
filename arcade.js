@@ -1899,7 +1899,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=zelda-room-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=zelda-room-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2035,7 +2035,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=zelda-room-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=zelda-room-2',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3119,6 +3119,11 @@ function makeModelCabinet(id,name,x,z,hue,system,model){
   void loadPokemonMachine(model.file).then(source=>{
     const body=source.clone(true);
     body.scale.setScalar(model.scale);
+    // modelRotY turns the shell inside the cabinet. rotY turns the cabinet, so
+    // it cannot fix a model whose own front is not its +z — spinning the group
+    // takes the marquee and the plinth with it. The Game Boy Advance is
+    // authored facing +x, which put its back to the room.
+    body.rotation.y=model.modelRotY??0;
     body.position.y=(model.lift??0)+.1;body.position.z=model.offsetZ??0;
     g.add(body);
   }).catch(error=>console.warn('A Pokemon machine model could not load.',error));
@@ -3126,7 +3131,12 @@ function makeModelCabinet(id,name,x,z,hue,system,model){
   // The 18 m cull is tuned for rows you walk along. In a 34 m round room the far
   // side of a ring stands 25 m off and would simply not be drawn, so a machine
   // can ask to be culled at 30 instead.
-  const cabinet={id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot:new THREE.Group(),controllerSystem:system,renderLights:[floorGlow],status:'syncing',occupiedByDisplayName:null,enabled:true,cullSq:model.farCull?900:undefined};
+  // artApplied up front, so the generated panels never land on one of these.
+  // applyCabinetArt hangs a 1.12 x 1.22 front and two 0.78 x 1.62 sides at
+  // fixed offsets sized for the standard upright; on a console sitting on a
+  // plinth they stand off it in mid-air and bury the model they are supposed to
+  // dress. A model cabinet's shell is the artwork.
+  const cabinet={id,g,name,type:id.toUpperCase(),screen,hue,statusLight,controlSlot:new THREE.Group(),controllerSystem:system,renderLights:[floorGlow],status:'syncing',occupiedByDisplayName:null,enabled:true,artApplied:true,cullSq:model.farCull?900:undefined};
   cabinets.push(cabinet);cabinetsById.set(id,cabinet);indexCabinet(cabinet);
 }
 // Cabinet art keyed off the registry id. Crash and Gex keep their hand-made
@@ -3455,11 +3465,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=zelda-room-1',scale:1.55,lift:.496,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=zelda-room-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=zelda-room-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=zelda-room-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=zelda-room-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=zelda-room-2',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=zelda-room-2',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=zelda-room-2',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=zelda-room-2',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=zelda-room-2',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -4724,7 +4734,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='zelda-room-1';
+const ARCADE_BUILD='zelda-room-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
