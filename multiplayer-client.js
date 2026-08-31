@@ -180,10 +180,10 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
       const [{ AvatarRenderer }, { loadAvatarRegistry }, { CabinetNetworkClient }, { CabinetVisualState }, { CabinetSessionController }, { loadCabinetRegistry }, { ChatClient }, { PresenceClient }, { ReactionClient }, { InspectionClient }, { WorldManager }] = await Promise.all([
         import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=triple-t-label-2'),
         import('./cabinets/cabinet-network-client.js?v=phase4-1'), import('./cabinets/cabinet-visual-state.js?v=phase4-1'),
-        import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=sh-seal-1'),
-        import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=sh-seal-1'),
+        import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=hall-walls-1'),
+        import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=hall-walls-1'),
         import('./social/reaction-client.js?v=phase5-2'), import('./social/inspection-client.js?v=phase5-1'),
-        import('./world/world-manager.js?v=sh-seal-1')
+        import('./world/world-manager.js?v=hall-walls-1')
       ]);
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
