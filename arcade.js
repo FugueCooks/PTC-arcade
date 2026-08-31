@@ -1897,12 +1897,14 @@ const CASTLE_APPROACH_Z=-25.2,CASTLE_APPROACH_HALF=5.4,CASTLE_APPROACH_WEST=-57.
 // stands it upright — x and z are the circular section, 7.224 across, y is the
 // axis, 5.584 long, origin at the base and rim at the far end.
 //
-// The section is capped by the room, not by taste. That ceiling is a flat 5.08,
-// so the widest pipe that fits is about five metres across, which leaves a bore
-// of 3.24. Dropped so the bore's floor sits at the room's own, the crown lands
-// at 4.12 and clears the ceiling with a metre to spare.
-const CASTLE_PIPE_BORE=.69,CASTLE_PIPE_LENGTH=3.87;
-const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=1.62;
+// The section is deliberately larger than the room. Nine metres across gives a
+// bore of 5.8 — wide enough that the tube reads as a tunnel you are inside
+// rather than a ring you step through — and at that size it cuts up through the
+// 5.08 ceiling and down through the floor, which is allowed here. The axis sits
+// at 2.92 so the bore's floor still lands level with the room's own; a player
+// walks the bottom of the pipe, not a ledge inside it.
+const CASTLE_PIPE_BORE=1.246,CASTLE_PIPE_LENGTH=3.87;
+const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=2.92;
 function installPeachsCastle(){
   if(castleStarted)return;
   castleStarted=true;
@@ -2009,11 +2011,13 @@ function installPeachsCastle(){
         // radius 3.4, so a panel at 3.3 out from the axis has only +/-0.8 of
         // height before it pushes through the curve — which is why the first
         // pass pinched them into strips. At 2.4 there is +/-2.4 to play with.
-        const bore=1.15,pipeMuralX=(CASTLE_PIPE_EAST+CASTLE_PIPE_WEST)/2;
+        // 2.0 out from the axis: the bore's radius is 2.92, so that offset still
+        // leaves 2.13 of half-height and a 3.8m panel sits inside the curve.
+        const bore=2,pipeMuralX=(CASTLE_PIPE_EAST+CASTLE_PIPE_WEST)/2;
         const portal=[
-          ['mario-room-mural.webp?v=mario-1',20,2.1,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z-bore,0,0],
-          ['mario-room-mural-3.webp?v=mario-1',20,2.1,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z+bore,Math.PI,0],
-          ['mario-room-mural-2.webp?v=mario-1',20,2.1,pipeMuralX,CASTLE_PIPE_AXIS_Y+bore,CASTLE_APPROACH_Z,0,Math.PI/2]
+          ['mario-room-mural.webp?v=mario-1',20,3.8,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z-bore,0,0],
+          ['mario-room-mural-3.webp?v=mario-1',20,3.8,pipeMuralX,CASTLE_PIPE_AXIS_Y,CASTLE_APPROACH_Z+bore,Math.PI,0],
+          ['mario-room-mural-2.webp?v=mario-1',20,3.8,pipeMuralX,CASTLE_PIPE_AXIS_Y+bore,CASTLE_APPROACH_Z,0,Math.PI/2]
         ];
         for(const [file,w,h,x,y,z,turnY,turnX] of portal){
           const texture=new THREE.TextureLoader().load('assets/art/'+file);
@@ -2110,7 +2114,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-room-1',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-room-2',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4446,7 +4450,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-room-1';
+const ARCADE_BUILD='pipe-room-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
