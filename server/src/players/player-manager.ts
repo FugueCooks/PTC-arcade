@@ -185,6 +185,17 @@ function violatesSocialLayout(fromX: number, fromZ: number, toX: number, toZ: nu
   }
   // The stadium's south wall, with the entrance doorway at its centre.
   const throughStadiumDoor = (x: number) => Math.abs(x - POKEMON_DOOR_X) < ROOM_DOOR_CLEARANCE;
+  // The corner where the north boundary steps east: the front wall stands on
+  // z -50.4 as far as x 10.8 and the stadium's south wall stands on -42 beyond
+  // it, so the eight metres between the two lines is a return wall. Without it
+  // a player walked east out of the building by the prize counter and reached
+  // the field up the back of the stadium. Matches resolveTopRowCollisions.
+  if (toZ > TOP_ROW_WALL_Z && toZ < POKEMON_SOUTH_Z && Math.abs(toX - POKEMON_WEST_X) < PARTITION_COLLISION_HALF_WIDTH) return true;
+  if ((fromX - POKEMON_WEST_X) * (toX - POKEMON_WEST_X) < 0) {
+    const cornerCrossing = (POKEMON_WEST_X - fromX) / (toX - fromX);
+    const cornerZ = fromZ + (toZ - fromZ) * cornerCrossing;
+    if (cornerCrossing >= 0 && cornerCrossing <= 1 && cornerZ > TOP_ROW_WALL_Z && cornerZ < POKEMON_SOUTH_Z) return true;
+  }
   if (toX > POKEMON_WEST_X && !throughStadiumDoor(toX) && Math.abs(toZ - POKEMON_SOUTH_Z) < PARTITION_COLLISION_HALF_WIDTH) return true;
   if ((fromZ - POKEMON_SOUTH_Z) * (toZ - POKEMON_SOUTH_Z) < 0) {
     const crossing = (POKEMON_SOUTH_Z - fromZ) / (toZ - fromZ);

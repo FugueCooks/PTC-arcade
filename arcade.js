@@ -400,6 +400,14 @@ box(9.2,5,.3,0x11182c,-26.2,2.5,SILENT_SOUTH_Z,.06);
 // lit tube running through the dark. The south wall still holds the line.
 box(14.6,5,.3,0x11182c,18.1,2.5,POKEMON_SOUTH_Z,.06);
 box(14.6,5,.3,0x11182c,35.9,2.5,POKEMON_SOUTH_Z,.06);
+// And the return that closes the step between the two north wall lines. The
+// front wall stands on z -50.4 as far as the stadium room, and the stadium's
+// own south wall stands on -42, so there are eight metres of corner between
+// them at x 10.8. Losing the old west wall left that corner open: standing at
+// the prize counter you looked straight past it into the unlit concourse, and
+// walking east along z -45 took you out of the building entirely and up the
+// back of the stadium without ever using the vomitory.
+box(.3,5,POKEMON_SOUTH_Z-TOP_BAND_MIN_Z,0x11182c,POKEMON_WEST_X,2.5,(TOP_BAND_MIN_Z+POKEMON_SOUTH_Z)/2,.06);
 const gangsterPepeMount=new THREE.Group();
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);
 const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34;
@@ -1891,7 +1899,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=pipe-solid-2',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=corner-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2027,7 +2035,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pipe-solid-2',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=corner-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -4567,6 +4575,16 @@ function resolveTopRowCollisions(previousX,previousZ){
       return;
     }
   }
+  // The corner between the two wall lines. Everything else in this function
+  // stops a player crossing a z line; this one stops them crossing an x line,
+  // because the north boundary steps east here rather than running straight.
+  if(playerPosition.z>TOP_BAND_MIN_Z&&playerPosition.z<POKEMON_SOUTH_Z){
+    const westFace=POKEMON_WEST_X-wallGap,eastFace=POKEMON_WEST_X+wallGap;
+    if(playerPosition.x>westFace&&playerPosition.x<eastFace){
+      if(previousX<POKEMON_WEST_X)playerPosition.x=westFace;else playerPosition.x=eastFace;
+      return;
+    }
+  }
   // The front wall at z=-50.4 runs between the two corner blocks: Silent Hill
   // took its west stretch the way the stadium took its east one.
   if(playerPosition.x<SILENT_EAST_X){
@@ -4608,7 +4626,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-solid-2';
+const ARCADE_BUILD='corner-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
