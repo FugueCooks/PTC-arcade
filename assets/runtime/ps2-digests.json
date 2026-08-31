@@ -37,5 +37,35 @@
     "file": "shadow-the-hedgehog.iso",
     "bytes": 4493967360,
     "sha256": "42e8c083bc2264e8f50416793c6e8c320fb7222563b444e4204cdb001a0380c7"
+  },
+  {
+    "kind": "game",
+    "file": "resident-evil-4.iso",
+    "bytes": 4435836928,
+    "sha256": "eb0874cf29dc48c994fd183e52a3b186b47b0a341281a0c2db24a1f18757cb66"
+  },
+  {
+    "kind": "game",
+    "file": "silent-hill-2.iso",
+    "bytes": 3879108608,
+    "sha256": "6dce8477d373b4492f0d9e081ad45761e2c46cf56a5f90d69271896c738a5611"
+  },
+  {
+    "kind": "game",
+    "file": "silent-hill-3.iso",
+    "bytes": 3584229376,
+    "sha256": "e08bb7bde06b6227ea33a2557f748b22e15888a52a52df586cfd01b32b2439c1"
+  },
+  {
+    "kind": "game",
+    "file": "silent-hill-4-the-room.iso",
+    "bytes": 3933929472,
+    "sha256": "cad8384ea37d4204e84f9a23efbba930d2b002f0bd57db482d2e6a24a0e1ce70"
+  },
+  {
+    "kind": "game",
+    "file": "silent-hill-origins.iso",
+    "bytes": 3074785280,
+    "sha256": "b5f738336fc637a6742419c7183951f6ebb5e852b6a47126002decb18fbecff6"
   }
 ]

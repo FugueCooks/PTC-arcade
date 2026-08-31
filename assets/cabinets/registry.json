@@ -1803,5 +1803,173 @@
     },
     "playerRotationY": 0,
     "defaultGameId": "shadow-the-hedgehog"
+  },
+  {
+    "id": "sh-room-cabinet-01",
+    "name": "Resident Evil",
+    "sceneKey": "RESIDENT EVIL",
+    "cabinetType": "psx-upright",
+    "zoneId": "silent-hill-room",
+    "gameId": "resident-evil",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -41,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -41,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "resident-evil"
+  },
+  {
+    "id": "sh-room-cabinet-02",
+    "name": "Resident Evil 2",
+    "sceneKey": "RESIDENT EVIL 2",
+    "cabinetType": "psx-upright",
+    "zoneId": "silent-hill-room",
+    "gameId": "resident-evil-2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -38.6,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -38.6,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "resident-evil-2"
+  },
+  {
+    "id": "sh-room-cabinet-03",
+    "name": "Resident Evil 3: Nemesis",
+    "sceneKey": "RESIDENT EVIL 3: NEMESIS",
+    "cabinetType": "psx-upright",
+    "zoneId": "silent-hill-room",
+    "gameId": "resident-evil-3-nemesis",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -36.2,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -36.2,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "resident-evil-3-nemesis"
+  },
+  {
+    "id": "sh-room-cabinet-04",
+    "name": "Resident Evil 4",
+    "sceneKey": "RESIDENT EVIL 4",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "silent-hill-room",
+    "gameId": "resident-evil-4",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -33.8,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -33.8,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "resident-evil-4"
+  },
+  {
+    "id": "sh-room-cabinet-05",
+    "name": "Silent Hill 2",
+    "sceneKey": "SILENT HILL 2",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "silent-hill-room",
+    "gameId": "silent-hill-2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -31.4,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -31.4,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "silent-hill-2"
+  },
+  {
+    "id": "sh-room-cabinet-06",
+    "name": "Silent Hill 3",
+    "sceneKey": "SILENT HILL 3",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "silent-hill-room",
+    "gameId": "silent-hill-3",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -29,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -29,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "silent-hill-3"
+  },
+  {
+    "id": "sh-room-cabinet-07",
+    "name": "Silent Hill 4: The Room",
+    "sceneKey": "SILENT HILL 4: THE ROOM",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "silent-hill-room",
+    "gameId": "silent-hill-4-the-room",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -26.6,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -26.6,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "silent-hill-4-the-room"
+  },
+  {
+    "id": "sh-room-cabinet-08",
+    "name": "Silent Hill Origins",
+    "sceneKey": "SILENT HILL ORIGINS",
+    "cabinetType": "ps2-kiosk",
+    "zoneId": "silent-hill-room",
+    "gameId": "silent-hill-origins",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -24.2,
+      "y": 1.65,
+      "z": -49.6
+    },
+    "playerPosition": {
+      "x": -24.2,
+      "y": 1.65,
+      "z": -49.25
+    },
+    "playerRotationY": 0,
+    "defaultGameId": "silent-hill-origins"
   }
 ]

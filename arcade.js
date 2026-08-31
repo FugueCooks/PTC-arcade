@@ -3925,6 +3925,29 @@ for(const [cabinetId,kind,rowX,gameOrLabel,hue] of SONIC_GARDEN_ROW){
   configureHostedCabinet(cabinetId);
   sonicCabinetSpots.push([rowX,39]);
 }
+/**
+ * The horror shelf, along the Silent Hill room's north wall: the three PSX
+ * Resident Evils, RE4 on PS2, and the four PS2-era Silent Hills, in release
+ * order west to east. Standard uprights -- the room's fog does the theming.
+ */
+const SILENT_ROOM_ROW=[
+  ['sh-room-cabinet-01','psx',-41.0,0x8f1d1d],
+  ['sh-room-cabinet-02','psx',-38.6,0xb03a2e],
+  ['sh-room-cabinet-03','psx',-36.2,0xd35400],
+  ['sh-room-cabinet-04','ps2',-33.8,0x9c640c],
+  ['sh-room-cabinet-05','ps2',-31.4,0x7b7d7d],
+  ['sh-room-cabinet-06','ps2',-29.0,0xa04000],
+  ['sh-room-cabinet-07','ps2',-26.6,0x6e2c00],
+  ['sh-room-cabinet-08','ps2',-24.2,0x515a5a],
+];
+for(const [cabinetId,system,rowX,hue] of SILENT_ROOM_ROW){
+  const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
+  const label=hosted?hosted.name.toUpperCase():cabinetId.toUpperCase();
+  makeCabinet(cabinetId,label,rowX,-49.6,hue,false,false,system);
+  const cabinet=cabinets[cabinets.length-1];
+  Object.assign(cabinet,{system,enabled:Boolean(hosted),status:hosted?'available':'disabled'});
+  configureHostedCabinet(cabinetId);
+}
 const expansionCabinetColors=[0xff3cac,0x36f9f6,0xffb42e,0x934dff,0x7dff67];
 const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREAS','DBZ TENKAICHI 3','PS2 // READY 05'];
 // DBZ Tenkaichi 3 used to face Melee across the tournament hall. It rejoins the

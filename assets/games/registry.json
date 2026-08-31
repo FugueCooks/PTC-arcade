@@ -2067,6 +2067,211 @@
           "label": null
         }
       ]
+    },
+    {
+      "id": "resident-evil",
+      "cabinetId": "sh-room-cabinet-01",
+      "name": "Resident Evil",
+      "system": "psx",
+      "file": "resident-evil.chd",
+      "emulatorId": 26010,
+      "sizeBytes": 319154746,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "resident-evil.chd",
+          "sizeBytes": 319154746,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "resident-evil-2",
+      "cabinetId": "sh-room-cabinet-02",
+      "name": "Resident Evil 2",
+      "system": "psx",
+      "file": "resident-evil-2.chd",
+      "emulatorId": 26011,
+      "sizeBytes": 370927339,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "resident-evil-2.chd",
+          "sizeBytes": 370927339,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "resident-evil-3-nemesis",
+      "cabinetId": "sh-room-cabinet-03",
+      "name": "Resident Evil 3: Nemesis",
+      "system": "psx",
+      "file": "resident-evil-3-nemesis.chd",
+      "emulatorId": 26012,
+      "sizeBytes": 368876495,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "psx-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "resident-evil-3-nemesis.chd",
+          "sizeBytes": 368876495,
+          "required": true,
+          "label": null
+        },
+        {
+          "kind": "bios",
+          "assetId": "SCPH1001.BIN",
+          "sizeBytes": null,
+          "required": false,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "resident-evil-4",
+      "cabinetId": "sh-room-cabinet-04",
+      "name": "Resident Evil 4",
+      "system": "ps2",
+      "file": "resident-evil-4.iso",
+      "emulatorId": 95006,
+      "sizeBytes": 4435836928,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "resident-evil-4.iso",
+          "sizeBytes": 4435836928,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "silent-hill-2",
+      "cabinetId": "sh-room-cabinet-05",
+      "name": "Silent Hill 2",
+      "system": "ps2",
+      "file": "silent-hill-2.iso",
+      "emulatorId": 95007,
+      "sizeBytes": 3879108608,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "silent-hill-2.iso",
+          "sizeBytes": 3879108608,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "silent-hill-3",
+      "cabinetId": "sh-room-cabinet-06",
+      "name": "Silent Hill 3",
+      "system": "ps2",
+      "file": "silent-hill-3.iso",
+      "emulatorId": 95008,
+      "sizeBytes": 3584229376,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "silent-hill-3.iso",
+          "sizeBytes": 3584229376,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "silent-hill-4-the-room",
+      "cabinetId": "sh-room-cabinet-07",
+      "name": "Silent Hill 4: The Room",
+      "system": "ps2",
+      "file": "silent-hill-4-the-room.iso",
+      "emulatorId": 95009,
+      "sizeBytes": 3933929472,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "silent-hill-4-the-room.iso",
+          "sizeBytes": 3933929472,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "silent-hill-origins",
+      "cabinetId": "sh-room-cabinet-08",
+      "name": "Silent Hill Origins",
+      "system": "ps2",
+      "file": "silent-hill-origins.iso",
+      "emulatorId": 95010,
+      "sizeBytes": 3074785280,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "play-ps2",
+      "inputProfileId": "ps2-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "silent-hill-origins.iso",
+          "sizeBytes": 3074785280,
+          "required": true,
+          "label": null
+        }
+      ]
     }
   ]
 }
