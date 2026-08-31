@@ -13,10 +13,10 @@ const validRow = {
 void test('the shipped registry maps onto the domain model with zones and types', () => {
   const { definitions, issues } = readCabinetRegistry();
   assert.deepEqual(issues, []);
-  assert.equal(definitions.length, 67);
-  assert.equal(new Set(definitions.map(({ zoneId }) => zoneId)).size, 8);
+  assert.equal(definitions.length, 75);
+  assert.equal(new Set(definitions.map(({ zoneId }) => zoneId)).size, 9);
   assert.equal(definitions.filter(({ zoneId }) => zoneId === 'megaman-room').length, 9);
-  assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 59);
+  assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 67);
   assert.ok(definitions.every(({ cabinetType }) => cabinetType.length > 0));
   assert.ok(definitions.every(({ interactionPolicy }) => interactionPolicy.interactionDistance > 0));
 });

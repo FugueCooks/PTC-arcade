@@ -22,7 +22,7 @@ async function loadJson<T>(file: string): Promise<T> {
 void test('hosted games have unique IDs, files, emulator IDs, and cabinet assignments', async () => {
   const registry = await loadJson<{ version: number; games: GameDefinition[] }>('assets/games/registry.json');
   assert.equal(registry.version, 2);
-  assert.equal(registry.games.length, 59);
+  assert.equal(registry.games.length, 67);
   for (const key of ['id', 'cabinetId', 'file', 'emulatorId'] as const) {
     const values = registry.games.map((game) => game[key]);
     assert.equal(new Set(values).size, values.length, `${key} values must be unique`);

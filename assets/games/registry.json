@@ -1570,6 +1570,190 @@
           "label": null
         }
       ]
+    },
+    {
+      "id": "super-mario-bros",
+      "cabinetId": "mario-cabinet-01",
+      "name": "Super Mario Bros.",
+      "system": "nes",
+      "file": "super-mario-bros.zip",
+      "emulatorId": 10002,
+      "sizeBytes": 31297,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-mario-bros.zip",
+          "sizeBytes": 31297,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "super-mario-bros-2",
+      "cabinetId": "mario-cabinet-02",
+      "name": "Super Mario Bros. 2",
+      "system": "nes",
+      "file": "super-mario-bros-2.zip",
+      "emulatorId": 10003,
+      "sizeBytes": 75478,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-mario-bros-2.zip",
+          "sizeBytes": 75478,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "super-mario-bros-3",
+      "cabinetId": "mario-cabinet-03",
+      "name": "Super Mario Bros. 3",
+      "system": "nes",
+      "file": "super-mario-bros-3.zip",
+      "emulatorId": 10004,
+      "sizeBytes": 220389,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-mario-bros-3.zip",
+          "sizeBytes": 220389,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "mario-bros",
+      "cabinetId": "mario-cabinet-04",
+      "name": "Mario Bros.",
+      "system": "nes",
+      "file": "mario-bros.zip",
+      "emulatorId": 10005,
+      "sizeBytes": 16503,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mario-bros.zip",
+          "sizeBytes": 16503,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "dr-mario",
+      "cabinetId": "mario-cabinet-08",
+      "name": "Dr. Mario",
+      "system": "nes",
+      "file": "dr-mario.zip",
+      "emulatorId": 10006,
+      "sizeBytes": 28831,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "nes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "dr-mario.zip",
+          "sizeBytes": 28831,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "super-mario-world",
+      "cabinetId": "mario-cabinet-07",
+      "name": "Super Mario World",
+      "system": "snes",
+      "file": "super-mario-world.zip",
+      "emulatorId": 26005,
+      "sizeBytes": 337615,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "snes-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "super-mario-world.zip",
+          "sizeBytes": 337615,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "mario-kart-64",
+      "cabinetId": "mario-cabinet-05",
+      "name": "Mario Kart 64",
+      "system": "n64",
+      "file": "mario-kart-64.zip",
+      "emulatorId": 6407,
+      "sizeBytes": 8769236,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "mario-kart-64.zip",
+          "sizeBytes": 8769236,
+          "required": true,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "paper-mario",
+      "cabinetId": "mario-cabinet-06",
+      "name": "Paper Mario",
+      "system": "n64",
+      "file": "paper-mario.zip",
+      "emulatorId": 6408,
+      "sizeBytes": 21966975,
+      "enabled": true,
+      "launcherAdapterId": "hosted-image",
+      "emulatorAdapterId": "emulatorjs",
+      "inputProfileId": "n64-gamepad",
+      "replayCapability": "NONE",
+      "assetRequirements": [
+        {
+          "kind": "game-image",
+          "assetId": "paper-mario.zip",
+          "sizeBytes": 21966975,
+          "required": true,
+          "label": null
+        }
+      ]
     }
   ]
 }

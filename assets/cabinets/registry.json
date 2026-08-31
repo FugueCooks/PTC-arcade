@@ -370,20 +370,20 @@
     "name": "Super Mario 64",
     "sceneKey": "SUPER MARIO 64",
     "cabinetType": "n64-upright",
-    "zoneId": "main-floor-east",
+    "zoneId": "peachs-castle",
     "gameId": "super-mario-64",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
-      "y": 1.65,
-      "z": -10.35
+      "x": -102.22,
+      "y": 1.669,
+      "z": -46.65
     },
     "playerPosition": {
-      "x": 9.15,
-      "y": 1.65,
-      "z": -10.35
+      "x": -101.968171,
+      "y": 1.669,
+      "z": -46.406932
     },
-    "playerRotationY": -1.5707963267948966,
+    "playerRotationY": 3.944693,
     "defaultGameId": "super-mario-64"
   },
   {
@@ -1416,5 +1416,173 @@
     },
     "playerRotationY": -1.047198,
     "defaultGameId": "zelda-spirit-tracks"
+  },
+  {
+    "id": "mario-cabinet-01",
+    "name": "Super Mario Bros.",
+    "sceneKey": "SUPER MARIO BROS.",
+    "cabinetType": "nes-console",
+    "zoneId": "peachs-castle",
+    "gameId": "super-mario-bros",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -102.25,
+      "y": 1.669,
+      "z": -3.74
+    },
+    "playerPosition": {
+      "x": -101.998051,
+      "y": 1.669,
+      "z": -3.982944
+    },
+    "playerRotationY": 5.479593,
+    "defaultGameId": "super-mario-bros"
+  },
+  {
+    "id": "mario-cabinet-02",
+    "name": "Super Mario Bros. 2",
+    "sceneKey": "SUPER MARIO BROS. 2",
+    "cabinetType": "nes-console",
+    "zoneId": "peachs-castle",
+    "gameId": "super-mario-bros-2",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -96.48,
+      "y": 1.669,
+      "z": -13.56
+    },
+    "playerPosition": {
+      "x": -96.19417,
+      "y": 1.669,
+      "z": -13.761994
+    },
+    "playerRotationY": 5.327593,
+    "defaultGameId": "super-mario-bros-2"
+  },
+  {
+    "id": "mario-cabinet-03",
+    "name": "Super Mario Bros. 3",
+    "sceneKey": "SUPER MARIO BROS. 3",
+    "cabinetType": "nes-console",
+    "zoneId": "peachs-castle",
+    "gameId": "super-mario-bros-3",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -101.88,
+      "y": 10.674,
+      "z": -25.27
+    },
+    "playerPosition": {
+      "x": -101.530002,
+      "y": 10.674,
+      "z": -25.268951
+    },
+    "playerRotationY": 4.709393,
+    "defaultGameId": "super-mario-bros-3"
+  },
+  {
+    "id": "mario-cabinet-04",
+    "name": "Mario Bros.",
+    "sceneKey": "MARIO BROS.",
+    "cabinetType": "nes-console",
+    "zoneId": "peachs-castle",
+    "gameId": "mario-bros",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -97.05,
+      "y": 1.669,
+      "z": -37.4
+    },
+    "playerPosition": {
+      "x": -96.765386,
+      "y": 1.669,
+      "z": -37.196297
+    },
+    "playerRotationY": 4.091193,
+    "defaultGameId": "mario-bros"
+  },
+  {
+    "id": "mario-cabinet-05",
+    "name": "Mario Kart 64",
+    "sceneKey": "MARIO KART 64",
+    "cabinetType": "n64-console",
+    "zoneId": "peachs-castle",
+    "gameId": "mario-kart-64",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -109.01,
+      "y": 10.674,
+      "z": 1.77
+    },
+    "playerPosition": {
+      "x": -108.753624,
+      "y": 10.674,
+      "z": 1.531733
+    },
+    "playerRotationY": 5.461193,
+    "defaultGameId": "mario-kart-64"
+  },
+  {
+    "id": "mario-cabinet-06",
+    "name": "Paper Mario",
+    "sceneKey": "PAPER MARIO",
+    "cabinetType": "n64-console",
+    "zoneId": "peachs-castle",
+    "gameId": "paper-mario",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -100.5,
+      "y": 1.669,
+      "z": -42.5
+    },
+    "playerPosition": {
+      "x": -100.232507,
+      "y": 1.669,
+      "z": -42.274284
+    },
+    "playerRotationY": 4.011493,
+    "defaultGameId": "paper-mario"
+  },
+  {
+    "id": "mario-cabinet-07",
+    "name": "Super Mario World",
+    "sceneKey": "SUPER MARIO WORLD",
+    "cabinetType": "snes-console",
+    "zoneId": "peachs-castle",
+    "gameId": "super-mario-world",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -100.5,
+      "y": 1.669,
+      "z": -8
+    },
+    "playerPosition": {
+      "x": -100.231878,
+      "y": 1.669,
+      "z": -8.224968
+    },
+    "playerRotationY": 5.410493,
+    "defaultGameId": "super-mario-world"
+  },
+  {
+    "id": "mario-cabinet-08",
+    "name": "Dr. Mario",
+    "sceneKey": "DR. MARIO",
+    "cabinetType": "nes-console",
+    "zoneId": "peachs-castle",
+    "gameId": "dr-mario",
+    "enabled": true,
+    "interactionPosition": {
+      "x": -95,
+      "y": 1.669,
+      "z": -45
+    },
+    "playerPosition": {
+      "x": -94.788659,
+      "y": 1.669,
+      "z": -44.721011
+    },
+    "playerRotationY": 3.789893,
+    "defaultGameId": "dr-mario"
   }
 ]

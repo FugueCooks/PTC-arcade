@@ -108,7 +108,10 @@ void test('the world reaches every cabinet a player is meant to stand at', () =>
 
     // The floor is a union now: the main rectangle, the Silent Hill annex,
     // and the arena in the void — a cabinet in any of them can be walked to.
-    const regions = [clientBounds, clientRegion('SILENT_HILL_EXPANSE'), clientRegion('POKEMON_EXPANSE'), clientRegion('CHAO_EXPANSE'), clientRegion('TEMPLE_EXPANSE')];
+    // CASTLE_EXPANSE joins the union: Peach's Castle is walked to through the
+    // warp pipe and now holds the Mario library, so its floor counts like any
+    // other region's.
+    const regions = [clientBounds, clientRegion('SILENT_HILL_EXPANSE'), clientRegion('POKEMON_EXPANSE'), clientRegion('CHAO_EXPANSE'), clientRegion('TEMPLE_EXPANSE'), clientRegion('CASTLE_EXPANSE')];
     const reachable = (x: number, z: number) =>
       regions.some((region) => x >= region.minX && x <= region.maxX && z >= region.minZ && z <= region.maxZ);
 

@@ -346,5 +346,53 @@
     "file": "zelda-majoras-mask.zip",
     "bytes": 27148761,
     "sha256": "3252df2be001fd6e83d5dc0db1e929a3d767c7118972c856d8a9ba68f88f57c3"
+  },
+  {
+    "kind": "game",
+    "file": "super-mario-bros.zip",
+    "bytes": 31297,
+    "sha256": "ae32dfaca3f74e0f2ed6f262294e4a8974c1f4891c0b09234730f4608be18ca1"
+  },
+  {
+    "kind": "game",
+    "file": "super-mario-bros-2.zip",
+    "bytes": 75478,
+    "sha256": "4b87e64c405a342c6f7106f9f452f4d61be8f2106ec2c6110721775c3832fbad"
+  },
+  {
+    "kind": "game",
+    "file": "super-mario-bros-3.zip",
+    "bytes": 220389,
+    "sha256": "dbac137afee798db10402cd315095d02bc6cc1041f09256998b679f774233c6f"
+  },
+  {
+    "kind": "game",
+    "file": "mario-bros.zip",
+    "bytes": 16503,
+    "sha256": "d6578ab9da1ac22b06dadaa8807eabe152b6147079857ae3eb780640a3604969"
+  },
+  {
+    "kind": "game",
+    "file": "dr-mario.zip",
+    "bytes": 28831,
+    "sha256": "70435475386ddbfb54eaedc91f45c2ae7b05113c63f886c4b1d532af9e6c2ded"
+  },
+  {
+    "kind": "game",
+    "file": "super-mario-world.zip",
+    "bytes": 337615,
+    "sha256": "643f5113c8ccaf1340287ce3d5d9518a81abca98821782e49005c1beb5146544"
+  },
+  {
+    "kind": "game",
+    "file": "mario-kart-64.zip",
+    "bytes": 8769236,
+    "sha256": "6b5298ab60261268f83ac6fa855e655fca46062224b4f0719379201e89676c19"
+  },
+  {
+    "kind": "game",
+    "file": "paper-mario.zip",
+    "bytes": 21966975,
+    "sha256": "ec3e2a727fc2ee041ba02f74aac4bb9c399349dcfd9e1402fb990a8805690691"
   }
 ]

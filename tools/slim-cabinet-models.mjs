@@ -39,6 +39,9 @@ const JOBS = [
   ['nintendo_3ds_majoras_mask. (1).glb', 'zelda-ds-cabinet.glb'],
   ['nes_console_and_controller.glb', 'zelda-nes-cabinet.glb'],
   ['nintendo_64.glb', 'zelda-n64-cabinet.glb'],
+  ['super_mario_bros_arcade.glb', 'mario-smb-arcade.glb'],
+  ['arcade_machine_lowpoly.glb', 'mario-bros-arcade.glb'],
+  ['super_mario_3_acrade.glb', 'mario-smb3-arcade.glb'],
 ];
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);

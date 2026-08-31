@@ -61,7 +61,13 @@ const TEMPLE_EXPANSE={minX:-124.5,maxX:-42.7,minZ:24.8,maxZ:59.2};
 // Peach's Castle stands outside the west wall on the Mario room's own line,
 // the way the Temple of Time stands outside it further south. The room is not
 // a room any more: it is the forecourt you cross to reach the front steps.
-const CASTLE_EXPANSE={minX:-119.7,maxX:-42.7,minZ:-42,maxZ:11.8};
+// minZ -55, not -42. The castle model is symmetric about z -25.2 and its hall
+// reaches z -52, but this bound was centred on -15.1, so ten metres of the
+// hall's southern end -- including one of its doorways -- was walled off by an
+// invisible line with nothing to show for it. resolveCastleFloor still refuses
+// any step with no floor under it, so widening the box opens the room without
+// opening the void.
+const CASTLE_EXPANSE={minX:-119.7,maxX:-42.7,minZ:-55,maxZ:11.8};
 const WORLD_REGIONS=[WORLD_BOUNDS,SILENT_HILL_EXPANSE,POKEMON_EXPANSE,CHAO_EXPANSE,TEMPLE_EXPANSE,CASTLE_EXPANSE];
 function insideRegion(region,x,z){return x>=region.minX&&x<=region.maxX&&z>=region.minZ&&z<=region.maxZ}
 function clampToWorld(previousX,previousZ){
@@ -410,7 +416,7 @@ box(14.6,5,.3,0x11182c,35.9,2.5,POKEMON_SOUTH_Z,.06);
 box(.3,5,POKEMON_SOUTH_Z-TOP_BAND_MIN_Z,0x11182c,POKEMON_WEST_X,2.5,(TOP_BAND_MIN_Z+POKEMON_SOUTH_Z)/2,.06);
 const gangsterPepeMount=new THREE.Group();
 const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);
-const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34;
+const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34,PLAYER_EYE_HEIGHT=1.65;
 // The first two segments are pulled back to clear the warp pipe's mouth: the
 // opening on z -25.2 runs the pipe's full nine metres rather than a door's 3.2,
 // so the tube is seen whole from the hall instead of cropped to a slot.
@@ -1759,13 +1765,13 @@ function installTempleOfTime(){
         // the wall under it is a bare slab, and there is still a hole through to
         // the sky. Geometry that cannot be measured cannot be adjusted, so it
         // comes out by name and is rebuilt below where its numbers are visible.
-        // threshold belongs to that same set: it is the only other hand-named
-        // mesh in the file, twelve triangles of flat plate laid at y 0 from the
-        // stair head out to x -41.4, with nothing whatever underneath it. From
-        // the hall floor you looked up at its bare underside cutting across the
-        // whole front of the building. It comes out and is rebuilt below as a
-        // landing that is actually supported.
-        if(/^(flanks|flankn|corridorlid|threshold)/.test(node.name||'')){doomed.push(node);return}
+        // threshold is deliberately NOT in this set. It is the landing plate
+        // outside the door and the only floor there, so resolveTempleFloor needs
+        // it: strip it and a player cannot leave the building. It was stripped
+        // once and replaced with a solid block, which put a ten metre monolith
+        // across the staircase. The plate stays; what it needed was something
+        // under it at the wall line, not instead of it.
+        if(/^(flanks|flankn|corridorlid)/.test(node.name||'')){doomed.push(node);return}
         const first=Array.isArray(node.material)?node.material[0]:node.material;
         if(!first.map){doomed.push(node);return}
         node.castShadow=false;node.receiveShadow=false;
@@ -1874,28 +1880,34 @@ function installTempleOfTime(){
           map.repeat.set(Math.max(1,Math.round(width/4)),Math.max(1,Math.round(height/4)));
           return new THREE.MeshBasicMaterial({map,color:facing.color?.clone()??new THREE.Color(0xffffff),side:THREE.DoubleSide});
         };
-        // The landing, solid from the hall floor to the tread. On the mount,
-        // because this one IS the floor outside the door and templeGroundAt has
-        // to find it; its top face at y 0 is where the old floating plate stood,
-        // so the walk out is unchanged.
-        const landing=new THREE.Mesh(new THREE.BoxGeometry(10.1,3.5,10.2),dressed(10.2,3.5));
-        landing.position.set(-46.45,-1.75,42);
-        mount.add(landing);
-        // Jambs on the lines the model already has, and a leaf set back 0.35
-        // into the reveal so the opening keeps its depth. These go on the scene,
-        // not the mount: the stone is DoubleSide, and anything in the doorway
-        // that templeGroundAt can see is read as floor at its underside and
-        // drops a walker three and a half metres.
-        const [leafSouth,leafNorth]=[39.4,44.6];
-        for(const [z,depth] of [[(36.9+leafSouth)/2,leafSouth-36.9],[(leafNorth+47.1)/2,47.1-leafNorth]]){
-          const jamb=new THREE.Mesh(new THREE.BoxGeometry(.5,3.2,depth),dressed(depth,3.2));
-          jamb.position.set(-46.2,1.6,z);
-          scene.add(jamb);
+        // A real entryway, not a filled hole.
+        //
+        // Flush panels on the wall line closed the view but left the front of
+        // the temple blank: from the forecourt there was no door at all. What
+        // reads as a door is depth, so the opening keeps its full ten metres and
+        // gains a reveal — two returns, a soffit and a back — set 1.4m into the
+        // wall and finished dark. From outside you see a doorway with an unlit
+        // interior; from inside the same dark back is what stops the sightline
+        // that used to run through the building to the Chao Garden.
+        //
+        // All on the scene, not the mount: this stone is DoubleSide and anything
+        // in the doorway that templeGroundAt can see is read as floor at its
+        // underside, which would drop a walker three and a half metres. The
+        // temple has no lateral collision, so the entry passes a player either
+        // way — the same reason its own columns are walk-through.
+        const reveal=dressed(10.2,3.5);
+        const dark=dressed(10.2,3.5);
+        dark.color.multiplyScalar(.16);
+        for(const [w,h,d,x,y,z,material] of [
+          [.4,6.9,10.0,-47.6,-.15,42,dark],      // the back of the recess
+          [1.4,6.9,.4,-46.9,-.15,36.8,reveal],   // south return
+          [1.4,6.9,.4,-46.9,-.15,47.2,reveal],   // north return
+          [1.4,.4,10.8,-46.9,3.4,42,reveal]      // soffit over the opening
+        ]){
+          const piece=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+          piece.position.set(x,y,z);
+          scene.add(piece);
         }
-        const leaf=new THREE.Mesh(new THREE.BoxGeometry(.5,3.2,leafNorth-leafSouth),dressed(leafNorth-leafSouth,3.2));
-        leaf.material.color.multiplyScalar(.34);
-        leaf.position.set(-46.55,1.6,(leafSouth+leafNorth)/2);
-        scene.add(leaf);
       }
     },undefined,error=>console.warn('Temple of Time failed to load:',error));
   }catch(error){console.warn('Temple of Time failed to load:',error)}})();
@@ -1980,7 +1992,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=temple-door-4',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=mario-castle-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2116,7 +2128,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=temple-door-4',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3477,10 +3489,12 @@ function resolveStatueCollisions(previousX,previousZ){
 const N64_HUES=[0x8b5cf6,0xff4da6,0x36f9f6,0xffb42e,0x7dff67,0xff3cac,0x42a5ff];
 const n64CabinetLayout=N64_HUES.map((hue,index)=>[index+1,FOYER_EAST[index].x,FOYER_EAST[index].z,FOYER_EAST[index].rotation,hue]);
 for(const [index,x,z,rotation,hue] of n64CabinetLayout){
-  // Pokemon Snap moved to the plaza, into the Pokemon arcade machine, and
-  // Ocarina of Time moved to the Temple of Time with the rest of the Zelda
-  // library. Both leave a gap in the row rather than a renumbering.
-  if(index===1||index===5)continue;
+  // Pokemon Snap moved to the plaza, into the Pokemon arcade machine; Ocarina
+  // of Time moved to the Temple of Time with the rest of the Zelda library; and
+  // Super Mario 64 moved into Peach's Castle, which is the one room in the
+  // building it is actually about. All three leave a gap in the row rather than
+  // a renumbering.
+  if(index===1||index===2||index===5)continue;
   const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
 /**
  * The Pokemon library, lined up on the arena platform's north deck strip in
@@ -3546,11 +3560,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=temple-door-4',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=temple-door-4',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=temple-door-4',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=temple-door-4',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=temple-door-4',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3584,6 +3598,52 @@ ZELDA_ROOM_RING.forEach(([cabinetId,kind,hue],index)=>{
     {system:'gamecube',emulator:'gecko',enabled:!isMobileDevice,status:isMobileDevice?'disabled':'available',disabledReason:isMobileDevice?'desktop-only':undefined});
   zeldaCabinetSpots.push([x,z]);
 });
+/**
+ * Peach's Castle: the Mario library, a machine at each of the hall's doorways.
+ *
+ * The hall has six openings with floor in front of them to stand on — four on
+ * the checkerboard at y 0.019 and two on the 2F landing at 9.024. The rest of
+ * the shell's openings give onto outer terraces at 3.62 and 10.82 with nothing
+ * to stand on, and two of those fall outside CASTLE_EXPANSE entirely, so the
+ * last three machines line the hall's west wall between the doorways instead.
+ *
+ * Every position here was solved in-engine rather than read off the model:
+ * step in from the opening until a downward ray finds real floor, then face the
+ * middle of the hall. The registry carries the same numbers, because the server
+ * refuses a handover to a cabinet that is not where it says it is.
+ */
+const MARIO_MACHINE_MODELS={
+  // The three supplied arcade cabinets, all authored facing +z, so none needs a
+  // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
+  // cabinets rather than at literal life size, which would leave them narrower
+  // than the marquee plate that labels them.
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  // and the console shells the Zelda room already brought in
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+};
+const MARIO_CASTLE_RING=[
+  ['mario-cabinet-01','smb', -102.25,.019, -3.74, 2.3380,0xff5f5f], // Super Mario Bros.
+  ['mario-cabinet-02','smb',  -96.48,.019,-13.56, 2.1860,0xffa14d], // Super Mario Bros. 2
+  ['mario-cabinet-03','smb3',-101.88,9.024,-25.27,1.5678,0x7dff67], // Super Mario Bros. 3
+  ['mario-cabinet-04','bros', -97.05,.019,-37.40, 0.9496,0x4aa8ff], // Mario Bros.
+  ['n64-cabinet-02',  'n64', -102.22,.019,-46.65, 0.8031,0xffd23e], // Super Mario 64
+  ['mario-cabinet-05','n64', -109.01,9.024,  1.77,2.3196,0x8cb4ff], // Mario Kart 64
+  ['mario-cabinet-06','n64', -100.50,.019,-42.50, 0.8699,0xd9d9e6], // Paper Mario
+  ['mario-cabinet-07','nes', -100.50,.019, -8.00, 2.2689,0xc06fff], // Super Mario World
+  ['mario-cabinet-08','nes',  -95.00,.019,-45.00, 0.6483,0x5fd48c]  // Dr. Mario
+];
+const marioCabinetSpots=[];
+for(const [cabinetId,kind,x,floorY,z,yaw,hue] of MARIO_CASTLE_RING){
+  const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
+  const label=hosted?hosted.name.toUpperCase():cabinetId.toUpperCase();
+  makeModelCabinet(cabinetId,label,x,z,hue,hosted?.system??'nes',
+    {...MARIO_MACHINE_MODELS[kind],baseY:floorY,rotY:yaw,farCull:true});
+  configureHostedCabinet(cabinetId);
+  marioCabinetSpots.push([x,z]);
+}
 // Five experimental GameCube cabinets sit inside their dedicated construction
 // room, facing its doorway. Gecko remains available for later runtime work, but
 // the cabinets cannot be reached while the room is blocked.
@@ -4614,6 +4674,24 @@ function resolveZeldaCabinetCollisions(previousX,previousZ){
     return;
   }
 }
+/**
+ * The castle's machines are solid, for the same reason the temple's are: the
+ * castle is raycast-as-floor with no lateral collision of its own.
+ */
+function resolveMarioCabinetCollisions(previousX,previousZ){
+  if(!marioCabinetSpots.length)return;
+  if(playerPosition.x>-88||playerPosition.x<-116)return;
+  const reach=ZELDA_CABINET_RADIUS+PLAYER_COLLISION_RADIUS;
+  for(const [x,z] of marioCabinetSpots){
+    const offsetX=playerPosition.x-x,offsetZ=playerPosition.z-z;
+    const distance=Math.hypot(offsetX,offsetZ);
+    if(distance>=reach)continue;
+    if(distance<1e-4){playerPosition.x=previousX;playerPosition.z=previousZ;return}
+    playerPosition.x=x+offsetX/distance*reach;
+    playerPosition.z=z+offsetZ/distance*reach;
+    return;
+  }
+}
 function resolveSocialLayoutCollisions(previousX,previousZ){
   if(Math.abs(playerPosition.x)<=Math.abs(PLAYSTATION_WALL_X)+PLAYER_COLLISION_RADIUS)return;
   // The dividers live between the partition and the shell and nowhere else:
@@ -4815,7 +4893,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-door-4';
+const ARCADE_BUILD='mario-castle-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -4851,7 +4929,7 @@ if(slowWindows>=2&&currentPixelRatio>pixelRatioFloor){
 // Callbacks that must run after movement is resolved but before the draw call.
 // Anything positioning a scene object from playerPosition belongs here: run
 // from its own requestAnimationFrame it would land a frame late and stutter.
-function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveZeldaCabinetCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-playerPosition.y*playerPosition.y;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
+function tick(){requestAnimationFrame(tick);const d=Math.min(clock.getDelta(),.05);if(emulatorRuntimeActive)return;const now=performance.now();const gamepadActive=pollArcadeGamepad(d);updatePerformanceStats(now);updateNearbyLights(now);animatedMixers.forEach(mixer=>mixer.update(d));if(now-lastPrizeLedDraw>=200&&playerPosition.distanceToSquared(prizeDisplay.position)<400){drawPrizeLed(now);lastPrizeLedDraw=now}loadNearbySceneModels(now);const controlsActive=locked||mobileInputAvailable()&&start.style.display==='none'&&!activeCabinet||gamepadActive&&!activeCabinet;if(controlsActive){movementVector.set((keys.KeyD?1:0)-(keys.KeyA?1:0)+mobileMove.x+gamepadMove.x,0,(keys.KeyS?1:0)-(keys.KeyW?1:0)+mobileMove.y+gamepadMove.y);localAnimationState=movementVector.lengthSq()?'walk':'idle';if(movementVector.lengthSq()){const analogSpeed=Math.min(1,movementVector.length());movementVector.normalize().multiplyScalar(d*11.25*analogSpeed).applyAxisAngle(upAxis,yaw);const previousX=playerPosition.x,previousZ=playerPosition.z;playerPosition.add(movementVector);resolvePartitionWallCollisions(previousX,previousZ);resolveWarpPipeCollisions(previousX);resolveSocialLayoutCollisions(previousX,previousZ);resolveStatueCollisions(previousX,previousZ);resolveRearGalleryCollision();resolvePokemonBowlCollisions(previousX,previousZ);resolveChaoGardenCollisions(previousX,previousZ);resolveZeldaCabinetCollisions(previousX,previousZ);resolveMarioCabinetCollisions(previousX,previousZ);resolveTempleFloor(previousX,previousZ);resolveCastleFloor(previousX,previousZ);resolveTopRowCollisions(previousX,previousZ);resolveSilentHillCollisions(previousX,previousZ);clampToWorld(previousX,previousZ)}const planarReachSq=CABINET_PROMPT_RANGE*CABINET_PROMPT_RANGE-PLAYER_EYE_HEIGHT*PLAYER_EYE_HEIGHT;near=planarReachSq>0?(window.ARCADE_CABINET_SPATIAL_INDEX?.nearest(playerPosition.x,playerPosition.z,Math.sqrt(planarReachSq))?.payload??null):null;if(near&&Math.abs(near.g.position.y-(playerPosition.y-PLAYER_EYE_HEIGHT))>1.8)near=null;warmEmulatorCore(near);const constructionRoom=nearbyConstructionRoom();if(constructionRoom)updateConstructionPrompt(constructionRoom);else updateCabinetPrompt()}else{localAnimationState=activeCabinet?'interact':'idle';if(now>=cabinetMessageUntil)prompt.classList.remove('active')}updateFollowCamera();game();for(const callback of beforeRenderCallbacks)callback(now,d);renderer.render(scene,camera)}tick();
 document.addEventListener('visibilitychange',()=>{performanceWindowStart=performance.now();performanceFrames=0;slowWindows=0;fastWindows=0});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);currentPixelRatio=Math.min(currentPixelRatio,renderScaleCeiling());renderer.setPixelRatio(currentPixelRatio)});
 // Start the preload the moment the scene exists. arcade.js is awaited before
