@@ -151,7 +151,7 @@ void test('the sealed rooms are closed in the scene and in what it enforces', ()
   assert.equal((client.match(/sealDoorway\('/g) ?? []).length, 1, 'Silent Hill is the only sealed room');
   assert.ok(client.includes("sealDoorway('Silent Hill'"), 'the barrier names the room');
   assert.ok(!/SILENT_DOOR_X\)>=1\.72/.test(client), 'the wall clamp no longer excuses the old doorway');
-  assert.ok(/const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8,25\.2\]/.test(client),
+  assert.ok(/const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8\]/.test(client),
     'the doorways that are open must be stated once');
   assert.ok(client.includes('resolveTopRowCollisions'), 'the top row needs real walls now that it is open');
   assert.ok(clientBounds.minZ < -50.4, 'the world must reach into the top row');

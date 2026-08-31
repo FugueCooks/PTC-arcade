@@ -405,7 +405,10 @@ const SIDE_ROOM_Z=[-25.2,-8.4,8.4,25.2];
 // pushed the whole east column south: Metroid and the room after it keep full
 // depth and the unbuilt room at the bottom absorbs the squeeze, so every door
 // on that side moved to its room's new centre.
-const OPEN_DOOR_Z_WEST=[-25.2,-8,8,25.2];
+// The doorway at 25.2 led to a bare, roofless room nothing ever moved into
+// (the Temple of Time once rose through its ceiling hole, and left for the
+// south-west lawn). The room is deleted: solid wall, plate over the bay.
+const OPEN_DOOR_Z_WEST=[-25.2,-8,8];
 // The east wall's only opening is the Pokemon Center's storefront run, which
 // is handled as an open stretch rather than a doorway; the -25.2 entry lies
 // inside that stretch. The three rooms south of it were empty and are deleted:
@@ -477,7 +480,7 @@ const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_W
 // The first two segments are pulled back to clear the warp pipe's mouth: the
 // opening on z -25.2 runs the pipe's full nine metres rather than a door's 3.2,
 // so the tube is seen whole from the hall instead of cropped to a slot.
-const PARTITION_WALL_SEGMENTS_WEST=[[-31.65,3.9],[-15.15,11.1],[0,12.8],[16.6,14],[30.2,6.8]];
+const PARTITION_WALL_SEGMENTS_WEST=[[-31.65,3.9],[-15.15,11.1],[0,12.8],[21.6,24]];
 // The first east segment is gone: the Pokemon Center fronts the hall through
 // where it stood, one wide opening with the old plaza doorway.
 const PARTITION_WALL_SEGMENTS_EAST=[[10.8,45.6]];
@@ -3030,7 +3033,10 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
   // over the Mario room, on the same nine metre slot, because this plate hangs
   // six centimetres below the main ceiling and would have cropped the pipe on
   // its own.
-  if(west){box(ROOM_SPAN,.12,3.9,0x090b18,roomX,5.08,-31.65,.08);box(ROOM_SPAN,.12,37.5,0x090b18,roomX,5.08,-1.95,.08);}
+  if(west){box(ROOM_SPAN,.12,3.9,0x090b18,roomX,5.08,-31.65,.08);box(ROOM_SPAN,.12,37.5,0x090b18,roomX,5.08,-1.95,.08);
+  // The plate over the deleted room at 25.2: the temple that once rose
+  // through this hole stands on the south-west lawn now, so the bay seals.
+  box(ROOM_SPAN,.12,16.8,0x090b18,roomX,5.08,25.2,.08);}
   // The east column's plate stops at the garden's new room: its sky dome
   // rises through the hole cut for it. The old garden room is the Pokemon
   // Center's plaza now, covered by the main ceiling like any other room.
@@ -3056,6 +3062,8 @@ for(const roomX of [-ANNEX_ROOM_CENTER_X,ANNEX_ROOM_CENTER_X]){
     // The Mario room is the warp pipe and nothing else now: no strips, no
     // troffers, no accent points burning inside a sealed box.
     if(west&&index===0)return;
+    // The bare room at west 25.2 is deleted and sealed: nothing burns there.
+    if(west&&index===3)return;
     const at=west?centerZ:EAST_ROOM_Z[index];
     // Four cyan strips per room at 4.65. In the Mario room the middle two land
     // at z -27.2 and -23.2, which is inside the bore: they drew as a pair of lit
@@ -3475,15 +3483,22 @@ function arcadeRow(centerX,count,spacing=ARCADE_ROW_SPACING){
  * The rows sit 11.5 m out, which clears the chandelier's bollards at 4.55 m
  * and leaves both partition walls, and every doorway in them, ten metres clear.
  */
-const FOYER_ROW_X=11.5,FOYER_ROW_SPACING=ARCADE_ROW_SPACING,FOYER_ROW_LENGTH=12;
-function foyerRow(side){
-  return Array.from({length:FOYER_ROW_LENGTH},(_,index)=>({
-    x:side*FOYER_ROW_X,
-    z:(index-(FOYER_ROW_LENGTH-1)/2)*FOYER_ROW_SPACING,
-    rotation:side<0?Math.PI/2:-Math.PI/2
-  }));
-}
-const FOYER_WEST=foyerRow(-1),FOYER_EAST=foyerRow(1);
+/**
+ * The hall's machines stand against its walls now, like a real arcade: backs
+ * to the partitions, screens facing the open floor. Twelve slots a side. The
+ * west list dodges the warp pipe's mouth (z -29.7..-20.7), both open doorways
+ * (-8 and 8, jambs included), and the two Mega Man hall murals (z 1.8..6.4
+ * and 9.7..16.8) so the art stays visible; the old doorway at 25.2 is sealed
+ * wall now, so the row runs past it. The east wall only exists south of the
+ * Pokemon storefront run, so its list starts at -11.2, and the Solana sign
+ * hangs at y 3+ so machines pass under it. The middle of the hall is open
+ * floor end to end.
+ */
+const WALL_ROW_X=20.6;
+const FOYER_WEST_Z=[-18.6,-16.3,-14,-11.7,-5.2,-2.9,-0.6,17.9,20.2,22.5,27.9,30.2];
+const FOYER_EAST_Z=[-11.2,-8.9,-6.6,-4.3,-2,0.3,2.6,4.9,7.2,9.5,11.8,14.1];
+const FOYER_WEST=FOYER_WEST_Z.map(z=>({x:-WALL_ROW_X,z,rotation:Math.PI/2}));
+const FOYER_EAST=FOYER_EAST_Z.map(z=>({x:WALL_ROW_X,z,rotation:-Math.PI/2}));
 const playstationRow=[
   ['silent-hill','SILENT HILL',0xc94c4c,false,false],
   ['pixel-rally',"TONY HAWK'S PRO SKATER 2",0x36f9f6,false,false],
@@ -3688,7 +3703,7 @@ for(const [index,x,z,rotation,hue] of n64CabinetLayout){
   // Super Mario 64 moved into Peach's Castle, which is the one room in the
   // building it is actually about. All three leave a gap in the row rather than
   // a renumbering.
-  if(index===1||index===2||index===5)continue;
+  if(index===1||index===2||index===5||index===7)continue; // 07 never held a game; deleted
   const cabinetId=`n64-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);makeCabinet(cabinetId,hosted?hosted.name.toUpperCase():`N64 // READY 0${index}`,x,z,hue,false,false,'n64');const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;configureHostedCabinet(cabinetId)}
 /**
  * The Pokemon library, lined up on the arena platform's north deck strip in
@@ -3959,6 +3974,9 @@ const ps2RoomTitles=['GOD OF WAR','KINGDOM HEARTS','GRAND THEFT AUTO: SAN ANDREA
 const ps2CabinetLayout=Array.from({length:5},(_,index)=>
   [index+1,FOYER_WEST[7+index].x,FOYER_WEST[7+index].z,FOYER_WEST[7+index].rotation]);
 for(const [index,x,z,rotation] of ps2CabinetLayout){
+  // Slots 1 and 5 held title plates with no game behind them — GOD OF WAR and
+  // PS2 // READY 05 — deleted rather than left standing dark on the wall.
+  if(index===1||index===5)continue;
   const cabinetId=`psx-back-cabinet-0${index}`,hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
   makeCabinet(cabinetId,ps2RoomTitles[index-1],x,z,expansionCabinetColors[index-1],false,false,'ps2');
   const cabinet=cabinets[cabinets.length-1];cabinet.g.rotation.y=rotation;Object.assign(cabinet,{system:'ps2',gameName:hosted?.name||ps2RoomTitles[index-1],gameId:hosted?.emulatorId||26000+index,enabled:Boolean(hosted),status:hosted?'available':'disabled'});configureHostedCabinet(cabinetId);

@@ -7,8 +7,9 @@ import { RoomManager } from '../server/src/rooms/room-manager.js';
 const identity = { displayName: 'CABINET TESTER', avatarId: 'neon-capsule' };
 const quiet = () => undefined;
 const roomConfigs = [
-  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -9.5, y: 1.65, z: -5.75, rotationY: Math.PI }, { x: -9.4, y: 1.65, z: -5.75, rotationY: Math.PI }] },
-  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -9.5, y: 1.65, z: -5.75, rotationY: Math.PI }] }
+  // Spawn beside Crash Bandicoot's wall slot: the hall rows stand against the walls now.
+  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -18.6, y: 1.65, z: -11.7, rotationY: Math.PI }, { x: -18.5, y: 1.65, z: -11.7, rotationY: Math.PI }] },
+  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -18.6, y: 1.65, z: -11.7, rotationY: Math.PI }] }
 ];
 
 function setup(options = {}) {
@@ -21,12 +22,12 @@ function setup(options = {}) {
 void test('the approved registry exposes consolidated console rooms and the MegaMan PlayStation cabinets', () => {
   const { cabinets } = setup();
   const snapshot = cabinets.snapshot('main');
-  assert.equal(snapshot.length, 93);
+  assert.equal(snapshot.length, 90);
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'pixel-rally'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'silent-hill'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'metal-gear-solid'));
-  assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'n64-cabinet-07'));
-  assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'psx-back-cabinet-05'));
+  assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'n64-cabinet-06'));
+  assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'psx-back-cabinet-02'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'sonic-cabinet-05'));
   assert.ok(snapshot.some(({ cabinetId }) => cabinetId === 'gamecube-cabinet-05'));
   assert.equal(snapshot.filter(({ cabinetId }) => cabinetId.startsWith('megaman-cabinet-')).length, 9);

@@ -26,7 +26,7 @@ export function syntheticRegistry(count: number, zones = 20): CabinetDefinition[
 
 void test('the shipped registry indexes by ID, zone, game, and type', () => {
   const index = new CabinetIndex(CABINET_REGISTRY);
-  assert.equal(index.size, 93);
+  assert.equal(index.size, 90);
   assert.equal(index.zoneCount, 12);
   assert.equal(index.forZone('megaman-room').length, 9);
   assert.equal(index.forZone('no-such-zone').length, 0);

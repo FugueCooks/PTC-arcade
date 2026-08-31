@@ -25,7 +25,7 @@ void test('no room in the building is sealed; every one of them is open', async 
   // The console games are all out in the foyer while the rooms are re-themed,
   // so their layouts are slots in the two hall rows rather than wall positions.
   assert.match(arcade, /const ps2CabinetLayout=Array\.from\(\{length:5\}/);
-  assert.match(arcade, /const FOYER_ROW_X=11\.5/);
+  assert.match(arcade, /const WALL_ROW_X=20\.6/);
   assert.match(arcade, /const gamecubeCabinetLayout=/);
   assert.match(arcade, /Room Under Construction\./);
 
@@ -36,9 +36,9 @@ void test('no room in the building is sealed; every one of them is open', async 
   // the authoritative path.
   // The east column re-planned around the grown garden, so each wall carries
   // its own door list and the two no longer mirror each other.
-  assert.match(arcade, /const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8,25\.2\];/);
+  assert.match(arcade, /const OPEN_DOOR_Z_WEST=\[-25\.2,-8,8\];/);
   assert.match(arcade, /const OPEN_DOOR_Z_EAST=\[-25\.2\];/);
-  assert.match(edge, /const OPEN_DOOR_Z_WEST = \[-25\.2, -8, 8, 25\.2\];/);
+  assert.match(edge, /const OPEN_DOOR_Z_WEST = \[-25\.2, -8, 8\];/);
   assert.match(edge, /const OPEN_DOOR_Z_EAST = \[-25\.2\];/);
   // The top row is walkable now, so its front wall and the walls between its
   // rooms have to be enforced rather than left to the world bound.

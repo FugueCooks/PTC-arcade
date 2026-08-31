@@ -13,7 +13,7 @@ const validRow = {
 void test('the shipped registry maps onto the domain model with zones and types', () => {
   const { definitions, issues } = readCabinetRegistry();
   assert.deepEqual(issues, []);
-  assert.equal(definitions.length, 93);
+  assert.equal(definitions.length, 90);
   assert.equal(new Set(definitions.map(({ zoneId }) => zoneId)).size, 12);
   assert.equal(definitions.filter(({ zoneId }) => zoneId === 'megaman-room').length, 9);
   assert.equal(definitions.filter(({ gameId }) => gameId !== null).length, 88);
@@ -24,7 +24,7 @@ void test('the shipped registry maps onto the domain model with zones and types'
 void test('every cabinet ID survives the Phase 11 migration unchanged', () => {
   // Milestone 11.39: existing cabinet IDs must remain stable.
   const ids = new Set(CABINET_REGISTRY.map(({ id }) => id));
-  for (const id of ['pixel-rally', 'silent-hill', 'metal-gear-solid', 'n64-cabinet-07', 'psx-back-cabinet-05', 'sonic-cabinet-05', 'gamecube-cabinet-05']) {
+  for (const id of ['pixel-rally', 'silent-hill', 'metal-gear-solid', 'n64-cabinet-06', 'psx-back-cabinet-02', 'sonic-cabinet-05', 'gamecube-cabinet-05']) {
     assert.ok(ids.has(id), `${id} must still exist`);
   }
   assert.equal([...ids].filter((id) => id.startsWith('megaman-cabinet-')).length, 9);

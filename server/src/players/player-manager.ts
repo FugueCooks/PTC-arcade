@@ -62,7 +62,7 @@ const PARTITION_COLLISION_HALF_WIDTH = 0.52 - 1e-6;
 // The east column re-planned around the grown garden: full rooms follow it
 // south and the unbuilt bottom room absorbs the squeeze, so the two partition
 // walls no longer mirror each other. Matches arcade.js.
-const OPEN_DOOR_Z_WEST = [-25.2, -8, 8, 25.2];
+const OPEN_DOOR_Z_WEST = [-25.2, -8, 8]; // the bare room behind the 25.2 doorway is deleted and sealed
 const OPEN_DOOR_Z_EAST = [-25.2]; // the three east rooms are deleted; the wall is solid across their old doorways
 const EAST_WALL_Z: Record<string, number> = { '-16.8': -12, '0': 4.8, '16.8': 21.6 };
 // The top row's front wall, with a doorway into each of its four rooms, and the

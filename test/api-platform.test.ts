@@ -48,7 +48,7 @@ void test('the platform endpoint reports honest capability', async () => {
     assert.ok(response.headers.get('x-request-id'), 'every response carries a request ID');
     const body = await response.json() as { ok: boolean; data: { cabinetDefinitions: number; replaySupported: boolean } };
     assert.equal(body.ok, true);
-    assert.equal(body.data.cabinetDefinitions, 93);
+    assert.equal(body.data.cabinetDefinitions, 90);
     assert.equal(body.data.replaySupported, false, 'the API must not claim replay support');
   } finally {
     await api.close();
@@ -118,12 +118,12 @@ void test('pagination walks the whole collection exactly once', async () => {
       const url = `${api.base}/cabinets?limit=10${cursor ? `&cursor=${cursor}` : ''}`;
       const page = await (await fetch(url)).json() as { data: Array<{ id: string }>; meta: { total: number; nextCursor: string | null } };
       seen.push(...page.data.map((row) => row.id));
-      assert.equal(page.meta.total, 93);
+      assert.equal(page.meta.total, 90);
       cursor = page.meta.nextCursor;
     } while (cursor !== null);
 
-    assert.equal(seen.length, 93);
-    assert.equal(new Set(seen).size, 93, 'no cabinet may appear twice across pages');
+    assert.equal(seen.length, 90);
+    assert.equal(new Set(seen).size, 90, 'no cabinet may appear twice across pages');
   } finally {
     await api.close();
   }

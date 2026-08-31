@@ -46,10 +46,11 @@ void test('an unassigned cabinet resolves no game and fails safely', () => {
   // Milestone 11.40 test 4: unknown game fails safely.
   const { registry } = loadGameRegistry();
   const placeholders = CABINET_REGISTRY.filter(({ gameId }) => gameId === null);
-  // The Halo stations are deleted. The placeholders now: N64 07, PS2 05,
-  // GameCube 03 and the two Dreamcast Adventures standing as display machines
-  // in the garden -- cabinets with no game assigned.
-  assert.equal(placeholders.length, 5);
+  // The dead title plates are deleted with their cabinets; the two Dreamcast
+  // Adventures standing as display machines in the garden are the only
+  // cabinets left with no game assigned, and they are display pieces on
+  // purpose.
+  assert.equal(placeholders.length, 2);
   assert.equal(registry.get('no-such-game'), undefined);
   assert.equal(registry.forCabinet('sonic-cabinet-05'), undefined);
   assert.equal(registry.has('no-such-game'), false);

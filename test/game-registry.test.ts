@@ -47,7 +47,8 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   const cabinets = await loadJson<Array<{ id: string; name: string; enabled: boolean; defaultGameId?: string; system?: string; emulatorId?: string; interactionPosition?: { x: number; y: number; z: number }; playerPosition?: { x: number; y: number; z: number } }>>('assets/cabinets/registry.json');
   const byId = new Map(cabinets.map((cabinet) => [cabinet.id, cabinet]));
   assert.equal(byId.get('n64-cabinet-06')?.defaultGameId, 'star-fox-64');
-  assert.equal(byId.get('n64-cabinet-07')?.defaultGameId, undefined);
+  // 07 never held a game and is deleted with the other empty plates.
+  assert.equal(byId.get('n64-cabinet-07'), undefined);
   assert.equal(byId.get('megaman-cabinet-09')?.defaultGameId, 'mega-man-64');
   assert.equal(byId.get('silent-hill')?.defaultGameId, 'silent-hill');
   assert.equal(byId.get('metal-gear-solid')?.defaultGameId, 'metal-gear-solid');
@@ -69,7 +70,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // three hold the shelf.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
     { x: -103.268871, y: 0.993, z: 36.433684 }, { x: -96.037024, y: 0.993, z: 33.538489 },
-    { x: 9.5, y: 1.65, z: 8.05 }, { x: 9.5, y: 1.65, z: 10.35 },
+    { x: 18.6, y: 1.65, z: 9.5 }, { x: 18.6, y: 1.65, z: 11.8 },
     // Sunshine stands in Peach's Castle hall, back-right corner, on its floor.
     { x: -100.5, y: 1.669, z: 0.3 }
   ]);
@@ -80,12 +81,12 @@ void test('unique N64 games are consolidated in the main room and the rear room 
     'super-smash-bros-melee',
     'super-mario-sunshine'
   ]);
-  assert.equal(byId.get('psx-back-cabinet-01')?.enabled, false);
+  assert.equal(byId.get('psx-back-cabinet-01'), undefined);
   assert.equal(byId.get('psx-back-cabinet-02')?.enabled, true);
   assert.equal(byId.get('psx-back-cabinet-03')?.enabled, true);
   assert.equal(byId.get('psx-back-cabinet-04')?.enabled, true);
-  assert.equal(byId.get('psx-back-cabinet-05')?.enabled, false);
-  assert.equal(byId.get('psx-back-cabinet-01')?.name, 'God of War (PS2)');
+  assert.equal(byId.get('psx-back-cabinet-05'), undefined);
+
   assert.equal(byId.get('psx-back-cabinet-02')?.name, 'Kingdom Hearts (PS2)');
   assert.equal(byId.get('psx-back-cabinet-03')?.name, 'Grand Theft Auto: San Andreas (PS2)');
   assert.equal(byId.get('psx-back-cabinet-04')?.name, 'Dragon Ball Z: Budokai Tenkaichi 3 (PS2)');

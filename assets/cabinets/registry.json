@@ -8,14 +8,14 @@
     "gameId": "tony-hawks-pro-skater-2",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": -10.35
+      "z": -16.3
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": -10.35
+      "z": -16.3
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "tony-hawks-pro-skater-2"
@@ -29,14 +29,14 @@
     "gameId": "gex-enter-the-gecko",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": -8.05
+      "z": -14
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": -8.05
+      "z": -14
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "gex-enter-the-gecko"
@@ -50,14 +50,14 @@
     "gameId": "crash-bandicoot",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": -5.75
+      "z": -11.7
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": -5.75
+      "z": -11.7
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "crash-bandicoot"
@@ -71,14 +71,14 @@
     "gameId": "spyro-year-of-the-dragon",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": -3.45
+      "z": -5.2
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": -3.45
+      "z": -5.2
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "spyro-year-of-the-dragon"
@@ -92,14 +92,14 @@
     "gameId": "twisted-metal-world-tour",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": -1.15
+      "z": -2.9
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": -1.15
+      "z": -2.9
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "twisted-metal-world-tour"
@@ -113,14 +113,14 @@
     "gameId": "silent-hill",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": -12.65
+      "z": -18.6
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": -12.65
+      "z": -18.6
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "silent-hill"
@@ -134,14 +134,14 @@
     "gameId": "metal-gear-solid",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": 1.15
+      "z": -0.6
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": 1.15
+      "z": -0.6
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "metal-gear-solid"
@@ -395,14 +395,14 @@
     "gameId": "glover",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
+      "x": 18.6,
       "y": 1.65,
-      "z": -8.05
+      "z": -6.6
     },
     "playerPosition": {
-      "x": 9.15,
+      "x": 18.25,
       "y": 1.65,
-      "z": -8.05
+      "z": -6.6
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "glover"
@@ -416,14 +416,14 @@
     "gameId": "doom-64",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
+      "x": 18.6,
       "y": 1.65,
-      "z": -5.75
+      "z": -4.3
     },
     "playerPosition": {
-      "x": 9.15,
+      "x": 18.25,
       "y": 1.65,
-      "z": -5.75
+      "z": -4.3
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "doom-64"
@@ -458,37 +458,17 @@
     "gameId": "star-fox-64",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
+      "x": 18.6,
       "y": 1.65,
-      "z": -1.15
+      "z": 0.3
     },
     "playerPosition": {
-      "x": 9.15,
+      "x": 18.25,
       "y": 1.65,
-      "z": -1.15
+      "z": 0.3
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "star-fox-64"
-  },
-  {
-    "id": "n64-cabinet-07",
-    "name": "N64 Cabinet 7",
-    "sceneKey": "N64 // READY 07",
-    "cabinetType": "n64-upright",
-    "zoneId": "main-floor-east",
-    "gameId": null,
-    "enabled": true,
-    "interactionPosition": {
-      "x": 9.5,
-      "y": 1.65,
-      "z": 1.15
-    },
-    "playerPosition": {
-      "x": 9.15,
-      "y": 1.65,
-      "z": 1.15
-    },
-    "playerRotationY": -1.5707963267948966
   },
   {
     "id": "gamecube-cabinet-01",
@@ -545,14 +525,14 @@
     "gameId": "pikmin",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
+      "x": 18.6,
       "y": 1.65,
-      "z": 8.05
+      "z": 9.5
     },
     "playerPosition": {
-      "x": 9.15,
+      "x": 18.25,
       "y": 1.65,
-      "z": 8.05
+      "z": 9.5
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "pikmin",
@@ -568,14 +548,14 @@
     "gameId": "super-smash-bros-melee",
     "enabled": true,
     "interactionPosition": {
-      "x": 9.5,
+      "x": 18.6,
       "y": 1.65,
-      "z": 10.35
+      "z": 11.8
     },
     "playerPosition": {
-      "x": 9.15,
+      "x": 18.25,
       "y": 1.65,
-      "z": 10.35
+      "z": 11.8
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "super-smash-bros-melee",
@@ -606,26 +586,6 @@
     "emulatorId": "gecko"
   },
   {
-    "id": "psx-back-cabinet-01",
-    "name": "God of War (PS2)",
-    "sceneKey": "GOD OF WAR",
-    "cabinetType": "ps2-kiosk",
-    "zoneId": "psx-back-gallery",
-    "gameId": null,
-    "enabled": false,
-    "interactionPosition": {
-      "x": -9.5,
-      "y": 1.65,
-      "z": 3.45
-    },
-    "playerPosition": {
-      "x": -9.15,
-      "y": 1.65,
-      "z": 3.45
-    },
-    "playerRotationY": 1.5707963267948966
-  },
-  {
     "id": "psx-back-cabinet-02",
     "name": "Kingdom Hearts (PS2)",
     "sceneKey": "KINGDOM HEARTS",
@@ -634,14 +594,14 @@
     "gameId": "kingdom-hearts",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": 5.75
+      "z": 20.2
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": 5.75
+      "z": 20.2
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "kingdom-hearts"
@@ -655,14 +615,14 @@
     "gameId": "gta-san-andreas",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": 8.05
+      "z": 22.5
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": 8.05
+      "z": 22.5
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "gta-san-andreas"
@@ -676,37 +636,17 @@
     "gameId": "dbz-tenkaichi-3",
     "enabled": true,
     "interactionPosition": {
-      "x": -9.5,
+      "x": -18.6,
       "y": 1.65,
-      "z": 10.35
+      "z": 27.9
     },
     "playerPosition": {
-      "x": -9.15,
+      "x": -18.25,
       "y": 1.65,
-      "z": 10.35
+      "z": 27.9
     },
     "playerRotationY": 1.5707963267948966,
     "defaultGameId": "dbz-tenkaichi-3"
-  },
-  {
-    "id": "psx-back-cabinet-05",
-    "name": "PS2 Cabinet 5",
-    "sceneKey": "PS2 // READY 05",
-    "cabinetType": "ps2-kiosk",
-    "zoneId": "psx-back-gallery",
-    "gameId": null,
-    "enabled": false,
-    "interactionPosition": {
-      "x": -9.5,
-      "y": 1.65,
-      "z": 12.65
-    },
-    "playerPosition": {
-      "x": -9.15,
-      "y": 1.65,
-      "z": 12.65
-    },
-    "playerRotationY": 1.5707963267948966
   },
   {
     "id": "gameboy-cabinet-01",
