@@ -2060,11 +2060,17 @@ function installPeachsCastle(){
         // measured, not guessed. Anything within 41 degrees of vertical is lost,
         // so the arcs run 45 to 135 either side: y 4.89 down to 1.05, clear of the
         // ceiling above and of the walker below.
-        const skinRadius=2.72,skinArc=Math.PI/2,skinX=[CASTLE_PIPE_WEST+.6,CASTLE_PIPE_EAST-.6];
-        const skinMid=(skinX[0]+skinX[1])/2;
+        // Galaxy goes right around the bore and the whole way down it: one
+        // continuous skin rather than panels with green between them. The radius
+        // is 2.90 against a bore of 2.92, which puts the bottom of the wrap at
+        // y 0.07 — on the walking floor, so you walk on the starfield rather than
+        // through a band floating above it. The crown ends up above the hall's
+        // ceiling and is simply never seen, which costs nothing now that there is
+        // no separate panel up there to lose.
+        const skinRadius=2.9,skinArc=Math.PI*2,skinX=[CASTLE_PIPE_WEST+.6,CASTLE_PIPE_EAST-.6];
         const axisY=CASTLE_PIPE_AXIS_Y+.86,axisZ=CASTLE_APPROACH_Z-CASTLE_CENTRE_Z;
         const curvedSkin=(centre,fromX,toX)=>{
-          const arcSegments=28,positions=[],uvs=[],indices=[];
+          const arcSegments=64,positions=[],uvs=[],indices=[];
           for(let i=0;i<=1;i++){
             const along=i,x=fromX+(toX-fromX)*along-CASTLE_CENTRE_X;
             for(let j=0;j<=arcSegments;j++){
@@ -2085,17 +2091,18 @@ function installPeachsCastle(){
           return geometry;
         };
         // Top of the bore, then the two haunches either side of it.
-        // The south flank takes two in sequence so all three still hang; the north
-        // flank takes one the whole way.
-        for(const [file,centre,fromX,toX] of [
-          ['mario-room-mural.webp?v=mario-1',-Math.PI/2,skinX[0],skinMid],
-          ['mario-room-mural-3.webp?v=mario-1',-Math.PI/2,skinMid,skinX[1]],
-          ['mario-room-mural-2.webp?v=mario-1',Math.PI/2,skinX[0],skinX[1]]
-        ]){
-          const texture=new THREE.TextureLoader().load('assets/art/'+file);
+        {
+          const texture=new THREE.TextureLoader().load('assets/art/mario-room-mural.webp?v=mario-1');
           texture.colorSpace=THREE.SRGBColorSpace;
           texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-          mount.add(new THREE.Mesh(curvedSkin(centre,fromX,toX),
+          // One pass, stretched, rather than tiled. The tube is 20.2m long and
+          // 18.2m round against art that is 1920x432, so a single mapping pulls
+          // it about four times taller than it was drawn — deliberately. Tiling
+          // kept the proportions but put four seams and four Marios round the
+          // bore; one stretched copy reads as a single continuous portal, which
+          // is the point of it.
+          texture.repeat.set(1,1);
+          mount.add(new THREE.Mesh(curvedSkin(0,skinX[0],skinX[1]),
             new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,toneMapped:false})));
         }
       },undefined,error=>console.warn('The warp pipe could not load.',error)));
@@ -2183,7 +2190,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-skin-2',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-galaxy-2',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4526,7 +4533,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-skin-2';
+const ARCADE_BUILD='galaxy-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
