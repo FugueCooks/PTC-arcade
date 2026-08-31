@@ -2076,7 +2076,10 @@ function installPeachsCastle(){
             for(let j=0;j<=arcSegments;j++){
               const across=j/arcSegments,theta=centre-skinArc/2+skinArc*across;
               positions.push(x,axisY+skinRadius*Math.cos(theta),axisZ+skinRadius*Math.sin(theta));
-              uvs.push(along,1-across);
+              // v runs with the arc, not against it, so the art's own bottom edge
+              // lands at the bottom of the bore: the green planet ends up under the
+              // player's feet and the sky over their head.
+              uvs.push(along,across);
             }
           }
           for(let i=0;i<1;i++)for(let j=0;j<arcSegments;j++){
@@ -2092,15 +2095,14 @@ function installPeachsCastle(){
         };
         // Top of the bore, then the two haunches either side of it.
         {
-          const texture=new THREE.TextureLoader().load('assets/art/mario-room-mural.webp?v=mario-1');
+          const texture=new THREE.TextureLoader().load('assets/art/mario-galaxy-portal.jpg?v=galaxy-portal-1');
           texture.colorSpace=THREE.SRGBColorSpace;
           texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-          // One pass, stretched, rather than tiled. The tube is 20.2m long and
-          // 18.2m round against art that is 1920x432, so a single mapping pulls
-          // it about four times taller than it was drawn — deliberately. Tiling
-          // kept the proportions but put four seams and four Marios round the
-          // bore; one stretched copy reads as a single continuous portal, which
-          // is the point of it.
+          // One pass, no tiling. This art is 800x1242 — portrait — so its long
+          // edge goes around the bore and its short edge down the tunnel, which
+          // costs 1.72x of stretch along the length. The old landscape mural cost
+          // 4.2x the other way and turned into a smear; this is the same single
+          // wrap, on a picture shaped to survive it.
           texture.repeat.set(1,1);
           mount.add(new THREE.Mesh(curvedSkin(0,skinX[0],skinX[1]),
             new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,toneMapped:false})));
@@ -2190,7 +2192,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-galaxy-2',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-galaxy-3',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4533,7 +4535,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='galaxy-2';
+const ARCADE_BUILD='galaxy-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
