@@ -2033,7 +2033,18 @@ function resolveTempleFloor(previousX,previousZ){
   }
   templeSettle=true;
   const feet=playerPosition.y-1.65;
-  const ground=templeGroundAt(playerPosition.x,playerPosition.z,feet);
+  let ground=templeGroundAt(playerPosition.x,playerPosition.z,feet);
+  if(ground===null){
+    // Slide before refusing, the same as the castle: a full revert also kills
+    // the along-edge component of the step, which made every temple edge and
+    // jamb feel like glue when brushed at an angle.
+    const slideGround=templeGroundAt(playerPosition.x,previousZ,feet);
+    if(slideGround!==null){playerPosition.z=previousZ;ground=slideGround}
+    else{
+      const slideGround2=templeGroundAt(previousX,playerPosition.z,feet);
+      if(slideGround2!==null){playerPosition.x=previousX;ground=slideGround2}
+    }
+  }
   if(ground===null){
     // stone ahead, or a drop with no floor: the step is refused and the
     // walker keeps the ground they were already standing on
@@ -2404,6 +2415,18 @@ function resolveCastleFloor(previousX,previousZ){
   // finds no floor and is put back. The threshold keeps the hall's level
   // instead, and the castle's own 25cm lip is a step up from there.
   if(ground===null&&playerPosition.x>CASTLE_THRESHOLD_X)ground=0;
+  if(ground===null){
+    // Slide before refusing. A full revert kills the along-edge component of
+    // the step too, so brushing a floor edge or a railing at an angle stopped
+    // ALL movement -- the sticky-wall feel on every castle edge. Try the step
+    // with one axis at a time; only a corner refuses outright.
+    const slideGround=castleGroundAt(playerPosition.x,previousZ,feet);
+    if(slideGround!==null){playerPosition.z=previousZ;ground=slideGround}
+    else{
+      const slideGround2=castleGroundAt(previousX,playerPosition.z,feet);
+      if(slideGround2!==null){playerPosition.x=previousX;ground=slideGround2}
+    }
+  }
   if(ground===null){
     playerPosition.x=previousX;playerPosition.z=previousZ;
     const held=castleGroundAt(previousX,previousZ,feet);
@@ -4874,7 +4897,11 @@ function resolveRearGalleryCollision(){}
 const silentHillBlocks=[];
 function resolveSilentHillCollisions(previousX,previousZ){
   if(!silentHillBlocks.length)return;
+  // Bounded on all four sides. The AABB loop below cannot false-fire, but the
+  // old two-sided guard ran 26 box checks per frame from the castle and the
+  // stadium -- the same loose-guard shape that produced two real walls.
   if(playerPosition.x>SILENT_HILL_EXPANSE.maxX+1||playerPosition.z>SILENT_HILL_EXPANSE.maxZ+1)return;
+  if(playerPosition.x<SILENT_WEST_X-6.5||playerPosition.z<SILENT_HILL_EXPANSE.minZ-1)return;
   for(const block of silentHillBlocks){
     if(playerPosition.x<=block.minX-PLAYER_COLLISION_RADIUS||playerPosition.x>=block.maxX+PLAYER_COLLISION_RADIUS)continue;
     if(playerPosition.z<=block.minZ-PLAYER_COLLISION_RADIUS||playerPosition.z>=block.maxZ+PLAYER_COLLISION_RADIUS)continue;
