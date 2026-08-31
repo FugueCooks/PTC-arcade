@@ -49,7 +49,13 @@ const MAX_PACKET_RATE_MS = 50;
 const DEFAULT_RECONNECT_GRACE_MS = 10_000;
 const MOVEMENT_TOLERANCE = 0.3;
 const PARTITION_WALL_X = 21.6;
-const PARTITION_COLLISION_HALF_WIDTH = 0.52;
+// 0.52 minus one micron. The client parks a blocked player at exactly
+// wall ± (0.18 + 0.34), which in IEEE doubles lands at 0.51999999999999957 from
+// the wall line -- strictly inside a bound of 0.52. Every move packet sent while
+// leaning on a wall was therefore refused, the avatar froze for everyone else,
+// and after ~0.7s the catch-up allowance capped and the desync outlived the
+// lean. The epsilon admits the client's own resting spot and nothing else.
+const PARTITION_COLLISION_HALF_WIDTH = 0.52 - 1e-6;
 // Four rooms open off each partition wall, and every one of them is walkable.
 // The only room still shut is the Multiplayer / Tournament hall, which is
 // behind the hall's own front wall. arcade.js holds the same table.
