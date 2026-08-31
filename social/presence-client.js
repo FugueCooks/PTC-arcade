@@ -71,6 +71,9 @@ export class PresenceClient {
       // The lowest of three recent RTTs is the best estimate of network latency;
       // higher samples can include rendering, emulator startup, or event-loop stalls.
       const networkPing = Math.min(...this.pingSamples);
+      // Published for the movement client: how much authoritative echo staleness
+      // is legitimate scales with this number, so it cannot live as a constant.
+      window.ARCADE_RTT_MS = networkPing;
       this.dot.className = networkPing > 350 ? 'poor' : 'online';
       this.stats.textContent = `${networkPing} MS · ${networkPing < 150 ? 'EXCELLENT' : networkPing < 350 ? 'GOOD' : 'WEAK'}`;
     });

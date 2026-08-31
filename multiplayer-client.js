@@ -81,7 +81,17 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
     // the camera backwards fifteen times a second, which reads as shaking. Mid
     // stride only a real desync is worth correcting.
     if (arcade.getLocalAnimationState?.() === 'walk') {
-      if (drift > 1) arcade.applyAuthoritativeTransform(target, 0.28);
+      // The comment above says the echo is stale by speed x latency -- but the
+      // threshold below used to be a constant 1m, which is only bigger than
+      // that staleness while the round trip stays under ~90ms. At 120ms ping a
+      // sprinting player's legitimate drift is 11.25 x 0.12 = 1.35m, so every
+      // echo crossed the bar and the 28% pull-back fired twenty times a second:
+      // the whole game read as immense lag the moment latency crossed the line,
+      // while the frame rate sat at 100fps. The bar now scales with the ping
+      // the presence client already measures, plus headroom for jitter.
+      const rttSeconds = (window.ARCADE_RTT_MS ?? 90) / 1000;
+      const legitimateStaleness = 11.25 * rttSeconds * 1.5 + 0.4;
+      if (drift > Math.max(1, legitimateStaleness)) arcade.applyAuthoritativeTransform(target, 0.28);
       return;
     }
     if (drift < 0.08 && rotationDrift < 0.05) return;
@@ -171,9 +181,9 @@ import { MatchPanel } from './matches/match-panel.js?v=arcade-rows-6';
         import('./avatars/avatar-renderer.js?v=phase4-1'), import('./avatars/avatar-registry.js?v=triple-t-label-2'),
         import('./cabinets/cabinet-network-client.js?v=phase4-1'), import('./cabinets/cabinet-visual-state.js?v=phase4-1'),
         import('./cabinets/cabinet-session-controller.js?v=phase4-1'), import('./cabinets/cabinet-registry.js?v=zelda-1'),
-        import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=network-meter-1'),
+        import('./social/chat-client.js?v=phase5-1'), import('./social/presence-client.js?v=rtt-bar-1'),
         import('./social/reaction-client.js?v=phase5-2'), import('./social/inspection-client.js?v=phase5-1'),
-        import('./world/world-manager.js?v=rooms-shuffle-1')
+        import('./world/world-manager.js?v=rtt-bar-1')
       ]);
       const avatarRegistry = await loadAvatarRegistry();
       avatarRenderer = new AvatarRenderer(arcade.scene, arcade.getCamera, avatarRegistry);
