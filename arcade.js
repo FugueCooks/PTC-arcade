@@ -1905,6 +1905,7 @@ const CASTLE_APPROACH_Z=-25.2,CASTLE_APPROACH_HALF=5.4,CASTLE_APPROACH_WEST=-57.
 // walks the bottom of the pipe, not a ledge inside it.
 const CASTLE_PIPE_BORE=1.246,CASTLE_PIPE_LENGTH=3.87;
 const CASTLE_PIPE_EAST=-21.6,CASTLE_PIPE_WEST=-43.2,CASTLE_PIPE_AXIS_Y=2.92;
+const CASTLE_PIPE_SHADE=.74;
 function installPeachsCastle(){
   if(castleStarted)return;
   castleStarted=true;
@@ -1983,14 +1984,38 @@ function installPeachsCastle(){
       // 14.2m from the arcade wall to the archway.
       void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pipe-model-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
+        pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
           if(!node.isMesh)return;
           node.castShadow=false;node.receiveShadow=false;
           const materials=Array.isArray(node.material)?node.material:[node.material];
           const swapped=materials.map(material=>new THREE.MeshBasicMaterial({
-            map:material.map??null,color:material.color?.clone()??new THREE.Color(0xffffff),
+            // The bake's green is a very bright 0.94; taken down to about three
+            // quarters it still reads as a warp pipe without glowing.
+            map:material.map??null,
+            color:(material.color?.clone()??new THREE.Color(0xffffff)).multiplyScalar(CASTLE_PIPE_SHADE),
             side:THREE.DoubleSide,toneMapped:false}));
           node.material=Array.isArray(node.material)?swapped:swapped[0];
+          // The far end is capped in the bake, so the tube dead-ends in a green
+          // disc instead of opening on the castle. The cap is the ring of
+          // triangles lying flat in the base plane; drop those and the pipe is
+          // open at both ends. Measured in the model's own space, where that
+          // plane is y=0, and a triangle only goes if ALL THREE of its corners
+          // are in it — otherwise the wall's bottom course goes with it.
+          const geometry=node.geometry,position=geometry.attributes.position;
+          const vertex=new THREE.Vector3(),lift=[];
+          for(let i=0;i<position.count;i++){
+            vertex.fromBufferAttribute(position,i).applyMatrix4(node.matrixWorld);
+            lift.push(vertex.y);
+          }
+          const index=geometry.getIndex(),kept=[];
+          const count=index?index.count:position.count;
+          for(let i=0;i<count;i+=3){
+            const a=index?index.getX(i):i,b=index?index.getX(i+1):i+1,c=index?index.getX(i+2):i+2;
+            if(lift[a]<.02&&lift[b]<.02&&lift[c]<.02)continue;
+            kept.push(a,b,c);
+          }
+          if(kept.length<count)geometry.setIndex(kept);
         });
         pipe.scale.set(CASTLE_PIPE_BORE,CASTLE_PIPE_LENGTH,CASTLE_PIPE_BORE);
         const pipeMount=new THREE.Group();
@@ -2114,7 +2139,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-room-2',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-pipe-room-3',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4450,7 +4475,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pipe-room-2';
+const ARCADE_BUILD='pipe-room-3';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
