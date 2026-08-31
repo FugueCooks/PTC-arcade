@@ -374,16 +374,16 @@
     "gameId": "super-mario-64",
     "enabled": true,
     "interactionPosition": {
-      "x": -102.22,
+      "x": -102.41,
       "y": 1.669,
-      "z": -46.65
+      "z": -47.68
     },
     "playerPosition": {
-      "x": -101.968171,
+      "x": -102.06,
       "y": 1.669,
-      "z": -46.406932
+      "z": -47.680001
     },
-    "playerRotationY": 3.944693,
+    "playerRotationY": 4.712393,
     "defaultGameId": "super-mario-64"
   },
   {
@@ -1426,16 +1426,16 @@
     "gameId": "super-mario-bros",
     "enabled": true,
     "interactionPosition": {
-      "x": -102.25,
+      "x": -102.33,
       "y": 1.669,
-      "z": -3.74
+      "z": -2.78
     },
     "playerPosition": {
-      "x": -101.998051,
+      "x": -101.98,
       "y": 1.669,
-      "z": -3.982944
+      "z": -2.780001
     },
-    "playerRotationY": 5.479593,
+    "playerRotationY": 4.712393,
     "defaultGameId": "super-mario-bros"
   },
   {
@@ -1447,16 +1447,16 @@
     "gameId": "super-mario-bros-2",
     "enabled": true,
     "interactionPosition": {
-      "x": -96.48,
+      "x": -98.38,
       "y": 1.669,
-      "z": -13.56
+      "z": -11
     },
     "playerPosition": {
-      "x": -96.19417,
+      "x": -98.132512,
       "y": 1.669,
-      "z": -13.761994
+      "z": -10.752513
     },
-    "playerRotationY": 5.327593,
+    "playerRotationY": 3.926993,
     "defaultGameId": "super-mario-bros-2"
   },
   {
@@ -1468,16 +1468,16 @@
     "gameId": "super-mario-bros-3",
     "enabled": true,
     "interactionPosition": {
-      "x": -101.88,
+      "x": -102.35,
       "y": 10.674,
-      "z": -25.27
+      "z": -25.23
     },
     "playerPosition": {
-      "x": -101.530002,
+      "x": -102,
       "y": 10.674,
-      "z": -25.268951
+      "z": -25.230001
     },
-    "playerRotationY": 4.709393,
+    "playerRotationY": 4.712393,
     "defaultGameId": "super-mario-bros-3"
   },
   {
@@ -1489,16 +1489,16 @@
     "gameId": "mario-bros",
     "enabled": true,
     "interactionPosition": {
-      "x": -97.05,
+      "x": -98.39,
       "y": 1.669,
-      "z": -37.4
+      "z": -39.45
     },
     "playerPosition": {
-      "x": -96.765386,
+      "x": -98.142514,
       "y": 1.669,
-      "z": -37.196297
+      "z": -39.697489
     },
-    "playerRotationY": 4.091193,
+    "playerRotationY": 5.497793,
     "defaultGameId": "mario-bros"
   },
   {
@@ -1510,16 +1510,16 @@
     "gameId": "mario-kart-64",
     "enabled": true,
     "interactionPosition": {
-      "x": -109.01,
+      "x": -102.35,
       "y": 10.674,
-      "z": 1.77
+      "z": -23.73
     },
     "playerPosition": {
-      "x": -108.753624,
+      "x": -102,
       "y": 10.674,
-      "z": 1.531733
+      "z": -23.730001
     },
-    "playerRotationY": 5.461193,
+    "playerRotationY": 4.712393,
     "defaultGameId": "mario-kart-64"
   },
   {
@@ -1531,16 +1531,16 @@
     "gameId": "paper-mario",
     "enabled": true,
     "interactionPosition": {
-      "x": -100.5,
-      "y": 1.669,
-      "z": -42.5
+      "x": -102.35,
+      "y": 10.674,
+      "z": -26.73
     },
     "playerPosition": {
-      "x": -100.232507,
-      "y": 1.669,
-      "z": -42.274284
+      "x": -102,
+      "y": 10.674,
+      "z": -26.730001
     },
-    "playerRotationY": 4.011493,
+    "playerRotationY": 4.712393,
     "defaultGameId": "paper-mario"
   },
   {
@@ -1552,16 +1552,16 @@
     "gameId": "super-mario-world",
     "enabled": true,
     "interactionPosition": {
-      "x": -100.5,
-      "y": 1.669,
-      "z": -8
+      "x": -109.49,
+      "y": 10.674,
+      "z": 2.25
     },
     "playerPosition": {
-      "x": -100.231878,
-      "y": 1.669,
-      "z": -8.224968
+      "x": -109.242514,
+      "y": 10.674,
+      "z": 2.002511
     },
-    "playerRotationY": 5.410493,
+    "playerRotationY": 5.497793,
     "defaultGameId": "super-mario-world"
   },
   {
@@ -1573,16 +1573,16 @@
     "gameId": "dr-mario",
     "enabled": true,
     "interactionPosition": {
-      "x": -95,
-      "y": 1.669,
-      "z": -45
+      "x": -108.43,
+      "y": 10.674,
+      "z": 3.31
     },
     "playerPosition": {
-      "x": -94.788659,
-      "y": 1.669,
-      "z": -44.721011
+      "x": -108.182514,
+      "y": 10.674,
+      "z": 3.062511
     },
-    "playerRotationY": 3.789893,
+    "playerRotationY": 5.497793,
     "defaultGameId": "dr-mario"
   }
 ]

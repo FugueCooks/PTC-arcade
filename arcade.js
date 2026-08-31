@@ -2038,7 +2038,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=mario-castle-3',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=mario-castle-4',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2174,7 +2174,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-3',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=mario-castle-4',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3606,11 +3606,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-3',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-3',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-3',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-3',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-3',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=mario-castle-4',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=mario-castle-4',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=mario-castle-4',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-4',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-4',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3663,23 +3663,23 @@ const MARIO_MACHINE_MODELS={
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
   // cabinets rather than at literal life size, which would leave them narrower
   // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-3',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-3',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-3',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=mario-castle-4',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=mario-castle-4',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=mario-castle-4',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-3',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-3',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=mario-castle-4',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=mario-castle-4',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1}
 };
 const MARIO_CASTLE_RING=[
-  ['mario-cabinet-01','smb', -102.25,.019, -3.74, 2.3380,0xff5f5f], // Super Mario Bros.
-  ['mario-cabinet-02','smb',  -96.48,.019,-13.56, 2.1860,0xffa14d], // Super Mario Bros. 2
-  ['mario-cabinet-03','smb3',-101.88,9.024,-25.27,1.5678,0x7dff67], // Super Mario Bros. 3
-  ['mario-cabinet-04','bros', -97.05,.019,-37.40, 0.9496,0x4aa8ff], // Mario Bros.
-  ['n64-cabinet-02',  'n64', -102.22,.019,-46.65, 0.8031,0xffd23e], // Super Mario 64
-  ['mario-cabinet-05','n64', -109.01,9.024,  1.77,2.3196,0x8cb4ff], // Mario Kart 64
-  ['mario-cabinet-06','n64', -100.50,.019,-42.50, 0.8699,0xd9d9e6], // Paper Mario
-  ['mario-cabinet-07','nes', -100.50,.019, -8.00, 2.2689,0xc06fff], // Super Mario World
-  ['mario-cabinet-08','nes',  -95.00,.019,-45.00, 0.6483,0x5fd48c]  // Dr. Mario
+  ['mario-cabinet-01','smb',   -102.33, 0.019,  -2.78, 1.5708,0xff5f5f], // super-mario-bros — north-west
+  ['mario-cabinet-02','smb',    -98.38, 0.019, -11.00, 0.7854,0xffa14d], // super-mario-bros-2 — north diagonal
+  ['mario-cabinet-04','bros',   -98.39, 0.019, -39.45, 2.3562,0x4aa8ff], // mario-bros — south diagonal
+  ['n64-cabinet-02','n64',   -102.41, 0.019, -47.68, 1.5708,0xffd23e], // super-mario-64 — south-west
+  ['mario-cabinet-03','smb3',  -102.35, 9.024, -25.23, 1.5708,0x7dff67], // super-mario-bros-3 — the grand 2F door
+  ['mario-cabinet-05','n64',   -102.35, 9.024, -23.73, 1.5708,0x8cb4ff], // mario-kart-64 — the grand 2F door
+  ['mario-cabinet-06','n64',   -102.35, 9.024, -26.73, 1.5708,0xd9d9e6], // paper-mario — the grand 2F door
+  ['mario-cabinet-07','nes',   -109.49, 9.024,   2.25, 2.3562,0xc06fff], // super-mario-world — 2F north
+  ['mario-cabinet-08','nes',   -108.43, 9.024,   3.31, 2.3562,0x5fd48c], // dr-mario — 2F north
 ];
 const marioCabinetSpots=[];
 for(const [cabinetId,kind,x,floorY,z,yaw,hue] of MARIO_CASTLE_RING){
@@ -4944,7 +4944,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='mario-castle-3';
+const ARCADE_BUILD='mario-castle-4';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
