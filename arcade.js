@@ -1873,7 +1873,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=spill-2',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=approach-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -1894,6 +1894,9 @@ function installPikomat(){
 let castleStarted=false,castleMount=null,castleSettle=false;
 const castleDown=new THREE.Vector3(0,-1,0),castleRayOrigin=new THREE.Vector3(),castleRay=new THREE.Raycaster();
 const CASTLE_STEP=1.4,CASTLE_FALL=6.8,CASTLE_CENTRE_X=-75.4,CASTLE_CENTRE_Z=-25.2,CASTLE_HEIGHT=31.5,CASTLE_THRESHOLD_X=-44.6;
+// The walled approach between the archway and the arcade wall, on the arch's
+// own z lines so the arch closes its west end.
+const CASTLE_APPROACH_Z=-25.2,CASTLE_APPROACH_HALF=5.4,CASTLE_APPROACH_WEST=-57.4;
 function installPeachsCastle(){
   if(castleStarted)return;
   castleStarted=true;
@@ -1920,6 +1923,33 @@ function installPeachsCastle(){
       const mount=new THREE.Group();
       mount.add(castle);
       mount.position.set(CASTLE_CENTRE_X,-.86,CASTLE_CENTRE_Z);
+      // The bake encloses itself only as far as x -57.4 — that is where its sky
+      // shell and its grass both stop. East of that only the arch and the
+      // carpet continue, so the whole 14m approach between the archway and the
+      // arcade's own wall had floor under it and nothing at either side: open
+      // to the black, both to look at and to walk out through. It is roofed and
+      // walled here, on the arch's own z lines so the arch itself closes the
+      // west end, in the arch's own brick so it reads as the same building.
+      const brick=(()=>{
+        let found=null;
+        mount.traverse(node=>{if(!found&&node.isMesh&&node.name==='Object_4')found=Array.isArray(node.material)?node.material[0]:node.material});
+        return found;
+      })();
+      if(brick){
+        const courses=brick.map?brick.map.clone():null;
+        if(courses){courses.needsUpdate=true;courses.wrapS=courses.wrapT=THREE.RepeatWrapping;courses.repeat.set(4,3.4)}
+        const walling=new THREE.MeshBasicMaterial({map:courses,color:brick.color?.clone()??new THREE.Color(0xffffff),side:THREE.DoubleSide});
+        const localZ=z=>z-CASTLE_CENTRE_Z,localX=x=>x-CASTLE_CENTRE_X,localY=y=>y+.86;
+        for(const [w,h,d,x,y,z] of [
+          [14.2,13,.5,-50.3,6.5,CASTLE_APPROACH_Z-CASTLE_APPROACH_HALF],
+          [14.2,13,.5,-50.3,6.5,CASTLE_APPROACH_Z+CASTLE_APPROACH_HALF],
+          [14.2,.5,CASTLE_APPROACH_HALF*2,-50.3,13,CASTLE_APPROACH_Z]
+        ]){
+          const piece=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),walling);
+          piece.position.set(localX(x),localY(y),localZ(z));
+          mount.add(piece);
+        }
+      }
       scene.add(mount);
       castleMount=mount;
       // A decal lying exactly on the surface it decorates cannot win a depth
@@ -1967,6 +1997,14 @@ function resolveCastleFloor(previousX,previousZ){
     }
     return;
   }
+  // The approach is a corridor, not an apron. Its carpet is far wider than the
+  // walls that now enclose it, and floor alone is permission to walk: without
+  // this a player simply strolls through the brick and out into the black
+  // beside it, which is exactly what happened.
+  if(playerPosition.x>CASTLE_APPROACH_WEST&&Math.abs(playerPosition.z-CASTLE_APPROACH_Z)>CASTLE_APPROACH_HALF-PLAYER_COLLISION_RADIUS){
+    playerPosition.x=previousX;playerPosition.z=previousZ;
+    return;
+  }
   castleSettle=true;
   const feet=playerPosition.y-1.65;
   let ground=castleGroundAt(playerPosition.x,playerPosition.z,feet);
@@ -1996,7 +2034,7 @@ function installSilentHillCast(){
   const place=(file,options)=>{
     void (async()=>{try{
       const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-spill-2',gltf=>{
+      loader.load('assets/models/silent-hill/'+file+'?v=sh-approach-1',gltf=>{
         const model=gltf.scene;
         model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
         const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
@@ -4332,7 +4370,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='spill-2';
+const ARCADE_BUILD='approach-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
