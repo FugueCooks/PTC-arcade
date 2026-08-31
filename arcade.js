@@ -1854,6 +1854,26 @@ function installTempleOfTime(){
           piece.position.set(x,y,z);
           mount.add(piece);
         }
+        // And the doorway under that head. Capping the arch was not enough: from
+        // the hall floor, 97 of 1012 rays fired across the front of the building
+        // still went past it, every one crossing the wall plane between y -3.17
+        // and 3.10 — the band under the head, split in two by the landing slab,
+        // which is also what was seen jutting through the opening from below.
+        //
+        // Sealed rather than glazed or narrowed, because there is nothing out
+        // there to look at. The temple stands three metres off the arcade's west
+        // wall, and that wall is open on this line, so the sightline runs
+        // straight through the building and out the far side to the Chao Garden.
+        //
+        // On the scene, not on the mount, and that is load-bearing. templeGroundAt
+        // raycasts the mount and this stone is DoubleSide, so a panel spanning the
+        // doorway's full height would be read as floor at its underside and drop
+        // anyone walking through it three and a half metres. The temple has no
+        // lateral collision of any kind, so the doorway still passes a player
+        // either way — the same reason its own columns are walk-through.
+        const doorway=new THREE.Mesh(new THREE.BoxGeometry(.5,6.7,10.2),stone);
+        doorway.position.set(-46.2,-.15,42);
+        scene.add(doorway);
       }
       scene.add(mount);
       templeMount=mount;
@@ -1940,7 +1960,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=temple-door-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=temple-door-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2076,7 +2096,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=temple-door-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=temple-door-2',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3506,11 +3526,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=temple-door-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=temple-door-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=temple-door-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=temple-door-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=temple-door-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=temple-door-2',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=temple-door-2',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=temple-door-2',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=temple-door-2',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=temple-door-2',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -4775,7 +4795,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-door-1';
+const ARCADE_BUILD='temple-door-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
