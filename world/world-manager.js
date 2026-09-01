@@ -1,4 +1,4 @@
-import { EnvironmentManager } from './environment-manager.js?v=pill-1';
+import { EnvironmentManager } from './environment-manager.js?v=poke-mats-2';
 import { LightingManager } from './lighting-manager.js';
 import { ObjectInteractionManager } from './object-interaction-manager.js';
 import { ParticleManager } from './particle-manager.js';

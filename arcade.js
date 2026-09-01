@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=pill-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=poke-mats-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .016);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 180);
 camera.position.set(0, 1.65, 11);
@@ -1153,13 +1153,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=pill-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=poke-mats-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=pill-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+    {file:'ff-room-mural-2.webp?v=poke-mats-2',span:16,at:new THREE.Vector3(10.54,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=pill-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+    {file:'ff-room-mural-3.webp?v=poke-mats-2',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -2099,7 +2099,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=pill-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=poke-mats-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2235,7 +2235,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pill-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=poke-mats-2',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3736,8 +3736,8 @@ const POKEMON_MACHINE_ROW=[
   // a 3.25m one is the half-sum of the two, 2.64. The whole run shifts left.
   ['nds-cabinet-01','ds',26.37,0x8cb4ff,{noPlate:true,statusY:2.31,mat:{file:'pokemon-diamond-mat.webp',w:2.4}}],
   ['nds-cabinet-02','ds',29.62,0xffb4d9,{noPlate:true,statusY:2.31,mat:{file:'pokemon-pearl-mat.webp',w:2.4}}],
-  ['nds-cabinet-03','ds',32.87,0xd9d9e6],
-  ['nds-cabinet-04','ds',36.12,0xffcf6b],
+  ['nds-cabinet-03','ds',32.87,0xd9d9e6,{noPlate:true,statusY:2.31,mat:{file:'pokemon-platinum-mat.webp',w:2.4}}],
+  ['nds-cabinet-04','ds',36.12,0xffcf6b,{noPlate:true,statusY:2.31,mat:{file:'pokemon-heartgold-mat.webp',w:2.4}}],
   ['nds-cabinet-05','ds',39.37,0xc0c0d0],
   ['nds-cabinet-06','ds',42.62,0x4a4a5f],
   ['nds-cabinet-07','ds',45.87,0xf0f0f5],
@@ -3772,11 +3772,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=pill-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=pill-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=pill-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pill-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pill-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=poke-mats-2',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=poke-mats-2',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=poke-mats-2',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=poke-mats-2',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=poke-mats-2',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3835,13 +3835,13 @@ const MARIO_MACHINE_MODELS={
   // for the console shells too, for the same reason the Pokemon machines
   // dropped theirs: the machine is the label. Each keeps its statusY, so the
   // status light still sits where the plate used to end.
-  smb:{noPlate:true,file:'assets/models/mario/mario-smb-arcade.glb?v=pill-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{noPlate:true,file:'assets/models/mario/mario-bros-arcade.glb?v=pill-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{noPlate:true,file:'assets/models/mario/mario-smb3-arcade.glb?v=pill-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{noPlate:true,file:'assets/models/mario/mario-smb-arcade.glb?v=poke-mats-2',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{noPlate:true,file:'assets/models/mario/mario-bros-arcade.glb?v=poke-mats-2',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{noPlate:true,file:'assets/models/mario/mario-smb3-arcade.glb?v=poke-mats-2',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{noPlate:true,file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pill-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{noPlate:true,file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pill-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  gamecube:{noPlate:true,file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=pill-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
+  n64:{noPlate:true,file:'assets/models/zelda/zelda-n64-cabinet.glb?v=poke-mats-2',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{noPlate:true,file:'assets/models/zelda/zelda-nes-cabinet.glb?v=poke-mats-2',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  gamecube:{noPlate:true,file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=poke-mats-2',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -3919,9 +3919,9 @@ for(const [cabinetId,gameId,rowZ,hue,system] of METROID_ROW){
  * runs Dreamcast, and a labelled machine that says so beats an empty lawn.
  */
 const SEGA_MACHINE_MODELS={
-  genesis:{file:'assets/models/sega/sega-genesis.glb?v=pill-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=pill-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=pill-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
+  genesis:{file:'assets/models/sega/sega-genesis.glb?v=poke-mats-2',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=poke-mats-2',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=poke-mats-2',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
 };
 const SONIC_GARDEN_ROW=[
   ['sonic-cabinet-01','genesis',    50,'sonic-the-hedgehog',0x4aa8ff],
@@ -4662,7 +4662,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=pill-1')
+  import('./emulators/disc-range-cache.js?v=poke-mats-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -4682,7 +4682,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=pill-1')
+  import('./emulators/disc-range-cache.js?v=poke-mats-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -5258,7 +5258,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='pill-1';
+const ARCADE_BUILD='poke-mats-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
