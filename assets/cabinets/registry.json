@@ -157,12 +157,12 @@
     "interactionPosition": {
       "x": -23.6,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -23.6,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x",
@@ -179,12 +179,12 @@
     "interactionPosition": {
       "x": -25.9,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -25.9,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x2",
@@ -201,12 +201,12 @@
     "interactionPosition": {
       "x": -28.2,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -28.2,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x3",
@@ -223,12 +223,12 @@
     "interactionPosition": {
       "x": -30.5,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -30.5,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x4",
@@ -245,12 +245,12 @@
     "interactionPosition": {
       "x": -32.8,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -32.8,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x5",
@@ -267,12 +267,12 @@
     "interactionPosition": {
       "x": -35.1,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -35.1,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-x6",
@@ -289,12 +289,12 @@
     "interactionPosition": {
       "x": -39.7,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -39.7,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-8",
@@ -311,12 +311,12 @@
     "interactionPosition": {
       "x": -37.4,
       "y": 1.65,
-      "z": 13.2
+      "z": 15.2
     },
     "playerPosition": {
       "x": -37.4,
       "y": 1.65,
-      "z": 12.85
+      "z": 14.85
     },
     "playerRotationY": 3.141592653589793,
     "system": "ps2",
@@ -331,16 +331,16 @@
     "gameId": "mega-man-64",
     "enabled": true,
     "interactionPosition": {
-      "x": -39.6,
+      "x": -42,
       "y": 1.65,
-      "z": 14.5
+      "z": 15.2
     },
     "playerPosition": {
-      "x": -39.25,
+      "x": -42,
       "y": 1.65,
-      "z": 14.5
+      "z": 14.85
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": 3.141592653589793,
     "defaultGameId": "mega-man-64",
     "system": "n64"
   },
