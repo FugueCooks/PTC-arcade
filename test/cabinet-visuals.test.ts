@@ -94,8 +94,10 @@ void test('the main room is an open hall beside square console rooms', async () 
   assert.doesNotMatch(arcade, /SOCIAL_COUCH_/);
   assert.doesNotMatch(arcade, /SOCIAL_DISPLAY_RADIUS/);
   assert.doesNotMatch(edge, /SOCIAL_COUCH_/);
-  // Trench Pepe moved out of that case and onto the prize counter.
-  assert.match(arcade, /gangsterPepeMount\.position\.set\(0,1\.265,0\);prizeDisplay\.add\(gangsterPepeMount\)/);
+  // The animated trench Pepe is deleted: 23.6MB, a quarter of the whole
+  // download, for one ornament on the counter. The counter keeps its other
+  // prizes, which are a fraction of the size between them.
+  assert.doesNotMatch(arcade, /gangsterPepeMount|pepe-gangster-animated/);
   // Both columns are floored in one piece again: the temple moved out of the
   // building to the south-west corner, so no room's floor is paved over by it.
   assert.match(arcade, /new THREE\.PlaneGeometry\(ROOM_SPAN,floorDepth\)/);

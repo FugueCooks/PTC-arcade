@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=temple-once-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=lean-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .016);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 180);
 camera.position.set(0, 1.65, 11);
@@ -474,8 +474,6 @@ box(14.6,5,.3,0x11182c,35.9,2.5,POKEMON_SOUTH_Z,.06);
 // walking east along z -45 took you out of the building entirely and up the
 // back of the stadium without ever using the vomitory.
 box(.3,5,POKEMON_SOUTH_Z-TOP_BAND_MIN_Z,0x11182c,POKEMON_WEST_X,2.5,(TOP_BAND_MIN_Z+POKEMON_SOUTH_Z)/2,.06);
-const gangsterPepeMount=new THREE.Group();
-const gangsterPepeLight=new THREE.PointLight(0xb9f5ff,3,3.5,2);
 const PLAYSTATION_WALL_X=-HALL_HALF_WIDTH,N64_WALL_X=HALL_HALF_WIDTH,PARTITION_WALL_HALF_THICKNESS=.18,PLAYABLE_ROOM_DOOR_Z=-8,CONSTRUCTION_ROOM_DOOR_Z=8,PS2_ROOM_CENTER_X=-ANNEX_ROOM_CENTER_X,PS2_ROOM_CENTER_Z=-25.2,PS2_ROOM_DOOR_Z=-16.8,PS2_ROOM_BACK_Z=-33.6,ROOM_DOOR_HALF_WIDTH=1.6,PLAYER_COLLISION_RADIUS=.34,PLAYER_EYE_HEIGHT=1.65;
 // The first two segments are pulled back to clear the warp pipe's mouth: the
 // opening on z -25.2 runs the pipe's full nine metres rather than a door's 3.2,
@@ -1153,13 +1151,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=temple-once-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=lean-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=temple-once-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+    {file:'ff-room-mural-2.webp?v=lean-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=temple-once-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+    {file:'ff-room-mural-3.webp?v=lean-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -1797,9 +1795,6 @@ let templeOfTimeStarted=false,templeStarted=false,templeMount=null,templeSettle=
 // Each outlying region hangs from its own group so the cull can drop the whole
 // place in one flag when nobody is near it. A hidden subtree costs no draw
 // calls, and these three are the heaviest things in the scene.
-const silentHillWorld=new THREE.Group();
-silentHillWorld.name='silent-hill-world';
-scene.add(silentHillWorld);
 const pokemonRosterWorld=new THREE.Group();
 pokemonRosterWorld.name='pokemon-roster-world';
 scene.add(pokemonRosterWorld);
@@ -2106,7 +2101,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=temple-once-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=lean-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2242,7 +2237,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=temple-once-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=lean-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -2450,125 +2445,6 @@ function resolveCastleFloor(previousX,previousZ){
  * of them is that the fog gives them up slowly. Pyramid Head is authored
  * facing away from the camera, the twins toward it, so their turns differ.
  */
-function installSilentHillCast(){
-  const place=(file,options)=>{
-    void (async()=>{try{
-      const loader=await getOptimizedGltfLoader();
-      loader.load('assets/models/silent-hill/'+file+'?v=sh-galaxy-3',gltf=>{
-        const model=gltf.scene;
-        model.traverse(node=>{if(node.isMesh){node.castShadow=false;node.receiveShadow=false}});
-        const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),centre=bounds.getCenter(new THREE.Vector3());
-        const scale=options.height/Math.max(size.y,.001);
-        const holder=new THREE.Group();
-        model.scale.setScalar(scale);
-        model.position.set(-centre.x*scale,-bounds.min.y*scale,-centre.z*scale);
-        holder.add(model);
-        holder.position.set(options.x,0,options.z);
-        holder.rotation.y=options.rotY;
-        silentHillWorld.add(holder);
-      },undefined,error=>console.warn('A Silent Hill figure could not load:',file,error));
-    }catch(error){console.warn('Silent Hill cast loader could not initialize.',error)}})();
-  };
-  // At the head of the street, hard against the east kerb where the fog is
-  // thickest. He was briefly put at x=-25.3 on the strength of a corner that
-  // measured well on paper and turned out to be INSIDE the block at (-21.4,-86),
-  // whose footprint runs x -25.65..-17.15 — which is why nobody could find him.
-  // -27.5 is in the roadway, about two metres clear of that block's west face,
-  // so he reads against its blank return as you come up the street. Turned half
-  // a circle to face back down the walk; the model faces away at rest.
-  place('pyramid-head.glb',{x:-27.5,z:-89.9,height:3.4,rotY:Math.PI});
-  // The twins keep to the kerbs, side-on to the street.
-  place('twin-victim.glb',{x:-40.2,z:-50.4,height:1.35,rotY:Math.PI/2});
-  place('twin-victim.glb',{x:-25.4,z:-63.4,height:1.35,rotY:-Math.PI/2+.3});
-}
-function installSilentHillBuildings(){
-  void (async()=>{try{
-    const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/silent-hill/sh1-building-11.glb?v=sh-buildings-1',gltf=>{
-      const source=gltf.scene;
-      source.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});
-      // Taller blocks, built the way a building gets taller: more storeys.
-      // Stretching one copy on Y smeared its windows into ribbons, so each
-      // site stacks whole copies instead and the masonry keeps its proportions.
-      // Only the ground floor brings its pavement slab.
-      const STOREY=9;
-      source.updateWorldMatrix(true,true);
-      const meshOrder=[],storeyBox=new THREE.Box3();
-      let slabIndex=-1;
-      source.traverse(node=>{
-        if(!node.isMesh)return;
-        storeyBox.setFromObject(node);
-        if(storeyBox.max.y-storeyBox.min.y<1)slabIndex=meshOrder.length;
-        meshOrder.push(node);
-      });
-      for(const [x,z,turn,scale,storeys] of [
-        [-28.1,-58.4,Math.PI/2,1,2],
-        // Two blocks backed against the arcade's north wall, either side of
-        // the one above. The warp pipe room's sky-brick box rises 2.4m proud
-        // of the arcade roof, and from the far north end of the street
-        // (z -92..-96) shallow rays cleared every rooftop and landed on that
-        // crown: Super Mario sky, framed by Silent Hill. These two close the
-        // band x -21..-51; raycast-swept from the whole district, no eye
-        // point sees the crown past them.
-        [-29,-55.1,Math.PI,1,2],
-        [-43,-55.1,Math.PI,1.02,2],
-        [-31,-65.4,0,1,3],
-        [-48,-65.4,0,1.04,2],
-        [-63,-65.4,0,.97,3],
-        [-54.5,-41,Math.PI,1,2],
-        // the street north of the building: blocks down both kerbs, thinning
-        // out as the fog takes over
-        [-21.4,-72.5,-Math.PI/2,1.02,3],
-        [-21.4,-86,-Math.PI/2,.98,2],
-        [-43.4,-72.5,Math.PI/2,1,2],
-        [-43.4,-86,Math.PI/2,1.03,3],
-        [-32.4,-93.5,0,1.05,3]
-      ]){
-        const mount=new THREE.Group();
-        for(let level=0;level<storeys;level++){
-          const building=source.clone(true);
-          if(level>0&&slabIndex>=0){
-            let seen=0;
-            building.traverse(node=>{
-              if(!node.isMesh)return;
-              if(seen===slabIndex)node.visible=false;
-              seen++;
-            });
-          }
-          building.position.y=level*STOREY;
-          mount.add(building);
-        }
-        mount.position.set(x,0,z);
-        mount.rotation.y=turn;
-        mount.scale.setScalar(scale);
-        silentHillWorld.add(mount);
-        // Each block is a hollow facade, open at the back and the top, and
-        // nothing enforced it: you could walk through the brickwork and out
-        // into the black behind the street. Take the footprint from the placed
-        // mount rather than the source, so scale and the quarter turns are
-        // already in it. Only the ground storey needs measuring — the upper
-        // copies sit directly above it.
-        mount.updateMatrixWorld(true);
-        const footprint=new THREE.Box3().setFromObject(mount.children[0]);
-        silentHillBlocks.push({
-          minX:footprint.min.x,maxX:footprint.max.x,
-          minZ:footprint.min.z,maxZ:footprint.max.z
-        });
-      }
-      // Solid cores for the two wall-backed blocks. The facade model is a
-      // hollow shell -- open back, open top, glass windows -- so on its own it
-      // leaks the exact sightline those two were placed to close: raycasts
-      // from the north street still reached the pipe room's crown through
-      // window openings. A dark core the size of each block makes them
-      // opaque from every angle, and in the fog it reads as interior gloom.
-      for(const [coreX,coreZ,coreW,coreH,coreD] of [[-29,-55.1,15.7,17.9,8.1],[-43,-55.1,16,18.3,8.2]]){
-        const core=new THREE.Mesh(new THREE.BoxGeometry(coreW,coreH,coreD),new THREE.MeshBasicMaterial({color:0x07090f}));
-        core.position.set(coreX,coreH/2-.05,coreZ);
-        silentHillWorld.add(core);
-      }
-    },undefined,error=>console.warn('Silent Hill buildings could not load.',error));
-  }catch(error){console.warn('Silent Hill building loader could not initialize.',error)}})();
-}
 function installChaoGardenFlora(){
   // Palms from the old procedural garden's prop file, and flower billboards,
   // seated on the real ground by the same ray the walk uses. All full-bright.
@@ -2865,9 +2741,10 @@ function buildSilentHillBlock(){
     const walk=new THREE.Mesh(new THREE.BoxGeometry(1.7,.14,MAX_Z-MIN_Z),kerb);
     walk.position.set(CX+side*9.6,.07,CZ);scene.add(walk);
   }
-  // The buildings are no longer generated: real Silent Hill 1 building
-  // geometry stands along both streets, cloned from a supplied model —
-  // installSilentHillBuildings, loaded on approach like every heavy asset.
+  // The district's buildings and cast are deleted: 6.3MB of models and some
+  // three hundred meshes for a street behind construction tape. The roads and
+  // kerbs stay -- they are a handful of planes, and they are what the room
+  // reads as from its doorway.
   // A cross-street runs west out of the building into the annex, and the
   // parking lot at the end of it is where the game machines will stand.
   const crossRoad=new THREE.Mesh(new THREE.PlaneGeometry(10,21.4),
@@ -3800,11 +3677,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=temple-once-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=temple-once-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=temple-once-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=temple-once-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=temple-once-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=lean-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=lean-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=lean-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=lean-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=lean-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3863,13 +3740,13 @@ const MARIO_MACHINE_MODELS={
   // for the console shells too, for the same reason the Pokemon machines
   // dropped theirs: the machine is the label. Each keeps its statusY, so the
   // status light still sits where the plate used to end.
-  smb:{noPlate:true,file:'assets/models/mario/mario-smb-arcade.glb?v=temple-once-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{noPlate:true,file:'assets/models/mario/mario-bros-arcade.glb?v=temple-once-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{noPlate:true,file:'assets/models/mario/mario-smb3-arcade.glb?v=temple-once-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{noPlate:true,file:'assets/models/mario/mario-smb-arcade.glb?v=lean-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{noPlate:true,file:'assets/models/mario/mario-bros-arcade.glb?v=lean-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{noPlate:true,file:'assets/models/mario/mario-smb3-arcade.glb?v=lean-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{noPlate:true,file:'assets/models/zelda/zelda-n64-cabinet.glb?v=temple-once-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{noPlate:true,file:'assets/models/zelda/zelda-nes-cabinet.glb?v=temple-once-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  gamecube:{noPlate:true,file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=temple-once-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
+  n64:{noPlate:true,file:'assets/models/zelda/zelda-n64-cabinet.glb?v=lean-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{noPlate:true,file:'assets/models/zelda/zelda-nes-cabinet.glb?v=lean-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  gamecube:{noPlate:true,file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=lean-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -3947,9 +3824,9 @@ for(const [cabinetId,gameId,rowZ,hue,system] of METROID_ROW){
  * runs Dreamcast, and a labelled machine that says so beats an empty lawn.
  */
 const SEGA_MACHINE_MODELS={
-  genesis:{file:'assets/models/sega/sega-genesis.glb?v=temple-once-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=temple-once-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=temple-once-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
+  genesis:{file:'assets/models/sega/sega-genesis.glb?v=lean-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=lean-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=lean-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
 };
 const SONIC_GARDEN_ROW=[
   ['sonic-cabinet-01','genesis',    50,'sonic-the-hedgehog',0x4aa8ff],
@@ -4193,8 +4070,6 @@ const prizeDisplayLights=[prizeDisplayLight,prizeLightBeam,prizeUnderlightBeam];
 // Trench Pepe stands on the counter top, at the same size he was in the case.
 // The prize windows occupy x = +/-1.15, 3.45 and 5.75, so the middle of the
 // counter is the one span of it that was never spoken for.
-gangsterPepeMount.position.set(0,1.265,0);prizeDisplay.add(gangsterPepeMount);
-gangsterPepeLight.position.set(0,1.95,.62);prizeDisplay.add(gangsterPepeLight);
 // The counter's flanks: a capsule tower on either end of the case, built from
 // the case's own materials so the three read as one piece of furniture. The
 // capsules are the arcade's gacha stock, procedural and light.
@@ -4279,7 +4154,6 @@ async function installPudgyModel(){try{const [loader,buffer]=await Promise.all([
 async function installFurthermoreModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/furthermore.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('furthermore-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.traverse(node=>{if(!node.isMesh)return;const materials=Array.isArray(node.material)?node.material:[node.material];for(const material of materials){if(material?.emissive){material.emissive.set(0x1a1209);material.emissiveIntensity=.1;}}});model.scale.setScalar(1.05/Math.max(size.x,size.y,size.z));model.rotation.y=-Math.PI/2;model.position.set(0,-.2,.18);slot.add(model);},undefined,error=>console.warn('Furthermore model could not load.',error));}catch(error){console.warn('Furthermore model loader could not initialize.',error)}}
 async function installEnterpriseModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/enterprise.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('enterprise-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());model.position.sub(center);model.scale.setScalar(.76/Math.max(size.x,size.y,size.z));model.rotation.y=Math.PI/2;model.position.y=.02;slot.add(model);},undefined,error=>console.warn('Enterprise model could not load.',error));}catch(error){console.warn('Enterprise model loader could not initialize.',error)}}
 async function installKurackModel(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/kurack.optimized.glb?v=meshopt-1',gltf=>{const slot=prizeDisplay.getObjectByName('kurack-model-slot');if(!slot)return;slot.clear();const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.72/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.rotation.y=Math.PI*1.5;model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y=-scaledBounds.min.y-.18;slot.add(model);},undefined,error=>console.warn('Kurack model could not load.',error));}catch(error){console.warn('Kurack model loader could not initialize.',error)}}
-async function installGangsterPepe(){try{const loader=await getOptimizedGltfLoader();loader.load('assets/models/pepe-gangster-animated.optimized.glb?v=meshopt-1',gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),scale=.016/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.set(-center.x*scale,0,-center.z*scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;gangsterPepeMount.add(model);if(gltf.animations.length){const mixer=new THREE.AnimationMixer(model);gltf.animations.forEach(clip=>mixer.clipAction(clip).play());animatedMixers.push(mixer);}},undefined,error=>console.warn('Animated gangster Pepe model could not load.',error));}catch(error){console.warn('Animated gangster Pepe loader could not initialize.',error)}}
 let prizeModelsStarted=false,megaManStatuesStarted=false,chaoGardenModelStarted=false,silentHillBuildingsStarted=false,pokemonCenterStarted=false,pokemonRosterStarted=false,nextHeavyAssetCheck=0;
 // Real controllers on the deck instead of a generic stick and four buttons.
 // Each model loads once per system and is cloned onto every cabinet of that
@@ -4341,7 +4215,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.z>8){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.z>8){templeOfTimeStarted=true;installTempleOfTime();}if(playerPosition.x<-14&&playerPosition.z<-12&&playerPosition.z>-40){installPeachsCastle();}if(!silentHillBuildingsStarted&&playerPosition.x<-14&&playerPosition.z<-28){silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();installPikomat();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
+  }if(!prizeModelsStarted&&playerPosition.distanceToSquared(prizeDisplay.position)<144){prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.z>8){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.z>8){templeOfTimeStarted=true;installTempleOfTime();}if(playerPosition.x<-14&&playerPosition.z<-12&&playerPosition.z>-40){installPeachsCastle();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();installPikomat();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
 /**
  * Everything heavy, loaded behind the avatar screen instead of underfoot.
  *
@@ -4365,7 +4239,7 @@ function warmSceneGpu(){
   // each is forced on for the pass and put back exactly as it was. r0.160 has
   // no compileAsync, so this is synchronous by necessity — which is precisely
   // why it belongs behind the avatar screen and not after it.
-  const regions=[silentHillWorld,pokemonRosterWorld,chaoWorld,templeMount,castleMount,stadiumArenaWorld,prizeDisplay].filter(Boolean);
+  const regions=[pokemonRosterWorld,chaoWorld,templeMount,castleMount,stadiumArenaWorld,prizeDisplay].filter(Boolean);
   const wasVisible=regions.map(region=>region.visible);
   for(const region of regions)region.visible=true;
   try{renderer.compile(scene,camera)}catch(error){console.warn('The GPU warm-up pass did not finish.',error)}
@@ -4376,17 +4250,18 @@ function preloadSceneModels(onProgress){
   scenePreloadStarted=true;
   // Nearest the spawn first, so an impatient player who enters early already
   // has what is in front of them.
+  // Only what a player can see from the spawn, or walks into within seconds of
+  // it. Peach's Castle, the Pokemon Center and the arena are minutes away
+  // through their own doorways and load on approach the way they always could
+  // -- keeping them here bought a hitch-free walk into rooms most players never
+  // open, and charged every player the download to get in the door.
   const steps=[
     ['the garden',()=>{chaoGardenModelStarted=true;installChaoGardenModel()}],
     ['the temple',()=>{templeOfTimeStarted=true;installTempleOfTime()}],
-    ['the castle',()=>installPeachsCastle()],
     ['the statues',()=>{megaManStatuesStarted=true;installMegaManStatues()}],
     ['the cabinets',()=>{for(const system of ['psx','n64','gamecube'])installControllerModel(system)}],
     ['the cabinet art',()=>{for(const cabinet of cabinets)if(cabinet.artSlug&&!cabinet.artApplied)applyCabinetArt(cabinet,cabinet.artSlug)}],
-    ['the prizes',()=>{prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel();installGangsterPepe()}],
-    ['the centre',()=>{pokemonCenterStarted=true;installPokemonCenter();installPikomat()}],
-    ['the arena',()=>{pokemonRosterStarted=true;installPokemonRoster()}],
-    ['the street',()=>{silentHillBuildingsStarted=true;installSilentHillBuildings();installSilentHillCast()}]
+    ['the prizes',()=>{prizeModelsStarted=true;installPepeModel();installPudgyModel();installFurthermoreModel();installEnterpriseModel();installKurackModel()}],
   ];
   return (async()=>{
     for(let index=0;index<steps.length;index++){
@@ -4423,7 +4298,6 @@ function updateChaoSkyVisibility(){
   // roster's 83 whenever the camera swung east -- nearly 200 draw calls for
   // rooms in another building. Same for the stadium bowl and the prize counter,
   // which had no gate at all: 79 and 116 more.
-  silentHillWorld.visible=playerPosition.z<-26&&playerPosition.x>-70;
   pokemonRosterWorld.visible=playerPosition.z<-44&&playerPosition.x>-16;
   if(stadiumArenaWorld)stadiumArenaWorld.visible=playerPosition.z<-30&&playerPosition.x>-16;
   prizeDisplay.visible=playerPosition.distanceToSquared(prizeDisplay.position)<5625;
@@ -4452,7 +4326,7 @@ muralLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},i
 // The Solana signs carry their own cheap additive glow. Two nearby washes tint
 // the player and floor without raising the live light budget as the arcade grows.
 solanaLights.sort((a,b)=>a.distanceSq-b.distanceSq).forEach(({light,distanceSq},index)=>{light.visible=index<2&&distanceSq<400});
-const prizeVisible=playerPosition.distanceToSquared(prizeDisplay.position)<144;gangsterPepeLight.visible=prizeVisible;prizeDisplayLights.forEach(light=>{light.visible=prizeVisible});}
+const prizeVisible=playerPosition.distanceToSquared(prizeDisplay.position)<144;prizeDisplayLights.forEach(light=>{light.visible=prizeVisible});}
 const prizeSignCanvas=document.createElement('canvas');prizeSignCanvas.width=1024;prizeSignCanvas.height=192;const psc=prizeSignCanvas.getContext('2d');const prizeLedTexture=new THREE.CanvasTexture(prizeSignCanvas);
 function drawPrizeLed(time=0){psc.fillStyle='#05060b';psc.fillRect(0,0,1024,192);for(let x=8;x<1024;x+=16){for(let y=8;y<192;y+=16){psc.fillStyle=(x+y)%32?'#101527':'#1c2540';psc.fillRect(x,y,3,3)}}psc.font='bold 88px monospace';psc.textBaseline='middle';psc.shadowColor='#ff3cac';psc.shadowBlur=20;psc.fillStyle='#fff4cc';const text='  ✦  PRIZE COUNTER  ✦  ';const width=psc.measureText(text).width;const offset=(time*.14)%(width+1024);psc.fillText(text,1024-offset,98);psc.fillText(text,1024-offset+width+160,98);psc.shadowBlur=0;prizeLedTexture.needsUpdate=true;}
 drawPrizeLed();
@@ -4690,7 +4564,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=temple-once-1')
+  import('./emulators/disc-range-cache.js?v=lean-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -4710,7 +4584,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=temple-once-1')
+  import('./emulators/disc-range-cache.js?v=lean-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -5104,21 +4978,6 @@ function resolveRearGalleryCollision(){}
  * projected: these are walls, and sliding along the inside of a wall is how a
  * player ends up in the void behind it.
  */
-const silentHillBlocks=[];
-function resolveSilentHillCollisions(previousX,previousZ){
-  if(!silentHillBlocks.length)return;
-  // Bounded on all four sides. The AABB loop below cannot false-fire, but the
-  // old two-sided guard ran 26 box checks per frame from the castle and the
-  // stadium -- the same loose-guard shape that produced two real walls.
-  if(playerPosition.x>SILENT_HILL_EXPANSE.maxX+1||playerPosition.z>SILENT_HILL_EXPANSE.maxZ+1)return;
-  if(playerPosition.x<SILENT_WEST_X-6.5||playerPosition.z<SILENT_HILL_EXPANSE.minZ-1)return;
-  for(const block of silentHillBlocks){
-    if(playerPosition.x<=block.minX-PLAYER_COLLISION_RADIUS||playerPosition.x>=block.maxX+PLAYER_COLLISION_RADIUS)continue;
-    if(playerPosition.z<=block.minZ-PLAYER_COLLISION_RADIUS||playerPosition.z>=block.maxZ+PLAYER_COLLISION_RADIUS)continue;
-    playerPosition.x=previousX;playerPosition.z=previousZ;
-    return;
-  }
-}
 /**
  * The Pokemon bowl is solid.
  *
@@ -5286,7 +5145,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='temple-once-1';
+const ARCADE_BUILD='lean-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
@@ -5320,7 +5179,6 @@ function runResolvers(previousX,previousZ){
     ['temple-floor',()=>resolveTempleFloor(previousX,previousZ)],
     ['castle-floor',()=>resolveCastleFloor(previousX,previousZ)],
     ['top-row',()=>resolveTopRowCollisions(previousX,previousZ)],
-    ['silent-hill',()=>resolveSilentHillCollisions(previousX,previousZ)],
     ['world-bounds',()=>clampToWorld(previousX,previousZ)]
   ];
   for(const [name,run] of chain){
@@ -5338,7 +5196,7 @@ function runResolvers(previousX,previousZ){
   }
 }
 const getRendererStats=()=>{const memory=performance.memory;return{...latestPerformance,renderScale:currentPixelRatio,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,heapUsedMb:memory?Number((memory.usedJSHeapSize/1048576).toFixed(1)):null,heapLimitMb:memory?Number((memory.jsHeapSizeLimit/1048576).toFixed(1)):null}};
-window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,playerPosition.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),debugInstallCastle:()=>installPeachsCastle(),debugInstallPikomat:()=>installPikomat(),debugInstallRoster:()=>installPokemonRoster(),debugWorldTick:()=>{nextHeavyAssetCheck=0;nextLightCull=0;loadNearbySceneModels(performance.now());updateNearbyLights(performance.now())},debugInstallSilentHill:()=>{installSilentHillBuildings();installSilentHillCast()},onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
+window.arcadeMultiplayer={scene,getCamera:()=>camera,getCanvas:()=>renderer.domElement,getLocalTransform:()=>({position:{x:playerPosition.x,y:playerPosition.y,z:playerPosition.z},rotationY:yaw}),getLocalAnimationState:()=>localAnimationState,isEmulatorActive:()=>emulatorRuntimeActive,isFirstPerson:()=>cameraMode==='first-person',getCameraMode:()=>cameraMode,isFollowingPlayer:()=>Boolean(socialFollowProvider),followPlayer:provider=>{socialFollowProvider=provider},clearPlayerFollow:()=>{socialFollowProvider=null},applyAuthoritativeTransform:({position,rotationY},strength=.12)=>{correctionTarget.set(position.x,playerPosition.y,position.z);playerPosition.lerp(correctionTarget,strength);const difference=Math.atan2(Math.sin(rotationY-yaw),Math.cos(rotationY-yaw));yaw+=difference*strength;},performanceProfile:{lowPower:lowPowerDevice,getRenderScale:()=>currentPixelRatio,getStats:getRendererStats},setCabinetState,setCabinetStates,showCabinetMessage,beginCabinetSession,forceCloseCabinetSession,debugInstallGarden:()=>installChaoGardenModel(),debugInstallTemple:()=>installTempleOfTime(),debugInstallCastle:()=>installPeachsCastle(),debugInstallPikomat:()=>installPikomat(),debugInstallRoster:()=>installPokemonRoster(),debugWorldTick:()=>{nextHeavyAssetCheck=0;nextLightCull=0;loadNearbySceneModels(performance.now());updateNearbyLights(performance.now())},onBeforeRender:callback=>{beforeRenderCallbacks.push(callback)}};
 function updatePerformanceStats(now){performanceFrames++;const elapsed=now-performanceWindowStart;if(elapsed<1000)return;const fps=Math.round(performanceFrames*1000/elapsed),frameMs=Math.round(elapsed/performanceFrames),quality=currentPixelRatio<=pixelRatioFloor+.01?'LOW':currentPixelRatio<.9?'MED':'HIGH';latestPerformance={fps,frameMs,quality};if(performanceStats)performanceStats.textContent=`${fps} FPS · ${frameMs} MS · ${quality} · ${Math.round(currentPixelRatio*100)}%`;// This only ever went down.
 //
 // It dropped the scale on a single second under 48 fps — one hitch, a model
