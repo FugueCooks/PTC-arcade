@@ -8,16 +8,16 @@
     "gameId": "tony-hawks-pro-skater-2",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": -16.3
+      "z": -3
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": -16.3
+      "z": -3
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "tony-hawks-pro-skater-2"
   },
   {
@@ -29,16 +29,16 @@
     "gameId": "gex-enter-the-gecko",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": -14
+      "z": -0.7
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": -14
+      "z": -0.7
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "gex-enter-the-gecko"
   },
   {
@@ -50,16 +50,16 @@
     "gameId": "crash-bandicoot",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": -11.7
+      "z": 1.6
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": -11.7
+      "z": 1.6
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "crash-bandicoot"
   },
   {
@@ -71,16 +71,16 @@
     "gameId": "spyro-year-of-the-dragon",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": -5.2
+      "z": 3.9
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": -5.2
+      "z": 3.9
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "spyro-year-of-the-dragon"
   },
   {
@@ -92,16 +92,16 @@
     "gameId": "twisted-metal-world-tour",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": -2.9
+      "z": 6.2
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": -2.9
+      "z": 6.2
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "twisted-metal-world-tour"
   },
   {
@@ -113,16 +113,16 @@
     "gameId": "silent-hill",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": -18.6
+      "z": -5.3
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": -18.6
+      "z": -5.3
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "silent-hill"
   },
   {
@@ -134,16 +134,16 @@
     "gameId": "metal-gear-solid",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": -0.6
+      "z": 8.5
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": -0.6
+      "z": 8.5
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "metal-gear-solid"
   },
   {
@@ -397,12 +397,12 @@
     "interactionPosition": {
       "x": 18.6,
       "y": 1.65,
-      "z": -6.6
+      "z": 17.7
     },
     "playerPosition": {
       "x": 18.25,
       "y": 1.65,
-      "z": -6.6
+      "z": 17.7
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "glover"
@@ -418,12 +418,12 @@
     "interactionPosition": {
       "x": 18.6,
       "y": 1.65,
-      "z": -4.3
+      "z": 20
     },
     "playerPosition": {
       "x": 18.25,
       "y": 1.65,
-      "z": -4.3
+      "z": 20
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "doom-64"
@@ -460,12 +460,12 @@
     "interactionPosition": {
       "x": 18.6,
       "y": 1.65,
-      "z": 0.3
+      "z": 22.3
     },
     "playerPosition": {
       "x": 18.25,
       "y": 1.65,
-      "z": 0.3
+      "z": 22.3
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "star-fox-64"
@@ -527,12 +527,12 @@
     "interactionPosition": {
       "x": 18.6,
       "y": 1.65,
-      "z": 9.5
+      "z": 24.6
     },
     "playerPosition": {
       "x": 18.25,
       "y": 1.65,
-      "z": 9.5
+      "z": 24.6
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "pikmin",
@@ -550,12 +550,12 @@
     "interactionPosition": {
       "x": 18.6,
       "y": 1.65,
-      "z": 11.8
+      "z": 26.9
     },
     "playerPosition": {
       "x": 18.25,
       "y": 1.65,
-      "z": 11.8
+      "z": 26.9
     },
     "playerRotationY": -1.5707963267948966,
     "defaultGameId": "super-smash-bros-melee",
@@ -594,16 +594,16 @@
     "gameId": "kingdom-hearts",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": 20.2
+      "z": 10.8
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": 20.2
+      "z": 10.8
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "kingdom-hearts"
   },
   {
@@ -615,16 +615,16 @@
     "gameId": "gta-san-andreas",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": 22.5
+      "z": 13.1
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": 22.5
+      "z": 13.1
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "gta-san-andreas"
   },
   {
@@ -636,16 +636,16 @@
     "gameId": "dbz-tenkaichi-3",
     "enabled": true,
     "interactionPosition": {
-      "x": -18.6,
+      "x": 18.6,
       "y": 1.65,
-      "z": 27.9
+      "z": 15.4
     },
     "playerPosition": {
-      "x": -18.25,
+      "x": 18.25,
       "y": 1.65,
-      "z": 27.9
+      "z": 15.4
     },
-    "playerRotationY": 1.5707963267948966,
+    "playerRotationY": -1.5707963267948966,
     "defaultGameId": "dbz-tenkaichi-3"
   },
   {

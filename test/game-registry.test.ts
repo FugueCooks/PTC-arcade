@@ -70,7 +70,7 @@ void test('unique N64 games are consolidated in the main room and the rear room 
   // three hold the shelf.
   assert.deepEqual(gamecubeCabinets.map((cabinet) => cabinet.interactionPosition), [
     { x: -103.268871, y: 0.993, z: 36.433684 }, { x: -96.037024, y: 0.993, z: 33.538489 },
-    { x: 18.6, y: 1.65, z: 9.5 }, { x: 18.6, y: 1.65, z: 11.8 },
+    { x: 18.6, y: 1.65, z: 24.6 }, { x: 18.6, y: 1.65, z: 26.9 },
     // Sunshine stands in Peach's Castle hall, back-right corner, on its floor.
     { x: -100.5, y: 1.669, z: 0.3 }
   ]);

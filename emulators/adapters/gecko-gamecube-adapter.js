@@ -1,5 +1,5 @@
 import { FRAME_SIGNALS, createCapabilities, estimateLoadTimeoutMs, preflightAssets } from '../emulator-adapter.js';
-import { fileNameFromUrl } from './play-ps2-adapter.js?v=poke-mats-3';
+import { fileNameFromUrl } from './play-ps2-adapter.js?v=east-wall-1';
 
 export const GECKO_FRAME_SRC = 'emulators/gecko/index.html?v=gecko-hosted-clean-1';
 

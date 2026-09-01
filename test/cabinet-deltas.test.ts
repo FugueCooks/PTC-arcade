@@ -9,8 +9,8 @@ import type { CabinetState } from '../server/src/protocol.js';
 const identity = { displayName: 'SCALE TESTER', avatarId: 'neon-capsule' };
 const quiet = () => undefined;
 const roomConfigs = [
-  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -18.6, y: 1.65, z: -11.7, rotationY: Math.PI }, { x: -18.5, y: 1.65, z: -11.7, rotationY: Math.PI }] },
-  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -18.6, y: 1.65, z: -11.7, rotationY: Math.PI }] }
+  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: 18.25, y: 1.65, z: 1.6, rotationY: Math.PI }, { x: 18.35, y: 1.65, z: 1.6, rotationY: Math.PI }] },
+  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: 18.25, y: 1.65, z: 1.6, rotationY: Math.PI }] }
 ];
 
 function setup() {
@@ -151,7 +151,7 @@ void test('nearby lookup goes through the spatial index', () => {
   const { cabinets } = setup();
   // Crash sits at the middle of the PlayStation row, which recentred when the
   // room widened to match every other room in the building.
-  const near = cabinets.nearestCabinet(-18.6, -11.7);
+  const near = cabinets.nearestCabinet(18.25, 1.6);
   assert.equal(near?.definition.id, 'crash-bandicoot');
   assert.equal(cabinets.nearestCabinet(9_999, 9_999), undefined);
 });

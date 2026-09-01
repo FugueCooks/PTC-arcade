@@ -8,8 +8,8 @@ const identity = { displayName: 'CABINET TESTER', avatarId: 'neon-capsule' };
 const quiet = () => undefined;
 const roomConfigs = [
   // Spawn beside Crash Bandicoot's wall slot: the hall rows stand against the walls now.
-  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: -18.6, y: 1.65, z: -11.7, rotationY: Math.PI }, { x: -18.5, y: 1.65, z: -11.7, rotationY: Math.PI }] },
-  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: -18.6, y: 1.65, z: -11.7, rotationY: Math.PI }] }
+  { id: 'main', spawnSeparation: 0.1, spawnPoints: [{ x: 18.25, y: 1.65, z: 1.6, rotationY: Math.PI }, { x: 18.35, y: 1.65, z: 1.6, rotationY: Math.PI }] },
+  { id: 'other', spawnSeparation: 0.1, spawnPoints: [{ x: 18.25, y: 1.65, z: 1.6, rotationY: Math.PI }] }
 ];
 
 function setup(options = {}) {
