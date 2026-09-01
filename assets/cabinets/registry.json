@@ -888,12 +888,12 @@
     "gameId": "pokemon-diamond",
     "enabled": true,
     "interactionPosition": {
-      "x": 28.4,
+      "x": 26.37,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 28.4,
+      "x": 26.37,
       "y": 1.65,
       "z": -125.45
     },
@@ -909,12 +909,12 @@
     "gameId": "pokemon-pearl",
     "enabled": true,
     "interactionPosition": {
-      "x": 31.65,
+      "x": 29.62,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 31.65,
+      "x": 29.62,
       "y": 1.65,
       "z": -125.45
     },
@@ -930,12 +930,12 @@
     "gameId": "pokemon-platinum",
     "enabled": true,
     "interactionPosition": {
-      "x": 34.9,
+      "x": 32.87,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 34.9,
+      "x": 32.87,
       "y": 1.65,
       "z": -125.45
     },
@@ -951,12 +951,12 @@
     "gameId": "pokemon-heartgold",
     "enabled": true,
     "interactionPosition": {
-      "x": 38.15,
+      "x": 36.12,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 38.15,
+      "x": 36.12,
       "y": 1.65,
       "z": -125.45
     },
@@ -972,12 +972,12 @@
     "gameId": "pokemon-soulsilver",
     "enabled": true,
     "interactionPosition": {
-      "x": 41.4,
+      "x": 39.37,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 41.4,
+      "x": 39.37,
       "y": 1.65,
       "z": -125.45
     },
@@ -993,12 +993,12 @@
     "gameId": "pokemon-black",
     "enabled": true,
     "interactionPosition": {
-      "x": 44.65,
+      "x": 42.62,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 44.65,
+      "x": 42.62,
       "y": 1.65,
       "z": -125.45
     },
@@ -1014,12 +1014,12 @@
     "gameId": "pokemon-white",
     "enabled": true,
     "interactionPosition": {
-      "x": 47.9,
+      "x": 45.87,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 47.9,
+      "x": 45.87,
       "y": 1.65,
       "z": -125.45
     },
@@ -1035,12 +1035,12 @@
     "gameId": "pokemon-black-2",
     "enabled": true,
     "interactionPosition": {
-      "x": 51.15,
+      "x": 49.12,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 51.15,
+      "x": 49.12,
       "y": 1.65,
       "z": -125.45
     },
@@ -1056,12 +1056,12 @@
     "gameId": "pokemon-white-2",
     "enabled": true,
     "interactionPosition": {
-      "x": 54.4,
+      "x": 52.37,
       "y": 1.65,
       "z": -125.1
     },
     "playerPosition": {
-      "x": 54.4,
+      "x": 52.37,
       "y": 1.65,
       "z": -125.45
     },

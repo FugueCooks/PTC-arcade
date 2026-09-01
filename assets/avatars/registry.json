@@ -3,9 +3,9 @@
   "avatars": [
     {
       "id": "neon-capsule",
-      "name": "Neon Capsule",
+      "name": "Pill",
       "modelUrl": null,
-      "thumbnailUrl": "assets/avatars/neon-capsule.svg",
+      "thumbnailUrl": "assets/avatars/neon-capsule.svg?v=pill-1",
       "scale": 1,
       "heightOffset": 0,
       "rotationOffset": 0,

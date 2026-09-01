@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=hall-walls-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=pill-1';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x090611, .016);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 180);
 camera.position.set(0, 1.65, 11);
@@ -1153,13 +1153,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=hall-walls-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=pill-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=hall-walls-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+    {file:'ff-room-mural-2.webp?v=pill-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=hall-walls-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+    {file:'ff-room-mural-3.webp?v=pill-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -2099,7 +2099,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=hall-walls-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=pill-1',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2235,7 +2235,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=hall-walls-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=pill-1',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3723,23 +3723,26 @@ const POKEMON_MACHINE_ROW=[
   ['gameboy-cabinet-02','gb',3.5,0x5f8cff,{noPlate:true,statusY:3.06,mat:{file:'pokemon-blue-mat.webp',w:1.8}}],
   ['n64-cabinet-01','arc',13.57,0xffd23e,{noPlate:true,statusY:3.35,top:{file:'pokemon-snap-banner.png',w:1.07,y:2.1,z:.12,tilt:0}}],
   ['gameboy-cabinet-03','gb',5.49,0xffe45f,{noPlate:true,statusY:3.06,mat:{file:'pokemon-yellow-mat.webp',w:1.8}}],
-  ['gameboy-cabinet-04','gb',7.49,0xd9b44a],
-  ['gameboy-cabinet-05','gb',9.52,0xc8ccd4],
-  ['gameboy-cabinet-06','gb',11.54,0x8ee6ff],
-  ['gameboy-cabinet-07','gbasp',15.6,0xd45f5f],
-  ['gameboy-cabinet-08','gbasp',17.63,0x4a8cd4],
-  ['gameboy-cabinet-09','gbasp',19.66,0xff8c5f],
-  ['gameboy-cabinet-10','gbasp',21.7,0x7dff67],
-  ['gameboy-cabinet-12','gbasp',23.73,0x4ad48c],
-  ['nds-cabinet-01','ds',28.4,0x8cb4ff],
-  ['nds-cabinet-02','ds',31.65,0xffb4d9],
-  ['nds-cabinet-03','ds',34.9,0xd9d9e6],
-  ['nds-cabinet-04','ds',38.15,0xffcf6b],
-  ['nds-cabinet-05','ds',41.4,0xc0c0d0],
-  ['nds-cabinet-06','ds',44.65,0x4a4a5f],
-  ['nds-cabinet-07','ds',47.9,0xf0f0f5],
-  ['nds-cabinet-08','ds',51.15,0x5f5f74],
-  ['nds-cabinet-09','ds',54.4,0xfafaff]
+  ['gameboy-cabinet-04','gb',7.49,0xd9b44a,{noPlate:true,statusY:3.06,mat:{file:'pokemon-gold-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-05','gb',9.52,0xc8ccd4,{noPlate:true,statusY:3.06,mat:{file:'pokemon-silver-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-06','gb',11.54,0x8ee6ff,{noPlate:true,statusY:3.06,mat:{file:'pokemon-crystal-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-07','gbasp',15.6,0xd45f5f,{noPlate:true,statusY:2.31,mat:{file:'pokemon-ruby-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-08','gbasp',17.63,0x4a8cd4,{noPlate:true,statusY:2.31,mat:{file:'pokemon-sapphire-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-09','gbasp',19.66,0xff8c5f,{noPlate:true,statusY:2.31,mat:{file:'pokemon-firered-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-10','gbasp',21.7,0x7dff67,{noPlate:true,statusY:2.31,mat:{file:'pokemon-leafgreen-mat.webp',w:1.8}}],
+  ['gameboy-cabinet-12','gbasp',23.73,0x4ad48c,{noPlate:true,statusY:2.31,mat:{file:'pokemon-emerald-mat.webp',w:1.8}}],
+  // The DS run closes up to the Game Boy Advance shelf: its first machine
+  // stood 4.67m from the last SP, where the pitch between a 2.03m machine and
+  // a 3.25m one is the half-sum of the two, 2.64. The whole run shifts left.
+  ['nds-cabinet-01','ds',26.37,0x8cb4ff,{noPlate:true,statusY:2.31,mat:{file:'pokemon-diamond-mat.webp',w:2.4}}],
+  ['nds-cabinet-02','ds',29.62,0xffb4d9,{noPlate:true,statusY:2.31,mat:{file:'pokemon-pearl-mat.webp',w:2.4}}],
+  ['nds-cabinet-03','ds',32.87,0xd9d9e6],
+  ['nds-cabinet-04','ds',36.12,0xffcf6b],
+  ['nds-cabinet-05','ds',39.37,0xc0c0d0],
+  ['nds-cabinet-06','ds',42.62,0x4a4a5f],
+  ['nds-cabinet-07','ds',45.87,0xf0f0f5],
+  ['nds-cabinet-08','ds',49.12,0x5f5f74],
+  ['nds-cabinet-09','ds',52.37,0xfafaff]
 ];
 for(const [cabinetId,kind,rowX,hue,opts] of POKEMON_MACHINE_ROW){
   const hosted=window.ARCADE_GAME_REGISTRY?.byCabinetId?.get(cabinetId);
@@ -3769,11 +3772,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=hall-walls-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=hall-walls-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=hall-walls-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=hall-walls-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=hall-walls-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=pill-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=pill-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=pill-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pill-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pill-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3824,15 +3827,21 @@ ZELDA_ROOM_RING.forEach(([cabinetId,kind,hue],index)=>{
 const MARIO_MACHINE_MODELS={
   // The three supplied arcade cabinets, all authored facing +z, so none needs a
   // modelRotY. Scaled to 2.7m at the marquee to sit with the arcade's own
-  // cabinets rather than at literal life size, which would leave them narrower
-  // than the marquee plate that labels them.
-  smb:{file:'assets/models/mario/mario-smb-arcade.glb?v=hall-walls-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{file:'assets/models/mario/mario-bros-arcade.glb?v=hall-walls-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{file:'assets/models/mario/mario-smb3-arcade.glb?v=hall-walls-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  // cabinets rather than at literal life size.
+  //
+  // None of them carries a generated marquee plate. These models are authored
+  // with their own artwork across the top, and a text banner hung in front of
+  // it read as a sticker over the cabinet's own marquee. The plate stays off
+  // for the console shells too, for the same reason the Pokemon machines
+  // dropped theirs: the machine is the label. Each keeps its statusY, so the
+  // status light still sits where the plate used to end.
+  smb:{noPlate:true,file:'assets/models/mario/mario-smb-arcade.glb?v=pill-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{noPlate:true,file:'assets/models/mario/mario-bros-arcade.glb?v=pill-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{noPlate:true,file:'assets/models/mario/mario-smb3-arcade.glb?v=pill-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=hall-walls-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=hall-walls-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=hall-walls-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
+  n64:{noPlate:true,file:'assets/models/zelda/zelda-n64-cabinet.glb?v=pill-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{noPlate:true,file:'assets/models/zelda/zelda-nes-cabinet.glb?v=pill-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  gamecube:{noPlate:true,file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=pill-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -3910,9 +3919,9 @@ for(const [cabinetId,gameId,rowZ,hue,system] of METROID_ROW){
  * runs Dreamcast, and a labelled machine that says so beats an empty lawn.
  */
 const SEGA_MACHINE_MODELS={
-  genesis:{file:'assets/models/sega/sega-genesis.glb?v=hall-walls-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=hall-walls-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=hall-walls-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
+  genesis:{file:'assets/models/sega/sega-genesis.glb?v=pill-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=pill-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=pill-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
 };
 const SONIC_GARDEN_ROW=[
   ['sonic-cabinet-01','genesis',    50,'sonic-the-hedgehog',0x4aa8ff],
@@ -4653,7 +4662,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=hall-walls-1')
+  import('./emulators/disc-range-cache.js?v=pill-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -4673,7 +4682,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=hall-walls-1')
+  import('./emulators/disc-range-cache.js?v=pill-1')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -4891,7 +4900,7 @@ function updateConstructionPrompt(roomName){prompt.classList.add('active');promp
 function setCabinetState(state){const cabinet=cabinetsById.get(state.cabinetId);if(!cabinet)return;if(!cabinet.enabled){cabinet.status='disabled';cabinet.occupiedByDisplayName=null;cabinet.statusLight.material.color.setHex(0x6c7896);cabinet.statusLight.material.emissive.setHex(0x26304a);return}cabinet.status=state.status;cabinet.occupiedByDisplayName=state.occupiedByDisplayName;const color=state.status==='available'?0x50ff9a:(state.status==='reserved'?0xffb42e:0xff3c76);cabinet.statusLight.material.color.setHex(color);cabinet.statusLight.material.emissive.setHex(color)}
 function setCabinetStates(states,ready){cabinetSnapshotReady=ready;states.forEach(state=>setCabinetState(state));if(!ready)cabinets.forEach(c=>{c.status=c.enabled?'syncing':'disabled';c.occupiedByDisplayName=null;c.statusLight.material.color.setHex(0x6c7896);c.statusLight.material.emissive.setHex(c.enabled?0x6c7896:0x26304a)})}
 function updateCabinetPrompt(){if(performance.now()<cabinetMessageUntil)return;if(!near){prompt.classList.remove('active');return}prompt.classList.add('active');const title=prompt.querySelector('b'),detail=prompt.querySelector('span');if(!near.enabled||near.status==='disabled'){if(near.disabledReason==='desktop-only'){title.textContent='GAMECUBE // DESKTOP ONLY';detail.textContent='ABOUT 1 GB PER GAME — OPEN ON A COMPUTER';return}
-    if(near.system==='gamecube'){title.textContent='GAMECUBE // GECKO';detail.textContent='BOOT VALIDATION IN PROGRESS'}else if(near.system==='xbox'){title.textContent='XBOX DISPLAY';detail.textContent='AWAITING GAME SETUP'}else{title.textContent='PS2 DISPLAY';detail.textContent='BROWSER CORE REQUIRED'}return}if(!cabinetSnapshotReady){title.textContent='SYNCING';detail.textContent='CABINET STATUS';return}if(near.status==='available'){title.textContent=mobileInputAvailable()?'TAP USE':'PRESS E';detail.textContent='TO ENTER CABINET';return}title.textContent=near.status==='reserved'?'RESERVED':'IN USE';detail.textContent=near.occupiedByDisplayName?`BY ${near.occupiedByDisplayName}`:'PLEASE WAIT'}
+    if(near.system==='gamecube'){title.textContent='GAMECUBE // GECKO';detail.textContent='BOOT VALIDATION IN PROGRESS'}else if(near.system==='xbox'){title.textContent='XBOX DISPLAY';detail.textContent='AWAITING GAME SETUP'}else{title.textContent='PS2 DISPLAY';detail.textContent='BROWSER CORE REQUIRED'}return}if(!cabinetSnapshotReady){title.textContent='SYNCING';detail.textContent='CABINET STATUS';return}if(near.status==='available'){title.textContent=mobileInputAvailable()?'TAP USE':'PRESS E';detail.textContent='TO PLAY '+String(near.gameName||near.name||'CABINET').toUpperCase();return}title.textContent=near.status==='reserved'?'RESERVED':'IN USE';detail.textContent=near.occupiedByDisplayName?`BY ${near.occupiedByDisplayName}`:'PLEASE WAIT'}
 function beginCabinetSession(cabinetId,alignment){const cabinet=cabinetsById.get(cabinetId);if(!cabinet||activeCabinet)return false;if(alignment?.position){playerPosition.set(...alignment.position);yaw=alignment.rotationY}openMachine(cabinet);return true}
 function forceCloseCabinetSession(cabinetId){if(activeCabinet?.id===cabinetId)closeMachine(false)}
 function resolvePartitionWallCollisions(previousX,previousZ){
@@ -5249,7 +5258,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='hall-walls-1';
+const ARCADE_BUILD='pill-1';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';
