@@ -1,6 +1,6 @@
 import { assertValidAdapter, platformOf } from './emulator-adapter.js';
 import { createEmulatorJsAdapter } from './adapters/emulatorjs-adapter.js';
-import { createPlayPs2Adapter } from './adapters/play-ps2-adapter.js?v=poke-mats-2';
+import { createPlayPs2Adapter } from './adapters/play-ps2-adapter.js?v=poke-mats-3';
 import { createGeckoGameCubeAdapter } from './adapters/gecko-gamecube-adapter.js';
 
 /**
