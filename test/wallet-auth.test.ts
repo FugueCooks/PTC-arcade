@@ -43,6 +43,18 @@ void test('wallet challenges are domain-bound, fresh, random, and single use', a
   const second = await service.create(wallet.address, origin, 1_000);
   assert.ok(first && second);
   assert.notEqual(first.input.nonce, second.input.nonce);
+  // Sign In With Solana inherits EIP-4361's grammar, where the nonce rule is
+  // `8*( ALPHA / DIGIT )`. A base64url nonce satisfies every assertion above
+  // and still breaks the message: `-` and `_` are outside the rule, a wallet
+  // that cannot parse the message never shows the request, and half of all
+  // logins failed on the toss of a coin. Enough draws here that a generator
+  // reaching outside the alphabet cannot pass by luck.
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const challenge = await service.create(wallet.address, origin, 1_000);
+    assert.ok(challenge);
+    assert.match(challenge.input.nonce ?? '', /^[A-Za-z0-9]{8,}$/,
+      `the sign-in grammar allows only letters and digits in a nonce, got ${challenge.input.nonce}`);
+  }
   assert.equal(first.input.domain, 'arcade.example');
   assert.equal(first.input.chainId, 'solana:mainnet');
   assert.equal(first.expiresAt, new Date(301_000).toISOString());
