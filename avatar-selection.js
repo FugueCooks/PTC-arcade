@@ -126,7 +126,14 @@ const submitAccount = async () => {
   showStatus(accountMode === 'register' ? 'Creating your account…' : 'Signing in…');
   try {
     const endpoint = accountMode === 'register' ? '/api/auth/register' : '/api/auth/login';
-    accountSession = await requestJson(endpoint, { method: 'POST', body: JSON.stringify({ username, password }) });
+    // The two schemas disagree on purpose: registration needs the avatar the
+    // player picked, and sign-in is strict and refuses any field it did not
+    // ask for -- sending one body for both fails whichever end is not being
+    // used at the time.
+    const body = accountMode === 'register'
+      ? { username, password, avatarId: selectedAvatarId }
+      : { username, password };
+    accountSession = await requestJson(endpoint, { method: 'POST', body: JSON.stringify(body) });
     // Nothing keeps the password once it has been sent.
     accountPassword.value = '';
     showAccountState();

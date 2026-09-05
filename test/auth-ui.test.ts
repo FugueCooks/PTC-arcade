@@ -21,6 +21,11 @@ void test('player selection supports temporary guests and username accounts', as
   assert.match(markup, /SIGN IN/);
   assert.match(client, /\/api\/auth\/register/);
   assert.match(client, /\/api\/auth\/login/);
+  // The two schemas disagree deliberately: registration requires avatarId and
+  // sign-in is strict and rejects it, so one shared body breaks whichever end
+  // is not in use. Sending only a username and password looked correct, passed
+  // every unit test, and was refused by the live endpoint for every account.
+  assert.match(client, /accountMode === 'register'\s*\n?\s*\? \{ username, password, avatarId: selectedAvatarId \}\s*\n?\s*: \{ username, password \}/);
 
   // The wallet flow is gone from what a player can reach: no picker, no
   // challenge, no signature. The server routes still exist behind it, so this
