@@ -152,5 +152,7 @@ void test('the arcade stops compositing itself while a game runs', async () => {
   assert.match(arcadeSource, /renderer\.domElement\.id='arcade-canvas'/, 'the canvas needs a handle to be hidden by');
   assert.match(css, /body\.emulator-running #arcade-canvas \{ display:none; \}/);
   // And the backdrop over it becomes opaque, or hiding the canvas gains nothing.
-  assert.match(css, /body\.emulator-running #machine-modal \{ background:#06030b; \}/);
+  // The point is that the modal goes fully opaque behind a running game, not
+  // which black it is; the palette moved from purple-black to graphite.
+  assert.match(css, /body\.emulator-running #machine-modal \{ background:#05080a; \}/);
 });

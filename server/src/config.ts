@@ -42,7 +42,6 @@ export interface ServerConfig {
   authCookieSecure: boolean;
   authRequestLimit: number;
   authAllowedOrigin?: string;
-  legacyPasswordAuthEnabled: boolean;
   walletAuthEnabled: boolean;
   walletChallengeTtlMs: number;
   walletChallengeMaxAttempts: number;
@@ -123,7 +122,6 @@ export function loadServerConfig(environment: NodeJS.ProcessEnv = process.env): 
     authCookieSecure: environment.NODE_ENV === 'production' || environment.AUTH_COOKIE_SECURE === '1',
     authRequestLimit: integer(environment.AUTH_REQUEST_LIMIT_PER_10_MINUTES, 30, 5, 1_000),
     authAllowedOrigin: publicUrl(environment.PUBLIC_APP_ORIGIN),
-    legacyPasswordAuthEnabled: environment.LEGACY_PASSWORD_AUTH_ENABLED === '1',
     walletAuthEnabled: environment.WALLET_AUTH_ENABLED !== '0',
     walletChallengeTtlMs: seconds(environment.WALLET_CHALLENGE_TTL_SECONDS, 300, 60, 900),
     walletChallengeMaxAttempts: integer(environment.WALLET_CHALLENGE_MAX_ATTEMPTS, 5, 1, 20),

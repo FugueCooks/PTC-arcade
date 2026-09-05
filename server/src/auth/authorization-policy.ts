@@ -4,7 +4,7 @@ import { DEFAULT_AVATAR_ID, isApprovedAvatarId } from '../avatars/avatar-registr
 export const DEFAULT_GUEST_AVATAR_ID = DEFAULT_AVATAR_ID;
 
 export interface IdentityEntitlements {
-  walletAuthenticated: boolean;
+  accountAuthenticated: boolean;
   canChooseCustomAvatar: boolean;
   canClaimPersistentDisplayName: boolean;
   canPersistPreferences: boolean;
@@ -13,10 +13,16 @@ export interface IdentityEntitlements {
 }
 
 export function entitlementsFor(identity: Pick<SafeIdentity, 'type' | 'walletAuthenticated'>): IdentityEntitlements {
-  const walletAuthenticated = identity.type === 'registered' && identity.walletAuthenticated === true;
-  return { walletAuthenticated, canChooseCustomAvatar: true,
-    canClaimPersistentDisplayName: walletAuthenticated, canPersistPreferences: walletAuthenticated,
-    canPersistProgress: walletAuthenticated, canPersistGameSaves: walletAuthenticated };
+  // Keeping anything follows having an account, not how the account was
+  // proved. This used to require a wallet signature, which was the only proof
+  // available while wallets were the only way to make an account; a username
+  // and a password prove the same thing. Left as it was, every account made
+  // through the new form would have been a registered identity that could save
+  // nothing: no name, no preferences, no progress, no game saves.
+  const accountAuthenticated = identity.type === 'registered';
+  return { accountAuthenticated, canChooseCustomAvatar: true,
+    canClaimPersistentDisplayName: accountAuthenticated, canPersistPreferences: accountAuthenticated,
+    canPersistProgress: accountAuthenticated, canPersistGameSaves: accountAuthenticated };
 }
 
 export function authoritativeAvatarId(identity: Pick<SafeIdentity, 'type' | 'walletAuthenticated'>, requested: unknown): string {

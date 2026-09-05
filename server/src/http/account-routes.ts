@@ -51,7 +51,7 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
       if (!entitlementsFor(session.identity).canClaimPersistentDisplayName) return unauthorized(response);
       const updated = await dependencies.accounts!.updateProfile(session.identity.id, parsed.data);
       if (!updated) return unauthorized(response);
-      const identity = { ...updated, walletAuthenticated: true, walletAddress: session.identity.walletAddress };
+      const identity = { ...updated, walletAuthenticated: session.identity.walletAuthenticated, walletAddress: session.identity.walletAddress };
       dependencies.identityChanged?.(identity); response.json({ ok: true, identity });
     } catch { unavailable(response); }
   });
@@ -87,7 +87,7 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
     try {
       if ('confirmation' in parsed.data) {
         await dependencies.accounts!.deleteWalletAccount(session.identity.id);
-      } else if (!config.legacyPasswordAuthEnabled || !await dependencies.accounts!.deleteAccount(session.identity.id, parsed.data.password)) {
+      } else if (!await dependencies.accounts!.deleteAccount(session.identity.id, parsed.data.password)) {
         response.status(403).json(error('authentication-failed', 'Account deletion was not accepted.')); return;
       }
       dependencies.accountDeleted?.(session.identity); clearCookie(response, config); response.status(204).end();
@@ -98,7 +98,7 @@ export function installAccountRoutes(app: Express, config: ServerConfig, depende
 async function registeredSession(request: Request, config: ServerConfig, auth: AuthService) {
   try {
     const session = await auth.session(readSessionCookie(request.get('Cookie'), config.authCookieName));
-    return session?.identity.type === 'registered' && session.identity.walletAuthenticated === true ? session : undefined;
+    return session?.identity.type === 'registered' ? session : undefined;
   } catch { return undefined; }
 }
 function clearCookie(response: Response, config: ServerConfig) {

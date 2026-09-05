@@ -19,13 +19,17 @@ export class RealtimeTicketService {
 
   issue(identity: SafeIdentity, now = Date.now()): { ticket: string; expiresAt: Date } {
     const expiresAt = new Date(now + this.ttlMs);
-    const walletAuthenticated = entitlementsFor(identity).walletAuthenticated;
+    const accountAuthenticated = entitlementsFor(identity).accountAuthenticated;
     const payload: RealtimeTicketPayload = {
       v: 2,
       pid: stablePublicPlayerId(identity),
       n: identity.displayName,
       a: authoritativeAvatarId(identity, identity.avatarId),
-      mode: walletAuthenticated ? 'wallet' : 'guest',
+      // 'wallet' is the wire value for an authenticated account, kept as it
+      // is because the edge worker checks this field against its own allowlist
+      // and deploys separately: renaming it here would refuse every ticket
+      // until that deploy caught up.
+      mode: accountAuthenticated ? 'wallet' : 'guest',
       exp: expiresAt.getTime(),
       nonce: randomUUID()
     };

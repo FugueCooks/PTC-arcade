@@ -84,10 +84,19 @@ void test('expired, altered, and wrong-wallet authentication attempts are reject
 void test('guest entitlements allow approved avatars while denying durable writes', () => {
   const guest = { type: 'guest' as const, walletAuthenticated: false };
   assert.deepEqual(entitlementsFor(guest), {
-    walletAuthenticated: false, canChooseCustomAvatar: true, canClaimPersistentDisplayName: false,
+    accountAuthenticated: false, canChooseCustomAvatar: true, canClaimPersistentDisplayName: false,
     canPersistPreferences: false, canPersistProgress: false, canPersistGameSaves: false
   });
   assert.equal(entitlementsFor({ type: 'registered', walletAuthenticated: true }).canPersistGameSaves, true);
+  // An account made with a username and a password carries no wallet, and must
+  // still be able to keep things. Gating persistence on the wallet flag would
+  // hand every such account a profile that silently saves nothing, which is
+  // exactly the shape of bug a deep-equal on the guest case cannot catch.
+  const password = { type: 'registered' as const, walletAuthenticated: false };
+  assert.deepEqual(entitlementsFor(password), {
+    accountAuthenticated: true, canChooseCustomAvatar: true, canClaimPersistentDisplayName: true,
+    canPersistPreferences: true, canPersistProgress: true, canPersistGameSaves: true
+  });
   assert.equal(authoritativeAvatarId(guest, 'omni-man'), 'omni-man');
   assert.equal(authoritativeAvatarId(guest, '../../untrusted.glb'), DEFAULT_GUEST_AVATAR_ID);
   assert.equal(authoritativeAvatarId({ type: 'registered', walletAuthenticated: true }, 'omni-man'), 'omni-man');

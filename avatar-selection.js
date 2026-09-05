@@ -14,21 +14,24 @@ const cards = document.querySelector('#avatar-cards');
 const status = document.querySelector('#avatar-status');
 const confirmButton = document.querySelector('#avatar-confirm');
 const cancelButton = document.querySelector('#placement-cancel');
-const walletPanel = document.querySelector('#wallet-panel');
-const walletSelect = document.querySelector('#wallet-select');
-const walletConnect = document.querySelector('#wallet-connect');
-const walletSignout = document.querySelector('#wallet-signout');
-const walletChange = document.querySelector('#wallet-change');
-const walletCopy = document.querySelector('#wallet-copy');
-const walletAddress = document.querySelector('#wallet-address');
+const accountPanel = document.querySelector('#account-panel');
+const accountSignedOut = document.querySelector('#account-signed-out');
+const accountSignedIn = document.querySelector('#account-signed-in');
+const accountWho = document.querySelector('#account-who');
+const accountUsername = document.querySelector('#account-username');
+const accountPassword = document.querySelector('#account-password');
+const accountSubmit = document.querySelector('#account-submit');
+const accountSignout = document.querySelector('#account-signout');
+const tabSignIn = document.querySelector('#account-tab-signin');
+const tabRegister = document.querySelector('#account-tab-register');
 const identityMode = document.querySelector('#identity-mode');
-const profileFields = document.querySelector('#wallet-profile-fields');
+const profileFields = document.querySelector('#account-profile-fields');
 const placementClient = new RoomPlacementClient();
 let selectedAvatarId = 'neon-capsule';
 let staticRooms;
 let accountSession;
 let avatarRegistry;
-let walletClient;
+let accountMode = 'signin';
 
 const readPreferences = () => {
   try {
@@ -64,62 +67,80 @@ const requestJson = async (url, options = {}) => {
   return payload;
 };
 
-const isWalletSession = () => accountSession?.identity?.type === 'registered' && accountSession.identity.walletAuthenticated === true;
+// A real account rather than the throwaway identity a guest is handed. The
+// wallet flow used to add a second condition here, because a registered row
+// could exist without the wallet having proved anything; a username and
+// password leave nothing half-proved, so the type is the whole answer.
+const isRegisteredSession = () => accountSession?.identity?.type === 'registered';
 
-const showIdentityMode = () => {
-  const authenticated = isWalletSession();
-  walletPanel.dataset.authenticated = String(authenticated);
-  identityMode.textContent = authenticated ? 'WALLET ACCOUNT' : 'GUEST MODE';
-  profileFields.hidden = !authenticated;
-  walletSignout.hidden = !authenticated;
-  walletChange.hidden = !authenticated;
-  walletCopy.hidden = !authenticated;
-  walletConnect.hidden = authenticated;
-  walletSelect.hidden = authenticated;
-  confirmButton.textContent = authenticated ? 'ENTER ARCADE' : 'PLAY AS GUEST';
-  if (authenticated) {
-    const address = accountSession.identity.walletAddress ?? '';
-    walletAddress.textContent = address ? `${address.slice(0, 4)}…${address.slice(-4)} · AUTHENTICATED` : 'AUTHENTICATED';
-    walletAddress.hidden = false;
+const showAccountState = () => {
+  const registered = isRegisteredSession();
+  accountPanel.dataset.authenticated = String(registered);
+  identityMode.textContent = registered ? 'ARCADE ACCOUNT' : 'GUEST MODE';
+  accountSignedOut.hidden = registered;
+  accountSignedIn.hidden = !registered;
+  profileFields.hidden = !registered;
+  confirmButton.textContent = registered ? 'ENTER ARCADE' : 'PLAY AS GUEST';
+  if (registered) {
+    accountWho.textContent = `SIGNED IN AS ${accountSession.identity.displayName.toUpperCase()}`;
     nameInput.value = accountSession.identity.displayName;
     selectedAvatarId = avatarRegistry?.has(accountSession.identity.avatarId) ? accountSession.identity.avatarId : 'neon-capsule';
-    selectAvatar(selectedAvatarId);
   } else {
-    walletAddress.hidden = true;
     nameInput.value = '';
     if (!avatarRegistry?.has(selectedAvatarId)) selectedAvatarId = 'neon-capsule';
-    selectAvatar(selectedAvatarId);
   }
+  selectAvatar(selectedAvatarId);
 };
 
-async function initializeWallets() {
-  try {
-    const { PtcWalletClient } = await import('./wallet/wallet-standard-bundle.js?v=phase9-1');
-    walletClient = new PtcWalletClient({ appName: 'PTC Arcade', appUri: location.origin,
-      network: window.ARCADE_RUNTIME?.solanaNetwork ?? 'mainnet-beta' });
-    walletClient.onAccountChange((address) => {
-      if (!isWalletSession()) return;
-      if (address && address === accountSession.identity.walletAddress) return;
-      walletAddress.textContent = address
-        ? 'CONNECTED WALLET CHANGED · AUTHENTICATE TO SWITCH ACCOUNT'
-        : 'WALLET DISCONNECTED · SIGNED-IN SESSION REMAINS ACTIVE';
-      walletChange.hidden = false;
-      showStatus('Your wallet connection changed. Your signed-in account has not changed.', true);
-    });
-    const render = () => {
-      const wallets = walletClient.wallets();
-      walletSelect.replaceChildren(...(wallets.length ? wallets.map((wallet) => roomOption(wallet.name, wallet.name))
-        : [roomOption('', 'NO COMPATIBLE WALLET FOUND', true)]));
-      walletConnect.disabled = wallets.length === 0;
-    };
-    render();
-    setTimeout(render, 500);
-  } catch {
-    walletSelect.replaceChildren(roomOption('', 'WALLET SUPPORT UNAVAILABLE', true));
-    walletConnect.disabled = true;
-  }
-}
+/** Sign in and register share one form; the mode decides where it posts. */
+const setAccountMode = (mode) => {
+  accountMode = mode;
+  const registering = mode === 'register';
+  tabSignIn.classList.toggle('is-active', !registering);
+  tabRegister.classList.toggle('is-active', registering);
+  tabSignIn.setAttribute('aria-selected', String(!registering));
+  tabRegister.setAttribute('aria-selected', String(registering));
+  accountSubmit.textContent = registering ? 'CREATE ACCOUNT' : 'SIGN IN';
+  accountPassword.autocomplete = registering ? 'new-password' : 'current-password';
+  showStatus(registering
+    ? 'Pick a username and a password of at least 8 characters.'
+    : 'Sign in to pick up where you left off.');
+};
 
+const submitAccount = async () => {
+  const username = accountUsername.value.trim();
+  const password = accountPassword.value;
+  // Checked here so an obvious slip does not cost a round trip, and checked
+  // again on the server, which is the copy that actually decides.
+  if (!/^[A-Za-z0-9_.-]{2,18}$/.test(username)) {
+    showStatus('Usernames are 2-18 characters: letters, numbers, dots, dashes or underscores.', true);
+    accountUsername.focus();
+    return;
+  }
+  if (!password || (accountMode === 'register' && password.length < 8)) {
+    showStatus(accountMode === 'register' ? 'Passwords need at least 8 characters.' : 'Enter your password.', true);
+    accountPassword.focus();
+    return;
+  }
+  accountSubmit.disabled = true;
+  showStatus(accountMode === 'register' ? 'Creating your account…' : 'Signing in…');
+  try {
+    const endpoint = accountMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+    accountSession = await requestJson(endpoint, { method: 'POST', body: JSON.stringify({ username, password }) });
+    // Nothing keeps the password once it has been sent.
+    accountPassword.value = '';
+    showAccountState();
+    showStatus(accountMode === 'register' ? 'Account created. Choose your avatar and enter.' : 'Signed in. Choose your avatar and enter.');
+  } catch (error) {
+    // The server answers a bad username and a bad password identically, so
+    // that probing cannot learn which usernames exist. Passing its wording
+    // through keeps that property instead of guessing at a friendlier one.
+    showStatus(error instanceof Error ? error.message : 'That did not work. Please try again.', true);
+    accountPassword.focus();
+  } finally {
+    accountSubmit.disabled = false;
+  }
+};
 const roomOption = (value, label, disabled = false) => {
   const option = document.createElement('option');
   option.value = value;
@@ -186,13 +207,11 @@ async function boot() {
     }));
     try {
       const session = await requestJson('/api/auth/session', { method: 'GET' });
-      accountSession = session?.identity?.type === 'registered' && session.identity.walletAuthenticated !== true
-        ? undefined : session;
+      accountSession = session;
     } catch { accountSession = undefined; }
-    showIdentityMode();
-    await initializeWallets();
+    showAccountState();
     confirmButton.disabled = false;
-    showStatus(isWalletSession() ? 'Wallet authenticated. Choose your name and avatar.' : 'Choose an avatar and enter instantly as a temporary guest.');
+    showStatus(isRegisteredSession() ? 'Signed in. Choose your name and avatar.' : 'Choose an avatar and enter instantly as a temporary guest.');
     void refreshRooms(false);
   } catch (error) {
     confirmButton.disabled = false;
@@ -202,56 +221,37 @@ async function boot() {
   }
 }
 
-walletConnect.addEventListener('click', async () => {
-  if (!walletClient || !walletSelect.value) return;
-  walletConnect.disabled = true;
-  showStatus('Connect your wallet, then approve the free sign-in message. No transaction will be sent.');
-  try {
-    const connected = await walletClient.connect(walletSelect.value);
-    const challenge = await requestJson('/api/auth/wallet/challenge', { method: 'POST', body: JSON.stringify({ walletAddress: connected.address }) });
-    showStatus('SIGNATURE PENDING // This is free and does not spend SOL.');
-    const output = await walletClient.signIn(challenge.input);
-    accountSession = await requestJson('/api/auth/wallet/verify', { method: 'POST',
-      body: JSON.stringify({ challengeId: challenge.challengeId, output }) });
-    showIdentityMode();
-    showStatus(accountSession.created ? 'Wallet verified. Finish your persistent arcade profile.' : 'Wallet verified. Your persistent profile is restored.');
-  } catch (error) {
-    showStatus(error instanceof Error ? error.message : 'Wallet authentication was canceled or rejected.', true);
-  } finally { walletConnect.disabled = false; }
-});
+tabSignIn.addEventListener('click', () => setAccountMode('signin'));
+tabRegister.addEventListener('click', () => setAccountMode('register'));
+accountSubmit.addEventListener('click', () => { void submitAccount(); });
 
-walletSignout.addEventListener('click', async () => {
-  walletSignout.disabled = true;
-  try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); } catch { /* Sign-out remains local if the server is unavailable. */ }
-  await walletClient?.disconnect();
+for (const field of [accountUsername, accountPassword]) {
+  field.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    // These fields sit inside the avatar form, where Enter means "play as
+    // guest". Pressing it in a password box should sign in instead.
+    event.preventDefault();
+    void submitAccount();
+  });
+}
+
+accountSignout.addEventListener('click', async () => {
+  accountSignout.disabled = true;
+  try { await requestJson('/api/auth/logout', { method: 'POST', body: '{}' }); }
+  catch { /* Signing out stays local when the server cannot be reached. */ }
   accountSession = undefined;
-  showIdentityMode();
-  walletSignout.disabled = false;
-  showStatus('Signed out. You may enter as a temporary guest.');
+  showAccountState();
+  accountSignout.disabled = false;
+  showStatus('Signed out. You can play as a guest or sign in again.');
 });
-
-walletCopy.addEventListener('click', async () => {
-  const address = accountSession?.identity?.walletAddress;
-  if (!address) return;
-  try { await navigator.clipboard.writeText(address); showStatus('Wallet address copied.'); }
-  catch { showStatus('Could not copy the wallet address.', true); }
-});
-
-walletChange.addEventListener('click', () => {
-  walletSelect.hidden = false;
-  walletConnect.hidden = false;
-  walletConnect.textContent = 'AUTHENTICATE NEW WALLET';
-  showStatus('Choose a wallet and sign a new challenge. Your current account remains active until verification succeeds.');
-});
-
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (confirmButton.dataset.retry === 'true') {
     void boot();
     return;
   }
-  let displayName = isWalletSession() ? nameInput.value.normalize('NFKC').trim().replace(/\s+/g, ' ') : '';
-  if (isWalletSession() && !namePattern.test(displayName)) {
+  let displayName = isRegisteredSession() ? nameInput.value.normalize('NFKC').trim().replace(/\s+/g, ' ') : '';
+  if (isRegisteredSession() && !namePattern.test(displayName)) {
     showStatus('Use 2–18 letters, numbers, spaces, dots, dashes, or underscores.', true);
     nameInput.focus();
     return;
@@ -264,7 +264,7 @@ form.addEventListener('submit', async (event) => {
   }
   confirmButton.disabled = true;
   try {
-    if (isWalletSession()) {
+    if (isRegisteredSession()) {
       const profile = await requestJson('/api/account/profile', { method: 'PUT', body: JSON.stringify({ displayName, avatarId: selectedAvatarId }) });
       accountSession = { ...accountSession, identity: profile.identity };
     } else {
@@ -297,8 +297,8 @@ form.addEventListener('submit', async (event) => {
     }
   }
   const selection = { displayName, avatarId: selectedAvatarId, roomId: customRoomId || roomSelect.value,
-    walletAuthenticated: isWalletSession(), realtimeTicket };
-  savePreferences(selection, isWalletSession());
+    walletAuthenticated: isRegisteredSession(), realtimeTicket };
+  savePreferences(selection, isRegisteredSession());
   window.arcadeAvatarIdentity = selection;
   window.dispatchEvent(new CustomEvent('arcade:identity-selected', { detail: selection }));
   screen.hidden = true;

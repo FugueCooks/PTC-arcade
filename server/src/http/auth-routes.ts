@@ -35,7 +35,6 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
   });
 
   app.post('/api/auth/register', async (request, response) => {
-    if (!config.legacyPasswordAuthEnabled) { response.status(410).json({ ok: false, error: { code: 'wallet-auth-required', message: 'Persistent accounts now use Solana wallet sign-in.' } }); return; }
     const parsed = registrationSchema.safeParse(request.body);
     if (!parsed.success) return validationError(response);
     try {
@@ -50,7 +49,6 @@ export function installAuthRoutes(app: Express, config: ServerConfig, dependenci
   });
 
   app.post('/api/auth/login', async (request, response) => {
-    if (!config.legacyPasswordAuthEnabled) { response.status(410).json({ ok: false, error: { code: 'wallet-auth-required', message: 'Persistent accounts now use Solana wallet sign-in.' } }); return; }
     const parsed = loginSchema.safeParse(request.body);
     if (!parsed.success) return validationError(response);
     try {
