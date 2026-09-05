@@ -3,7 +3,7 @@ import { CabinetSpatialIndex } from './cabinet-spatial-index.js';
 let registryPromise;
 
 export function loadCabinetRegistry() {
-  if (!registryPromise) registryPromise = fetch('./assets/cabinets/registry.json?v=vled-2', { cache: 'no-cache' })
+  if (!registryPromise) registryPromise = fetch('./assets/cabinets/registry.json?v=walk-1', { cache: 'no-cache' })
     .then((response) => {
       if (!response.ok) throw new Error(`Cabinet registry returned ${response.status}`);
       return response.json();

@@ -120,6 +120,7 @@ class RemoteAvatar {
     this.hidden = false;
     this.animation = 'idle';
     this.walkTime = 0;
+    this.restYaw = 0;
     this.proceduralWalk = false;
     this.flightMode = false;
     this.hoverWhenIdle = false;
@@ -147,7 +148,8 @@ class RemoteAvatar {
     const definition = this.registry.get(state.v) ?? this.registry.get('vled');
     // Keep presentation adjustments outside the imported model. Some GLBs
     // animate their own root transform, which would otherwise overwrite this.
-    this.visual.rotation.y = definition?.rotationOffset ?? 0;
+    this.restYaw = definition?.rotationOffset ?? 0;
+    this.visual.rotation.y = this.restYaw;
     this.flightMode = definition?.movementEffect === 'hover' || definition?.movementEffect === 'hover-jets';
     this.hoverWhenIdle = definition?.hoverWhenIdle === true;
     this.showFlightJets = definition?.movementEffect === 'hover-jets';
@@ -322,12 +324,30 @@ class RemoteAvatar {
       }
     }
     if (this.proceduralWalk) {
+      // A walk for avatars with no walk clip. Vled has no skeleton at all —
+      // eight meshes and not a single joint — so there is nothing to pose and
+      // the body itself has to do the stepping.
+      //
+      // Bounce is |sin| rather than sin because a walk rises on each footfall
+      // and drops between them, which is twice per stride; the roll, the lean
+      // and the shoulder waggle run at half that rate, once per stride pair,
+      // as the weight shifts foot to foot. Running them all at one frequency
+      // is what makes procedural walks read as a hover.
       if (this.animation === 'walk') this.walkTime += delta * 9;
       const intensity = this.animation === 'walk' ? 1 : 0;
-      const bob = Math.sin(this.walkTime) * 0.045 * intensity;
-      const sway = Math.sin(this.walkTime * 0.5) * 0.035 * intensity;
-      this.visual.position.y += (bob - this.visual.position.y) * Math.min(1, delta * 12);
-      this.visual.rotation.z += (sway - this.visual.rotation.z) * Math.min(1, delta * 10);
+      const stride = this.walkTime;
+      // biased so the rest pose sits at zero rather than half a bounce high
+      const bounce = (Math.abs(Math.sin(stride)) - 0.32) * 0.085 * intensity;
+      const roll = Math.sin(stride * 0.5) * 0.055 * intensity;
+      const waggle = Math.sin(stride * 0.5) * 0.05 * intensity;
+      const lean = -0.07 * intensity;
+      const ease = Math.min(1, delta * 12);
+      this.visual.position.y += (bounce - this.visual.position.y) * ease;
+      this.visual.rotation.z += (roll - this.visual.rotation.z) * ease;
+      this.visual.rotation.x += (lean - this.visual.rotation.x) * ease;
+      // relative to the rest yaw: the definition may already have turned the
+      // model to face its walking direction, and this must not undo that.
+      this.visual.rotation.y += (this.restYaw + waggle - this.visual.rotation.y) * ease;
     }
   }
 
