@@ -72,3 +72,39 @@ void test('every avatar model the registry serves is allowed into the image', as
     `these avatar models are excluded from the image and will 404 in production: ${missing.join(', ')}`
   );
 });
+
+// .dockerignore decides what reaches the image; .gitignore decides what reaches
+// the repository, and the same directory is an allow-list in both for the same
+// reason. Passing the check above while failing this one is the worse failure:
+// the model sits on the author's disk, loads all through local testing, and is
+// simply absent from the clone the image is built from. Vled shipped that way
+// and 404'd in production as the default avatar every visitor is handed.
+void test('every avatar model the registry serves is committed, not just present locally', async () => {
+  const root = process.cwd();
+  const gitignore = await readFile(path.resolve(root, '.gitignore'), 'utf8');
+  const registry = JSON.parse(await readFile(path.resolve(root, 'assets/avatars/registry.json'), 'utf8'));
+
+  const excluded = gitignore.split(/\r?\n/).some((line) => line.trim() === 'assets/avatars/models/*.glb');
+  assert.ok(excluded, 'the avatar model ignore moved; update this guard to match it');
+
+  const kept = new Set(
+    gitignore.split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('!assets/avatars/models/'))
+      .map((line) => line.slice(1))
+  );
+
+  const required = new Set<string>();
+  for (const avatar of registry.avatars ?? []) {
+    for (const value of [avatar.modelUrl, avatar.motionModelUrl]) {
+      if (typeof value === 'string') required.add(value.split('?')[0]);
+    }
+  }
+
+  const ignored = [...required].filter((file) => !kept.has(file));
+  assert.deepEqual(
+    ignored,
+    [],
+    `these avatar models are gitignored and will never reach the image: ${ignored.join(', ')}`
+  );
+});
