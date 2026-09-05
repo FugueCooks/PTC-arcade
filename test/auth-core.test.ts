@@ -13,7 +13,7 @@ void test('registration validation normalizes identity and resolves only approve
   });
   assert.equal(parsed.normalizedUsername, 'player_one');
   assert.equal(parsed.displayName, 'Player_One');
-  assert.equal(parsed.avatarId, 'neon-capsule');
+  assert.equal(parsed.avatarId, 'vled');
   assert.equal(normalizeUsername('USER_Name'), 'user_name');
   assert.equal(loginSchema.parse({ username: ' USER_Name ', password: 'anything' }).normalizedUsername, 'user_name');
 });

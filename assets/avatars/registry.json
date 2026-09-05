@@ -2,13 +2,13 @@
   "version": 1,
   "avatars": [
     {
-      "id": "neon-capsule",
-      "name": "Pill",
-      "modelUrl": null,
-      "thumbnailUrl": "assets/avatars/neon-capsule.svg?v=pill-1",
-      "scale": 1,
+      "id": "vled",
+      "name": "Vled",
+      "modelUrl": "assets/avatars/models/vled.optimized.glb?v=vled-1",
+      "thumbnailUrl": "assets/avatars/vled.svg?v=vled-1",
+      "scale": 0.135,
       "heightOffset": 0,
-      "rotationOffset": 0,
+      "rotationOffset": 3.141592653589793,
       "enabled": true,
       "animations": {}
     },

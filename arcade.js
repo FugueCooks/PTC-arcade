@@ -1,4 +1,4 @@
-import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=accounts-1';
+import { GAMEPAD_AXES, GAMEPAD_BUTTONS, buttonPressed, DEFAULT_DEAD_ZONE as GAMEPAD_DEAD_ZONE, gamepadHasActivity, pickGamepad, readDpad, readStick } from './emulators/gamepad-mapping.js?v=vled-2';
 const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x070a0c, .016);
 const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, .1, 180);
 camera.position.set(0, 1.65, 11);
@@ -503,41 +503,10 @@ buildPartitionWall(N64_WALL_X,0x16c784,PARTITION_WALL_SEGMENTS_EAST);
  */
 const SOLANA_PALETTE=Object.freeze([0x14f195,0x20d9ff,0x9945ff]);
 const solanaAtmosphere=new THREE.Group();solanaAtmosphere.name='solana-atmosphere';scene.add(solanaAtmosphere);
-function createSolanaSignTexture(){
-  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;
-  const context=canvas.getContext('2d');
-  const background=context.createLinearGradient(0,0,1024,256);
-  background.addColorStop(0,'#05070d');background.addColorStop(.52,'#0b1121');background.addColorStop(1,'#090614');
-  context.fillStyle=background;context.fillRect(0,0,1024,256);
-  context.strokeStyle='rgba(128,236,255,.24)';context.lineWidth=2;context.strokeRect(9,9,1006,238);
-  for(let y=14;y<256;y+=8){context.fillStyle='rgba(255,255,255,.018)';context.fillRect(0,y,1024,2)}
-  const ribbon=context.createLinearGradient(362,0,642,0);
-  ribbon.addColorStop(0,'#14f195');ribbon.addColorStop(.48,'#20d9ff');ribbon.addColorStop(1,'#9945ff');
-  const stripe=(y,reverse=false)=>{
-    const left=reverse?392:362,right=reverse?612:642,slant=34;
-    context.beginPath();context.moveTo(left+slant,y);context.lineTo(right,y);context.lineTo(right-slant,y+42);context.lineTo(left,y+42);context.closePath();
-    context.shadowColor=reverse?'#9945ff':'#14f195';context.shadowBlur=18;context.fillStyle=ribbon;context.fill();context.shadowBlur=0;
-  };
-  // Just the mark: three slanted bars, centred. No wordmark, no tagline.
-  stripe(48);stripe(107,true);stripe(166);
-  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-  texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return texture;
-}
-const solanaSignTexture=createSolanaSignTexture();
-const solanaSignBackingMaterial=new THREE.MeshStandardMaterial({color:0x04060c,emissive:0x070b16,emissiveIntensity:.5,metalness:.82,roughness:.2});
-const solanaSignFaceMaterial=new THREE.MeshBasicMaterial({map:solanaSignTexture,side:THREE.FrontSide});
-function addSolanaNeonSign({x,y,z,rotationY,width=5.8,height=1.45}){
-  const sign=new THREE.Group();sign.name='solana-neon-sign';sign.position.set(x,y,z);sign.rotation.y=rotationY;sign.userData.solanaNeon=true;
-  const backing=new THREE.Mesh(new THREE.BoxGeometry(width+.24,height+.22,.12),solanaSignBackingMaterial);sign.add(backing);
-  const face=new THREE.Mesh(new THREE.PlaneGeometry(width,height),solanaSignFaceMaterial);face.position.z=.066;sign.add(face);
-  const glow=new THREE.Mesh(new THREE.PlaneGeometry(width*1.12,height*1.3),new THREE.MeshBasicMaterial({map:solanaSignTexture,color:0xa5ffe3,transparent:true,opacity:.18,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.FrontSide}));
-  glow.position.z=.075;sign.add(glow);
-  solanaAtmosphere.add(sign);return sign;
-}
-addSolanaNeonSign({x:PLAYSTATION_WALL_X+.205,y:3.7,z:-16.6,rotationY:Math.PI/2,width:5.2,height:1.25});
-addSolanaNeonSign({x:N64_WALL_X-.205,y:3.7,z:20.4,rotationY:-Math.PI/2,width:5.2,height:1.25});
-const solanaWestWash=point(SOLANA_PALETTE[0],-18.8,2.8,-16.6,3.15);solanaWestWash.userData.solanaLight=true;
-const solanaEastWash=point(SOLANA_PALETTE[2],18.8,2.8,20.4,3.15);solanaEastWash.userData.solanaLight=true;
+// The two Solana logo boards are gone, and the wash lights that existed to
+// light them go with them. The floor pools stay: they are coloured light
+// rather than a mark, and one of their three colours is already the green the
+// building was repainted in.
 // Soft pools follow the main walking route instead of adding another row of
 // signs. Their additive floor halos cost no lights; only the two nearest real
 // washes are enabled, so the arcade is brighter without multiplying GPU work.
@@ -1151,13 +1120,13 @@ function hangMuralWalls(walls){
   }
 }
 hangMuralWalls([
-    {file:'ff-room-mural.webp?v=accounts-1',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
+    {file:'ff-room-mural.webp?v=vled-2',span:32,at:new THREE.Vector3(-5.4,2.5,-66.94),
       backing:()=>box(32,5,.08,0x050711,-5.4,2.5,-67.01,.12),
       rotation:0,normal:new THREE.Vector3(0,0,1),along:new THREE.Vector3(1,0,0),count:6},
-    {file:'ff-room-mural-2.webp?v=accounts-1',span:16,at:new THREE.Vector3(10.54,2.5,-59),
+    {file:'ff-room-mural-2.webp?v=vled-2',span:16,at:new THREE.Vector3(10.54,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,10.61,2.5,-59,.12),
       rotation:-Math.PI/2,normal:new THREE.Vector3(-1,0,0),along:new THREE.Vector3(0,0,1),count:4},
-    {file:'ff-room-mural-3.webp?v=accounts-1',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
+    {file:'ff-room-mural-3.webp?v=vled-2',span:16,at:new THREE.Vector3(-21.34,2.5,-59),
       backing:()=>box(.08,5,16,0x050711,-21.41,2.5,-59,.12),
       rotation:Math.PI/2,normal:new THREE.Vector3(1,0,0),along:new THREE.Vector3(0,0,-1),count:4}
 ]);
@@ -2101,7 +2070,7 @@ function installPikomat(){
   pikomatStarted=true;
   void (async()=>{try{
     const loader=await getOptimizedGltfLoader();
-    loader.load('assets/models/props/pikomat.glb?v=accounts-1',gltf=>{
+    loader.load('assets/models/props/pikomat.glb?v=vled-2',gltf=>{
       const machine=gltf.scene;
       machine.traverse(node=>{if(!node.isMesh)return;node.castShadow=false;node.receiveShadow=false;});
       machine.updateMatrixWorld(true);
@@ -2237,7 +2206,7 @@ function installPeachsCastle(){
       // player arrives. It is scaled wide enough to fill the corridor's section
       // so the masonry behind it barely shows, and long enough to run the whole
       // 14.2m from the arcade wall to the archway.
-      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=accounts-1',pipeGltf=>{
+      void getOptimizedGltfLoader().then(pipeLoader=>pipeLoader.load('assets/models/mario/warp-pipe.glb?v=vled-2',pipeGltf=>{
         const pipe=pipeGltf.scene;
         pipe.updateMatrixWorld(true);
         pipe.traverse(node=>{
@@ -3695,11 +3664,11 @@ const ZELDA_ROOM_CENTRE_X=-96.845,ZELDA_ROOM_CENTRE_Z=42,ZELDA_ROOM_FLOOR=-.657,
 // consoles that lie flat get a lower marquee so it sits over the machine rather
 // than a metre above it.
 const ZELDA_MACHINE_MODELS={
-  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=accounts-1',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
-  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=accounts-1',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
-  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=accounts-1',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
-  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=accounts-1',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
-  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=accounts-1',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
+  handheld:{file:'assets/models/zelda/zelda-gba-cabinet.glb?v=vled-2',scale:1.55,lift:.496,modelRotY:-Math.PI/2,plateY:1.74,plinthScale:1.15,statusY:1.72},
+  ds:{file:'assets/models/zelda/zelda-ds-cabinet.glb?v=vled-2',scale:.1,lift:-.005,plateY:1.86,plinthScale:1.3,statusY:1.84},
+  gamecube:{file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=vled-2',scale:.22,lift:.004,plateY:1.74,plinthScale:1.25,statusY:1.72},
+  n64:{file:'assets/models/zelda/zelda-n64-cabinet.glb?v=vled-2',scale:.85,lift:.211,plateY:1.5,plinthScale:1.2,statusY:1.48},
+  nes:{file:'assets/models/zelda/zelda-nes-cabinet.glb?v=vled-2',scale:3.7,lift:.159,plateY:1.44,plinthScale:1.1,statusY:1.42}
 };
 const ZELDA_ROOM_RING=[
   ['zelda-cabinet-08','nes',0xd4b24a],       // The Legend of Zelda, 1986
@@ -3758,13 +3727,13 @@ const MARIO_MACHINE_MODELS={
   // for the console shells too, for the same reason the Pokemon machines
   // dropped theirs: the machine is the label. Each keeps its statusY, so the
   // status light still sits where the plate used to end.
-  smb:{noPlate:true,file:'assets/models/mario/mario-smb-arcade.glb?v=accounts-1',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
-  bros:{noPlate:true,file:'assets/models/mario/mario-bros-arcade.glb?v=accounts-1',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
-  smb3:{noPlate:true,file:'assets/models/mario/mario-smb3-arcade.glb?v=accounts-1',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
+  smb:{noPlate:true,file:'assets/models/mario/mario-smb-arcade.glb?v=vled-2',scale:.0726,lift:.018,offsetZ:-.196,plateY:2.62,statusY:2.6,plinthScale:1.2},
+  bros:{noPlate:true,file:'assets/models/mario/mario-bros-arcade.glb?v=vled-2',scale:1.3583,lift:-.071,offsetZ:-.135,plateY:2.62,statusY:2.6,plinthScale:1.05},
+  smb3:{noPlate:true,file:'assets/models/mario/mario-smb3-arcade.glb?v=vled-2',scale:1.4985,lift:1.35,plateY:2.62,statusY:2.6,plinthScale:1.15},
   // and the console shells the Zelda room already brought in
-  n64:{noPlate:true,file:'assets/models/zelda/zelda-n64-cabinet.glb?v=accounts-1',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
-  nes:{noPlate:true,file:'assets/models/zelda/zelda-nes-cabinet.glb?v=accounts-1',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  gamecube:{noPlate:true,file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=accounts-1',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
+  n64:{noPlate:true,file:'assets/models/zelda/zelda-n64-cabinet.glb?v=vled-2',scale:.85,lift:.211,plateY:1.5,statusY:1.48,plinthScale:1.2},
+  nes:{noPlate:true,file:'assets/models/zelda/zelda-nes-cabinet.glb?v=vled-2',scale:3.7,lift:.159,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  gamecube:{noPlate:true,file:'assets/models/zelda/zelda-gamecube-cabinet.glb?v=vled-2',scale:.22,lift:.004,plateY:1.74,statusY:1.72,plinthScale:1.25}
 };
 const MARIO_CASTLE_RING=[
   ['mario-cabinet-01','smb',   -102.35, 0.019,  -2.74, 1.5708,0xff5f5f], // super-mario-bros — hall north-west
@@ -3842,9 +3811,9 @@ for(const [cabinetId,gameId,rowZ,hue,system] of METROID_ROW){
  * runs Dreamcast, and a labelled machine that says so beats an empty lawn.
  */
 const SEGA_MACHINE_MODELS={
-  genesis:{file:'assets/models/sega/sega-genesis.glb?v=accounts-1',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=accounts-1',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
-  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=accounts-1',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
+  genesis:{file:'assets/models/sega/sega-genesis.glb?v=vled-2',scale:3.7,lift:0,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  dreamcast:{file:'assets/models/sega/sega-dreamcast.glb?v=vled-2',scale:3.2,lift:-.051,plateY:1.44,statusY:1.42,plinthScale:1.1},
+  ps2:{file:'assets/models/sega/sega-dreamcast.glb?v=vled-2',scale:0,lift:0,plateY:2.62,statusY:2.6,plinthScale:1.4}
 };
 const SONIC_GARDEN_ROW=[
   ['sonic-cabinet-01','genesis',    50,'sonic-the-hedgehog',0x4aa8ff],
@@ -4075,6 +4044,49 @@ beforeRenderCallbacks.push((now,delta)=>{
   }
   moteField.instanceMatrix.needsUpdate=true;
 });
+/**
+ * The diamond hands, mounted on the top row's front wall.
+ *
+ * This is the wall the prize counter stood against until it was deleted, so
+ * the bay had nothing in it. The model arrives 99 units wide and centred on
+ * nothing in particular, so it is scaled to a 5.5m span and then placed by
+ * its own measured bounding box rather than by its origin: that way the
+ * piece is centred on the wall whatever the exporter thought its centre was.
+ *
+ * It loads on approach like every other heavy asset -- 3.8MB, and nobody
+ * standing in the south hall needs it.
+ */
+const DIAMOND_HANDS_SPAN=5.5,DIAMOND_HANDS_CENTER_Y=2.7,DIAMOND_HANDS_Z=TOP_BAND_MIN_Z+1.05;
+let diamondHandsStarted=false;
+function installDiamondHands(){
+  if(diamondHandsStarted)return;
+  diamondHandsStarted=true;
+  void (async()=>{try{
+    const loader=await getOptimizedGltfLoader();
+    loader.load('assets/models/diamond-hands.glb?v=vled-2',gltf=>{
+      const piece=gltf.scene;
+      piece.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false}});
+      const raw=new THREE.Box3().setFromObject(piece);
+      const rawSize=raw.getSize(new THREE.Vector3());
+      const scale=DIAMOND_HANDS_SPAN/Math.max(rawSize.x,.001);
+      piece.scale.setScalar(scale);
+      piece.updateMatrixWorld(true);
+      const scaled=new THREE.Box3().setFromObject(piece);
+      const centre=scaled.getCenter(new THREE.Vector3());
+      const mount=new THREE.Group();
+      mount.name='diamond-hands';
+      piece.position.sub(centre);
+      mount.add(piece);
+      mount.position.set(0,DIAMOND_HANDS_CENTER_Y,DIAMOND_HANDS_Z);
+      scene.add(mount);
+      if(gltf.animations.length){
+        const mixer=new THREE.AnimationMixer(piece);
+        gltf.animations.forEach(clip=>mixer.clipAction(clip).play());
+        animatedMixers.push(mixer);
+      }
+    },undefined,error=>console.warn('The diamond hands could not load.',error));
+  }catch(error){console.warn('The diamond hands loader could not initialize.',error)}})();
+}
 let optimizedGltfLoaderPromise,pendingSceneLoads=0;
 function getOptimizedGltfLoader(){if(!optimizedGltfLoaderPromise)optimizedGltfLoaderPromise=Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('three/addons/libs/meshopt_decoder.module.js')]).then(([{GLTFLoader},{MeshoptDecoder}])=>{
   const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -4175,7 +4187,7 @@ function loadNearbySceneModels(now){if(now<nextHeavyAssetCheck)return;nextHeavyA
   for(const cabinet of cabinets){
     if(cabinet.artApplied||!cabinet.artSlug)continue;
     if(cabinet.g.position.distanceToSquared(playerPosition)<324)applyCabinetArt(cabinet,cabinet.artSlug);
-  }if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.z>8){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.z>8){templeOfTimeStarted=true;installTempleOfTime();}if(playerPosition.x<-14&&playerPosition.z<-12&&playerPosition.z>-40){installPeachsCastle();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();installPikomat();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
+  }if(!diamondHandsStarted&&playerPosition.z<-30&&Math.abs(playerPosition.x)<34){installDiamondHands();}if(!megaManStatuesStarted&&playerPosition.x<-18.6&&playerPosition.z<24&&playerPosition.z>-6){megaManStatuesStarted=true;installMegaManStatues();}if(!chaoGardenModelStarted&&playerPosition.z>8){chaoGardenModelStarted=true;installChaoGardenModel();}if(!templeOfTimeStarted&&playerPosition.z>8){templeOfTimeStarted=true;installTempleOfTime();}if(playerPosition.x<-14&&playerPosition.z<-12&&playerPosition.z>-40){installPeachsCastle();}if(!pokemonCenterStarted&&playerPosition.x>8&&playerPosition.z<-6){pokemonCenterStarted=true;installPokemonCenter();installPikomat();}if(!pokemonRosterStarted&&playerPosition.z<-64&&playerPosition.x>-12&&playerPosition.x<66){pokemonRosterStarted=true;installPokemonRoster();}}
 /**
  * Everything heavy, loaded behind the avatar screen instead of underfoot.
  *
@@ -4516,7 +4528,7 @@ function warmStreamingDisc(cabinet){
   if(cabinet?.system!=='ps2'||!cabinet.hostedGame||!cabinet.gameFileName||!cabinet.gameSizeBytes)return;
   if(warmedDiscCabinets.has(cabinet.id)||navigator.connection?.saveData)return;
   warmedDiscCabinets.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=accounts-1')
+  import('./emulators/disc-range-cache.js?v=vled-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:cabinet.bootChunks?(lowPowerDevice?2:8):(lowPowerDevice?1:3),chunkList:cabinet.bootChunks}))
@@ -4536,7 +4548,7 @@ function warmRemainingDisc(cabinet){
   if(!chunkList?.length||cabinet.system!=='ps2'||!cabinet.hostedGame||navigator.connection?.saveData)return;
   if(fullyWarmedDiscs.has(cabinet.id))return;
   fullyWarmedDiscs.add(cabinet.id);
-  import('./emulators/disc-range-cache.js?v=accounts-1')
+  import('./emulators/disc-range-cache.js?v=vled-2')
     .then(({prewarmDiscRanges})=>prewarmDiscRanges(
       {url:cabinet.hostedGame,name:cabinet.gameFileName,size:cabinet.gameSizeBytes},
       {chunks:chunkList.length,chunkList,maxChunks:Math.max(128,chunkList.length+16)}))
@@ -5096,7 +5108,7 @@ const performanceStats=document.querySelector('#performance-stats');
 // The build stamp. Every deploy bumps the shared cache key, and this constant
 // is spelled with the same string, so the same sed that bumps the key bumps
 // the stamp: the corner of the screen always names the exact build running.
-const ARCADE_BUILD='accounts-1';
+const ARCADE_BUILD='vled-2';
 if(performanceStats){
   const buildStamp=document.createElement('div');
   buildStamp.id='build-stamp';

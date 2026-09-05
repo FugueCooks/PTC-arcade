@@ -16,49 +16,6 @@ function colorFor(id) {
   return new Color().setHSL(((hash >>> 0) % 360) / 360, 0.72, 0.58);
 }
 
-/**
- * The Pill, the default avatar.
- *
- * Two shells rather than one capsule, because the seam is the whole look: a
- * green cap that closes over a white body, the way a real capsule does. The
- * cap is a hair wider and reaches past the midline, so the join reads as one
- * half sliding over the other instead of two halves meeting at a line. The
- * gloss streak is both the highlight the shape needs to read as glass and the
- * only thing on a symmetric body that shows which way a player is facing.
- *
- * Every mesh is marked avatarFallback: this geometry is built per player and
- * disposed with them, unlike the shared GLTF avatars.
- */
-const PILL_RADIUS = 0.28;
-const PILL_HALF = 0.54;
-const PILL_CAP_RADIUS = PILL_RADIUS * 1.045;
-const PILL_CAP_OVERLAP = 0.07;
-function buildPill() {
-  const pill = new Group();
-  const finish = { metalness: 0.24, roughness: 0.15 };
-  const white = new MeshStandardMaterial({ color: 0xeef6f0, emissive: 0x7fa596, emissiveIntensity: 0.18, ...finish });
-  const green = new MeshStandardMaterial({ color: 0x1fd45f, emissive: 0x0d8a3c, emissiveIntensity: 0.32, ...finish });
-  const parts = [
-    [new CylinderGeometry(PILL_RADIUS, PILL_RADIUS, PILL_HALF, 28), white, -PILL_HALF / 2],
-    [new SphereGeometry(PILL_RADIUS, 28, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), white, -PILL_HALF],
-    [new CylinderGeometry(PILL_CAP_RADIUS, PILL_CAP_RADIUS, PILL_HALF + PILL_CAP_OVERLAP, 28), green, (PILL_HALF - PILL_CAP_OVERLAP) / 2],
-    [new SphereGeometry(PILL_CAP_RADIUS, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), green, PILL_HALF]
-  ];
-  for (const [geometry, material, y] of parts) {
-    const mesh = new Mesh(geometry, material);
-    mesh.userData.avatarFallback = true;
-    mesh.position.y = y;
-    pill.add(mesh);
-  }
-  const gloss = new Mesh(new CapsuleGeometry(0.026, 0.32, 3, 8), new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.42 }));
-  gloss.userData.avatarFallback = true;
-  gloss.position.set(-0.11, 0.16, 0.278);
-  gloss.rotation.z = 0.1;
-  pill.add(gloss);
-  pill.position.y = 0.85;
-  return pill;
-}
-
 function loadAsset(url) {
   if (!assetPromises.has(url)) assetPromises.set(url, loader.loadAsync(url));
   return assetPromises.get(url);
@@ -187,7 +144,7 @@ class RemoteAvatar {
     if (this.avatarId === state.v) return;
     this.avatarId = state.v;
     this.clearVisual();
-    const definition = this.registry.get(state.v) ?? this.registry.get('neon-capsule');
+    const definition = this.registry.get(state.v) ?? this.registry.get('vled');
     // Keep presentation adjustments outside the imported model. Some GLBs
     // animate their own root transform, which would otherwise overwrite this.
     this.visual.rotation.y = definition?.rotationOffset ?? 0;
@@ -197,7 +154,7 @@ class RemoteAvatar {
     this.hoverHeight = Number.isFinite(definition?.hoverHeight) ? definition.hoverHeight : 0.055;
     this.flightHeight = Number.isFinite(definition?.flightHeight) ? definition.flightHeight : this.hoverHeight;
     this.hoverPitch = Number.isFinite(definition?.hoverPitch) ? definition.hoverPitch : 0.025;
-    this.showFallback(state.id, definition);
+    this.showFallback(state.id);
     if (this.showFlightJets) {
       this.flightEffects = createFlightEffects();
       this.visual.add(this.flightEffects);
@@ -266,18 +223,7 @@ class RemoteAvatar {
     if (this.motionModel) this.motionModel.visible = useMotionPose;
   }
 
-  showFallback(id, definition) {
-    // An avatar with no model is not waiting for one: the Pill's definition
-    // carries no modelUrl, so this shape is the avatar the player chose, not a
-    // stand-in. Model avatars keep the per-player capsule, which is only ever
-    // on screen for as long as their GLB takes to arrive — which is why it is
-    // coloured by player id rather than by avatar.
-    if (!definition?.modelUrl) {
-      const pill = buildPill();
-      this.visual.add(pill);
-      this.fallback = pill;
-      return;
-    }
+  showFallback(id) {
     const color = colorFor(id);
     const fallback = new Group();
     const body = new Mesh(new CapsuleGeometry(0.28, 1.08, 4, 10), new MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.18, metalness: 0.35, roughness: 0.32 }));

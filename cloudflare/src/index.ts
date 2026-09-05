@@ -107,7 +107,7 @@ const CABINET_DISTANCE = 2.6;
 const CABINET_TIMEOUT_MS = 5_000;
 const AFK_TIMEOUT_MS = 120_000;
 const approvedAvatars = new Set(avatarRegistry.avatars.filter((avatar) => avatar.enabled).map((avatar) => avatar.id));
-const defaultAvatarId = 'neon-capsule';
+const defaultAvatarId = 'vled';
 const cabinets = new Map(cabinetRegistry.map((cabinet) => [cabinet.id, cabinet]));
 const approvedRooms = new Map(roomRegistry.rooms.filter((room) => room.enabled).map((room) => [room.id, room]));
 const spawnPoints = [
@@ -660,7 +660,7 @@ async function verifyRealtimeTicket(value: string | null, secret: string): Promi
     return {
       playerId: payload.pid,
       displayName: identity.displayName,
-      avatarId: payload.v === 2 ? identity.avatarId : 'neon-capsule',
+      avatarId: payload.v === 2 ? identity.avatarId : 'vled',
       mode: payload.v === 2 && payload.mode === 'wallet' ? 'wallet' : 'guest'
     };
   } catch { return undefined; }

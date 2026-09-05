@@ -37,7 +37,7 @@ if (registry.version !== 1 || !registry.avatars.every(isValidDefinition)) {
 }
 
 export const avatars = new Map(registry.avatars.filter((avatar) => avatar.enabled).map((avatar) => [avatar.id, avatar]));
-export const DEFAULT_AVATAR_ID = 'neon-capsule';
+export const DEFAULT_AVATAR_ID = 'vled';
 
 if (!avatars.has(DEFAULT_AVATAR_ID)) throw new Error('The fallback avatar must be enabled.');
 

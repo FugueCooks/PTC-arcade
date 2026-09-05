@@ -27,7 +27,7 @@ const tabRegister = document.querySelector('#account-tab-register');
 const identityMode = document.querySelector('#identity-mode');
 const profileFields = document.querySelector('#account-profile-fields');
 const placementClient = new RoomPlacementClient();
-let selectedAvatarId = 'neon-capsule';
+let selectedAvatarId = 'vled';
 let staticRooms;
 let accountSession;
 let avatarRegistry;
@@ -84,10 +84,10 @@ const showAccountState = () => {
   if (registered) {
     accountWho.textContent = `SIGNED IN AS ${accountSession.identity.displayName.toUpperCase()}`;
     nameInput.value = accountSession.identity.displayName;
-    selectedAvatarId = avatarRegistry?.has(accountSession.identity.avatarId) ? accountSession.identity.avatarId : 'neon-capsule';
+    selectedAvatarId = avatarRegistry?.has(accountSession.identity.avatarId) ? accountSession.identity.avatarId : 'vled';
   } else {
     nameInput.value = '';
-    if (!avatarRegistry?.has(selectedAvatarId)) selectedAvatarId = 'neon-capsule';
+    if (!avatarRegistry?.has(selectedAvatarId)) selectedAvatarId = 'vled';
   }
   selectAvatar(selectedAvatarId);
 };
@@ -200,7 +200,7 @@ async function boot() {
     staticRooms = window.ARCADE_ROOM_REGISTRY?.rooms;
     if (!(staticRooms instanceof Map) || staticRooms.size === 0) throw new Error('Arcade instances could not be loaded.');
     const saved = readPreferences();
-    selectedAvatarId = typeof saved.avatarId === 'string' && avatars.has(saved.avatarId) ? saved.avatarId : 'neon-capsule';
+    selectedAvatarId = typeof saved.avatarId === 'string' && avatars.has(saved.avatarId) ? saved.avatarId : 'vled';
     showStaticRooms(typeof saved.roomId === 'string' ? saved.roomId : '');
     if (typeof saved.roomId === 'string' && saved.roomId && !staticRooms.has(saved.roomId)) roomIdInput.value = saved.roomId.slice(0, 96);
     cards.replaceChildren(...[...avatars.values()].map((avatar) => {

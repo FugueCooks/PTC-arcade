@@ -1,4 +1,4 @@
-const REGISTRY_URL = 'assets/avatars/registry.json?v=accounts-1';
+const REGISTRY_URL = 'assets/avatars/registry.json?v=vled-2';
 const REGISTRY_TIMEOUT_MS = 5_000;
 const validId = /^[a-z0-9-]{2,40}$/;
 let registryPromise;
@@ -15,7 +15,7 @@ export async function loadAvatarRegistry() {
       .then((registry) => {
         if (registry?.version !== 1 || !Array.isArray(registry.avatars)) throw new Error('Avatar choices are invalid.');
         const avatars = registry.avatars.filter((avatar) => avatar && avatar.enabled && validId.test(avatar.id));
-        if (!avatars.some((avatar) => avatar.id === 'neon-capsule')) throw new Error('The fallback avatar is unavailable.');
+        if (!avatars.some((avatar) => avatar.id === 'vled')) throw new Error('The fallback avatar is unavailable.');
         return new Map(avatars.map((avatar) => [avatar.id, avatar]));
       })
       .catch((error) => {
@@ -28,4 +28,4 @@ export async function loadAvatarRegistry() {
   return registryPromise;
 }
 
-export const getAvatar = async (avatarId) => (await loadAvatarRegistry()).get(avatarId) ?? (await loadAvatarRegistry()).get('neon-capsule');
+export const getAvatar = async (avatarId) => (await loadAvatarRegistry()).get(avatarId) ?? (await loadAvatarRegistry()).get('vled');

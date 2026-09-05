@@ -4,7 +4,7 @@ import { DEFAULT_AVATAR_ID, isApprovedAvatarId, resolveAvatarId } from '../serve
 import { normalizeDisplayName, validateIdentity } from '../server/src/players/player-identity.js';
 
 void test('avatar IDs are limited to the server-approved registry', () => {
-  assert.equal(isApprovedAvatarId('neon-capsule'), true);
+  assert.equal(isApprovedAvatarId('vled'), true);
   assert.equal(isApprovedAvatarId('extreme-gundam'), true);
   assert.equal(isApprovedAvatarId('sora-final'), true);
   assert.equal(isApprovedAvatarId('tung-sahur'), true);

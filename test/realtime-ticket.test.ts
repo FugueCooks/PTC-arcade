@@ -17,7 +17,7 @@ void test('realtime tickets carry only signed public identity and expire quickly
   const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as Record<string, unknown>;
   assert.equal(payload.pid, stablePublicPlayerId(identity));
   assert.equal(payload.n, 'Player One');
-  assert.equal(payload.a, 'neon-capsule');
+  assert.equal(payload.a, 'vled');
   assert.equal(payload.v, 2);
   assert.equal(payload.mode, 'wallet');
   assert.equal(payload.exp, 31_000);
